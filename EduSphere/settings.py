@@ -18,15 +18,17 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Read .env file if it exists
-environ.Env.read_env()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# .env file path
+ENV_PATH = BASE_DIR / '.env'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
+
+# Read .env file if it exists
+environ.Env.read_env(ENV_PATH)
 
 SECRET_KEY = env('SECRET_KEY')
 

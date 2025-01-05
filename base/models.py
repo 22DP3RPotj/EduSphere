@@ -1,8 +1,10 @@
+import uuid
 from django.db import models
 
 # Create your models here.
 
 class Room(models.Model):
+    id = models.UUIDField(primary_key=True, unique=True, editable=False, default=uuid.uuid4)
     # host =
     # topic =
     name = models.CharField(max_length=200)

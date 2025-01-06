@@ -12,3 +12,7 @@ def room(request, id):
     room = Room.objects.get(id=id)
     context = {'room': room}
     return render(request, 'base/room.html', context)
+
+def create_room(request):
+    context = {}
+    return render(request, 'base/room-form.html', context)

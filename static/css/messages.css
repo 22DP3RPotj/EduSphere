@@ -1,0 +1,79 @@
+.messages {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.messages .message {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+    color: #FFFFFF;
+    animation: fadeIn 0.3s ease-in-out, fadeOut 0.5s ease-in-out 4.5s;
+}
+
+.messages .message.success {
+    background-color: #4CAF50;
+}
+
+.messages .message.error {
+    background-color: #F44336;
+}
+
+.messages .message.info {
+    background-color: #2196F3;
+}
+
+.messages .message.warning {
+    background-color: #FFC107;
+    color: #212121; /* Dark text for warning */
+}
+
+.messages .message.default {
+    background-color: #616161;
+}
+
+.messages .message button {
+    margin-left: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.messages .message button:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}

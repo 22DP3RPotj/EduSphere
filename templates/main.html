@@ -1,8 +1,12 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/messages.css' %}">
+    <script src="{% static 'js/messages.js' %}" defer></script>
     <title>EduSphere</title>
 </head>
 
@@ -14,13 +18,15 @@
     {% endblock content %}
     
     {% if messages %}
-    <ul class="messages">
+    <div class="messages">
         {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button>&times;</button>
+        </div>
         {% endfor %}
-    </ul>
-    {% endif %}
-    
+    </div>
+    {% endif %}    
 </body>
 
 </html>

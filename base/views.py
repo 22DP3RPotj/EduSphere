@@ -7,7 +7,7 @@ from .models import Room, Topic
 from .forms import RoomForm
 
 
-def login_page(request):
+def login_user(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -27,6 +27,12 @@ def login_page(request):
             messages.warning(request, 'Username OR Password does not exist')
         
     return render(request, 'base/login-register.html', {})
+
+
+def logout_user(request):
+    logout(request)
+    return redirect('home')
+
 
 def home(request):
     q = request.GET.get('q') if request.GET.get('q') is not None else ''
@@ -49,6 +55,7 @@ def room(request, id):
     context = {'room': room}
     return render(request, 'base/room.html', context)
 
+
 def create_room(request):
     form = RoomForm()
     
@@ -60,6 +67,7 @@ def create_room(request):
 
     context = {'form': form}
     return render(request, 'base/room-form.html', context)
+
 
 def update_room(request, id):
     room = Room.objects.get(id=id)
@@ -73,6 +81,7 @@ def update_room(request, id):
     
     context = {'form': form}
     return render(request, 'base/room-form.html', context)
+
 
 def delete_room(request, id):
     room = Room.objects.get(id=id)

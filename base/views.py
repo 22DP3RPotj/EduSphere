@@ -1,11 +1,46 @@
 from django.shortcuts import render, redirect
-from .models import Room
+from django.contrib import messages
+from django.db.models import Q
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from .models import Room, Topic
 from .forms import RoomForm
 
 
+def login_page(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            messages.warning(request, 'User does not exist')
+            return render(request, 'base/login-register.html', {})
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.warning(request, 'Username OR Password does not exist')
+        
+    return render(request, 'base/login-register.html', {})
+
 def home(request):
-    rooms = Room.objects.all()
-    context = {'rooms': rooms}
+    q = request.GET.get('q') if request.GET.get('q') is not None else ''
+    
+    rooms = Room.objects.filter(
+        Q(topic__name__icontains=q) |
+        Q(name__icontains=q) |
+        Q(description__icontains=q)
+    )
+    
+    topics = Topic.objects.all()
+    rooms_count = rooms.count()
+    
+    context = {'rooms': rooms, 'topics': topics, 'rooms_count': rooms_count}
     return render(request, 'base/home.html', context)
 
 

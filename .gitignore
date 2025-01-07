@@ -4,6 +4,7 @@
 *.pot
 *.so
 db.sqlite3
+staticfiles/
 
 # Python
 *.pyc

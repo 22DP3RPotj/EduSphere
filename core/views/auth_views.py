@@ -19,7 +19,7 @@ def login_user(request):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
             messages.error(request, 'User does not exist')
-            return render(request, 'base/login-register.html', {})
+            return render(request, 'core/login-register.html', {})
         
         user = authenticate(request, username=username, password=password)
         
@@ -31,7 +31,7 @@ def login_user(request):
             messages.error(request, 'Username OR Password does not exist')
     
     context = {'page': page}
-    return render(request, 'base/login-register.html', context)
+    return render(request, 'core/login-register.html', context)
 
 
 def register_user(request):
@@ -47,7 +47,7 @@ def register_user(request):
         else:
             messages.error(request, 'An error occured during registration')
     
-    return render(request, 'base/login-register.html', {'form': form})
+    return render(request, 'core/login-register.html', {'form': form})
 
 
 def logout_user(request):

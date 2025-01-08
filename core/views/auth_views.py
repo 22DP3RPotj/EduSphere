@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 
 
 def login_user(request):
@@ -49,7 +50,7 @@ def register_user(request):
     
     return render(request, 'core/login-register.html', {'form': form})
 
-
+@login_required
 def logout_user(request):
     logout(request)
     return redirect('home')

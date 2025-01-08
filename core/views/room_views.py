@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -7,7 +7,7 @@ from ..forms import RoomForm
 
 
 def home(request):
-    q = request.GET.get('q') if request.GET.get('q') is not None else ''
+    q = request.GET.get('q') or ''
     
     rooms = Room.objects.filter(
         Q(topic__name__icontains=q) |
@@ -26,12 +26,12 @@ def home(request):
 
 
 def room(request, id):
-    room = Room.objects.get(id=id)
+    room = get_object_or_404(Room, id=id)
     room_messages = room.message_set.all().order_by('-created')
     participants = room.participants.all()
     
     if request.method == 'POST':
-        message = Message.objects.create(
+        Message.objects.create(
             user=request.user,
             room=room,
             body=request.POST.get('body')
@@ -46,7 +46,7 @@ def room(request, id):
     })
 
 
-@login_required(login_url='/login')
+@login_required
 def create_room(request):
     form = RoomForm()
     
@@ -60,9 +60,9 @@ def create_room(request):
     return render(request, 'core/room-form.html', {'form': form})
 
 
-@login_required(login_url='/login')
+@login_required
 def update_room(request, id):
-    room = Room.objects.get(id=id)
+    room = get_object_or_404(Room, id=id)
     form = RoomForm(instance=room)
     
     if request.method == 'POST':
@@ -75,9 +75,9 @@ def update_room(request, id):
     return render(request, 'core/room-form.html', {'form': form})
 
 
-@login_required(login_url='/login')
+@login_required
 def delete_room(request, id):
-    room = Room.objects.get(id=id)
+    room = get_object_or_404(Room, id=id)
     
     if request.method == 'POST':
         room.delete()
@@ -86,9 +86,9 @@ def delete_room(request, id):
     
     return render(request, 'core/delete.html', {'obj': room})
 
-@login_required(login_url='/login')
+@login_required
 def delete_message(request, id):
-    message = Message.objects.get(id=id)
+    message = get_object_or_404(Message, id=id)
     
     if request.method == 'POST':
         message.delete()

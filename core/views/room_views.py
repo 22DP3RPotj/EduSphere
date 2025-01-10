@@ -73,25 +73,3 @@ def update_room(request, id):
             return redirect('home')
     
     return render(request, 'core/room-form.html', {'form': form})
-
-
-@login_required
-def delete_room(request, id):
-    room = get_object_or_404(Room, id=id)
-    
-    if request.method == 'POST':
-        room.delete()
-        messages.success(request, 'Room deleted')
-        return redirect('home')
-    
-    return render(request, 'core/delete.html', {'obj': room})
-
-@login_required
-def delete_message(request, id):
-    message = get_object_or_404(Message, id=id)
-    
-    if request.method == 'POST':
-        message.delete()
-        return redirect('home')
-    
-    return render(request, 'core/delete.html', {'obj': message})

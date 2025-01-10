@@ -11,6 +11,4 @@ urlpatterns = [
     path('room/<uuid:id>/', room_views.room, name="room"),
     path('create-room/', room_views.create_room, name="create-room"),
     path('update-room/<uuid:id>/', room_views.update_room, name="update-room"),
-    path('delete-room/<uuid:id>/', room_views.delete_room, name="delete-room"),
-    path('delete-message/<uuid:id>/', room_views.delete_message, name="delete-message"),
 ]

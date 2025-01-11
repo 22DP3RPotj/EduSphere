@@ -11,17 +11,27 @@ def home(request):
     
     rooms = Room.objects.filter(
         Q(topic__name__icontains=q) |
-        Q(name__icontains=q) |
-        Q(description__icontains=q)
+        Q(name__icontains=q)
     )
     
     topics = Topic.objects.all()
     rooms_count = rooms.count()
     
+    if request.user.is_authenticated:
+        room_messages = Message.objects.filter(
+            room__in=rooms,
+            room__participants=request.user
+        ).select_related('room')[:5]
+    else:
+        room_messages = Message.objects.filter(
+            room__in=rooms
+        ).select_related('room')[:5]
+    
     return render(request, 'core/home.html', context = {
         'rooms': rooms,
         'topics': topics,
-        'rooms_count': rooms_count
+        'rooms_count': rooms_count,
+        'room_messages': room_messages
     })
 
 

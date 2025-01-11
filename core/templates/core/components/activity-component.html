@@ -1,0 +1,18 @@
+<h3>Recent Activity</h3>
+<hr>
+{% if room_messages %}
+    {% for message in room_messages %}
+    <div>
+        <small>@{{ message.user }} {{ message.created|timesince }}</small>
+        <small>replied in "{{ message.room }}"</small>
+
+        <p>{{ message }}</p>
+        {% if request.user == message.user %}
+        <button onclick="confirmDelete('{% url 'delete-message' message.id %}')">Delete</button>
+        <hr>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No recent activities to display.</p>
+{% endif %}

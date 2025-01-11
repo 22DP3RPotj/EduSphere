@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from ..models import Room, Topic, Message
+from ..models import Room, Topic, Message, User
 from ..forms import RoomForm
 
 
@@ -32,6 +32,20 @@ def home(request):
         'topics': topics,
         'rooms_count': rooms_count,
         'room_messages': room_messages
+    })
+    
+    
+def user_profile(request, id):
+    user = get_object_or_404(User, id=id)
+    rooms = user.room_set.all()
+    room_messages = user.message_set.all()
+    topic = Topic.objects.all()
+    
+    return render(request, 'core/user-profile.html', context = {
+        'user': user,
+        'rooms': rooms,
+        'room_messages': room_messages,
+        'topic': topic
     })
 
 

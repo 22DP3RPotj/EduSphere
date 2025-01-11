@@ -4,6 +4,8 @@ from .views import room_views, auth_views
 urlpatterns = [
     path('', room_views.home, name="home"),
     
+    path('profile/<str:id>/', room_views.user_profile, name="user-profile"),
+    
     path('login/', auth_views.login_user, name="login"),
     path('register/', auth_views.register_user, name="register"),        
     path('logout/', auth_views.logout_user, name="logout"),

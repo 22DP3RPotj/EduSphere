@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 
 class Topic(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.name[0:50]
@@ -12,11 +12,11 @@ class Topic(models.Model):
 
 class Room(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    host = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    host = models.ForeignKey(User, on_delete=models.CASCADE)
     topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    participants = models.ManyToManyField(User, related_name='paricipants', blank=True)
+    participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -29,7 +29,7 @@ class Room(models.Model):
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     body = models.TextField()
     updated = models.DateTimeField(auto_now=True)

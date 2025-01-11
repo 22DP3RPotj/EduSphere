@@ -28,7 +28,7 @@
                 {% if request.user == message.user %}
                 <button onclick="confirmDelete('{% url 'delete-message' message.id %}')">Delete</button>
                 {% endif %}
-                <small>@{{ message.user|default:"[deleted]" }}  {{ message.created|timesince }} ago</small>
+                <small>@{{ message.user }}  {{ message.created|timesince }} ago</small>
                 <p>{{ message.body }}</p>
                 <hr>
             </div>
@@ -51,7 +51,7 @@
 
         {% for user in participants %}
         <div>
-            <p>@{{ user.username|default:"[deleted]" }}</p>
+            <p>@{{ user.username }}</p>
         </div>
         {% endfor %}
     </div>

@@ -1,8 +1,10 @@
 function confirmDelete(url) {
     Swal.fire({
-        title: '<h3 style="">Are you sure?</h3>',
+        title: '<h3>Are you sure?</h3>',
         html: '<p>This action cannot be undone.</p>',
-        background: '#f7f5f4', // Light gray background
+        background: '#f7f5f4',
+        showCloseButton: true,
+        closeButtonHtml: '&times;',
         showCancelButton: true,
         showConfirmButton: true,
         confirmButtonText: 'Delete',
@@ -14,6 +16,7 @@ function confirmDelete(url) {
             confirmButton: 'btn-confirm',
             cancelButton: 'btn-cancel',
             actions: 'center-buttons',
+            closeButton: 'close-btn', // Custom styling for close button
         },
     }).then((result) => {
         if (result.isConfirmed) {
@@ -22,11 +25,13 @@ function confirmDelete(url) {
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
-            }).then(() => location.reload())
-            .catch(err => console.error(err));
+            })
+                .then(() => location.reload())
+                .catch((err) => console.error(err));
         }
     });
 }
+
 
 function getCookie(name) {
     let cookieValue = null;

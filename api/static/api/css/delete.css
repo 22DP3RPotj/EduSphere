@@ -1,5 +1,5 @@
 .minimal-popup {
-    width: 470px;
+    width: 425px;
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #BDC3C7;
@@ -19,31 +19,32 @@
     font-family: Open Sans, sans-serif;
     font-size: 14px;
     font-weight: bold;
-    padding: 10px 20px;
+    padding: 15px 30px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .btn-confirm:hover {
-    background-color: #f77a95;
+    background-color: #d53064;
 }
 
 .btn-cancel {
-    background-color: #ECF0F1;
+    background-color: #f7f5f4;
     color: #2C3E50;
     font-family: Montserrat, sans-serif;
     font-size: 14px;
     font-weight: bold;
-    padding: 10px 20px;
+    padding: 15px 30px;
     border: 1px solid black;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .btn-cancel:hover {
-    background-color: #BDC3C7;
+    background-color: #e6e3e2;
 }
+
 
 .minimal-popup h3 {
     color: #2C3E50;
@@ -59,5 +60,20 @@
     font-size: 14px;
     font-family: Open Sans, sans-serif;
     margin: 0 0 20px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+}
+
+.close-btn {
+    font-size: 30px;
+    color: #2C3E50;
+    font-weight: bold;
+    position: absolute;
+    cursor: pointer;
+    background-color: transparent;
+    border-radius: 5px;
+}
+
+.close-btn:hover {
+    color: #1A252F;
+    background-color: #ececec;
 }

@@ -3,6 +3,7 @@
 
 {% block head %}
 <script src="{% static 'api/js/delete.js' %}" defer></script>
+<link rel="stylesheet" href="{% static 'api/css/delete.css' %}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 {% endblock head %}
@@ -42,7 +43,7 @@
             <div>
                 {% if request.user == room.host %}
                 <a href="{% url 'update-room' room.id %}">Edit</a>
-                <button onclick="confirmDelete('{{ room.id }}')">Delete</button>
+                <button onclick="confirmDelete('{% url 'delete-room' room.id %}')">Delete</button>
                 {% endif %}
                 <span>@{{ room.host.username }}</span>
                 <h5><a href="{% url 'room' room.id %}">{{ room.name }}</a></h5>

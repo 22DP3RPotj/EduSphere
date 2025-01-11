@@ -1,0 +1,63 @@
+.minimal-popup {
+    width: 470px;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #BDC3C7;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.center-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-confirm {
+    background-color: #f34075;
+    color: #ffffff;
+    font-family: Open Sans, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-confirm:hover {
+    background-color: #f77a95;
+}
+
+.btn-cancel {
+    background-color: #ECF0F1;
+    color: #2C3E50;
+    font-family: Montserrat, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: 1px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background-color: #BDC3C7;
+}
+
+.minimal-popup h3 {
+    color: #2C3E50;
+    font-size: 24px;
+    font-family: Montserrat, sans-serif;
+    font-weight: bold;
+    margin: 0 0 10px;
+    margin-bottom: 10px;
+}
+
+.minimal-popup p {
+    color: #2C3E50;
+    font-size: 14px;
+    font-family: Open Sans, sans-serif;
+    margin: 0 0 20px;
+    margin-bottom: 20px;
+}

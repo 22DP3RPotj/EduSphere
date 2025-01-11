@@ -1,41 +1,29 @@
-function confirmDelete(roomId) {
+function confirmDelete(url) {
     Swal.fire({
-        title: 'Are you sure?',
-        text: 'This action cannot be undone!',
-        icon: 'warning',
+        title: '<h3 style="">Are you sure?</h3>',
+        html: '<p>This action cannot be undone.</p>',
+        background: '#f7f5f4', // Light gray background
         showCancelButton: true,
-        confirmButtonColor: '#4CAF50',
-        cancelButtonColor: '#FF5252',
-        confirmButtonText: 'Yes, delete it!',
+        showConfirmButton: true,
+        confirmButtonText: 'Delete',
         cancelButtonText: 'Cancel',
-        background: '#f2f2f2',
-        color: '#333',
+        buttonsStyling: false,
+        reverseButtons: true,
         customClass: {
-            title: 'swal-title',
-            text: 'swal-text',
-            confirmButton: 'swal-confirm-button',
-            cancelButton: 'swal-cancel-button'
-        }
+            popup: 'minimal-popup',
+            confirmButton: 'btn-confirm',
+            cancelButton: 'btn-cancel',
+            actions: 'center-buttons',
+        },
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`api/delete-room/${roomId}/`, {
+            fetch(url, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
-            })
-            .then(response => {
-                if (response.ok) {
-                    Swal.fire('Deleted!', 'The room has been deleted.', 'success');
-                    location.reload(); // Reload or update the UI as needed
-                } else {
-                    Swal.fire('Error!', 'Failed to delete the room.', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('Error!', 'An unexpected error occurred.', 'error');
-            });
+            }).then(() => location.reload())
+            .catch(err => console.error(err));
         }
     });
 }

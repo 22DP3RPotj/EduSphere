@@ -37,10 +37,8 @@
     
         {% if request.user.is_authenticated %}
         <div class="comment-form">
-            <form method="POST" action="">
-                {% csrf_token %}
-                <input type="text" name="body" placeholder="Write your message..." />
-            </form>
+            <input autoFocus type="text" id="chat-message-input" placeholder="Write your message..." />
+            <button id="chat-message-submit">Send</button>
         </div>
         {% endif %}
     </div>

@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import JsonResponse
 from ..models import Room, Topic, Message, User
 from ..forms import RoomForm
+import json
 
 
 def home(request):
@@ -53,21 +55,38 @@ def room(request, id):
     room = get_object_or_404(Room, id=id)
     room_messages = room.message_set.all().order_by('-created')
     participants = room.participants.all()
-    
+
     if request.method == 'POST':
-        Message.objects.create(
-            user=request.user,
-            room=room,
-            body=request.POST.get('body')
-        )
-        room.participants.add(request.user)
-        return redirect('room', id=room.id)
-    
-    return render(request, 'core/room.html', context = {
+        try:
+            if request.content_type == 'application/json':
+                body_unicode = request.body.decode('utf-8')
+                body_data = json.loads(body_unicode)
+                message_body = body_data.get('body')
+            else:
+                message_body = request.POST.get('body')
+
+            if not message_body:
+                return JsonResponse({'error': 'Message body cannot be empty.'}, status=400)
+
+            message = Message.objects.create(
+                user=request.user,
+                room=room,
+                body=message_body
+            )
+            return JsonResponse({
+                'user': message.user.username,
+                'body': message.body,
+                'created': message.created.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON payload.'}, status=400)
+
+    return render(request, 'core/room.html', {
         'room': room,
         'room_messages': room_messages,
         'participants': participants
     })
+
 
 
 @login_required

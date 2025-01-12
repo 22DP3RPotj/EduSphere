@@ -16,7 +16,7 @@ function confirmDelete(url) {
             confirmButton: 'btn-confirm',
             cancelButton: 'btn-cancel',
             actions: 'center-buttons',
-            closeButton: 'close-btn', // Custom styling for close button
+            closeButton: 'close-btn',
         },
     }).then((result) => {
         if (result.isConfirmed) {
@@ -26,8 +26,8 @@ function confirmDelete(url) {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
             })
-                .then(() => location.reload())
-                .catch((err) => console.error(err));
+            .then(() => location.reload())
+            .catch((err) => console.error(err));
         }
     });
 }
@@ -47,3 +47,36 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const csrftoken = getCookie('csrftoken');
+    const messageInput = document.getElementById('chat-message-input');
+    const messageSubmit = document.getElementById('chat-message-submit');
+
+    function sendMessage() {
+        const message = messageInput.value;
+
+        if (message.trim()) {
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 'body': message }),
+            })
+            .then(() => location.reload())
+            .catch((err) => console.error(err));
+        }
+    }
+
+    messageSubmit.onclick = sendMessage;
+
+    messageInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+});
+

@@ -7,7 +7,6 @@ from django.contrib.auth.decorators import login_required
 
 
 def login_user(request):
-    page = 'login'
     if request.user.is_authenticated:
         messages.error(request, 'User already logged in')
         return redirect('home')
@@ -16,10 +15,8 @@ def login_user(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            messages.error(request, 'User does not exist')
+        if not username or not password:
+            messages.error(request, 'Both username and password are required')
             return render(request, 'core/login-register.html', {})
         
         user = authenticate(request, username=username, password=password)
@@ -29,10 +26,10 @@ def login_user(request):
             messages.success(request, 'Successful login')
             return redirect(request.GET.get('next', 'home'))
         else:
-            messages.error(request, 'Username OR Password does not exist')
+            messages.error(request, 'Invalid username or password')
     
-    context = {'page': page}
-    return render(request, 'core/login-register.html', context)
+    return render(request, 'core/login-register.html', {'page': 'login'})
+
 
 
 def register_user(request):

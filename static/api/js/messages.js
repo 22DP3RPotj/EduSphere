@@ -20,7 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             body: JSON.stringify({ 'body': message }),
         })
-        .then(() => location.reload())
+        .then(() => {
+            messageInput.value = '';
+            location.reload();
+        })
         .catch((err) => console.error(err));
     }
     

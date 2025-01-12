@@ -1,7 +1,9 @@
 {% extends "components/main.html" %}
+{% load static %}
 
 {% block head %}
     {% include "components/delete-assets.html" %}
+    <script type="module" src="{% static 'api/js/messages.js' %}" defer></script>
 {% endblock head %}
 
 {% block content %}

@@ -1,5 +1,5 @@
-function confirmDelete(url) {
-    Swal.fire({
+async function confirmDelete(url) {
+    const result = await Swal.fire({
         title: '<h3>Are you sure?</h3>',
         html: '<p>This action cannot be undone.</p>',
         background: '#f7f5f4',
@@ -18,19 +18,30 @@ function confirmDelete(url) {
             actions: 'center-buttons',
             closeButton: 'close-btn',
         },
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(url, {
+    });
+
+    if (result.isConfirmed) {
+        try {
+            await fetch(url, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
-            })
-            .then(() => location.reload())
-            .catch((err) => console.error(err));
+            });
+            location.reload();
+        } catch (err) {
+            console.error(err);
         }
-    });
+    }
 }
+
+document.querySelectorAll('.delete-button').forEach(button => {
+    button.addEventListener('click', (event) => {
+        const url = event.target.dataset.url;
+        confirmDelete(url);
+    });
+});
+
 
 
 function getCookie(name) {
@@ -54,23 +65,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageSubmit = document.getElementById('chat-message-submit');
 
     function sendMessage() {
-        const message = messageInput.value;
-
-        if (message.trim()) {
-            fetch('', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 'body': message }),
-            })
-            .then(() => location.reload())
-            .catch((err) => console.error(err));
+        const message = messageInput.value.trim();
+    
+        if (!message) {
+            return;
         }
+    
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 'body': message }),
+        })
+        .then(() => location.reload())
+        .catch((err) => console.error(err));
     }
+    
 
-    messageSubmit.onclick = sendMessage;
+    messageSubmit.addEventListener('click', sendMessage);
 
     messageInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {

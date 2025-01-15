@@ -25,7 +25,7 @@
     <div class="messages">
         {% for message in messages %}
         <div class="message {{ message.tags }}">
-            <span>{{ message.body }}</span>
+            <span>{{ message }}</span>
             <button>&times;</button>
         </div>
         {% endfor %}

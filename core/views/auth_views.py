@@ -28,7 +28,7 @@ def login_user(request):
         else:
             messages.error(request, 'Invalid username or password')
     
-    return render(request, 'core/login-register.html', {'page': 'login'})
+    return render(request, 'core/login.html')
 
 
 
@@ -45,7 +45,7 @@ def register_user(request):
         else:
             messages.error(request, 'An error occured during registration')
     
-    return render(request, 'core/login-register.html', {'form': form})
+    return render(request, 'core/register.html', {'form': form})
 
 @login_required
 def logout_user(request):

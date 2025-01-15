@@ -26,17 +26,38 @@ class Room(models.Model):
     class Meta:
         ordering = ['-updated', '-created']
 
-
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    room = models.ForeignKey('Room', on_delete=models.CASCADE)
     body = models.TextField()
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.body[0:240]
+        return f'Message by {self.user.username} in {self.room.name} at {self.created}'
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['room', 'created']),  # Optimized queries for fetching room messages
+            models.Index(fields=['user']),  # Optimized queries for fetching user messages
+        ]
+        ordering = ['-created']
+
+    def serialize(self):
+        """
+        Serialize the message object for WebSocket or API responses.
+        """
+        return {
+            'id': str(self.id),
+            'user': self.user.username,
+            'user_id': self.user.id,
+            'room': str(self.room.id),
+            'body': self.body,
+            'created': self.created.strftime('%Y-%m-%d %H:%M:%S'),
+            'updated': self.updated.strftime('%Y-%m-%d %H:%M:%S'),
+        }
+
     
     class Meta:
         ordering = ['-updated', '-created']

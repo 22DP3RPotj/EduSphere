@@ -6,7 +6,7 @@
         <small><a href="{% url 'user-profile' message.user.id %}">@{{ message.user }}</a> {{ message.created|timesince }}</small>
         <small>replied in "{{ message.room }}"</small>
 
-        <p>{{ message }}</p>
+        <p>{{ message.body }}</p>
         {% if request.user == message.user %}
         <button class="delete-button" data-url="{% url 'delete-message' message.id %}">Delete</button>
         <hr>

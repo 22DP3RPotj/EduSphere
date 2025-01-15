@@ -1,9 +1,7 @@
 {% extends "components/main.html" %}
-{% load static %}
 
 {% block head %}
     {% include "components/delete-assets.html" %}
-    <script type="module" src="{% static 'api/js/messages.js' %}" defer></script>
 {% endblock head %}
 
 {% block content %}
@@ -30,7 +28,10 @@
                 {% if request.user == message.user %}
                 <button class="delete-button" data-url="{% url 'delete-message' message.id %}">Delete</button>
                 {% endif %}
-                <small><a href="{% url 'user-profile' message.user.id %}">@{{ message.user }}</a> {{ message.created|timesince }}</small>
+                <small>
+                    <a href="{% url 'user-profile' message.user.id %}">@{{ message.user.username }}</a>
+                    {{ message.created|timesince }} ago
+                </small>
                 <p>{{ message.body }}</p>
                 <hr>
             </div>
@@ -38,9 +39,11 @@
         </div>
     
         {% if request.user.is_authenticated %}
-        <div class="comment-form">
-            <input autoFocus type="text" id="chat-message-input" placeholder="Write your message..." />
-            <button id="chat-message-submit">Send</button>
+        <div class="comment-form form">
+            <form method="POST" action="">
+                {% csrf_token %}
+                <input type="text" name="body" placeholder="Write your message..." />
+            </form>
         </div>
         {% endif %}
     </div>
@@ -56,5 +59,37 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/room/' + "{{ room.id }}" + '/'
+    );
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const messageContainer = document.querySelector('.comments-wrapper');
+
+        const userProfileUrl = `{% url 'user-profile' 0 %}`.replace(0, data.user_id);
+
+        messageContainer.innerHTML += `
+            <div>
+                <small>
+                    <a href="${userProfileUrl}">@${data.user}</a>
+                    just now
+                </small>
+                <p>${data.message}</p>
+                <hr>
+            </div>`;
+    };
+
+    document.querySelector('.comment-form').onsubmit = function(e) {
+        e.preventDefault();
+        const messageInput = document.querySelector('input[name="body"]');
+        chatSocket.send(JSON.stringify({
+            'message': messageInput.value
+        }));
+        messageInput.value = '';
+    };
+</script>
 
 {% endblock content %}

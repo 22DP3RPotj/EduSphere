@@ -30,17 +30,22 @@ async function confirmDelete(url) {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
             });
-            location.reload();
+
+            // Remove the deleted message without reloading the page
+            const messageDiv = document.querySelector(`[data-url="${url}"]`).closest('div');
+            if (messageDiv) {
+                messageDiv.remove();
+            }
         } catch (err) {
-            console.error(err);
+            console.error('Error while deleting:', err);
         }
     }
 }
 
-document.querySelectorAll('.delete-button').forEach(button => {
-    button.addEventListener('click', (event) => {
+// Event delegation: Add the listener to the parent container
+document.querySelector('.comments-wrapper').addEventListener('click', (event) => {
+    if (event.target.classList.contains('delete-button')) {
         const url = event.target.dataset.url;
         confirmDelete(url);
-    });
+    }
 });
-

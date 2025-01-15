@@ -61,6 +61,7 @@
 </div>
 
 <script>
+    // TODO: Add purifications to the messages
     const chatSocket = new WebSocket(
         'ws://' + window.location.host + '/ws/room/' + "{{ room.id }}" + '/'
     );
@@ -68,18 +69,20 @@
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         const messageContainer = document.querySelector('.comments-wrapper');
-
+        const messageDeleteUrl = `{% url 'delete-message' 0 %}`.replace(0, data.id);
         const userProfileUrl = `{% url 'user-profile' 0 %}`.replace(0, data.user_id);
 
-        messageContainer.innerHTML += `
+        messageContainer.insertAdjacentHTML('beforeend', `
             <div>
+                <button class="delete-button" data-url="${messageDeleteUrl}">Delete</button>
                 <small>
                     <a href="${userProfileUrl}">@${data.user}</a>
                     just now
                 </small>
                 <p>${data.message}</p>
                 <hr>
-            </div>`;
+            </div>
+        `);
     };
 
     document.querySelector('.comment-form').onsubmit = function(e) {

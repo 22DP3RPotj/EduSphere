@@ -42,10 +42,13 @@ async function confirmDelete(url) {
     }
 }
 
-// Event delegation: Add the listener to the parent container
-document.querySelector('.comments-wrapper').addEventListener('click', (event) => {
-    if (event.target.classList.contains('delete-button')) {
-        const url = event.target.dataset.url;
-        confirmDelete(url);
-    }
-});
+// Event delegation: Add the listener to the parent container if exists
+const deleteWrapper = document.querySelector('[data-role="feed-container"]')
+if (deleteWrapper) {
+    deleteWrapper.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-button')) {
+            const url = event.target.dataset.url;
+            confirmDelete(url);
+        }
+    });
+}

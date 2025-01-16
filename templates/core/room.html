@@ -19,7 +19,7 @@
     
         <p>{{ room.description }}</p>
         
-        <div class="comments-wrapper">
+        <div class="comments-wrapper" data-role="feed-container">
             <h3>Conversation</h3>
             <hr>
     
@@ -61,7 +61,6 @@
 </div>
 
 <script>
-    // TODO: Add purifications to the messages
     const chatSocket = new WebSocket(
         'ws://' + window.location.host + '/ws/room/' + "{{ room.id }}" + '/'
     );
@@ -69,6 +68,7 @@
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         const messageContainer = document.querySelector('.comments-wrapper');
+        const safeMessage = sanitize(data.message);
         const messageDeleteUrl = `{% url 'delete-message' 0 %}`.replace(0, data.id);
         const userProfileUrl = `{% url 'user-profile' 0 %}`.replace(0, data.user_id);
 
@@ -79,20 +79,36 @@
                     <a href="${userProfileUrl}">@${data.user}</a>
                     just now
                 </small>
-                <p>${data.message}</p>
+                <p>${safeMessage}</p>
                 <hr>
             </div>
         `);
     };
 
-    document.querySelector('.comment-form').onsubmit = function(e) {
-        e.preventDefault();
-        const messageInput = document.querySelector('input[name="body"]');
-        chatSocket.send(JSON.stringify({
-            'message': messageInput.value
-        }));
-        messageInput.value = '';
-    };
+    const commentForm = document.querySelector('.comment-form');
+    if (commentForm) {
+        commentForm.onsubmit = function(e) {
+            e.preventDefault();
+            const messageInput = document.querySelector('input[name="body"]');
+            chatSocket.send(JSON.stringify({
+                'message': messageInput.value
+            }));
+            messageInput.value = '';
+        };
+    }
+
+    function sanitize(string) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            "/": '&#x2F;',
+        };
+        const reg = /[&<>"'/]/ig;
+        return string.replace(reg, (match)=>(map[match]));
+    }
 </script>
 
 {% endblock content %}

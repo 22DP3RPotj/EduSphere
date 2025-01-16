@@ -1,9 +1,8 @@
-from django.urls import path
+from django.urls import re_path
 from . import views
 
-# TODO: Add regex
 
 urlpatterns = [
-    path('delete-room/<uuid:id>/', views.delete_room, name='delete-room'),
-    path('delete-message/<id>/', views.delete_message, name='delete-message'),
+    re_path(r'^delete-room/(?P<id>[a-f0-9\-]+)/$', views.delete_room, name='delete-room'),
+    re_path(r'^delete-message/(?P<id>[a-f0-9\-]+)/$', views.delete_message, name='delete-message'),
 ]

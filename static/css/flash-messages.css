@@ -17,7 +17,8 @@
     font-family: Arial, sans-serif;
     font-size: 0.9rem;
     color: #FFFFFF;
-    animation: fadeIn 0.3s ease-in-out, fadeOut 0.5s ease-in-out 4.5s;
+    animation: fadeIn 0.3s ease-in-out, fadeOut 0.5s ease-in-out 4s forwards;
+    animation-fill-mode: forwards;
 }
 
 .messages .message.success {

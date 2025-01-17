@@ -3,7 +3,7 @@
 {% block content %}
 
 <div>
-    <form method="post">
+    <form method="post" autocomplete="on">
         {% csrf_token %}
         
         {{ form.as_p }}

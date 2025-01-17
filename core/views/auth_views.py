@@ -16,7 +16,7 @@ def login_user(request):
         
         if not username or not password:
             messages.error(request, 'Both username and password are required')
-            return render(request, 'core/login-register.html', {})
+            return redirect('login')
         
         user = authenticate(request, username=username, password=password)
         
@@ -26,6 +26,7 @@ def login_user(request):
             return redirect(request.GET.get('next', 'home'))
         else:
             messages.error(request, 'Invalid username or password')
+            return redirect('login')
     
     return render(request, 'core/login.html')
 
@@ -43,6 +44,7 @@ def register_user(request):
             return redirect('home')
         else:
             messages.error(request, 'An error occured during registration')
+            return redirect('register')
     
     return render(request, 'core/register.html', {'form': form})
 

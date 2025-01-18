@@ -37,6 +37,11 @@ def create_room(request):
 @login_required
 def update_room(request, id):
     room = get_object_or_404(Room, id=id)
+    
+    if room.host != request.user:
+        messages.error(request, 'You are not authorized to update this room')
+        return redirect('home')
+    
     form = RoomForm(instance=room)
     
     if request.method == 'POST':

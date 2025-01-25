@@ -25,7 +25,7 @@ def home(request):
         room_messages = Message.objects.filter(
             room__in=rooms
         ).select_related('room', 'user')[:5]
-    
+
     paginator = Paginator(rooms, 10)  # Paginate rooms with 10 per page
     page = request.GET.get('page')
     rooms = paginator.get_page(page)
@@ -34,6 +34,7 @@ def home(request):
         'rooms': rooms,
         'topics': topics,
         'rooms_count': rooms_count,
+        'total_rooms_count': Room.objects.count(),
         'room_messages': room_messages
     })
 

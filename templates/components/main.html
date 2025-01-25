@@ -3,24 +3,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{% static 'style.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'css/flash-messages.css' %}">
     <script src="{% static 'js/flash-messages.js' %}" defer></script>
-    
-    <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
     
     <title>EduSphere</title>
     
     {% block head %}{% endblock head %}
 </head>
+
 <body>
     {% include "components/navbar.html" %}
-    
-    {% block content %}
-    
-    {% endblock content %}
-    
+
     {% if messages %}
     <div class="messages">
         {% for message in messages %}
@@ -30,7 +27,12 @@
         </div>
         {% endfor %}
     </div>
-    {% endif %}    
-</body>
+    {% endif %}
 
+    {% block content %}
+    
+    {% endblock content %}
+
+    <script src="{% static 'script.js' %}"></script>
+</body>
 </html>

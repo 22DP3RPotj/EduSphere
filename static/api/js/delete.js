@@ -32,7 +32,7 @@ async function confirmDelete(url) {
             });
 
             // Remove the deleted message without reloading the page
-            const messageDiv = document.querySelector(`[data-url="${url}"]`).closest('div');
+            const messageDiv = document.querySelector(`[data-url="${url}"]`).closest('[data-type="deletable-item"]');
             if (messageDiv) {
                 messageDiv.remove();
             }

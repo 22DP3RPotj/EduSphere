@@ -1,0 +1,114 @@
+{% extends "components/main.html" %}
+
+{% block head %}
+    {% include "components/delete-assets.html" %}
+{% endblock head %}
+
+{% block content %}
+
+<style>
+    .room-container {
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+    }
+</style>
+
+<div class="room-container">
+    <div>
+        <h1>{{ room.name }}</h1>
+    
+        <p>{{ room.description }}</p>
+        
+        <div class="comments-wrapper" data-role="feed-container">
+            <h3>Conversation</h3>
+            <hr>
+    
+            {% for message in room_messages %}
+            <div>
+                {% if request.user == message.user %}
+                <button class="delete-button" data-url="{% url 'delete-message' message.id %}">Delete</button>
+                {% endif %}
+                <small>
+                    <a href="{% url 'user-profile' message.user.id %}">@{{ message.user.username }}</a>
+                    {{ message.created|timesince }} ago
+                </small>
+                <p>{{ message.body }}</p>
+                <hr>
+            </div>
+            {% endfor %}
+        </div>
+    
+        {% if request.user.is_authenticated %}
+        <div class="comment-form form">
+            <form method="POST" action="">
+                {% csrf_token %}
+                <input type="text" name="body" placeholder="Write your message..." />
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <h3>Participants</h3>
+        <hr>
+
+        {% for user in participants %}
+        <div>
+            <p>@{{ user.username }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/room/' + "{{ room.id }}" + '/'
+    );
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const messageContainer = document.querySelector('.comments-wrapper');
+        const safeMessage = sanitize(data.message);
+        const messageDeleteUrl = `{% url 'delete-message' 0 %}`.replace(0, data.id);
+        const userProfileUrl = `{% url 'user-profile' 0 %}`.replace(0, data.user_id);
+
+        messageContainer.insertAdjacentHTML('beforeend', `
+            <div>
+                <button class="delete-button" data-url="${messageDeleteUrl}">Delete</button>
+                <small>
+                    <a href="${userProfileUrl}">@${data.user}</a>
+                    just now
+                </small>
+                <p>${safeMessage}</p>
+                <hr>
+            </div>
+        `);
+    };
+
+    const commentForm = document.querySelector('.comment-form');
+    if (commentForm) {
+        commentForm.onsubmit = function(e) {
+            e.preventDefault();
+            const messageInput = document.querySelector('input[name="body"]');
+            chatSocket.send(JSON.stringify({
+                'message': messageInput.value
+            }));
+            messageInput.value = '';
+        };
+    }
+
+    function sanitize(string) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            "/": '&#x2F;',
+        };
+        const reg = /[&<>"'/]/ig;
+        return string.replace(reg, (match)=>(map[match]));
+    }
+</script>
+
+{% endblock content %}

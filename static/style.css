@@ -62,6 +62,10 @@ a {
   text-decoration: none;
 }
 
+svg {
+  vertical-align: middle;
+}
+
 /*========== components ==========*/
 .container {
   max-width: 120rem;
@@ -566,6 +570,15 @@ a {
   color: var(--color-dark-light);
 }
 
+.topics span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 100%;
+}
+
+
 .topics__list {
   list-style: none;
 }
@@ -941,7 +954,6 @@ a {
   width: 1.6rem;
   height: 1.6rem;
   fill: var(--color-light);
-  vertical-align: middle;
   cursor: pointer;
 }
 

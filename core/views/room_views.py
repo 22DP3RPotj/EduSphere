@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.core.exceptions import PermissionDenied
 from ..models import Room, Topic
 from ..forms import RoomForm
@@ -22,7 +23,8 @@ def room(request, id):
 @login_required
 def create_room(request):
     form = RoomForm()
-    topics = Topic.objects.all()
+    topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')
+    
     if request.method == 'POST':
         topic_name = request.POST.get('topic')
         topic, created = Topic.objects.get_or_create(name=topic_name)
@@ -45,7 +47,7 @@ def update_room(request, id):
     room = get_object_or_404(Room, id=id)
     
     form = RoomForm(instance=room)
-    topics = Topic.objects.all()
+    topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')
     
     if request.user != room.host:
         raise PermissionDenied()

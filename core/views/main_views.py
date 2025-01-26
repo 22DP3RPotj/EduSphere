@@ -1,19 +1,22 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from ..models import Room, Topic, Message, User
 
 
-
 def home(request):
     q = request.GET.get('q') or ''
+
+    if q:
+        rooms = Room.objects.filter(
+            Q(topic__name__iexact=q) |
+            Q(name__iexact=q)
+        ).select_related('topic').prefetch_related('participants')
+    else:
+        rooms = Room.objects.all().select_related('topic').prefetch_related('participants')
+
     
-    rooms = Room.objects.filter(
-        Q(topic__name__icontains=q) |
-        Q(name__icontains=q)
-    ).select_related('topic').prefetch_related('participants')
-    
-    topics = Topic.objects.all()  # This could use caching if topics don't change frequently.
+    topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')  # This could use caching if topics don't change frequently.
     rooms_count = rooms.count()
     
     if request.user.is_authenticated:

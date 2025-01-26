@@ -18,19 +18,17 @@
         </div>
       </div>
       <div class="layout__body">
-        <form class="form" action="#" method="POST">
+        <form class="form" action="#" method="POST" autocomplete="off">
           {% csrf_token %}
           
           <div class="form__group">
             <label for="room_topic">{{ form.topic.label }}</label>
-            <input required autocomplete="off" type="text" value="{{ room.topic.name }}" name="topic" list="topic-list" />
-            <datalist id="topic-list">
-              <select id="room_topic">
+            <input required type="text" value="{{ room.topic.name }}" name="topic" id="topic-input" />
+            <ul id="topic-list" class="styled-ul">
                 {% for topic in topics %}
-                <option value="{{ topic.name }}">{{ topic.name }}</option>
+                    <li class="styled-li">{{ topic.name }}</li>
                 {% endfor %}
-              </select>
-            </datalist>
+            </ul>
           </div>
 
           <div class="form__group">
@@ -52,4 +50,106 @@
     </div>
   </div>
 </main>
+
+<style>
+    .form__group {
+        position: relative;
+    }
+
+    .styled-ul {
+        display: none;
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+        background-color: white;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        z-index: 1000;
+    }
+
+    .styled-ul.active {
+        display: block;
+    }
+
+    .styled-li {
+        padding: 10px;
+        cursor: pointer;
+        color: #2d2d39;
+    }
+
+    .styled-li:hover, .styled-li.selected {
+        background-color: #eee;
+    }
+</style>
+
+<script>
+  const input = document.getElementById('topic-input');
+  const ul = document.getElementById('topic-list');
+  let currentIndex = -1;
+  
+  // Show the list only when the user starts typing
+  input.addEventListener('input', () => {
+      ul.classList.add('active'); // Show the list
+      const filter = input.value.toLowerCase();
+      const items = ul.querySelectorAll('.styled-li');
+  
+      items.forEach((item) => {
+          // Check if the filter is not an empty string and the item's text starts with the filter value
+          if (filter && item.textContent.toLowerCase().startsWith(filter)) {
+              item.hidden = false;
+          } else {
+              item.hidden = true;
+          }
+      });
+  });
+  
+  // Hide the list when the input loses focus
+  input.addEventListener('blur', () => {
+      setTimeout(() => ul.classList.remove('active'), 100);
+      currentIndex = -1; // Reset the index when the list is hidden
+  });
+  
+  ul.addEventListener('click', (e) => {
+      if (e.target && e.target.nodeName === 'LI') {
+          input.value = e.target.textContent;
+          ul.classList.remove('active');
+          currentIndex = -1; // Reset the index when a selection is made
+      }
+  });
+  
+  input.addEventListener('keydown', (e) => {
+      const activeItems = ul.querySelectorAll('.styled-li:not([hidden])');
+      if (!ul.classList.contains('active')) return; // Don't allow arrow keys if the list is not active
+  
+      if (e.code === 'ArrowDown') {
+          e.preventDefault();
+          currentIndex = (currentIndex + 1) % activeItems.length;
+          updateSelection(activeItems);
+      } else if (e.code === 'ArrowUp') {
+          e.preventDefault();
+          currentIndex = (currentIndex - 1 + activeItems.length) % activeItems.length;
+          updateSelection(activeItems);
+      } else if (e.code === 'Enter') {
+          e.preventDefault();
+          if (currentIndex >= 0) {
+              input.value = activeItems[currentIndex].textContent;
+              ul.classList.remove('active');
+              currentIndex = -1; // Reset the index after selection
+          }
+      }
+  });
+  
+  function updateSelection(items) {
+      items.forEach((item, index) => {
+          if (index === currentIndex) {
+              item.classList.add('selected');
+              item.scrollIntoView({ block: "nearest" });
+          } else {
+              item.classList.remove('selected');
+          }
+      });
+  }  
+</script>
 {% endblock content %}

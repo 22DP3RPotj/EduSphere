@@ -16,7 +16,7 @@ def home(request):
         rooms = Room.objects.all().select_related('topic').prefetch_related('participants')
 
     
-    topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')  # This could use caching if topics don't change frequently.
+    topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')[:4]  # This could use caching if topics don't change frequently.
     rooms_count = rooms.count()
     
     if request.user.is_authenticated:

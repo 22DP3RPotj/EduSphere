@@ -44,7 +44,7 @@ async function confirmDelete(url) {
 
 // Event delegation: Add the listener to the parent container
 document.querySelector('[data-role="feed-container"]').addEventListener('click', (event) => {
-    if (event.target.classList.contains('delete-button')) {
+    if (event.target.classList.contains('dlt-btn')) {
         const url = event.target.dataset.url;
         confirmDelete(url);
     }

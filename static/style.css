@@ -685,7 +685,7 @@ svg {
   font-weight: 500;
 }
 
-.delete-button {
+.dlt-btn {
   background-color: transparent;
   border: none;
   padding: 0;
@@ -693,7 +693,7 @@ svg {
   cursor: pointer;
 }
 
-.delete-button svg {
+.dlt-btn svg {
   fill: var(--color-main);
   pointer-events: none;
 

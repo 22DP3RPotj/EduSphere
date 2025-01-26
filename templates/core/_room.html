@@ -26,7 +26,7 @@
             {% for message in room_messages %}
             <div>
                 {% if request.user == message.user %}
-                <button class="delete-button" data-url="{% url 'delete-message' message.id %}">Delete</button>
+                <button class="dlt-btn" data-url="{% url 'delete-message' message.id %}">Delete</button>
                 {% endif %}
                 <small>
                     <a href="{% url 'user-profile' message.user.id %}">@{{ message.user.username }}</a>
@@ -74,7 +74,7 @@
 
         messageContainer.insertAdjacentHTML('beforeend', `
             <div>
-                <button class="delete-button" data-url="${messageDeleteUrl}">Delete</button>
+                <button class="dlt-btn" data-url="${messageDeleteUrl}">Delete</button>
                 <small>
                     <a href="${userProfileUrl}">@${data.user}</a>
                     just now

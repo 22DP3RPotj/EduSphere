@@ -119,9 +119,11 @@ svg {
 }
 
 .btn--pill {
-  border-radius: 10rem;
+  width: 100%;
+  border-radius: 8rem;
   font-size: 1.4rem;
   font-weight: 700;
+  justify-content: center;
   padding: 6px 2.5rem;
   color: var(--color-main);
   background: transparent;
@@ -437,6 +439,11 @@ svg {
   border-radius: 1rem;
   box-shadow: 1px 1px 6px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  max-height: calc(100vh - 10rem);
 }
 
 .layout__boxHeader {

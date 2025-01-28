@@ -6,7 +6,7 @@ from ..models import Room, Topic, Message, User
 from ..forms import UserForm
 
 def home(request):
-    q = request.GET.get('q') or ''
+    q = request.GET.get('q', '')
 
     if q:
         rooms = Room.objects.filter(

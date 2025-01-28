@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.core.exceptions import PermissionDenied
-from ..models import Room, Topic
+from ..models import Room, Topic, Message
 from ..forms import RoomForm
 
 
@@ -62,3 +62,15 @@ def update_room(request, id):
         return redirect('home')
 
     return render(request, 'core/room-form.html', {'form': form, 'topics': topics, 'room': room})
+
+
+def topics(request):
+    q = request.GET.get('q', '')
+    topics = Topic.objects.filter(
+        name__icontains=q
+    ).annotate(room_count=Count('room')).order_by('-room_count')
+    return render(request, 'core/topics.html', {'topics': topics})
+
+def activity(request):
+    room_message = Message.objects.all()
+    return render(request, 'core/activity.html', {'room_messages': room_message})

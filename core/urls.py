@@ -13,4 +13,7 @@ urlpatterns = [
     path('room/<uuid:id>/', room_views.room, name="room"),
     path('create-room/', room_views.create_room, name="create-room"),
     path('update-room/<uuid:id>/', room_views.update_room, name="update-room"),
+    
+    path('topics/', room_views.topics, name="topics"),
+    path('activity/', room_views.activity, name="activity"),
 ]

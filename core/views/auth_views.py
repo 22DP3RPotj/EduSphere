@@ -43,7 +43,9 @@ def register_user(request):
             messages.success(request, 'Successful registration')
             return redirect('home')
         else:
-            messages.error(request, 'An error occured during registration')
+            for field in form:
+                for error in field.errors:
+                    messages.error(request, f'{field.label}: {error}')
             return redirect('register')
     
     return render(request, 'core/register.html', {'form': form})

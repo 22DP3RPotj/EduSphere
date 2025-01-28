@@ -52,7 +52,12 @@
       <!-- Room List End -->
 
       <!-- Activities Start -->
-      {% include 'components/activity-component.html' %}
+      <div class="activities" data-role="feed-container">
+        <div class="activities__header">
+            <h2>Recent Activities</h2>
+        </div>
+        {% include 'components/activity-component.html' %}
+      </div>
       <!-- Activities End -->
     </div>
   </main>

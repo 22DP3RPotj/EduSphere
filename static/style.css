@@ -459,8 +459,12 @@ svg {
 }
 
 .layout__boxTitle h3 {
+  position: absolute;
+  text-align: right;
+  right: 0px;
+  padding: 2rem;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 800;
   color: var(--color-light);
 }
 

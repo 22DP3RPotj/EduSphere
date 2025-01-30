@@ -5,6 +5,7 @@
 *.so
 db.sqlite3
 staticfiles/
+media/
 
 # Python
 *.pyc

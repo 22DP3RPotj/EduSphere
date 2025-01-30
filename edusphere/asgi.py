@@ -8,7 +8,6 @@ from channels.auth import AuthMiddlewareStack
 from core.routing import websocket_urlpatterns
 
 
-
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(

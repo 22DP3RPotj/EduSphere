@@ -47,6 +47,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'id': str(new_message.id),
             'user': user.username,
             'user_id': user.id,
+            'user_avatar': user.avatar.url,
             'message': new_message.body,
             'created': new_message.created.strftime('%Y-%m-%d %H:%M:%S'),
         }
@@ -69,6 +70,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'id': event['id'],
             'user': event['user'],
             'user_id': event['user_id'],
+            'user_avatar': event['user_avatar'],
             'message': event['message'],
             'created': event['created'],
         }))

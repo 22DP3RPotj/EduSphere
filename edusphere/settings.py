@@ -43,6 +43,8 @@ ALLOWED_HOSTS = [
 
 LOGIN_URL = '/login'
 
+AUTH_USER_MODEL = 'core.User'
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -160,6 +162,12 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_STORAGE = 'servestatic.storage.CompressedManifestStaticFilesStorage'
+
+# Media files (User avatar)
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

@@ -2,7 +2,7 @@ from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from ..models import Room, Topic, Message, User
+from ..models import User, Room, Topic, Message
 from ..forms import UserForm
 
 def home(request):
@@ -54,6 +54,7 @@ def user_profile(request, id):
     return render(request, 'core/user-profile.html', context={
         'user': user,
         'rooms': rooms,
+        'total_rooms_count': Room.objects.count(),
         'room_messages': room_messages,
         'topics': topics
     })
@@ -65,7 +66,7 @@ def update_user(request):
     form = UserForm(instance=user)
     
     if request.method == 'POST':
-        form = UserForm(request.POST, instance=user)
+        form = UserForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
             return redirect('user-profile', id=user.id)

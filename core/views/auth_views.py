@@ -1,9 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-
+from ..forms import CustomUserCreationForm
 
 def login_user(request):
     if request.user.is_authenticated:
@@ -33,10 +32,10 @@ def login_user(request):
 
 
 def register_user(request):
-    form = UserCreationForm()
+    form = CustomUserCreationForm()
     
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)

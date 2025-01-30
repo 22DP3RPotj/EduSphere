@@ -3,7 +3,7 @@ from .views import rooms, auth, main
 
 urlpatterns = [
     path('', main.home, name="home"),
-    path('profile/<uuid:id>/', main.user_profile, name="user-profile"),
+    path('profile/<str:id>/', main.user_profile, name="user-profile"),
     path('update-user/', main.update_user, name="update-user"),
     
     path('login/', auth.login_user, name="login"),

@@ -67,6 +67,8 @@ class RoomForm(ModelForm):
         exclude = ['host', 'participants']
 
 class UserForm(ModelForm):
+    avatar = forms.ImageField(widget=forms.FileInput)
     class Meta:
         model = User
         fields = ['username', 'name', 'email', 'avatar', 'bio']
+        

@@ -1,19 +1,19 @@
 from django.urls import path
-from .views import room_views, auth_views, main_views
+from .views import rooms, auth, main
 
 urlpatterns = [
-    path('', main_views.home, name="home"),
-    path('profile/<str:id>/', main_views.user_profile, name="user-profile"),
-    path('update-user/', main_views.update_user, name="update-user"),
+    path('', main.home, name="home"),
+    path('profile/<str:id>/', main.user_profile, name="user-profile"),
+    path('update-user/', main.update_user, name="update-user"),
     
-    path('login/', auth_views.login_user, name="login"),
-    path('register/', auth_views.register_user, name="register"),        
-    path('logout/', auth_views.logout_user, name="logout"),
+    path('login/', auth.login_user, name="login"),
+    path('register/', auth.register_user, name="register"),        
+    path('logout/', auth.logout_user, name="logout"),
     
-    path('room/<uuid:id>/', room_views.room, name="room"),
-    path('create-room/', room_views.create_room, name="create-room"),
-    path('update-room/<uuid:id>/', room_views.update_room, name="update-room"),
+    path('room/<uuid:id>/', rooms.room, name="room"),
+    path('create-room/', rooms.create_room, name="create-room"),
+    path('update-room/<uuid:id>/', rooms.update_room, name="update-room"),
     
-    path('topics/', room_views.topics, name="topics"),
-    path('activity/', room_views.activity, name="activity"),
+    path('topics/', rooms.topics, name="topics"),
+    path('activity/', rooms.activity, name="activity"),
 ]

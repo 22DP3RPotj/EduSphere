@@ -1,11 +1,10 @@
-{% extends "components/main.html" %}
+{% extends 'components/main.html' %}
 
 {% block content %}
-
 <main class="profile-page layout layout--3">
   <div class="container">
     <!-- Topics Start -->
-    {% include "components/topic-component.html" %}
+    {% include 'components/topics.html' %}
     <!-- Topics End -->
 
     <!-- Room List Start -->
@@ -37,7 +36,7 @@
           </h2>
         </div>
       </div>
-      {% include "components/feed-component.html" %}
+      {% include 'components/feed.html' %}
     </div>
     <!-- Room List End -->
 
@@ -46,10 +45,9 @@
       <div class="activities__header">
           <h2>Recent Activities</h2>
       </div>
-      {% include 'components/activity-component.html' %}
+      {% include 'components/activity.html' %}
     </div>
     <!-- Activities End -->
   </div>
 </main>
-
 {% endblock content %}

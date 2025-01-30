@@ -71,7 +71,7 @@ MIDDLEWARE = [
     'servestatic.middleware.ServeStaticMiddleware', # Serve static files
 ]
 
-ROOT_URLCONF = 'edusphere.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -93,7 +93,7 @@ TEMPLATES = [
 
 # Real-time chat
 
-ASGI_APPLICATION = 'edusphere.asgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
@@ -105,7 +105,7 @@ CHANNEL_LAYERS = {
 }
 
 
-WSGI_APPLICATION = 'edusphere.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database

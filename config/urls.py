@@ -12,7 +12,7 @@ urlpatterns = [
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-handler400 = "core.views.error_views.custom_400"
-handler403 = "core.views.error_views.custom_403"
-handler404 = "core.views.error_views.custom_404"
-handler500 = "core.views.error_views.custom_500"
+handler400 = "core.views.errors.custom_400"
+handler403 = "core.views.errors.custom_403"
+handler404 = "core.views.errors.custom_404"
+handler500 = "core.views.errors.custom_500"

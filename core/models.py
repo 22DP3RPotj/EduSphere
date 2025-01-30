@@ -5,10 +5,10 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    name = models.CharField(max_length=200, null=True)
-    email = models.EmailField(unique=True, null=True)
-    bio = models.TextField(null=True)
-    avatar = models.ImageField(null=True, default='default.svg')
+    name = models.CharField(max_length=200)
+    email = models.EmailField(unique=True)
+    bio = models.TextField(blank=True, null=True)
+    avatar = models.ImageField(default='default.svg')
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'name']
@@ -50,7 +50,7 @@ class Message(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=['room', 'created']),  # Optimized queries for fetching room messages
-            models.Index(fields=['user']),  # Optimized queries for fetching user messages
+            models.Index(fields=['user']),             # Optimized queries for fetching user messages
         ]
         ordering = ['-created']
 
@@ -67,7 +67,3 @@ class Message(models.Model):
             'created': self.created.strftime('%Y-%m-%d %H:%M:%S'),
             'updated': self.updated.strftime('%Y-%m-%d %H:%M:%S'),
         }
-
-    
-    class Meta:
-        ordering = ['-updated', '-created']

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from ..forms import RegisterForm
+from ..forms import RegisterForm, LoginForm
 
 def login_user(request):
     if request.user.is_authenticated:
@@ -10,30 +10,28 @@ def login_user(request):
         return redirect('home')
     
     if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        
-        if not email or not password:
-            messages.error(request, 'Both email and password are required')
-            return redirect('login')
-        
-        user = authenticate(request, email=email, password=password)
-        
-        if user is not None:
-            login(request, user)
-            messages.success(request, 'Successful login')
-            return redirect(request.GET.get('next', 'home'))
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            user = authenticate(request, email=email, password=password)
+            
+            if user is not None:
+                login(request, user)
+                messages.success(request, 'Successful login')
+                return redirect(request.GET.get('next', 'home'))
         else:
-            messages.error(request, 'Invalid email or password')
-            return redirect('login')
+            for error in form.errors.values():
+                messages.error(request, error)
+            return render(request, 'core/login.html', {'form': form})
+    else:
+        form = LoginForm()
     
-    return render(request, 'core/login.html')
+    return render(request, 'core/login.html', {'form': form})
 
 
 
 def register_user(request):
-    form = RegisterForm()
-    
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -42,11 +40,12 @@ def register_user(request):
             messages.success(request, 'Successful registration')
             return redirect('home')
         else:
-            for field in form:
-                for error in field.errors:
-                    messages.error(request, f'{field.label}: {error}')
-            return redirect('register')
-    
+            for error in form.errors.values():
+                messages.error(request, error)
+            return render(request, 'core/register.html', {'form': form})
+    else:
+        form = RegisterForm()
+        
     return render(request, 'core/register.html', {'form': form})
 
 @login_required

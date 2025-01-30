@@ -2,6 +2,7 @@ from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from ..models import User, Room, Topic, Message
 from ..forms import UserForm
 
@@ -16,9 +17,17 @@ def home(request):
     else:
         rooms = Room.objects.all().select_related('topic').prefetch_related('participants')
 
-    
-    # This could use caching if topics don't change frequently.
+        
     topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')[:4]
+
+    # from django.core.cache import cache
+    # 
+    # topics = cache.get('topics')
+    # if not topics:
+    #     # Fetch topics from the database if not cached
+    #     topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')[:4]
+    #     cache.set('topics', topics, timeout=60*5)  # Cache for 5 minutes
+        
     rooms_count = rooms.count()
     
     if request.user.is_authenticated:
@@ -70,5 +79,8 @@ def update_user(request):
         if form.is_valid():
             form.save()
             return redirect('user-profile', id=user.id)
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
         
     return render(request, 'core/update-user.html', {'form': form})

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from ..forms import CustomUserCreationForm
+from ..forms import RegisterForm
 
 def login_user(request):
     if request.user.is_authenticated:
@@ -10,21 +10,21 @@ def login_user(request):
         return redirect('home')
     
     if request.method == 'POST':
-        username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
         
-        if not username or not password:
-            messages.error(request, 'Both username and password are required')
+        if not email or not password:
+            messages.error(request, 'Both email and password are required')
             return redirect('login')
         
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email=email, password=password)
         
         if user is not None:
             login(request, user)
             messages.success(request, 'Successful login')
             return redirect(request.GET.get('next', 'home'))
         else:
-            messages.error(request, 'Invalid username or password')
+            messages.error(request, 'Invalid email or password')
             return redirect('login')
     
     return render(request, 'core/login.html')
@@ -32,10 +32,10 @@ def login_user(request):
 
 
 def register_user(request):
-    form = CustomUserCreationForm()
+    form = RegisterForm()
     
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
+        form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)

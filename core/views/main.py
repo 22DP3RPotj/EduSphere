@@ -49,7 +49,7 @@ def user_profile(request, id):
     user = get_object_or_404(User, id=id)
     rooms = user.room_set.prefetch_related('participants')
     room_messages = user.message_set.select_related('room')  # Optimize related room lookups
-    topics = Topic.objects.all()  # Rename variable to `topics` for consistency
+    topics = Topic.objects.all()
     
     return render(request, 'core/user-profile.html', context={
         'user': user,

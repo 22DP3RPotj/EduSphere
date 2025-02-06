@@ -69,7 +69,8 @@ def topics(request):
     topics = Topic.objects.filter(
         name__icontains=q
     ).annotate(room_count=Count('room')).order_by('-room_count')
-    return render(request, 'core/topics.html', {'topics': topics})
+    rooms = Room.objects.all()
+    return render(request, 'core/topics.html', {'topics': topics, 'rooms': rooms})
 
 def activity(request):
     room_message = Message.objects.all()

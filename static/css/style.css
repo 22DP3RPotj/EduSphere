@@ -622,12 +622,18 @@ svg {
   text-decoration: underline;
 }
 
-.topics-page .topics__list li:not(:last-child) a {
+.topics-page .topics__list li a {
   margin: 2rem 0;
   padding-bottom: 1rem;
   text-decoration: none;
   border-bottom: 1px solid var(--color-dark-medium);
 }
+
+.topics-page .topics__list li:only-child a {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
 
 .topics-page .header__search {
   display: block;

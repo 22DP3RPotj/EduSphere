@@ -11,22 +11,13 @@ def home(request):
 
     if q:
         rooms = Room.objects.filter(
-            Q(topic__name__iexact=q) |
-            Q(name__iexact=q)
+            Q(topic__name__iexact=q)
         ).select_related('topic').prefetch_related('participants')
     else:
         rooms = Room.objects.all().select_related('topic').prefetch_related('participants')
 
         
     topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')[:4]
-
-    # from django.core.cache import cache
-    # 
-    # topics = cache.get('topics')
-    # if not topics:
-    #     # Fetch topics from the database if not cached
-    #     topics = Topic.objects.annotate(room_count=Count('room')).order_by('-room_count')[:4]
-    #     cache.set('topics', topics, timeout=60*5)  # Cache for 5 minutes
         
     rooms_count = rooms.count()
     

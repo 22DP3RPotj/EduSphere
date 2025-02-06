@@ -22,3 +22,6 @@ env/
 
 # Theme
 theme/
+
+# Backups
+*-bac

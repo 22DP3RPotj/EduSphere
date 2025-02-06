@@ -7,7 +7,7 @@ class User(AbstractUser):
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
     bio = models.TextField(blank=True, null=True)
-    avatar = models.ImageField(default='default.svg')
+    avatar = models.ImageField(upload_to='avatars', default='default.svg')
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'name']
@@ -44,7 +44,9 @@ class Message(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'Message by {self.user.username} in {self.room.name} at {self.created}'
+        if len(self.body) > 50:
+            return self.body[:50] + '...'
+        return self.body
 
     class Meta:
         indexes = [

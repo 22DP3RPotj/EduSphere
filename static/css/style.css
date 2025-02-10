@@ -1,30 +1,43 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
 :root {
-  --color-main: #71c6dd;
-  --color-main-light: #e1f6fb;
-  --color-dark: #3f4156;
-  --color-dark-medium: #51546e;
-  --color-dark-light: #696d97;
-  --color-light: #e5e5e5;
-  --color-gray: #8b8b8b;
-  --color-light-gray: #b2bdbd;
-  --color-bg: #2d2d39;
-  --color-success: #5dd693;
-  --color-error: #fc4b0b;
-}
+  --color-background-primary: #F4F1FA;
+  --color-background-secondary: #1C1C1C;
+  --color-background-accent: #FFFFFF;
+  
+  --color-surface: #e0e0e0;
+  --color-hover: #2C3E50;
+
+  --color-text: #2C3E50;
+  --color-text-primary: #1C1C1C;
+  --color-text-secondary: #FFFFFF;
+
+
+  --color-success: #28a745;
+  --color-error: #dc3545;
+
+  /* --: #222831
+      #393E46
+      #00ADB5
+      #EEEEEE; */
+  }
 
 /*========== base styles ==========*/
 
 * {
-  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
-    "Helvetica Neue", sans-serif;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   text-rendering: optimizeLegibility;
   /* color: inherit; */
   font-size: inherit;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-hover);
+  outline-offset: 2px;
 }
 
 html {
@@ -47,8 +60,8 @@ body {
   line-height: 1.6;
   font-weight: 400;
   font-size: 1.5rem;
-  color: var(--color-light-gray);
-  background-color: var(--color-bg);
+  color: var(--color-text);
+  background-color: var(--color-background-primary);
   min-height: 100vh;
 }
 
@@ -58,7 +71,7 @@ img {
 
 a {
   display: inline-block;
-  color: var(--color-main);
+  color: var(--color-hover);
   text-decoration: none;
 }
 
@@ -90,7 +103,7 @@ svg {
 .btn--link {
   border-radius: 0;
   padding: 0;
-  color: var(--color-main);
+  color: var(--color-text-primary);
   box-shadow: none;
 }
 
@@ -99,8 +112,8 @@ svg {
 }
 
 .btn--main {
-  background-color: var(--color-main);
-  color: var(--color-dark);
+  background-color: var(--color-hover);
+  color: var(--color-text-secondary);
 }
 
 .btn:hover {
@@ -108,8 +121,8 @@ svg {
 }
 
 .btn--dark {
-  background-color: var(--color-dark-light);
-  color: var(--color-light);
+  background-color: transparent;
+  color: var(--color-text-primary);
 }
 
 .btn > svg {
@@ -125,9 +138,9 @@ svg {
   font-weight: 700;
   justify-content: center;
   padding: 6px 2.5rem;
-  color: var(--color-main);
+  color: var(--color-hover);
   background: transparent;
-  border: 2px solid var(--color-main);
+  border: 2px solid var(--color-hover);
 }
 
 .action-button {
@@ -141,7 +154,7 @@ svg {
   position: relative;
   display: inline-block;
   border-radius: 50%;
-  border: 2px solid var(--color-main);
+  border: 2px solid var(--color-hover);
 }
 
 .avatar img {
@@ -155,10 +168,10 @@ svg {
   content: "";
   display: block;
   position: absolute;
-  background-color: var(--color-gray);
+  background-color: var(--color-text);
   z-index: 111;
   border-radius: 50%;
-  border: 0.3rem solid var(--color-dark);
+  border: 0.3rem solid var(--color-background-accent);
 }
 
 .avatar.active::after {
@@ -204,22 +217,12 @@ svg {
   right: 3.5px;
 }
 
-.scroll::-webkit-scrollbar {
-  width: 0.6rem;
-  background-color: rgb(41, 41, 46);
-}
-
-.scroll::-webkit-scrollbar-thumb {
-  border-radius: 1rem;
-  background-color: var(--color-gray);
-}
-
 .dropdown-menu {
   z-index: 111;
   position: absolute;
   top: 5rem;
   right: 0.5rem;
-  background: var(--color-dark-light);
+  background: var(--color-background-primary);
   border-radius: 5px;
   box-shadow: 1px 1px 3px 1px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -233,21 +236,21 @@ svg {
 .dropdown-menu a {
   padding: 1.2rem 4rem;
   display: block;
-  color: var(--color-light) !important;
+  color: var(--color-text-primary) !important;
   font-weight: 500;
   font-size: 1.4rem;
 }
 
 .dropdown-menu a:hover {
-  background-color: var(--color-dark-medium);
+  background-color: var(--color-surface);
 }
 
 .dropdown-menu > a:not(:last-child) {
-  border-bottom: 1px solid var(--color-dark-medium);
+  border-bottom: 1px solid var(--color-surface);
 }
 
 .dropdown-menu a svg {
-  fill: var(--color-light);
+  fill: var(--color-text-primary);
 }
 
 .mobile-menu {
@@ -267,13 +270,24 @@ svg {
   }
 }
 
+/*========== scrollbar ==========*/
+.scroll::-webkit-scrollbar {
+  width: 0.6rem;
+  background-color: rgb(41, 41, 46);
+}
+
+.scroll::-webkit-scrollbar-thumb {
+  border-radius: 1rem;
+  background-color: var(--color-text);
+}
+
 /*==============================
 =>  Header Section
 ================================*/
 
 .header {
   padding: 1.5rem;
-  background-color: var(--color-dark);
+  background-color: var(--color-background-accent);
   /* Make the header stick to the top */
   position: sticky;
   top: 0;
@@ -300,12 +314,12 @@ svg {
 
 .header__logo > h1 {
   font-weight: 700;
-  font-size: 2rem;
-  color: var(--color-light);
+  font-size: 3rem;
+  color: var(--color-text-primary);
 }
 
 .header__search > label {
-  background-color: var(--color-dark-medium);
+  background-color: var(--color-surface);
   padding: 1.3rem 1rem;
   display: flex;
   align-items: center;
@@ -314,7 +328,7 @@ svg {
 }
 
 .header__search svg {
-  fill: var(--color-gray);
+  fill: var(--color-text);
   width: 2rem;
   height: 2rem;
   margin-left: 1rem;
@@ -325,7 +339,7 @@ svg {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--color-light);
+  color: var(--color-text-primary);
 }
 
 @media screen and (max-width: 800px) {
@@ -361,7 +375,7 @@ svg {
   align-items: center;
   font-weight: 500;
   text-decoration: none;
-  color: var(--color-gray);
+  color: var(--color-text);
 }
 
 .header__menu img {
@@ -373,7 +387,7 @@ svg {
 }
 
 .header__menu span {
-  color: var(--color-main);
+  color: var(--color-hover);
   font-weight: 500;
   font-size: 1.4rem;
   display: block;
@@ -382,7 +396,7 @@ svg {
 .header__menu svg {
   width: 1.6rem;
   height: 1.6rem;
-  fill: var(--color-dark-light);
+  fill: var(--color-text-primary);
 }
 
 .dropdown-button {
@@ -393,7 +407,7 @@ svg {
 }
 
 .dropdown-button:hover svg {
-  fill: var(--color-main);
+  fill: var(--color-hover);
 }
 
 /*==============================
@@ -440,7 +454,7 @@ svg {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -46%);
-  background-color: var(--color-dark);
+  background-color: var(--color-background-accent);
   border-radius: 1rem;
   box-shadow: 1px 1px 6px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -454,7 +468,7 @@ svg {
 .layout__boxHeader {
   display: flex;
   padding: 1.5rem;
-  background-color: var(--color-dark-light);
+  background-color: var(--color-background-secondary);
 }
 
 .layout__boxTitle {
@@ -466,13 +480,13 @@ svg {
 .layout__boxTitle h3 {
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--color-light);
+  color: var(--color-text-secondary);
 }
 
 .layout__boxTitle svg {
   width: 1.6rem;
   height: 1.6rem;
-  fill: var(--color-main);
+  fill: var(--color-text-secondary);
 }
 
 .layout__body {
@@ -514,18 +528,18 @@ svg {
 .form__group textarea,
 .form__group select {
   background: transparent;
-  border: 1px solid var(--color-dark-light);
+  border: 1px solid var(--color-text-primary);
   padding: 1rem;
   border-radius: 3px;
   width: 100%;
-  color: var(--color-light);
+  color: var(--color-text-primary);
   font-weight: 500;
   outline: none;
 }
 
 .form__group input:focus,
 .form__group textarea:focus {
-  border-color: var(--color-main);
+  border-color: var(--color-hover);
 }
 
 .form__group textarea {
@@ -535,13 +549,13 @@ svg {
 }
 
 .form__group select {
-  color: var(--color-gray);
+  color: var(--color-text);
   font-weight: 400;
 }
 
 .form__group select option {
-  background-color: var(--color-dark-light);
-  color: var(--color-light);
+  background-color: var(--color-text-primary);
+  color: var(--color-text-primary);
   padding: 0 10rem;
 }
 
@@ -560,7 +574,7 @@ svg {
   text-align: center;
   font-size: 1.8rem;
   font-weight: 500;
-  color: var(--color-main);
+  color: var(--color-hover);
   cursor: pointer;
 }
 
@@ -579,7 +593,7 @@ svg {
 .topics__header h2 {
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--color-dark-light);
+  color: var(--color-text-primary);
 }
 
 .topics span {
@@ -600,18 +614,21 @@ svg {
   justify-content: space-between;
   margin-bottom: 3rem;
   font-weight: 500;
-  color: var(--color-light-gray);
+  color: var(--color-text);
   transition: all 0.3s ease-in-out;
 }
 
-.topics__list li a.active,
+.topics__list li a.active {
+  color: var(--color-text);
+}
+
 .topics__list li a:hover {
-  color: var(--color-main);
+  color: var(--color-hover);
 }
 
 .topics__list li a span {
   padding: 0.5rem 1rem;
-  background-color: var(--color-dark);
+  background-color: var(--color-background-accent);
   border-radius: 3px;
   font-size: 1.3rem;
   font-weight: 700;
@@ -626,7 +643,7 @@ svg {
   margin: 2rem 0;
   padding-bottom: 1rem;
   text-decoration: none;
-  border-bottom: 1px solid var(--color-dark-medium);
+  border-bottom: 1px solid var(--color-surface);
 }
 
 .topics-page .topics__list li:only-child a {
@@ -660,20 +677,20 @@ svg {
 .roomList__header h2 {
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--color-light);
+  color: var(--color-text-primary);
   letter-spacing: 1px;
 }
 
 .roomList__header p {
   font-weight: 500;
-  color: var(--color-dark-light);
+  color: var(--color-text-primary);
 }
 
 /*========== Room List Room ==========*/
 
 .roomListRoom {
   margin-bottom: 2.4rem;
-  background-color: var(--color-dark);
+  background-color: var(--color-background-accent);
   border-radius: 1rem;
   padding: 2rem;
 }
@@ -712,7 +729,7 @@ svg {
 }
 
 .dlt-btn svg {
-  fill: var(--color-main);
+  fill: var(--color-hover);
   pointer-events: none;
 
   width: 1.6rem;
@@ -727,16 +744,16 @@ svg {
   font-size: 2rem;
   font-weight: 500;
   margin-bottom: 1.5rem;
-  color: var(--color-light);
+  color: var(--color-text-primary);
   transition: all 0.3s ease-in-out;
 }
 
 .roomListRoom__content a:hover {
-  color: var(--color-main);
+  color: var(--color-hover);
 }
 
 .roomListRoom__meta {
-  border-top: 1px solid var(--color-dark-medium);
+  border-top: 1px solid var(--color-surface);
   padding-top: 1rem;
   display: flex;
   align-items: center;
@@ -744,7 +761,7 @@ svg {
 }
 
 .roomListRoom__joined {
-  color: var(--color-light-gray);
+  color: var(--color-text);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -753,14 +770,14 @@ svg {
 }
 
 .roomListRoom__joined svg {
-  fill: var(--color-main);
+  fill: var(--color-text);
   width: 1.6rem;
   height: 1.6rem;
 }
 
 .roomListRoom__topic {
   padding: 5px 1.5rem;
-  background-color: var(--color-dark-medium);
+  background-color: var(--color-surface);
   border-radius: 5rem;
   font-weight: 500;
   font-size: 1.3rem;
@@ -771,17 +788,17 @@ svg {
 ================================*/
 
 .activities {
-  background: var(--color-dark);
+  background: var(--color-background-accent);
   border-radius: 5px;
   overflow: hidden;
 }
 
 .activities__header h2 {
-  background-color: var(--color-dark-light);
+  background-color: var(--color-background-secondary);
   text-transform: uppercase;
   font-weight: 500;
   padding: 1rem 1.5rem;
-  color: var(--color-light);
+  color: var(--color-text-secondary);
   letter-spacing: 1px;
   font-size: 1.4rem;
 }
@@ -789,7 +806,7 @@ svg {
 .activities__box {
   margin: 1.5rem;
   padding: 1.5rem;
-  border: 2px solid var(--color-dark-medium);
+  border: 2px solid var(--color-surface);
   border-radius: 5px;
 }
 
@@ -799,7 +816,7 @@ svg {
 }
 
 .activities__boxHeader p span {
-  color: var(--color-gray);
+  color: var(--color-text);
   font-size: 1.2rem;
   display: block;
 }
@@ -817,7 +834,7 @@ svg {
 }
 
 .activities__boxRoomContent {
-  background: var(--color-bg);
+  background: var(--color-background-primary);
   padding: 1rem;
   border-radius: 5px;
   margin-top: 1rem;
@@ -825,7 +842,7 @@ svg {
 }
 
 .roomListRoom__actions svg {
-  fill: var(--color-light-gray);
+  fill: var(--color-text);
 }
 
 /*==============================
@@ -859,7 +876,7 @@ svg {
 .auth__tagline {
   text-align: center;
   margin-bottom: 3rem;
-  color: var(--color-main);
+  color: var(--color-hover);
   font-weight: 500;
   font-size: 1.8rem;
 }
@@ -906,12 +923,12 @@ svg {
 
 .profile__info h3 {
   font-size: 2rem;
-  color: var(--color-light);
+  color: var(--color-text-primary);
   font-weight: 400;
 }
 
 .profile__info p {
-  color: var(--color-main);
+  color: var(--color-hover);
   font-weight: 500;
   margin-bottom: 1rem;
 }
@@ -922,7 +939,7 @@ svg {
 
 .profile__about h3 {
   text-transform: uppercase;
-  color: var(--color-dark-light);
+  color: var(--color-text-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -931,7 +948,7 @@ svg {
 }
 
 .profile-page .roomList__header h2 {
-  color: var(--color-dark-light);
+  color: var(--color-text-primary);
 }
 
 /*==============================
@@ -940,7 +957,7 @@ svg {
 
 .room,
 .participants {
-  background: var(--color-dark);
+  background: var(--color-background-accent);
   max-height: 87.5vh;
   border-radius: 0.7rem;
   overflow: hidden;
@@ -959,7 +976,7 @@ svg {
 
 .room__top,
 .participants__top {
-  background: var(--color-dark-light);
+  background: var(--color-background-secondary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -971,7 +988,7 @@ svg {
 .thread__top svg {
   width: 1.6rem;
   height: 1.6rem;
-  fill: var(--color-light);
+  fill: var(--color-text-secondary);
   cursor: pointer;
 }
 
@@ -985,13 +1002,13 @@ svg {
 .participants__top {
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--color-light);
+  color: var(--color-text-secondary);
 }
 
 .room__topLeft svg {
   width: 1.6rem;
   height: 1.6rem;
-  fill: var(--color-light);
+  fill: var(--color-text-secondary);
 }
 
 .room__topRight {
@@ -1002,7 +1019,7 @@ svg {
 .room__header {
   position: absolute;
   width: 95%;
-  background: var(--color-dark);
+  background: var(--color-background-accent);
   z-index: 999;
   top: 4.4rem;
   padding-top: 2rem;
@@ -1042,12 +1059,12 @@ svg {
 .room__info h3 {
   font-size: 2.4rem;
   font-weight: 500;
-  color: var(--color-main);
+  color: var(--color-hover);
 }
 
 .room__hosted p {
   text-transform: uppercase;
-  color: var(--color-gray);
+  color: var(--color-text);
   font-size: 1.2rem;
   font-weight: 700;
   line-height: 2;
@@ -1067,8 +1084,8 @@ svg {
 
 .room__topics {
   padding: 0.5rem 1.5rem;
-  background: var(--color-dark-light);
-  color: var(--color-light);
+  background: var(--color-surface);
+  color: var(--color-text);
   display: inline-block;
   font-size: 1.4rem;
   border-radius: 1.5rem;
@@ -1084,11 +1101,11 @@ svg {
 .threads h3 {
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--color-gray);
+  color: var(--color-text);
 }
 
 .threads {
-  background: var(--color-bg);
+  background: var(--color-background-primary);
   border-radius: 0.7rem;
   overflow-y: auto;
   height: 100%;
@@ -1097,7 +1114,7 @@ svg {
 }
 
 .thread {
-  border-left: 2px solid var(--color-dark);
+  border-left: 2px solid var(--color-background-accent);
   padding-left: 1rem;
   margin: 2rem 0;
   padding: 2rem;
@@ -1110,7 +1127,7 @@ svg {
 }
 
 .thread__top svg {
-  fill: var(--color-dark-light);
+  fill: var(--color-text-primary);
 }
 
 .thread__author {
@@ -1143,8 +1160,8 @@ svg {
 
 .room__message > form > input {
   resize: none;
-  background-color: var(--color-dark-light);
-  color: var(--color-light);
+  background-color: var(--color-hover);
+  color: var(--color-text-secondary);
   border: none;
   outline: none;
   border-radius: 0.7rem;
@@ -1158,11 +1175,11 @@ svg {
 }
 
 .room__message > form > input::placeholder {
-  color: var(--color-light-gray);
+  color: var(--color-text-secondary);
 }
 
 .participants__top span {
-  color: var(--color-main);
+  color: var(--color-text-secondary);
   font-size: 1.3rem;
   text-transform: none;
 }
@@ -1175,7 +1192,7 @@ svg {
 .participants__list {
   padding: 2rem;
   height: 82.5vh;
-  overflow-y: scroll;
+  overflow-y: auto;
   padding-bottom: 0;
 }
 
@@ -1187,13 +1204,13 @@ svg {
 }
 
 .participant p {
-  color: var(--color-light-gray);
+  color: var(--color-text);
   line-height: 1.2;
 }
 
 .participant span {
   display: block;
   font-weight: 500;
-  color: var(--color-main);
+  color: var(--color-hover);
   font-weight: 1.4rem;
 }

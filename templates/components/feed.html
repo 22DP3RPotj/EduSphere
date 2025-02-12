@@ -1,21 +1,21 @@
 {% for room in rooms %}
-<div class="roomListRoom">
-    <div class="roomListRoom__header">
-        <a href="{% url 'user-profile' room.host.id %}" class="roomListRoom__author">
+<div class="room-list__room">
+    <div class="room-list__room-header">
+        <a href="{% url 'user-profile' room.host.id %}" class="room-list__room-author">
             <div class="avatar avatar--small">
             <img src="{{ room.host.avatar.url }}" />
             </div>
             <span>@{{ room.host.username }}</span>
         </a>
-        <div class="roomListRoom__actions">
+        <div class="room-list__room-actions">
             <span>{{ room.created|timesince }} ago</span>
         </div>
     </div>
-    <div class="roomListRoom__content">
+    <div class="room-list__room-content">
         <a href="{% url 'room' room.id %}">{{ room.name }}</a>
     </div>
-    <div class="roomListRoom__meta">
-        <a href="{% url 'room' room.id %}" class="roomListRoom__joined">
+    <div class="room-list__room-meta">
+        <a href="{% url 'room' room.id %}" class="room-list__room-joined">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
             <title>user-group</title>
             <path
@@ -33,7 +33,7 @@
             </svg>
             {{ room.participants.all.count }} Joined
         </a>
-        <p class="roomListRoom__topic">{{ room.topic.name }}</p>
+        <p class="room-list__room-topic">{{ room.topic.name }}</p>
     </div>
 </div>
 {% endfor %}

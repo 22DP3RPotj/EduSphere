@@ -688,34 +688,34 @@ svg {
 
 /*========== Room List Room ==========*/
 
-.roomListRoom {
+.room-list__room {
   margin-bottom: 2.4rem;
   background-color: var(--color-background-accent);
   border-radius: 1rem;
   padding: 2rem;
 }
 
-.roomListRoom__header {
+.room-list__room-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.roomListRoom__author {
+.room-list__room-author {
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.roomListRoom__actions {
+.room-list__room-actions {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
   position: relative;
 }
 
-.roomListRoom__actions span {
+.room-list__room-actions span {
   font-size: 1.4rem;
   font-weight: 500;
 }
@@ -736,11 +736,11 @@ svg {
   height: 1.6rem;
 }
 
-.roomListRoom__content {
+.room-list__room-content {
   margin: 1rem 0;
 }
 
-.roomListRoom__content a {
+.room-list__room-content a {
   font-size: 2rem;
   font-weight: 500;
   margin-bottom: 1.5rem;
@@ -748,11 +748,11 @@ svg {
   transition: all 0.3s ease-in-out;
 }
 
-.roomListRoom__content a:hover {
+.room-list__room-content a:hover {
   color: var(--color-hover);
 }
 
-.roomListRoom__meta {
+.room-list__room-meta {
   border-top: 1px solid var(--color-surface);
   padding-top: 1rem;
   display: flex;
@@ -760,7 +760,7 @@ svg {
   justify-content: space-between;
 }
 
-.roomListRoom__joined {
+.room-list__room-joined {
   color: var(--color-text);
   display: flex;
   align-items: center;
@@ -769,13 +769,13 @@ svg {
   font-weight: 500;
 }
 
-.roomListRoom__joined svg {
+.room-list__room-joined svg {
   fill: var(--color-text);
   width: 1.6rem;
   height: 1.6rem;
 }
 
-.roomListRoom__topic {
+.room-list__room-topic {
   padding: 5px 1.5rem;
   background-color: var(--color-surface);
   border-radius: 5rem;
@@ -841,7 +841,7 @@ svg {
   margin-left: -4.2rem;
 }
 
-.roomListRoom__actions svg {
+.room-list__room-actions svg {
   fill: var(--color-text);
 }
 

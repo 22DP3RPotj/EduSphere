@@ -25,3 +25,6 @@ theme/
 
 # Backups
 *-bac
+
+# Local
+*-local

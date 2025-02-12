@@ -1,281 +1,151 @@
-# **Learning Platform: Detailed Project Description**
-
-This document outlines the detailed functionality, architecture, and project logic for the Learning Platform. It is designed to address potential questions and guide the development process.
-
----
-
-## **1. Project Overview**
-
-The Learning Platform is a web application where:
-
-- **Teachers** can create, manage, and deliver courses.
-
-- **Students** can browse, enroll in, and access course materials.
-
-### **Core Features**
-
-1. User roles with distinct permissions (Teachers, Students, Admin).
-
-2. Secure user authentication and profile management.
-
-3. Course creation, editing, publishing, and enrollment management.
-
-4. Search and filtering for courses.
-
-5. Role-based access to course content and features.
-
-6. An admin panel for platform management.
+# **Course Marketplace Platform: Detailed Project Description**  
+This document outlines the functionality, architecture, and logic for the Course Marketplace Platform, enabling creators to monetize content and learners to engage via real-time communication.
 
 ---
 
-## **2. Application Logic**
+## **1. Project Overview**  
+The platform is a **course marketplace** where:  
+- **Creators** (any registered user) can design, publish, and sell courses.  
+- **Learners** can discover, purchase, and interact with courses and creators.  
+- **Admins** manage platform operations, commissions, and moderation.  
 
-### **2.1. User Roles and Permissions**
-
-#### **Teachers**
-
-- Can create, edit, and delete courses.
-
-- Can view and manage the list of students enrolled in their courses.
-
-- Can upload course materials (e.g., text, PDFs, video links).
-
-- Can publish/unpublish courses (unpublished courses are not visible to students).
-
-#### **Students**
-
-- Can browse all published courses available on the platform.
-
-- Can enroll in free or paid courses (optional payment system in future phases).
-
-- Can access course materials after enrollment.
-
-- Can manage their enrolled courses and track progress (e.g., completed modules).
-
-#### **Admins**
-
-- Have access to a dashboard for user management (e.g., banning users, approving teachers).
-
-- Can moderate courses to ensure compliance with platform policies.
-
-- Can manage platform settings (e.g., categories, featured courses).
+### **Core Features**  
+1. **Open Course Creation**: Any user can create and sell courses (free or paid).  
+2. **Real-Time Communication**: Integrated chat, direct messaging, and course Q&A.  
+3. **Monetization & Commissions**: Platform earns a percentage of paid course sales.  
+4. Role-based access (Creator, Learner, Admin) with flexible permissions.  
+5. Course discovery with advanced search, filters, and recommendations.  
+6. Admin dashboard for financial tracking, user moderation, and dispute resolution.  
 
 ---
 
-### **2.2. Course Management**
+## **2. Application Logic**  
 
-#### **Course Properties**
+### **2.1. User Roles and Permissions**  
+#### **Creators**  
+- Create, edit, and publish courses (free or paid).  
+- Set course prices and manage earnings (post-commission).  
+- Interact with learners via chat and course discussions.  
+- View sales analytics and learner engagement metrics.  
 
-- **Title**: A brief name for the course.
+#### **Learners**  
+- Browse, purchase, and enroll in courses.  
+- Access purchased courses and participate in discussions.  
+- Message creators and other learners.  
+- Rate courses and leave public reviews.  
 
-- **Description**: A detailed explanation of the course.
-
-- **Category**: A classification (e.g., Science, Arts, Technology).
-
-- **Teacher**: The creator of the course.
-
-- **Materials**: Resources such as PDFs, videos, and links.
-
-- **Publish Status**: Determines if the course is visible to students.
-
-#### **Logic for Visibility**
-
-- Students can see only **published courses**.
-
-- Unpublished courses are visible only to the teacher who created them and to admins.
-
-#### **Course Enrollment**
-
-- Students must explicitly enroll in a course to access its materials.
-
-- A course can have a maximum capacity (optional future feature).
+#### **Admins**  
+- Approve/reject courses to ensure quality and compliance.  
+- Manage commissions (e.g., set rates, view transaction history).  
+- Moderate chats, resolve disputes, and suspend accounts.  
 
 ---
 
-### **2.3. Search and Filtering**
+### **2.2. Course Management**  
+#### **Course Properties**  
+- **Price**: Free or set amount (with platform commission).  
+- **Status**: Draft, Under Review (admin approval), Published.  
+- **Materials**: Videos, PDFs, quizzes, and discussion boards.  
+- **Earnings**: Track revenue (after commission) in creator dashboard.  
 
-- **Search**: Students can search courses by title or keywords in the description.
-
-- **Filters**:
-
-  - By category (e.g., Science, Technology).
-
-  - By teacher name.
-
-  - By popularity (number of students enrolled).
-
----
-### **2.4. Access Control**
-
-#### **Public Access**
-
-- Any visitor (not logged in) can view the platform's homepage and browse the list of published courses.
-
-- Enrollment and material access require login.
-
-#### **Private Access**
-
-- Students and teachers have personalized dashboards:
-
-  - **Students**: A list of enrolled courses, progress tracking.
-
-  - **Teachers**: A list of their courses, with options to manage them.
-
-#### **RBAC (Role-Based Access Control)**
-
-- Certain endpoints are restricted based on user roles.
-
-  - Example: Only teachers can create courses, only students can enroll in courses.
+#### **Commission Logic**  
+- Admins set global commission rates (e.g., 15% per sale).  
+- Creators receive earnings post-commission, withdrawable via Stripe/PayPal.  
 
 ---
 
-### **2.5. Notifications (Optional)**
-
-- Notify students via email or on the dashboard when:
-
-  - New content is added to an enrolled course.
-
-  - Their enrollment request is approved (if manual approval is required).
-
-- Notify teachers when:
-
-  - A new student enrolls in their course.
+### **2.3. Real-Time Communication**  
+- **Course Chat**: Public chat rooms for enrolled learners.  
+- **Direct Messaging**: Private conversations between users.  
+- **Notifications**: Alerts for new messages, sales, and course updates.  
 
 ---
 
-### **2.6. Platform Moderation**
-
-- Admins can:
-
-  - View and remove courses flagged as inappropriate.
-
-  - Manage user roles (e.g., approve teacher accounts).
-
-  - Update global settings (e.g., platform title, featured courses).
+### **2.4. Search and Filtering**  
+- **Filters**: Price (free/paid), ratings, category, creator.  
+- **Sorting**: Trending (engagement), newest, highest-rated.  
 
 ---
 
-## **3. Development Architecture**
-
-### **3.1. Backend**
-
-- Framework: **Django**.
-
-- **Authentication**: Role-based authentication using either session-based authentication or JWT.
-
-- **Database**: PostgreSQL.
-
-#### **Backend APIs**
-
-- User management:
-
-  - Signup, login, and profile management.
-
-- Course management:
-
-  - CRUD operations for courses.
-
-  - APIs for searching, filtering, and enrolling.
-
-- Enrollment:
-
-  - API for students to enroll in courses and view their enrolled courses.
-
-- Admin panel:
-
-  - APIs for moderation and user role management.
+### **2.5. Access Control**  
+- **Public Access**: Browse courses without an account.  
+- **Private Access**:  
+  - Purchases and messaging require login.  
+  - Creators control course visibility (draft/published).  
+- **RBAC**:  
+  - Admins approve courses and manage payouts.  
+  - Learners cannot edit courses; creators cannot moderate others.  
 
 ---
 
-### **3.2. Frontend**
-
-- Framework: **Vue.js**.
-
-- **Key Pages**:
-
-  - Home: List of courses with search and filters.
-
-  - Course Details: Information about a specific course, with an "Enroll" button.
-
-  - Profile: User details and enrolled courses.
-
-  - Dashboard: Separate views for teachers and students.
+### **2.6. Payments & Payouts**  
+- **Stripe/PayPal Integration**: Handle purchases and creator withdrawals.  
+- **Escrow System**: Hold earnings until course completion (configurable).  
 
 ---
 
-### **3.3. Database Design**
+## **3. Development Architecture**  
 
-| **Table**       | **Fields**                                                                              | **Description**                                 |
-| --------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **User**        | ID, username, email, password, role (teacher/student/admin), bio, profile picture       | Stores user credentials and roles.              |
-| **Course**      | ID, title, description, category, teacher_id (FK), is_published, created_at, updated_at | Stores course information.                      |
-| **Enrollment**  | ID, course_id (FK), student_id (FK), enrolled_at                                        | Links students to courses they are enrolled in. |
-| **Material**    | ID, course_id (FK), title, type (text/PDF/video), file_path, created_at                 | Stores uploaded materials for a course.         |
+### **3.1. Backend**  
+- **Framework**: Django + Django Channels (WebSocket support).  
+- **Authentication**: JWT with OAuth2 for social logins.  
+- **Database**: PostgreSQL + Redis (for real-time features).  
 
----
-
-## **4. Questions Answered**
-
-1. **Can students see all courses on the platform?**
-
-   - Students can see only **published courses**.
-
-   - Unpublished courses are visible only to their respective teachers and admins.
-
-2. **How are teachers and students separated?**
-
-   - User roles (teacher/student/admin) are defined at registration or by an admin.
-
-   - Backend logic restricts access to features based on roles.
-
-3. **Can students enroll in multiple courses?**
-
-   - Yes, students can enroll in as many courses as they like.
-
-4. **How do teachers manage their courses?**
-
-   - Teachers access a dashboard where they can:
-
-     - View a list of their courses.
-
-     - Create, edit, and delete courses.
-
-     - Upload and manage materials.
-
-5. **How are categories defined?**
-
-   - Categories are predefined by the admin but can be extended dynamically.
-
-6. **Are there any limits on file uploads?**
-
-   - File upload limits will depend on server configuration (e.g., 50 MB per file).
+#### **APIs**  
+- **Course & Payment**: CRUD, purchase, commission calculation.  
+- **Chat**: WebSocket endpoints for messaging and notifications.  
+- **Admin**: Payout management, dispute resolution, analytics.  
 
 ---
 
-## **5. Deployment Strategy**
-
-1. **Backend**: Deploy Django with Gunicorn and NGINX on a VPS (e.g., DigitalOcean, Linode).
-
-2. **Frontend**: Host the Vue.js app on Netlify or Vercel for cost-effective deployment.
-
-3. **Database**: Use a managed PostgreSQL instance or host it on the same VPS.
+### **3.2. Frontend**  
+- **Framework**: React.js (Next.js for SSR) + Tailwind CSS.  
+- **Key Pages**:  
+  - **Creator Dashboard**: Course stats, earnings, chat inbox.  
+  - **Marketplace**: Course listings with filters and recommendations.  
+  - **Chat Interface**: Real-time messaging with message history.  
 
 ---
 
-## **6. Future Enhancements**
+### **3.3. Database Design**  
+| **Table**         | **Fields**                                                                 |  
+| ----------------- | -------------------------------------------------------------------------- |  
+| **User**          | ID, email, role, stripe_account_id, balance, created_at                    |  
+| **Course**        | ID, title, price, commission_rate, status (draft/published), creator_id   |  
+| **Enrollment**    | ID, course_id, learner_id, purchased_at, payment_status                   |  
+| **Message**       | ID, sender_id, receiver_id, content, timestamp, is_read                   |  
+| **Transaction**   | ID, course_id, learner_id, amount, commission, payout_date                |  
 
-1. **Payment Gateway Integration**:
+---
 
-   - Add support for paid courses using Stripe or PayPal.
+## **4. Questions Answered**  
+1. **How do commissions work?**  
+   - Admins set a global rate (e.g., 15%). Creators earn the remaining 85% per sale.  
 
-2. **Course Ratings and Reviews**:
+2. **Can users be both creators and learners?**  
+   - Yes! Users switch roles seamlessly via their dashboard.  
 
-   - Allow students to rate courses and leave feedback.
+3. **How is real-time chat implemented?**  
+   - WebSockets (Django Channels) power instant messaging and notifications.  
 
-3. **Progress Tracking**:
+4. **How are payments processed?**  
+   - Stripe/PayPal handles purchases. Creators withdraw earnings via linked accounts.  
 
-   - Implement a feature to track module completion within a course.
+5. **Are courses moderated?**  
+   - Yes. Admins review courses before publication to ensure quality.  
 
-4. **Mobile App**:
+---
 
-   - Build a mobile version using frameworks like React Native or Flutter.
+## **5. Deployment Strategy**  
+1. **Backend**: Dockerized Django + Gunicorn on AWS EC2.  
+2. **Frontend**: Vercel for Next.js static hosting.  
+3. **Real-Time**: Redis cluster for WebSocket management.  
+4. **Database**: AWS RDS (PostgreSQL) with daily backups.  
+
+---
+
+## **6. Future Enhancements**  
+1. **Affiliate Program**: Users earn by promoting courses.  
+2. **Live Workshops**: Integrate Zoom/Google Meet for live sessions.  
+3. **Mobile App**: Flutter-based app for on-the-go learning.  
+4. **AI Recommendations**: Suggest courses based on user behavior.  

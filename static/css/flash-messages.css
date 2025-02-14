@@ -42,6 +42,12 @@
     background-color: #616161;
 }
 
+.errorlist {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

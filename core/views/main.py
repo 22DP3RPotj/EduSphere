@@ -45,9 +45,9 @@ def home(request):
 
     
     
-def user_profile(request, id):
-    user = get_object_or_404(User, id=id)
-    rooms = user.room_set.prefetch_related('participants')
+def user_profile(request, username):
+    user = get_object_or_404(User, slug=username)
+    rooms = user.hosted_rooms.prefetch_related('participants')
     room_messages = user.message_set.select_related('room')  # Optimize related room lookups
     topics = Topic.objects.all()
     
@@ -69,7 +69,7 @@ def update_user(request):
         form = UserForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
-            return redirect('user-profile', id=user.id)
+            return redirect('user-profile', username=user.slug)
         else:
             for error in form.errors.values():
                 messages.error(request, error)

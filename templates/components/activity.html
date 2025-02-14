@@ -1,7 +1,7 @@
 {% for message in room_messages %}
 <div class="activities__box" data-type="deletable-item">
     <div class="activities__boxHeader room-list__room-header">
-        <a href="{% url 'user-profile' message.user.id %}" class="room-list__room-author">
+        <a href="{% url 'user-profile' message.user.slug %}" class="room-list__room-author">
             <div class="avatar avatar--small">
                 <img src="{{ message.user.avatar.url }}" />
             </div>
@@ -25,7 +25,7 @@
         {% endif %}
     </div>
     <div class="activities__boxContent">
-        <p>replied to post “<a href="{% url 'room' message.room.id %}">{{ message.room.name }}</a>”</p>
+        <p>replied to post “<a href="{% url 'room' message.user.slug message.room.slug %}">{{ message.room.name }}</a>”</p>
         <div class="activities__boxRoomContent">{{ message.body }}</div>
     </div>
 </div>

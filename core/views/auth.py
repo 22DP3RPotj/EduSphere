@@ -23,6 +23,7 @@ def login_user(request):
         else:
             for error in form.errors.values():
                 messages.error(request, error)
+                print(error)
             return render(request, 'core/login.html', {'form': form})
     else:
         form = LoginForm()

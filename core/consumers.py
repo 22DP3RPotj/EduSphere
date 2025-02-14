@@ -5,9 +5,11 @@ from channels.db import database_sync_to_async
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Extract the room ID from the WebSocket URL
-        self.room_id = self.scope['url_route']['kwargs']['id']
-        self.room_group_name = f'chat_{self.room_id}'
+        # Extract slugs from the WebSocket URL
+        self.username = self.scope['url_route']['kwargs']['username']
+        self.room_slug = self.scope['url_route']['kwargs']['room']
+        
+        self.room_group_name = f'chat_{self.username}_{self.room_slug}'
 
         # Add the WebSocket connection to the room group
         await self.channel_layer.group_add(
@@ -35,7 +37,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from .models import Room, Message
 
         # Save the message to the database
-        room = await database_sync_to_async(Room.objects.get)(id=self.room_id)
+        room = await database_sync_to_async(Room.objects.get)(
+            host__slug=self.username,
+            slug=self.room_slug
+        )
+        
         new_message = await database_sync_to_async(Message.objects.create)(
             user=user,
             room=room,
@@ -66,11 +72,4 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Handle broadcasted messages and send them to WebSocket clients.
         """
         # Send the broadcasted message to the WebSocket client
-        await self.send(text_data=json.dumps({
-            'id': event['id'],
-            'user': event['user'],
-            'user_id': event['user_id'],
-            'user_avatar': event['user_avatar'],
-            'message': event['message'],
-            'created': event['created'],
-        }))
+        await self.send(text_data=json.dumps(event))

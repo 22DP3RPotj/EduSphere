@@ -33,7 +33,7 @@ def create_room(request):
         topic_name = request.POST.get('topic')
         room_name = request.POST.get('name')
         
-        if Room.objects.filter(host=request.user, name=room_name).exists():
+        if Room.objects.filter(host=request.user, name__iexact=room_name).exists():
             messages.error(request, 'You already have a room with this name!')
             return render(request, 'core/room-form.html', {'form': form, 'topics': topics})
         
@@ -71,7 +71,7 @@ def update_room(request, username, room):
         topic, created = Topic.objects.get_or_create(name=topic_name)
         new_name = request.POST.get('name')
         
-        if Room.objects.filter(host=request.user, name=new_name).exclude(id=room.id).exists():
+        if Room.objects.filter(host=request.user, name__iexact=new_name).exclude(id=room.id).exists():
             messages.error(request, 'You already have a room with this name.')
             return render(request, 'core/room-form.html', {'form': form, 'topics': topics, 'room': room})
         

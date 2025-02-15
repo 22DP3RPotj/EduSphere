@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from core.models import Room, Message
+from backend.core.models import Room, Message
 
 
 @api_view(['DELETE'])

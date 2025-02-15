@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
 from .models import User, Room
 
+
 class LoginForm(forms.Form):
     email = forms.EmailField(
         label="Email",

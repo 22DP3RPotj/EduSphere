@@ -6,12 +6,13 @@ from django.contrib import messages
 from ..models import User, Room, Topic, Message
 from ..forms import UserForm
 
+
 def home(request):
     q = request.GET.get('q', '')
 
     if q:
         rooms = Room.objects.filter(
-            Q(topic__name__iexact=q)
+            Q(topic__name__exact=q)
         ).select_related('topic').prefetch_related('participants')
     else:
         rooms = Room.objects.all().select_related('topic').prefetch_related('participants')

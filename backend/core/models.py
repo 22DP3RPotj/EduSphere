@@ -5,6 +5,7 @@ from django.utils.text import slugify
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 
+
 class User(AbstractUser):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)

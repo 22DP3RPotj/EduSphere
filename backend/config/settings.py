@@ -19,7 +19,7 @@ env = environ.Env(
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # .env file path
 ENV_PATH = BASE_DIR / '.env'
@@ -55,8 +55,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'core.apps.CoreConfig',
-    'api.apps.ApiConfig',
+    'backend.core.apps.CoreConfig',
+    # 'backend.api.apps.ApiConfig',
     'channels',
 ]
 
@@ -71,7 +71,7 @@ MIDDLEWARE = [
     'servestatic.middleware.ServeStaticMiddleware', # Serve static files
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = 'backend.config.urls'
 
 TEMPLATES = [
     {
@@ -93,7 +93,7 @@ TEMPLATES = [
 
 # Real-time chat
 
-ASGI_APPLICATION = 'config.asgi.application'
+ASGI_APPLICATION = 'backend.config.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
@@ -105,7 +105,7 @@ CHANNEL_LAYERS = {
 }
 
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = 'backend.config.wsgi.application'
 
 
 # Database

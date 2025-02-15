@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from ..forms import RegisterForm, LoginForm
 
+
 def login_user(request):
     if request.user.is_authenticated:
         messages.error(request, 'User already logged in')

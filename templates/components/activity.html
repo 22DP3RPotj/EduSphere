@@ -11,7 +11,7 @@
             </p>
         </a>
 
-        {% if request.user == message.user %}
+        {% comment %} {% if request.user == message.user %}
         <div class="room-list__room-actions">
             <button class="dlt-btn" data-url="{% url 'delete-message' message.id %}">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
@@ -22,7 +22,7 @@
                 </svg>
             </button>
         </div>
-        {% endif %}
+        {% endif %} {% endcomment %}
     </div>
     <div class="activities__boxContent">
         <p>replied to post “<a href="{% url 'room' message.user.slug message.room.slug %}">{{ message.room.name }}</a>”</p>

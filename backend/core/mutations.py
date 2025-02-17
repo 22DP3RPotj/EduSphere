@@ -1,11 +1,12 @@
 import graphene
 import graphql_jwt
-from .types import UserType, RoomType, TopicType
+from .types import UserType, RoomType
 from .models import Room, Topic, Message
 from .forms import UserForm, RegisterForm, RoomForm
 from django.contrib.auth import login
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required
+from graphql_jwt.shortcuts import get_token
 from graphql import GraphQLError
 
 
@@ -18,17 +19,20 @@ class RegisterUser(graphene.Mutation):
         password2 = graphene.String(required=True)
 
     user = graphene.Field(UserType)
+    token = graphene.String()
 
     def mutate(self, info, **kwargs):
-        form = GraphQLError(kwargs)
+        form = RegisterForm(kwargs)
         
         if form.is_valid():
             user = form.save()
-            # Optional: Auto-login after registration
-            login(info.context, user)
-            return RegisterUser(user=user)
+            user.backend = "django.contrib.auth.backends.ModelBackend"
+            login(info.context, user, backend=user.backend)
+            token = get_token(user)
+            return RegisterUser(user=user, token=token)
         else:
             raise GraphQLError(form.errors.as_json())
+    
 
 class UpdateUser(graphene.Mutation):
     class Arguments:
@@ -131,15 +135,6 @@ class JoinRoom(graphene.Mutation):
         room.participants.add(info.context.user)
         return JoinRoom(room=room)
     
-class CreateTopic(graphene.Mutation):
-    class Arguments:
-        name = graphene.String(required=True)
-
-    topic = graphene.Field(TopicType)
-
-    def mutate(self, info, name):
-        topic, created = Topic.objects.get_or_create(name=name)
-        return CreateTopic(topic=topic)
 
 class AppMutation(graphene.ObjectType):
     update_user = UpdateUser.Field()
@@ -147,7 +142,6 @@ class AppMutation(graphene.ObjectType):
     register_user = RegisterUser.Field()
     delete_room = DeleteRoom.Field()
     delete_message = DeleteMessage.Field()
-    create_topic = CreateTopic.Field()
 
 class AuthMutation(graphene.ObjectType):
     token_auth = graphql_jwt.ObtainJSONWebToken.Field()

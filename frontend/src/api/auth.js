@@ -35,3 +35,48 @@ export function logout() {
   localStorage.removeItem("token");
   useAuthStore().clearToken();
 }
+
+// Add to existing auth.js API
+const REGISTER_MUTATION = gql`
+  mutation RegisterUser(
+    $username: String!
+    $name: String!
+    $email: String!
+    $password1: String!
+    $password2: String!
+  ) {
+    registerUser(
+      username: $username
+      name: $name
+      email: $email
+      password1: $password1
+      password2: $password2
+    ) {
+      user {
+        id
+        username
+        email
+      }
+      token
+    }
+  }
+`;
+
+export async function registerUser(username, name, email, password1, password2) {
+  try {
+    const response = await apolloClient.mutate({
+      mutation: REGISTER_MUTATION,
+      variables: { username, name, email, password1, password2 },
+    });
+
+    const token = response.data.registerUser.token;
+    if (token) {
+      useAuthStore().setToken(token);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Registration failed", error);
+    throw new Error(error.message);
+  }
+}

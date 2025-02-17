@@ -1,7 +1,6 @@
 import { useAuthStore } from "@/stores/auth";
 
 export const AuthService = {
-  // Check if user is authenticated
   isAuthenticated() {
     const authStore = useAuthStore();
     return authStore.token || localStorage.getItem("token");

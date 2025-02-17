@@ -8,11 +8,11 @@ const httpLink = createHttpLink({
 
 // Attach Authorization Header
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem("token");  // Retrieve token from storage
+  const token = localStorage.getItem("token");
   return {
     headers: {
       ...headers,
-      authorization: token ? `JWT ${token}` : "",  // Attach JWT token
+      authorization: token ? `JWT ${token}` : "",
     },
   };
 });

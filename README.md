@@ -1,5 +1,20 @@
-# **Course Marketplace Platform: Detailed Project Description**  
+# **Course Marketplace Platform: Detailed Project Description**
+
 This document outlines the functionality, architecture, and logic for the Course Marketplace Platform, enabling creators to monetize content and learners to engage via real-time communication.
+
+## Overview
+The **Course Marketplace Platform** enables users to create, sell, and purchase courses while providing real-time communication between learners and creators. The platform consists of a **Django backend** and a **Vue frontend**.
+
+## Table of Contents
+- **[Project Overview](#1-project-overview)**<br>
+- **[Application Logic](#2-application-logic)**<br>
+- **[Development Architecture](#3-development-architecture)**<br>
+- **[Questions Answered](#4-questions-answered)**<br>
+- **[Deployment Strategy](#5-deployment-strategy)**<br>
+- **[Future Enhancements](#6-future-enhancements)**<br>
+
+- **[Backend (Django)](backend/Readme.md#backend-django)**<br>
+- **[Frontend (Vue)](frontend/README.md#frontend-vue)**<br>
 
 ---
 
@@ -150,124 +165,20 @@ The platform is a **course marketplace** where:
 3. **Mobile App**: Flutter-based app for on-the-go learning.  
 4. **AI Recommendations**: Suggest courses based on user behavior.  
 
-
-# Course Marketplace Platform
-
-## Overview
-The **Course Marketplace Platform** enables users to create, sell, and purchase courses while providing real-time communication between learners and creators. The platform consists of a **Django backend** and a **Vue frontend**.
-
-## Table of Contents
-- [Backend (Django)](README.md#backend-django)
-- [Frontend (Vue)](README.md#frontend-vue)
-- [Installation Guide](README.md#installation-guide)
-- [Deployment](README.md#deployment)
-- [Future Enhancements](README.md#future-enhancements)
-
 ---
 
-## Backend (Django)
-The backend is built using **Django** and **Django Channels** to support real-time features like chat and notifications.
+### Deployment
 
-### Features
-- User authentication (JWT-based with OAuth2 support)
-- Course management (CRUD operations for courses)
-- Payment processing (Stripe/PayPal)
-- WebSockets for real-time messaging
-- Role-based access control (Creator, Learner, Admin)
-- PostgreSQL database with Redis for real-time operations
-
-### Installation
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/your-repo/course-marketplace.git
-   cd course-marketplace/backend
-   ```
-2. **Create and activate a virtual environment:**
-   ```sh
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
-4. **Set up environment variables:**
-   Create a `.env` file in the root of the backend directory and add the following:
-   ```sh
-   SECRET_KEY=your_secret_key
-   DEBUG=True
-   DB_NAME=your_database_name
-   DB_USER=your_database_user
-   DB_PASSWORD=your_database_password
-   DB_HOST=localhost
-   DB_PORT=5432
-   ```
-5. **Run migrations:**
-   ```sh
-   python manage.py migrate
-   ```
-6. **Create a superuser (for admin access):**
-   ```sh
-   python manage.py createsuperuser
-   ```
-7. **Run the server:**
-   ```sh
-   python manage.py runserver
-   ```
-
----
-
-## Frontend (Vue)
-The frontend is built using **Vue.js** and interacts with the Django backend via REST API.
-
-### Features
-- Course listing and search with filters
-- Secure authentication via JWT
-- Payment integration
-- Real-time chat with WebSocket support
-- User dashboards (Creator, Learner, Admin)
-
-### Installation
-1. **Navigate to the frontend directory:**
-   ```sh
-   cd ../frontend
-   ```
-2. **Install dependencies:**
-   ```sh
-   npm install
-   ```
-3. **Set up environment variables:**
-   Create a `.env` file in the root of the frontend directory and add:
-   ```sh
-   VUE_APP_API_BASE_URL=http://127.0.0.1:8000/api
-   ```
-4. **Run the development server:**
-   ```sh
-   npm run serve
-   ```
-
----
-
-## Deployment
-
-### Backend Deployment
+#### Backend Deployment
 - Use **Gunicorn + Nginx** for production.
 - Deploy on **AWS EC2 / DigitalOcean**.
 - Set up **PostgreSQL on AWS RDS**.
 - Use **Redis for WebSocket support**.
 
-### Frontend Deployment
+#### Frontend Deployment
 - Deploy on **Vercel / Netlify**.
 - Configure `.env.production` for API connection.
 - Use **Cloudflare for caching and security**.
-
----
-
-## Future Enhancements
-- Mobile app using **Flutter**.
-- AI-based course recommendations.
-- Affiliate marketing system for course promotions.
-- Live workshops via **Zoom/Google Meet integration**.
 
 ---
 

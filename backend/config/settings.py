@@ -56,8 +56,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'backend.core.apps.CoreConfig',
-    # 'backend.api.apps.ApiConfig',
     'channels',
+    'corsheaders',
+    'graphene_django',
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'servestatic.middleware.ServeStaticMiddleware', # Serve static files
 ]
 
@@ -91,9 +93,9 @@ TEMPLATES = [
     },
 ]
 
-# Real-time chat
-
 ASGI_APPLICATION = 'backend.config.asgi.application'
+
+WSGI_APPLICATION = 'backend.config.wsgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
@@ -104,9 +106,26 @@ CHANNEL_LAYERS = {
     },
 }
 
+GRAPHENE = {
+    "SCHEMA": "backend.core.schema.schema",
+    "MIDDLEWARE": [
+        "graphql_jwt.middleware.JSONWebTokenMiddleware",
+    ],
+}
 
-WSGI_APPLICATION = 'backend.config.wsgi.application'
+AUTHENTICATION_BACKENDS = [
+    "graphql_jwt.backends.JSONWebTokenBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite
+    "http://127.0.0.1:5173",  # Vite
+    "http://localhost:5173",  # Vite
+    "http://127.0.0.1:8080",  # Vue CLI
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

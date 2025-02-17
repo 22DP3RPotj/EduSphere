@@ -29,6 +29,9 @@ class User(AbstractUser):
             while User.objects.filter(slug=self.slug).exists():
                 self.slug = f"{self.slug}-{uuid.uuid4().hex[:4]}"
         super().save(*args, **kwargs)
+        
+    class Meta:
+        app_label = 'core'
     
 
 class Topic(models.Model):

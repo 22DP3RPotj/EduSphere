@@ -1,16 +1,6 @@
-# Django
-*.log
-*.py[cod]
-*.pot
-*.so
-db.sqlite3
+# Files
 staticfiles/
 media/
-
-# Python
-*.pyc
-*.pyo
-__pycache__/
 
 #Environment
 env/
@@ -28,3 +18,4 @@ theme/
 
 # Local
 local*
+*.pem

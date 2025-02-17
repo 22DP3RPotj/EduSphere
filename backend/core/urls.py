@@ -1,9 +1,10 @@
 from django.urls import path, re_path
 from .views import rooms, auth, main, api
-
+from graphene_django.views import GraphQLView
 
 urlpatterns = [
     path('', main.home, name="home"),
+    path("graphql/", GraphQLView.as_view(graphiql=True)),
     path('update-user/', main.update_user, name="update-user"),
     
     path('login/', auth.login_user, name="login"),

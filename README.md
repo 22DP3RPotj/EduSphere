@@ -157,11 +157,11 @@ The platform is a **course marketplace** where:
 The **Course Marketplace Platform** enables users to create, sell, and purchase courses while providing real-time communication between learners and creators. The platform consists of a **Django backend** and a **Vue frontend**.
 
 ## Table of Contents
-- [Backend (Django)](local-README.md#backend-django)
-- [Frontend (Vue)](local-README.md#frontend-vue)
-- [Installation Guide](local-README.md#installation-guide)
-- [Deployment](local-README.md#deployment)
-- [Future Enhancements](local-README.md#future-enhancements)
+- [Backend (Django)](README.md#backend-django)
+- [Frontend (Vue)](README.md#frontend-vue)
+- [Installation Guide](README.md#installation-guide)
+- [Deployment](README.md#deployment)
+- [Future Enhancements](README.md#future-enhancements)
 
 ---
 

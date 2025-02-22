@@ -18,7 +18,8 @@ def login_user(request):
             user = authenticate(request, email=email, password=password)
             
             if user is not None:
-                login(request, user)
+                user.backend = "django.contrib.auth.backends.ModelBackend"
+                login(request, user, backend=user.backend)
                 messages.success(request, 'Successful login')
                 return redirect(request.GET.get('next', 'home'))
         else:
@@ -38,7 +39,8 @@ def register_user(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            user.backend = "django.contrib.auth.backends.ModelBackend"
+            login(request, user, backend=user.backend)
             messages.success(request, 'Successful registration')
             return redirect('home')
         else:

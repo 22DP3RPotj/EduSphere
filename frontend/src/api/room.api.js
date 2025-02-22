@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client/core";
-import { apolloClient } from "./apollo";
+import { apolloClient } from "./apollo.client";
 
 // GraphQL Mutation to Create Room
 const CREATE_ROOM_MUTATION = gql`

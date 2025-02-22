@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { createRoom } from "@/api/user";
+import { createRoom } from "@/api/room.api";
 
 export default {
   data() {

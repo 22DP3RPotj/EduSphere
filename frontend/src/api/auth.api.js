@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client/core";
-import { apolloClient } from "./apollo";
-import { useAuthStore } from "../stores/auth";
+import { apolloClient } from "./apollo.client";
+import { useAuthStore } from "../stores/auth.store";
 
 // GraphQL Login Mutation
 const LOGIN_MUTATION = gql`

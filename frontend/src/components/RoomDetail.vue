@@ -11,10 +11,10 @@
 </template>
 
 <script>
-import { deleteRoom, joinRoom } from "@/api/user";
+import { deleteRoom, joinRoom } from "@/api/room.api";
 import { gql } from "@apollo/client/core";
-import { apolloClient } from "@/api/apollo";
-import { useAuthStore } from "@/stores/auth";
+import { apolloClient } from "@/api/apollo.client";
+import { useAuthStore } from "@/stores/auth.store";
 
 const ROOM_QUERY = gql`
   query GetRoom($hostSlug: String!, $roomSlug: String!) {

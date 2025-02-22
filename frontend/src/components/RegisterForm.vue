@@ -12,7 +12,7 @@
   </template>
   
   <script>
-  import { registerUser } from "@/api/auth";
+  import { registerUser } from "@/api/auth.api";
   
   export default {
     data() {

@@ -8,7 +8,7 @@
   </template>
   
   <script>
-  import { login } from "@/api/auth";
+  import { login } from "@/api/auth.api";
   
   export default {
     data() {

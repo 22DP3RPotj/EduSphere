@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { apolloClient } from "@/api/apollo";
+import { apolloClient } from "@/api/apollo.client";
 import { gql } from "@apollo/client/core";
 
 export const useAuthStore = defineStore("auth", {
@@ -7,6 +7,10 @@ export const useAuthStore = defineStore("auth", {
     token: localStorage.getItem("token") || null,
     user: null,
   }),
+  getters: {
+    currentUser: (state) => state.user,
+    isAuthenticated: (state) => !!state.token
+  },
   actions: {
     setToken(token) {
       this.token = token;

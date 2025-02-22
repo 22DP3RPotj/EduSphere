@@ -28,3 +28,39 @@ export async function createRoom(name, topic_name, description) {
 
   return response.data.createRoom.room;
 }
+
+const DELETE_ROOM_MUTATION = gql`
+  mutation DeleteRoom($hostSlug: String!, $roomSlug: String!) {
+    deleteRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+      success
+    }
+  }
+`;
+
+export async function deleteRoom(hostSlug, roomSlug) {
+  return apolloClient.mutate({
+    mutation: DELETE_ROOM_MUTATION,
+    variables: { hostSlug, roomSlug }
+  });
+}
+
+const JOIN_ROOM_MUTATION = gql`
+  mutation JoinRoom($hostSlug: String!, $roomSlug: String!) {
+    joinRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+      room {
+        id
+        participants {
+          id
+          username
+        }
+      }
+    }
+  }
+`;
+
+export async function joinRoom(hostSlug, roomSlug) {
+  return apolloClient.mutate({
+    mutation: JOIN_ROOM_MUTATION,
+    variables: { hostSlug, roomSlug }
+  });
+}

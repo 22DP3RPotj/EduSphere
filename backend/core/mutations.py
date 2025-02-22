@@ -4,6 +4,7 @@ from .types import UserType, RoomType
 from .models import Room, Topic, Message
 from .forms import UserForm, RegisterForm, RoomForm
 from django.contrib.auth import login
+from django.shortcuts import get_object_or_404
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required
 from graphql_jwt.shortcuts import get_token
@@ -71,10 +72,8 @@ class CreateRoom(graphene.Mutation):
 
     @login_required
     def mutate(self, info, name, topic_name, description=None):
-        # Get or create the topic
         topic, created = Topic.objects.get_or_create(name=topic_name)
         
-        # Initialize form with the topic ID
         form = RoomForm({
             "name": name,
             "topic": topic.id,
@@ -89,17 +88,21 @@ class CreateRoom(graphene.Mutation):
         else:
             raise GraphQLError(form.errors.as_json())
 
-# mutations.py
+
 class DeleteRoom(graphene.Mutation):
     class Arguments:
-        room_id = graphene.UUID(required=True)
+        host_username = graphene.String(required=True)
+        room_slug = graphene.String(required=True)
 
     success = graphene.Boolean()
 
     @login_required
-    def mutate(self, info, room_id):
-        from .models import Room
-        room = Room.objects.get(id=room_id)
+    def mutate(self, info, host_username, room_slug):
+        room = get_object_or_404(
+            Room,
+            host__username=host_username,
+            slug=room_slug
+        )
         
         if room.host != info.context.user:
             raise PermissionError("Not room host")
@@ -122,16 +125,21 @@ class DeleteMessage(graphene.Mutation):
         return DeleteMessage(success=True)
     
     
-# mutations.py
+
 class JoinRoom(graphene.Mutation):
     class Arguments:
-        room_id = graphene.UUID(required=True)
+        host_slug = graphene.String(required=True)
+        room_slug = graphene.String(required=True)
 
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info, room_id):
-        room = Room.objects.get(id=room_id)
+    def mutate(self, info, host_slug, room_slug):
+        room = get_object_or_404(
+            Room,
+            host__slug=host_slug,
+            slug=room_slug
+        )
         room.participants.add(info.context.user)
         return JoinRoom(room=room)
     
@@ -139,6 +147,7 @@ class JoinRoom(graphene.Mutation):
 class AppMutation(graphene.ObjectType):
     update_user = UpdateUser.Field()
     create_room = CreateRoom.Field()
+    join_room = JoinRoom.Field()
     register_user = RegisterUser.Field()
     delete_room = DeleteRoom.Field()
     delete_message = DeleteMessage.Field()

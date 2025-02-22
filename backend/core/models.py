@@ -24,7 +24,7 @@ class User(AbstractUser):
         return self.username
     
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if not self.slug or self.username != User.objects.get(pk=self.pk).username:
             self.slug = slugify(self.username)
             while User.objects.filter(slug=self.slug).exists():
                 self.slug = f"{self.slug}-{uuid.uuid4().hex[:4]}"

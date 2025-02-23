@@ -6,16 +6,20 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     token: localStorage.getItem("token") || null,
     user: null,
-    isLoadingUser: false
+    isLoadingUser: false,
   }),
   getters: {
     currentUser: (state) => state.user,
-    isAuthenticated: (state) => !!state.token
+    isAuthenticated: (state) => !!state.token,
   },
   actions: {
     setToken(token) {
-      localStorage.setItem("token", token);
-      this.token = token;
+      if (token) {
+        localStorage.setItem("token", token);
+        this.token = token;
+      } else {
+        this.clearToken();
+      }
     },
     clearToken() {
       localStorage.removeItem("token");
@@ -23,6 +27,7 @@ export const useAuthStore = defineStore("auth", {
       this.user = null;
     },
     async fetchUser() {
+      if (!this.token) return;
       this.isLoadingUser = true;
       try {
         const { data } = await apolloClient.query({
@@ -36,10 +41,12 @@ export const useAuthStore = defineStore("auth", {
               }
             }
           `,
+          fetchPolicy: "network-only",
         });
         this.user = data.me;
         return data.me;
       } catch (error) {
+        console.error("Error fetching user:", error);
         this.clearToken();
         throw error;
       } finally {
@@ -47,9 +54,16 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async initialize() {
+      window.addEventListener("storage", (event) => {
+        if (event.key === "token") {
+          this.token = event.newValue;
+          this.token ? this.fetchUser() : this.clearToken();
+        }
+      });
+
       if (this.token && !this.user) {
         await this.fetchUser();
       }
-    }
+    },
   },
 });

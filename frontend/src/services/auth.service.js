@@ -3,18 +3,16 @@ import { useAuthStore } from "@/stores/auth.store";
 export const AuthService = {
   isAuthenticated() {
     const authStore = useAuthStore();
-    return authStore.token || localStorage.getItem("token");
+    return authStore.isAuthenticated;
   },
-
-  // Login: Save token and update state
   login(token) {
     const authStore = useAuthStore();
     authStore.setToken(token);
   },
-
-  // Logout: Remove token and update state
   logout() {
     const authStore = useAuthStore();
     authStore.clearToken();
-  }
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("storage"));
+  },
 };

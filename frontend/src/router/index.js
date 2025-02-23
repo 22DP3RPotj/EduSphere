@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { AuthService } from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 const routes = [
   {
@@ -34,19 +34,16 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = AuthService.isAuthenticated();
+  const authStore = useAuthStore();
+  const isAuthenticated = authStore.isAuthenticated;
 
   if (to.meta.requireGuest && isAuthenticated) {
-    next({ path: '/' });
-    return;
+    next({ path: "/" });
+  } else if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ path: "/login", query: { redirect: to.fullPath } });
+  } else {
+    next();
   }
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ path: '/login', query: { redirect: to.fullPath } });
-    return;
-  }
-
-  next();
 });
 
 export default router;

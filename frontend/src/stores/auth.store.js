@@ -6,6 +6,7 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     token: localStorage.getItem("token") || null,
     user: null,
+    isLoadingUser: false
   }),
   getters: {
     currentUser: (state) => state.user,
@@ -13,16 +14,16 @@ export const useAuthStore = defineStore("auth", {
   },
   actions: {
     setToken(token) {
-      this.token = token;
       localStorage.setItem("token", token);
-      this.fetchUser();
+      this.token = token;
     },
     clearToken() {
+      localStorage.removeItem("token");
       this.token = null;
       this.user = null;
-      localStorage.removeItem("token");
     },
     async fetchUser() {
+      this.isLoadingUser = true;
       try {
         const { data } = await apolloClient.query({
           query: gql`
@@ -37,9 +38,18 @@ export const useAuthStore = defineStore("auth", {
           `,
         });
         this.user = data.me;
+        return data.me;
       } catch (error) {
-        console.error("Failed to fetch user", error);
+        this.clearToken();
+        throw error;
+      } finally {
+        this.isLoadingUser = false;
       }
     },
+    async initialize() {
+      if (this.token && !this.user) {
+        await this.fetchUser();
+      }
+    }
   },
 });

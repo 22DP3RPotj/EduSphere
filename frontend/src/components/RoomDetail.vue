@@ -1,20 +1,16 @@
-<template>
-  <div v-if="room">
-    <h2>{{ room.name }}</h2>
-    <p>Hosted by: {{ room.host.username }}</p>
-    <button @click="deleteRoom" v-if="isHost">Delete Room</button>
-    <button @click="joinRoom">Join Room</button>
-  </div>
-  <div v-else>
-    Loading room...
-  </div>
-</template>
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth.store';
+import { deleteRoom, joinRoom } from '@/api/room.api';
+import { apolloClient } from '@/api/apollo.client';
+import { gql } from '@apollo/client/core';
 
-<script>
-import { deleteRoom, joinRoom } from "@/api/room.api";
-import { gql } from "@apollo/client/core";
-import { apolloClient } from "@/api/apollo.client";
-import { useAuthStore } from "@/stores/auth.store";
+const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
+const room = ref(null);
+const loading = ref(false);
 
 const ROOM_QUERY = gql`
   query GetRoom($hostSlug: String!, $roomSlug: String!) {
@@ -36,45 +32,47 @@ const ROOM_QUERY = gql`
   }
 `;
 
-export default {
-  setup() {
-    const authStore = useAuthStore();
-    return { authStore };
-  },
-  data() {
-    return {
-      room: null
-    };
-  },
-  computed: {
-    isHost() {
-      return this.room?.host.id === this.authStore.user?.id;
-    }
-  },
-  async mounted() {
-    await this.fetchRoom();
-  },
-  methods: {
-    async fetchRoom() {
-      const { hostSlug, roomSlug } = this.$route.params;
-      try {
-        const { data } = await apolloClient.query({
-          query: ROOM_QUERY,
-          variables: { hostSlug, roomSlug }
-        });
-        this.room = data.room;
-      } catch (error) {
-        console.error("Failed to fetch room:", error);
-      }
-    },
-    async deleteRoom() {
-      await deleteRoom(this.room.host.slug, this.room.slug);
-      this.$router.push('/');
-    },
-    async joinRoom() {
-      await joinRoom(this.room.host.slug, this.room.slug);
-      await this.fetchRoom();
-    }
+const isHost = computed(() => {
+  return room.value?.host?.id === authStore.user?.id;
+});
+
+async function fetchRoom() {
+  try {
+    loading.value = true;
+    const { data } = await apolloClient.query({
+      query: ROOM_QUERY,
+      variables: route.params
+    });
+    room.value = data.room;
+  } finally {
+    loading.value = false;
   }
-};
+}
+
+async function handleDelete() {
+  await deleteRoom(room.value.host.slug, room.value.slug);
+  router.push('/');
+}
+
+async function handleJoin() {
+  await joinRoom(room.value.host.slug, room.value.slug);
+  await fetchRoom();
+}
+
+onMounted(async () => {
+  await authStore.initialize();
+  await fetchRoom();
+});
 </script>
+
+<template>
+  <div v-if="loading || authStore.isLoadingUser">
+    Loading room...
+  </div>
+  <div v-else-if="room">
+    <h2>{{ room.name }}</h2>
+    <p>Hosted by: {{ room.host.username }}</p>
+    <button @click="handleDelete" v-if="isHost">Delete Room</button>
+    <button @click="handleJoin">Join Room</button>
+  </div>
+</template>

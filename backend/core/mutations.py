@@ -41,14 +41,14 @@ class UpdateUser(graphene.Mutation):
         name = graphene.String(required=False)
         email = graphene.String(required=False)
         bio = graphene.String(required=False)
-        avatar = Upload(required=False)  # File upload support
+        avatar = Upload(required=False)
 
     user = graphene.Field(UserType)
 
     @login_required
     def mutate(self, info, **kwargs):
         user = info.context.user
-        avatar = kwargs.pop("avatar", None)  # Extract file separately
+        avatar = kwargs.pop("avatar", None)
         
         form = UserForm(
             data=kwargs,
@@ -91,16 +91,16 @@ class CreateRoom(graphene.Mutation):
 
 class DeleteRoom(graphene.Mutation):
     class Arguments:
-        host_username = graphene.String(required=True)
+        host_slug = graphene.String(required=True)
         room_slug = graphene.String(required=True)
 
     success = graphene.Boolean()
 
     @login_required
-    def mutate(self, info, host_username, room_slug):
+    def mutate(self, info, host_slug, room_slug):
         room = get_object_or_404(
             Room,
-            host__username=host_username,
+            host__slug=host_slug,
             slug=room_slug
         )
         

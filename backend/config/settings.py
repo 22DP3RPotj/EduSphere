@@ -97,15 +97,6 @@ ASGI_APPLICATION = 'backend.config.asgi.application'
 
 WSGI_APPLICATION = 'backend.config.wsgi.application'
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
-        },
-    },
-}
-
 GRAPHENE = {
     "SCHEMA": "backend.core.schema.schema",
     "MIDDLEWARE": [
@@ -140,6 +131,31 @@ DATABASES = {
         'PORT': env('DB_PORT', default='5432'),
     }
 }
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# DEFAULTS:
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels.layers.InMemoryChannelLayer',
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -199,16 +215,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # STATICFILES_STORAGE = 'servestatic.storage.CompressedManifestStaticFilesStorage'
 
 # MIDDLEWARE += 'servestatic.middleware.ServeStaticMiddleware'
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels.layers.InMemoryChannelLayer',
-#     }
-# }

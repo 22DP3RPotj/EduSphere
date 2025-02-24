@@ -18,7 +18,13 @@ export default {
   },
   methods: {
     async submitRoom() {
-      this.response = await createRoom(this.name, this.topic_name, this.description);
+      const payload = {
+        name: this.name || null,
+        topic_name: this.topic_name || null,
+        description: this.description || null
+      };
+      
+      this.response = await createRoom(payload.name, payload.topic_name, payload.description);
     }
   }
 };

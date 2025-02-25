@@ -1,185 +1,149 @@
-# **Course Marketplace Platform: Detailed Project Description**
+# Course Marketplace Platform
 
-This document outlines the functionality, architecture, and logic for the Course Marketplace Platform, enabling creators to monetize content and learners to engage via real-time communication.
+[![Project License](LICENSE)](https://opensource.org/licenses/MIT)
 
-## Overview
-The **Course Marketplace Platform** enables users to create, sell, and purchase courses while providing real-time communication between learners and creators. The platform consists of a **Django backend** and a **Vue frontend**.
+A full-stack course marketplace platform with real-time communication features. Built with Django (backend) and Vue.js (frontend).
 
 ## Table of Contents
-- **[Project Overview](#1-project-overview)**<br>
-- **[Application Logic](#2-application-logic)**<br>
-- **[Development Architecture](#3-development-architecture)**<br>
-- **[Questions Answered](#4-questions-answered)**<br>
-- **[Deployment Strategy](#5-deployment-strategy)**<br>
-- **[Future Enhancements](#6-future-enhancements)**<br>
+- [Features](#features)
+- [Architecture Overview](#architecture-overview)
+- [Installation Guide](#installation-guide)
+  - [Prerequisites](#prerequisites)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+  - [Running the Application](#running-the-application)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
 
-- **[Backend (Django)](backend/Readme.md#backend-django)**<br>
-- **[Frontend (Vue)](frontend/README.md#frontend-vue)**<br>
+## Features
+- **Multi-role System**: Creators, Learners, and Admins
+- **Course Management**: Create, publish, and sell courses
+- **Real-Time Chat**: WebSocket-based messaging system
+- **Payment Processing**: Integrated Stripe/PayPal payments
+- **Advanced Search**: Filter courses by price, rating, and category
+- **Admin Dashboard**: Manage users, courses, and transactions
 
----
+## Architecture Overview
 
-## **1. Project Overview**  
-The platform is a **course marketplace** where:  
-- **Creators** (any registered user) can design, publish, and sell courses.  
-- **Learners** can discover, purchase, and interact with courses and creators.  
-- **Admins** manage platform operations, commissions, and moderation.  
+### Backend (Django)
+- **Framework**: Django + Django Channels
+- **Database**: PostgreSQL (primary), Redis (real-time)
+- **APIs**: REST + GraphQL endpoints
+- **Authentication**: JWT with OAuth2 social login
+- **Key Features**:
+  - WebSocket implementation for chat
+  - Commission-based payment system
+  - Role-based access control
 
-### **Core Features**  
-1. **Open Course Creation**: Any user can create and sell courses (free or paid).  
-2. **Real-Time Communication**: Integrated chat, direct messaging, and course Q&A.  
-3. **Monetization & Commissions**: Platform earns a percentage of paid course sales.  
-4. Role-based access (Creator, Learner, Admin) with flexible permissions.  
-5. Course discovery with advanced search, filters, and recommendations.  
-6. Admin dashboard for financial tracking, user moderation, and dispute resolution.  
+### Frontend (Vue.js)
+- **Framework**: Vue 3 + Vue Router
+- **State Management**: Pinia
+- **Styling**: Tailwind CSS
+- **Key Features**:
+  - Responsive course marketplace UI
+  - Interactive dashboards
+  - Real-time chat interface
 
----
+## Installation Guide
 
-## **2. Application Logic**  
+### Prerequisites
+- Python 3.9+
+- Node.js 16+
+- PostgreSQL 14+
+- Redis 6+
 
-### **2.1. User Roles and Permissions**  
-#### **Creators**  
-- Create, edit, and publish courses (free or paid).  
-- Set course prices and manage earnings (post-commission).  
-- Interact with learners via chat and course discussions.  
-- View sales analytics and learner engagement metrics.  
+### Backend Setup
+1. Navigate to backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt --no-binary uvloop  # Omit --no-binary on Linux
+   ```
+4. Configure environment variables (create `.env` file):
+   ```env
+   SECRET_KEY=your_django_secret
+   DB_NAME=marketplace
+   DB_USER=postgres
+   DB_PASSWORD=postgres
+   DB_HOST=localhost
+   DB_PORT=5432
+   ```
+5. Run migrations:
+   ```bash
+   python manage.py makemigrations
+   ```
+   ```bash
+   python manage.py migrate
+   ```
 
-#### **Learners**  
-- Browse, purchase, and enroll in courses.  
-- Access purchased courses and participate in discussions.  
-- Message creators and other learners.  
-- Rate courses and leave public reviews.  
+### Frontend Setup
+1. Navigate to frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-#### **Admins**  
-- Approve/reject courses to ensure quality and compliance.  
-- Manage commissions (e.g., set rates, view transaction history).  
-- Moderate chats, resolve disputes, and suspend accounts.  
+### Running the Application
+```bash
+./scripts/run.sh
+```
+#### Start backend (from `backend` directory):
+```bash
+python manage.py runserver
+```
+#### Start frontend (from `frontend` directory):
+```bash
+npm run dev
+```
+Access the application at [http://localhost:8080](http://localhost:8080)
 
----
+## Project Structure
+```
+.
+├── backend/
+│   ├── config/          # Django settings and routing
+│   ├── core/            # Main application logic
+│   ├── requirements.txt
+│   └── README.md        # Technical backend documentation
+├── frontend/
+│   ├── public/
+│   ├── src/             # Vue components and stores
+│   ├── package.json
+│   └── README.md        # Frontend development guide
+├── scripts/
+│   ├── run.sh           # Combined server startup
+│   └── test.sh          # Test runner
+├── README.md            # Main documentation (you are here)
+└── LICENSE
+```
 
-### **2.2. Course Management**  
-#### **Course Properties**  
-- **Price**: Free or set amount (with platform commission).  
-- **Status**: Draft, Under Review (admin approval), Published.  
-- **Materials**: Videos, PDFs, quizzes, and discussion boards.  
-- **Earnings**: Track revenue (after commission) in creator dashboard.  
+## Contributing
+1. Fork the repository
+2. Create feature branch:
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+3. Commit changes:
+   ```bash
+   git commit -m 'Add some feature'
+   ```
+4. Push to branch:
+   ```bash
+   git push origin feature/your-feature
+   ```
+5. Submit a pull request
 
-#### **Commission Logic**  
-- Admins set global commission rates (e.g., 15% per sale).  
-- Creators receive earnings post-commission, withdrawable via Stripe/PayPal.  
+## License
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
----
-
-### **2.3. Real-Time Communication**  
-- **Course Chat**: Public chat rooms for enrolled learners.  
-- **Direct Messaging**: Private conversations between users.  
-- **Notifications**: Alerts for new messages, sales, and course updates.  
-
----
-
-### **2.4. Search and Filtering**  
-- **Filters**: Price (free/paid), ratings, category, creator.  
-- **Sorting**: Trending (engagement), newest, highest-rated.  
-
----
-
-### **2.5. Access Control**  
-- **Public Access**: Browse courses without an account.  
-- **Private Access**:  
-  - Purchases and messaging require login.  
-  - Creators control course visibility (draft/published).  
-- **RBAC**:  
-  - Admins approve courses and manage payouts.  
-  - Learners cannot edit courses; creators cannot moderate others.  
-
----
-
-### **2.6. Payments & Payouts**  
-- **Stripe/PayPal Integration**: Handle purchases and creator withdrawals.  
-- **Escrow System**: Hold earnings until course completion (configurable).  
-
----
-
-## **3. Development Architecture**  
-
-### **3.1. Backend**  
-- **Framework**: Django + Django Channels (WebSocket support).  
-- **Authentication**: JWT with OAuth2 for social logins.  
-- **Database**: PostgreSQL + Redis (for real-time features).  
-
-#### **APIs**  
-- **Course & Payment**: CRUD, purchase, commission calculation.  
-- **Chat**: WebSocket endpoints for messaging and notifications.  
-- **Admin**: Payout management, dispute resolution, analytics.  
-
----
-
-### **3.2. Frontend**  
-- **Framework**: React.js (Next.js for SSR) + Tailwind CSS.  
-- **Key Pages**:  
-  - **Creator Dashboard**: Course stats, earnings, chat inbox.  
-  - **Marketplace**: Course listings with filters and recommendations.  
-  - **Chat Interface**: Real-time messaging with message history.  
-
----
-
-### **3.3. Database Design**  
-| **Table**         | **Fields**                                                                 |  
-| ----------------- | -------------------------------------------------------------------------- |  
-| **User**          | ID, email, role, stripe_account_id, balance, created_at                    |  
-| **Course**        | ID, title, price, commission_rate, status (draft/published), creator_id   |  
-| **Enrollment**    | ID, course_id, learner_id, purchased_at, payment_status                   |  
-| **Message**       | ID, sender_id, receiver_id, content, timestamp, is_read                   |  
-| **Transaction**   | ID, course_id, learner_id, amount, commission, payout_date                |  
-
----
-
-## **4. Questions Answered**  
-1. **How do commissions work?**  
-   - Admins set a global rate (e.g., 15%). Creators earn the remaining 85% per sale.  
-
-2. **Can users be both creators and learners?**  
-   - Yes! Users switch roles seamlessly via their dashboard.  
-
-3. **How is real-time chat implemented?**  
-   - WebSockets (Django Channels) power instant messaging and notifications.  
-
-4. **How are payments processed?**  
-   - Stripe/PayPal handles purchases. Creators withdraw earnings via linked accounts.  
-
-5. **Are courses moderated?**  
-   - Yes. Admins review courses before publication to ensure quality.  
-
----
-
-## **5. Deployment Strategy**  
-1. **Backend**: Dockerized Django + Gunicorn on AWS EC2.  
-2. **Frontend**: Vercel for Next.js static hosting.  
-3. **Real-Time**: Redis cluster for WebSocket management.  
-4. **Database**: AWS RDS (PostgreSQL) with daily backups.  
-
----
-
-## **6. Future Enhancements**  
-1. **Affiliate Program**: Users earn by promoting courses.  
-2. **Live Workshops**: Integrate Zoom/Google Meet for live sessions.  
-3. **Mobile App**: Flutter-based app for on-the-go learning.  
-4. **AI Recommendations**: Suggest courses based on user behavior.  
-
----
-
-### Deployment
-
-#### Backend Deployment
-- Use **Gunicorn + Nginx** for production.
-- Deploy on **AWS EC2 / DigitalOcean**.
-- Set up **PostgreSQL on AWS RDS**.
-- Use **Redis for WebSocket support**.
-
-#### Frontend Deployment
-- Deploy on **Vercel / Netlify**.
-- Configure `.env.production` for API connection.
-- Use **Cloudflare for caching and security**.
-
----
-
-For further details, please check the backend and frontend README files inside their respective directories.

@@ -1,46 +1,33 @@
-## Frontend (Vue)
+# Frontend (Vue)
+
 The frontend is built using **Vue.js** and interacts with the **Django** backend via API.
 
-### Features
+## Features
 - Course listing and search with filters
 - Secure authentication via JWT
 - Payment integration
 - Real-time chat with WebSocket support
 - User dashboards (Creator, Learner, Admin)
 
-### Installation
-1. **Navigate to the frontend directory:**
-   ```sh
-   cd frontend
-   ```
-2. **Install dependencies:**
-   ```sh
-   npm install
-   ```
-3. **Set up environment variables:**
-   Create a `.env` file in the root of the frontend directory and add:
-   ```sh
-   VUE_APP_API_BASE_URL=http://127.0.0.1:8000/api
-   ```
-4. **Run the development server:**
-   ```sh
-   npm run serve
-   ```
+## Architecture Overview
+- **Framework**: Vue 3 + Vue Router
+- **State Management**: Pinia
+- **Styling**: Tailwind CSS
+- **API Communication**: Fetches data from Django backend
 
-### Compile and Hot-Reload for Development
+## Running the Frontend
+Refer to the main [README](../README.md) for installation and setup instructions.
 
-```sh
+To start the frontend development server:
+```bash
 npm run dev
 ```
 
-### Compile and Minify for Production
-
-```sh
-npm run build
+## Linting and Building
+```bash
+npm run lint  # Lint the code
+npm run build  # Minify and prepare for production
 ```
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+## Installation
+For installation instructions, refer to the main [README](../README.md#installation-guide).

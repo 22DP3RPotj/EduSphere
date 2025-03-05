@@ -7,6 +7,34 @@ export function useRoomApi() {
   const notifications = useNotifications();
   const router = useRouter();
 
+  const ROOM_MESSAGES_QUERY = gql`
+  query RoomMessages($hostSlug: String!, $roomSlug: String!) {
+    messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+      id
+      user {
+        username
+        id
+      }
+      body
+      created
+    }
+  }
+`;
+
+  async function fetchRoomMessages(hostSlug, roomSlug) {
+    try {
+      const { data } = await apolloClient.query({
+        query: ROOM_MESSAGES_QUERY,
+        variables: { hostSlug, roomSlug }
+      });
+
+      return data.messages;
+    } catch (error) {
+      notifications.error(error);
+      return [];
+    }
+  }
+
   const CREATE_ROOM_MUTATION = gql`
     mutation CreateRoom($name: String!, $topicName: String!, $description: String) {
       createRoom(name: $name, topicName: $topicName, description: $description) {
@@ -117,6 +145,7 @@ export function useRoomApi() {
     createRoom,
     deleteRoom,
     joinRoom,
-    deleteMessage
+    deleteMessage,
+    fetchRoomMessages,
   };
 }

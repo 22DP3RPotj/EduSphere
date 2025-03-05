@@ -1,10 +1,20 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-
+from graphql_jwt.shortcuts import get_user_by_token
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        # Extract token and validate
+        token = self.scope['query_string'].decode().split('=')[-1]
+        user = await self.get_user_from_token(token)
+        
+        if not user:
+            await self.close()
+            return
+
+        self.user = user
+        
         # Extract slugs from the WebSocket URL
         self.username = self.scope['url_route']['kwargs']['username']
         self.room_slug = self.scope['url_route']['kwargs']['room']
@@ -17,6 +27,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         await self.accept()
+
+    @database_sync_to_async
+    def get_user_from_token(self, token):
+        try:
+            return get_user_by_token(token)
+        except:
+            return None
 
     async def disconnect(self, close_code):
         # Remove the WebSocket connection from the room group
@@ -32,7 +49,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Parse the incoming WebSocket data
         data = json.loads(text_data)
         message_body = data.get('message')  # The message text
-        user = self.scope['user']  # The currently authenticated user
         
         from .models import Room, Message
 
@@ -43,7 +59,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         
         new_message = await database_sync_to_async(Message.objects.create)(
-            user=user,
+            user=self.user,
             room=room,
             body=message_body
         )
@@ -51,11 +67,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Prepare the serialized message data
         serialized_message = {
             'id': str(new_message.id),
-            'user': user.username,
-            'user_id': user.id,
-            'user_avatar': user.avatar.url,
-            'message': new_message.body,
+            'user': self.user.username,
+            'user_id': self.user.id,
+            'body': new_message.body,
             'created': new_message.created.strftime('%Y-%m-%d %H:%M:%S'),
+            'userAvatar': self.user.avatar.url if self.user.avatar else None
         }
 
         # Broadcast the message to the group

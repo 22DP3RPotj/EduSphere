@@ -24,7 +24,6 @@ const routes = [
   {
     path: "/:hostSlug/:roomSlug",
     component: () => import("@/components/RoomDetail.vue"),
-    meta: { requiresAuth: true }
   }
 ];
 

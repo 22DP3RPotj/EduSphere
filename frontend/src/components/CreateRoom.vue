@@ -4,28 +4,32 @@
     <input v-model="name" placeholder="Room Name">
     <input v-model="topic_name" placeholder="Topic Name">
     <input v-model="description" placeholder="Description">
-    <button @click="submitRoom">Create</button>
-    <pre>{{ response }}</pre>
+    <button @click="submitRoom" :disabled="isLoading">
+      {{ isLoading ? 'Creating...' : 'Create' }}
+    </button>
   </div>
 </template>
 
-<script>
-import { createRoom } from "@/api/room.api";
+<script setup>
+import { ref } from 'vue';
+import { useRoomApi } from "@/api/room.api";
 
-export default {
-  data() {
-    return { name: "", topic_name: "", description: "", response: null };
-  },
-  methods: {
-    async submitRoom() {
-      const payload = {
-        name: this.name || null,
-        topic_name: this.topic_name || null,
-        description: this.description || null
-      };
-      
-      this.response = await createRoom(payload.name, payload.topic_name, payload.description);
-    }
-  }
-};
+const { createRoom } = useRoomApi();
+
+const name = ref('');
+const topic_name = ref('');
+const description = ref('');
+const isLoading = ref(false);
+
+async function submitRoom() {
+  if (!name.value || !topic_name.value) return;
+
+  isLoading.value = true;
+  await createRoom(
+    name.value, 
+    topic_name.value, 
+    description.value || null
+  );
+  isLoading.value = false;
+}
 </script>

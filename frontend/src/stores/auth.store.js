@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { apolloClient } from "@/api/apollo.client";
 import { gql } from "@apollo/client/core";
+import { useNotifications } from "@/composables/useNotifications";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -27,6 +28,8 @@ export const useAuthStore = defineStore("auth", {
       this.user = null;
     },
     async fetchUser() {
+      const notifications = useNotifications();
+
       if (!this.token) return;
       this.isLoadingUser = true;
       try {
@@ -46,7 +49,7 @@ export const useAuthStore = defineStore("auth", {
         this.user = data.me;
         return data.me;
       } catch (error) {
-        console.error("Error fetching user:", error);
+        notifications.error(error);
         this.clearToken();
         throw error;
       } finally {

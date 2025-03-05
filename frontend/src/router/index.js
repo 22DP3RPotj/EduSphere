@@ -22,7 +22,7 @@ const routes = [
     meta: { requiresAuth: true } 
   },
   {
-    path: "/rooms/:hostSlug/:roomSlug",
+    path: "/:hostSlug/:roomSlug",
     component: () => import("@/components/RoomDetail.vue"),
     meta: { requiresAuth: true }
   }

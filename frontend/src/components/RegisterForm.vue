@@ -1,44 +1,89 @@
 <template>
-    <div>
-      <h2>Register</h2>
-      <input v-model="username" placeholder="Username">
-      <input v-model="name" placeholder="Name">
-      <input v-model="email" placeholder="Email">
-      <input v-model="password1" type="password" placeholder="Password">
-      <input v-model="password2" type="password" placeholder="Confirm Password">
-      <button @click="handleRegister">Register</button>
-      <p v-if="error" class="error">{{ error }}</p>
-    </div>
-  </template>
-  
-  <script>
-  import { registerUser } from "@/api/auth.api";
-  
-  export default {
-    data() {
-      return {
-        username: "",
-        name: "",
-        email: "",
-        password1: "",
-        password2: "",
-        error: null
-      };
-    },
-    methods: {
-      async handleRegister() {
-        if (this.password1 !== this.password2) {
-          this.error = "Passwords don't match";
-          return;
-        }
-        
-        try {
-          await registerUser(this.username, this.name, this.email, this.password1, this.password2);
-          this.$router.push("/create-room");
-        } catch (error) {
-          this.error = error.message;
-        }
-      }
-    }
-  };
-  </script>
+  <div>
+    <h2>Register</h2>
+    <form @submit.prevent="handleRegister">
+      <input 
+        v-model="username" 
+        type="text" 
+        placeholder="Username" 
+        autocomplete="username" 
+        required
+      >
+      <input 
+        v-model="name" 
+        type="text" 
+        placeholder="Name" 
+        autocomplete="name" 
+        required
+      >
+      <input 
+        v-model="email" 
+        type="email" 
+        placeholder="Email" 
+        autocomplete="email" 
+        required
+      >
+      <input 
+        v-model="password1" 
+        type="password" 
+        placeholder="Password" 
+        autocomplete="new-password" 
+        required
+      >
+      <input 
+        v-model="password2" 
+        type="password" 
+        placeholder="Confirm Password" 
+        autocomplete="new-password" 
+        required
+      >
+      <button type="submit" :disabled="isLoading">
+        {{ isLoading ? 'Registering...' : 'Register' }}
+      </button>
+    </form>
+    <p v-if="error" class="error">{{ error }}</p>
+  </div>
+</template>
+
+
+<script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthApi } from "@/api/auth.api";
+
+const router = useRouter();
+const { registerUser } = useAuthApi();
+
+const username = ref('');
+const name = ref('');
+const email = ref('');
+const password1 = ref('');
+const password2 = ref('');
+const error = ref(null);
+const isLoading = ref(false);
+
+async function handleRegister() {
+  // Reset error
+  error.value = null;
+
+  // Validate inputs
+  if (!username.value || !name.value || !email.value || !password1.value || !password2.value) {
+    error.value = "Please fill in all fields";
+    return;
+  }
+
+  isLoading.value = true;
+  const success = await registerUser(
+    username.value, 
+    name.value, 
+    email.value, 
+    password1.value, 
+    password2.value
+  );
+  isLoading.value = false;
+
+  if (success) {
+    router.push("/create-room");
+  }
+}
+</script>

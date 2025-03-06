@@ -31,7 +31,6 @@ export function useAuthApi() {
         password2: $password2
       ) {
         user {
-          id
           username
           email
         }

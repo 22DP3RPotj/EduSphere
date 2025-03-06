@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
@@ -8,8 +8,10 @@ import { useNotifications } from '@/composables/useNotifications';
 import { useApi } from '@/composables/useApi';
 import { apolloClient } from '@/api/apollo.client';
 import { gql } from '@apollo/client/core';
-import { format } from 'timeago.js';
+import { inject } from 'vue';
+import Message from '@/components/Message.vue';
 
+const Swal = inject('$swal');
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
@@ -28,14 +30,13 @@ const {
   messages,
   initializeWebSocket,
   sendMessage: sendWebSocketMessage,
-  closeWebSocket
+  closeWebSocket,
 } = useWebSocket(route.params.hostSlug, route.params.roomSlug);
 
 // Queries remain the same as in your previous implementation
 const ROOM_QUERY = gql`
   query GetRoom($hostSlug: String!, $roomSlug: String!) {
     room(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-      id
       name
       slug
       description
@@ -90,19 +91,53 @@ async function fetchRoom() {
   }
 }
 
-async function handleRoomDelete() {
-  if (!confirm('Are you sure you want to delete this room?')) return;
-  
+async function handleMessageDelete(messageId) {
   try {
-    await api.call(
-      () => deleteRoom(room.value.host.slug, room.value.slug),
-      'Room deleted successfully'
+    const success = await api.call(
+      () => deleteMessage(messageId),
+      'Message deleted successfully'
     );
-    router.push('/');
+    
+    if (success) {
+      // More efficient way to remove message
+      messages.value = messages.value.filter(msg => msg.id !== messageId);
+    }
   } catch (error) {
     // Error handled by api.call
   }
 }
+
+async function handleRoomDelete() {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Do you want to delete this room?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, delete it!'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await api.call(
+        () => deleteRoom(room.value.host.slug, room.value.slug),
+        'Room deleted successfully'
+      );
+      router.push('/');
+    } catch (error) {
+      // Error handled by api.call
+    }
+  }
+}
+
+// Scroll to bottom when messages update
+watch(messages, async () => {
+  await nextTick();
+  if (messagesContainerRef.value) {
+    messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight;
+  }
+});
 
 async function handleJoin() {
   try {
@@ -157,7 +192,7 @@ onBeforeUnmount(() => {
       <div class="room-header">
         <div class="room-header-left">
           <button @click="$router.push('/')" class="back-button">
-            <i class="fas fa-arrow-left"></i>
+            <font-awesome-icon icon="arrow-left" />
             Back
           </button>
           <h2>{{ room.name }}</h2>
@@ -177,22 +212,13 @@ onBeforeUnmount(() => {
       <!-- Room conversation -->
       <div class="room-conversation">
         <div ref="messagesContainerRef" class="messages-container">
-          <div 
+          <Message 
             v-for="message in messages" 
             :key="message.id" 
-            class="message-item"
-          >
-            <div class="message-header">
-              <div class="message-author">
-                <img :src="message.userAvatar" alt="User avatar" class="avatar-tiny" />
-                <span class="username">{{ message.user }}</span>
-              </div>
-              <div class="message-meta">
-                <span class="message-time">{{ message.created }}</span>
-              </div>
-            </div>
-            <div class="message-body">{{ message.body }}</div>
-          </div>
+            :message="message"
+            :is-host="isHost"
+            @delete-message="handleMessageDelete"
+          />
         </div>
         
         <!-- Message input -->

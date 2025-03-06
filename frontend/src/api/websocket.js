@@ -2,9 +2,13 @@ import { ref } from 'vue';
 import { apolloClient } from '@/api/apollo.client';
 import { gql } from '@apollo/client/core';
 import { useAuthStore } from '@/stores/auth.store';
+import { useRoomApi } from './room.api';
+import { useApi } from '@/composables/useApi';
 import { useNotifications } from '@/composables/useNotifications';
 
 export function useWebSocket(username, roomSlug) {
+  const { fetchRoomMessages } = useRoomApi();
+  const api = useApi();
   const socket = ref(null);
   const messages = ref([]);
   const connectionStatus = ref('disconnected');
@@ -14,17 +18,6 @@ export function useWebSocket(username, roomSlug) {
   const MAX_RECONNECT_ATTEMPTS = 5;
   const RECONNECT_DELAY = 3000; // 3 seconds
 
-  const MESSAGES_QUERY = gql`
-    query RoomMessages($hostSlug: String!, $roomSlug: String!) {
-      messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-        id
-        user { username }
-        body
-        created
-      }
-    }
-  `;
-
   async function initializeWebSocket() {
     const token = authStore.token;
     if (!token) {
@@ -33,11 +26,11 @@ export function useWebSocket(username, roomSlug) {
     }
 
     try {
-      const { data } = await apolloClient.query({
-        query: MESSAGES_QUERY,
-        variables: { hostSlug: username, roomSlug: roomSlug }
-      });
-      messages.value = [...data.messages];
+      const room_messages = await api.call(
+        () => fetchRoomMessages(username, roomSlug),
+        'Messages fetched'
+      )
+      messages.value = [...room_messages];
     } catch (error) {
       notifications.error({message: 'Failed to load messages'});
     }
@@ -53,10 +46,17 @@ export function useWebSocket(username, roomSlug) {
       };
 
       socket.value.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        messages.value.unshift({
-          ...message,
-          timestamp: new Date().toISOString()
+        const receivedMessage = JSON.parse(event.data);
+        
+        // Use received timestamp or generate a new one
+        const messageTimestamp = receivedMessage.timestamp 
+          ? new Date(receivedMessage.timestamp).toISOString() 
+          : new Date().toISOString();
+
+        messages.value.push({
+          ...receivedMessage,
+          created: messageTimestamp,
+          user: receivedMessage.user || { username: receivedMessage.username }
         });
       };
 
@@ -95,7 +95,7 @@ export function useWebSocket(username, roomSlug) {
       socket.value.send(JSON.stringify({ 
         message, 
         type: messageType,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString() // Keep using ISO string for consistency
       }));
     } else {
       notifications.warning('WebSocket is not connected. Message not sent.');

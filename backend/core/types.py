@@ -10,12 +10,12 @@ class UserType(DjangoObjectType):
 class RoomType(DjangoObjectType):
     class Meta:
         model = Room
-        fields = ("id", "name", "slug", "host", "topic", "description", "participants", "updated", "created")
+        fields = ("name", "slug", "host", "topic", "description", "participants", "updated", "created")
 
 class TopicType(DjangoObjectType):
     class Meta:
         model = Topic
-        fields = ("id", "name")
+        fields = ("name",)
 
 class MessageType(DjangoObjectType):
     class Meta:

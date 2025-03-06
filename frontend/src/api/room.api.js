@@ -12,8 +12,8 @@ export function useRoomApi() {
     messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
       id
       user {
-        username
         id
+        username
       }
       body
       created
@@ -42,7 +42,10 @@ export function useRoomApi() {
           name
           description
           topic { name }
-          host { username }
+          host {
+            id
+            username 
+          }
         }
       }
     }
@@ -60,7 +63,6 @@ export function useRoomApi() {
     mutation JoinRoom($hostSlug: String!, $roomSlug: String!) {
       joinRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {
         room {
-          id
           participants {
             id
             username
@@ -90,7 +92,7 @@ export function useRoomApi() {
       });
 
       const room = response.data.createRoom.room;
-      router.push(`/${room.host.username}/${room.name.toLowerCase().replace(/ /g, '-')}`);
+      router.push(`/${room.host.username}/${room.name.toLowerCase().replace(/\s+/g, '-')}`);
       return room;
     } catch (error) {
       notifications.error(error);

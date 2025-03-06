@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
+from django.core.validators import RegexValidator
 from .models import User, Room
 
 
@@ -62,6 +63,17 @@ class RegisterForm(UserCreationForm):
         fields = ['username', 'name', 'email', 'password1', 'password2']
 
 class RoomForm(ModelForm):
+    name = forms.CharField(
+        max_length=200, 
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z0-9 ]+$',
+                message="Room name can only contain letters and numbers.",
+                code='invalid_room_name'
+            )
+        ]
+    )
+        
     class Meta:
         model = Room
         fields = '__all__'

@@ -9,9 +9,11 @@ A full-stack course marketplace platform with real-time communication features. 
 - [Architecture Overview](#architecture-overview)
 - [Installation Guide](#installation-guide)
   - [Prerequisites](#prerequisites)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Setup](#frontend-setup)
-  - [Running the Application](#running-the-application)
+  - [Docker Setup (Recommended)](#docker-setup-recommended)
+  - [Manual Setup](#manual-setup)
+    - [Backend Setup](#backend-setup)
+    - [Frontend Setup](#frontend-setup)
+    - [Running the Application](#running-the-application)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [License](#license)
@@ -48,12 +50,60 @@ A full-stack course marketplace platform with real-time communication features. 
 ## Installation Guide
 
 ### Prerequisites
-- Python 3.9+
-- Node.js 16+
-- PostgreSQL 14+
-- Redis 6+
+- For Docker setup: Docker and Docker Compose
+- For manual setup:
+  - Python 3.9+
+  - Node.js 16+
+  - PostgreSQL 14+
+  - Redis 6+
 
-### Backend Setup
+### Docker Setup (Recommended)
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/22DP3RPotj/EduSphere.git
+   cd EduSphere
+   ```
+
+2. Create `.env.docker` file in the project root (or use the provided template):
+   ```env
+   SECRET_KEY='your_secret_key'
+   DEBUG=True
+
+   DB_NAME=coredb
+   DB_USER=db_user
+   DB_PASSWORD=db_password
+   DB_HOST=postgres
+   DB_PORT=5432
+
+   REDIS_HOST=redis
+   REDIS_PORT=6379
+   ```
+
+3. Build and start the Docker containers:
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. Run initial setup commands:
+   ```bash
+   # Run migrations
+   docker compose exec backend python manage.py migrate
+
+   # Create a superuser
+   docker compose exec backend python manage.py createsuperuser
+
+   # Collect static files
+   docker compose exec backend python manage.py collectstatic --noinput
+   ```
+
+5. Access the application:
+   - Frontend: http://localhost
+   - Django Admin: http://localhost/admin
+
+### Manual Setup
+
+#### Backend Setup
 1. Navigate to backend directory:
    ```bash
    cd backend
@@ -65,26 +115,24 @@ A full-stack course marketplace platform with real-time communication features. 
    ```
 3. Install dependencies:
    ```bash
-   pip install -r requirements.txt --no-binary uvloop  # Omit --no-binary on Linux
+   pip install -r requirements.txt # Windows: add '--no-binary uvloop'
    ```
 4. Configure environment variables (create `.env` file):
    ```env
-   SECRET_KEY=your_django_secret
-   DB_NAME=marketplace
-   DB_USER=postgres
-   DB_PASSWORD=postgres
+   SECRET_KEY=secret_key
+   DB_NAME=coredb
+   DB_USER=db_user
+   DB_PASSWORD=db_password
    DB_HOST=localhost
    DB_PORT=5432
    ```
 5. Run migrations:
    ```bash
    python manage.py makemigrations
-   ```
-   ```bash
    python manage.py migrate
    ```
 
-### Frontend Setup
+#### Frontend Setup
 1. Navigate to frontend directory:
    ```bash
    cd frontend
@@ -94,15 +142,15 @@ A full-stack course marketplace platform with real-time communication features. 
    npm install
    ```
 
-### Running the Application
+#### Running the Application
 ```bash
 ./scripts/run.sh
 ```
-#### Start backend (from `backend` directory):
+##### Start backend (from `backend` directory):
 ```bash
 python manage.py runserver
 ```
-#### Start frontend (from `frontend` directory):
+##### Start frontend (from `frontend` directory):
 ```bash
 npm run dev
 ```
@@ -121,9 +169,16 @@ Access the application at [http://localhost:8080](http://localhost:8080)
 │   ├── src/             # Vue components and stores
 │   ├── package.json
 │   └── README.md        # Frontend development guide
+├── docker/              # Docker configuration files
+│   ├── backend/         # Backend Docker setup
+│   ├── frontend/        # Frontend Docker setup
+│   └── nginx/           # Nginx configuration
 ├── scripts/
 │   ├── run.sh           # Combined server startup
 │   └── test.sh          # Test runner
+├── docker-compose.yml   # Docker Compose configuration
+├── docker-bake.hcl      # Docker Bake configuration
+├── docker-bake.sh       # Docker Bake helper script
 ├── README.md            # Main documentation (you are here)
 └── LICENSE
 ```
@@ -146,4 +201,3 @@ Access the application at [http://localhost:8080](http://localhost:8080)
 
 ## License
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
-

@@ -10,4 +10,5 @@ RUN cd frontend && npm install
 COPY . .
 
 # Command to run the dev server
-CMD ["npm", "--prefix", "frontend", "run", "dev", "--", "--host", "0.0.0.0"]
+ENTRYPOINT ["npm", "--prefix", "frontend", "run"]
+CMD ["dev", "--", "--host", "0.0.0.0"]

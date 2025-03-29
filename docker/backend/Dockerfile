@@ -22,4 +22,5 @@ COPY . .
 RUN mkdir -p staticfiles media
 
 # Command to run the server
-CMD ["uvicorn", "backend.config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--lifespan", "off"]
+ENTRYPOINT ["uvicorn", "backend.config.asgi:application"]
+CMD ["--host", "0.0.0.0", "--port", "8000", "--lifespan", "off"]

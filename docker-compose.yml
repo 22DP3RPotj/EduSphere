@@ -1,0 +1,77 @@
+services:
+  # Database service
+  postgres:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=coredb
+      - POSTGRES_USER=rpote
+      - POSTGRES_PASSWORD=I62432
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rpote -d coredb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis service for Django Channels
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # Django backend service
+  backend:
+    build: 
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.config.settings
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  # Vue.js frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  # Nginx service for serving static files and proxying
+  nginx:
+    build:
+      context: ./docker/nginx
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

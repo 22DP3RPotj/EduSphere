@@ -70,7 +70,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'servestatic.middleware.ServeStaticMiddleware', # Serve static files
+    # 'servestatic.middleware.ServeStaticMiddleware', # Serve static files
 ]
 
 ROOT_URLCONF = 'backend.config.urls'
@@ -110,6 +110,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost",
     "http://localhost:5173",  # Vite
     "http://127.0.0.1:5173",  # Vite
     "http://localhost:5173",  # Vite
@@ -136,7 +137,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [(env('REDIS_HOST', default='localhost'), 6379)],
         },
     },
 }

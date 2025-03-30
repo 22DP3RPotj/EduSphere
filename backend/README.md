@@ -13,7 +13,7 @@ The backend is built using **Django** and **Django Channels** to support real-ti
 ## Architecture Overview
 - **Framework**: Django + Django Channels
 - **Database**: PostgreSQL (primary), Redis (real-time)
-- **APIs**: REST + GraphQL endpoints
+- **APIs**: GraphQL endpoints
 - **Authentication**: JWT with OAuth2 social login
 - **WebSocket Support**: Integrated for real-time messaging
 

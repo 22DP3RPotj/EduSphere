@@ -31,7 +31,7 @@ A full-stack course marketplace platform with real-time communication features. 
 ### Backend (Django)
 - **Framework**: Django + Django Channels
 - **Database**: PostgreSQL (primary), Redis (real-time)
-- **APIs**: REST + GraphQL endpoints
+- **APIs**: GraphQL endpoints
 - **Authentication**: JWT with OAuth2 social login
 - **Key Features**:
   - WebSocket implementation for chat
@@ -67,7 +67,7 @@ A full-stack course marketplace platform with real-time communication features. 
 
 2. Create `.env.docker` file in the project root (or use the provided template):
    ```env
-   SECRET_KEY='your_secret_key'
+   SECRET_KEY=secret_key
    DEBUG=True
 
    DB_NAME=coredb
@@ -101,6 +101,21 @@ A full-stack course marketplace platform with real-time communication features. 
    - Frontend: http://localhost
    - Django Admin: http://localhost/admin
 
+
+#### PostgreSQL Backup & Restore
+
+##### Backup PostgreSQL Database
+
+```bash
+docker exec -t edusphere-postgres-1 pg_dump -U <db_user> -d coredb > backup.sql
+```
+
+##### Restore PostgreSQL Backup
+
+```bash
+docker exec -i edusphere-postgres-1 psql -U <db_user> -d coredb < backup.sql
+```
+
 ### Manual Setup
 
 #### Backend Setup
@@ -125,6 +140,9 @@ A full-stack course marketplace platform with real-time communication features. 
    DB_PASSWORD=db_password
    DB_HOST=localhost
    DB_PORT=5432
+
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
    ```
 5. Run migrations:
    ```bash
@@ -146,15 +164,7 @@ A full-stack course marketplace platform with real-time communication features. 
 ```bash
 ./scripts/run.sh
 ```
-##### Start backend (from `backend` directory):
-```bash
-python manage.py runserver
-```
-##### Start frontend (from `frontend` directory):
-```bash
-npm run dev
-```
-Access the application at [http://localhost:8080](http://localhost:8080)
+Access the application at [http://localhost](http://localhost)
 
 ## Project Structure
 ```

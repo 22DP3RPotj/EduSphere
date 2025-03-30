@@ -6,6 +6,14 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    hmr: {
+      clientPort: 80,
+      protocol: 'ws',
+      host: 'localhost'
+    },
+    strictPort: true
+  },
   plugins: [
     vue(),
     vueDevTools(),

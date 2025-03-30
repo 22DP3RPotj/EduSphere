@@ -14,6 +14,7 @@ export function useRoomApi() {
       user {
         id
         username
+        avatar
       }
       body
       created

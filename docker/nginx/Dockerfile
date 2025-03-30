@@ -2,7 +2,7 @@ FROM nginx:alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-RUN mkdir -p /app/staticfiles /app/media
+RUN mkdir -p /app/staticfiles
 
 EXPOSE 80
 

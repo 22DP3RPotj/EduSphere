@@ -38,8 +38,9 @@ const userDisplayName = computed(() => {
 });
 
 const userAvatar = computed(() => {
-  // Handle both backend and dynamically generated message formats
-  return props.message.userAvatar || props.message.avatar || '/default-avatar.png';
+  if (props.message.userAvatar) return props.message.userAvatar;
+  if (props.message.user?.avatar) return `/media/${props.message.user?.avatar}`;
+  return '/media/default-avatar.png';
 });
 
 function handleMessageDelete() {

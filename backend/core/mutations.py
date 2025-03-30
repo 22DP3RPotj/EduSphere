@@ -3,7 +3,6 @@ import graphql_jwt
 from .types import UserType, RoomType
 from .models import Room, Topic, Message
 from .forms import UserForm, RegisterForm, RoomForm
-from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required
@@ -27,8 +26,9 @@ class RegisterUser(graphene.Mutation):
         
         if form.is_valid():
             user = form.save()
-            user.backend = "django.contrib.auth.backends.ModelBackend"
-            login(info.context, user, backend=user.backend)
+            # Remove the Django session login to prevent session/token mismatch
+            # user.backend = "django.contrib.auth.backends.ModelBackend"
+            # login(info.context, user, backend=user.backend)
             token = get_token(user)
             return RegisterUser(user=user, token=token)
         else:
@@ -120,7 +120,7 @@ class DeleteMessage(graphene.Mutation):
     def mutate(self, info, message_id):
         message = Message.objects.get(id=message_id)
         if message.user != info.context.user:
-            raise GraphQLError("Not message author")
+            raise GraphQLError(f"You ({info.context.user}) are not message author ({message.user})")
         message.delete()
         return DeleteMessage(success=True)
     
@@ -144,12 +144,24 @@ class JoinRoom(graphene.Mutation):
         return JoinRoom(room=room)
     
 
+# Add logout mutation to clear the session
+class LogoutUser(graphene.Mutation):
+    success = graphene.Boolean()
+
+    @login_required
+    def mutate(self, info):
+        from django.contrib.auth import logout
+        logout(info.context)
+        return LogoutUser(success=True)
+
+
 class AppMutation(graphene.ObjectType):
+    register_user = RegisterUser.Field()
+    logout_user = LogoutUser.Field()
     update_user = UpdateUser.Field()
     create_room = CreateRoom.Field()
-    join_room = JoinRoom.Field()
-    register_user = RegisterUser.Field()
     delete_room = DeleteRoom.Field()
+    join_room = JoinRoom.Field()
     delete_message = DeleteMessage.Field()
 
 class AuthMutation(graphene.ObjectType):

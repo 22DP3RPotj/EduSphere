@@ -35,7 +35,7 @@ export function useWebSocket(username, roomSlug) {
       notifications.error({message: 'Failed to load messages'});
     }
 
-    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost:8000/ws/chat/${username}/${roomSlug}/?token=${token}`;
+    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost/ws/chat/${username}/${roomSlug}/?token=${token}`;
     
     function createWebSocket() {
       socket.value = new WebSocket(wsUrl);
@@ -95,7 +95,7 @@ export function useWebSocket(username, roomSlug) {
       socket.value.send(JSON.stringify({ 
         message, 
         type: messageType,
-        timestamp: new Date().toISOString() // Keep using ISO string for consistency
+        timestamp: new Date().toISOString()
       }));
     } else {
       notifications.warning('WebSocket is not connected. Message not sent.');

@@ -3,7 +3,7 @@ import { setContext } from "@apollo/client/link/context";
 
 // API Endpoint (Django GraphQL)
 const httpLink = createHttpLink({
-  uri: "http://localhost:8000/graphql/",
+  uri: "/graphql/",
 });
 
 // Attach Authorization Header

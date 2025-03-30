@@ -39,6 +39,14 @@ export function useAuthApi() {
     }
   `;
 
+  const LOGOUT_MUTATION = gql`
+    mutation LogoutUser {
+      logoutUser {
+        success
+      }
+    }
+  `;
+
   async function login(email, password) {
     try {
       const response = await apolloClient.mutate({
@@ -49,6 +57,9 @@ export function useAuthApi() {
       const token = response.data.tokenAuth.token;
       localStorage.setItem("token", token);
       authStore.setToken(token);
+      
+      // Fetch user data after successful login to ensure it's in sync with the token
+      await authStore.fetchUser();
       
       notifications.success('Login successful!');
       return true;
@@ -72,6 +83,8 @@ export function useAuthApi() {
       const token = response.data.registerUser.token;
       if (token) {
         authStore.setToken(token);
+        // Fetch user data after successful registration
+        await authStore.fetchUser();
       }
       
       notifications.success('Registration successful!');
@@ -82,10 +95,22 @@ export function useAuthApi() {
     }
   }
 
-  function logout() {
-    localStorage.removeItem("token");
-    authStore.clearToken();
-    notifications.info('Logged out successfully');
+  async function logout() {
+    try {
+      // Call the backend logout mutation to clear the Django session
+      await apolloClient.mutate({
+        mutation: LOGOUT_MUTATION
+      });
+    } catch (error) {
+      console.error("Error during server logout:", error);
+      // Continue with frontend logout even if server logout fails
+    } finally {
+      // Clear frontend state regardless of server response
+      localStorage.removeItem("token");
+      authStore.clearToken();
+      apolloClient.clearStore();
+      notifications.info('Logged out successfully');
+    }
   }
 
   return {

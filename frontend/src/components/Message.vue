@@ -8,18 +8,16 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  isHost: {
-    type: Boolean,
-    default: false
+  currentUserId: {
+    type: String,
+    default: null
   }
 });
 
 const emit = defineEmits(['delete-message']);
 
-const authStore = useAuthStore();
-
 const canDeleteMessage = computed(() => {
-  return props.isHost || props.message.userId === authStore.user?.id;
+  return (props.message.user?.id || props.message.user_id) === props.currentUserId;
 });
 
 const formattedTimestamp = computed(() => {

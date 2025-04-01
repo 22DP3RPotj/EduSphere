@@ -68,7 +68,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         serialized_message = {
             'id': str(new_message.id),
             'user': self.user.username,
-            'user_id': self.user.id,
+            'user_id': str(self.user.id),
             'body': new_message.body,
             'created': new_message.created.strftime('%Y-%m-%d %H:%M:%S'),
             'userAvatar': self.user.avatar.url if self.user.avatar else None

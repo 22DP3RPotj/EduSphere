@@ -1,6 +1,6 @@
 import graphene
 from .types import RoomType, TopicType, MessageType, UserType
-from .models import Room, Topic, Message, User
+from .models import Room, Topic, User
 from django.db.models import Q, Count
 from graphql_jwt.decorators import login_required
 from django.shortcuts import get_object_or_404

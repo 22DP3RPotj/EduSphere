@@ -105,7 +105,7 @@ class DeleteRoom(graphene.Mutation):
         )
         
         if room.host != info.context.user:
-            raise PermissionError("Not room host")
+            raise GraphQLError(f"Permission denied")
             
         room.delete()
         return DeleteRoom(success=True)
@@ -119,8 +119,10 @@ class DeleteMessage(graphene.Mutation):
     @login_required
     def mutate(self, info, message_id):
         message = Message.objects.get(id=message_id)
+        
         if message.user != info.context.user:
-            raise GraphQLError(f"You ({info.context.user}) are not message author ({message.user})")
+            raise GraphQLError(f"Permission denied")
+        
         message.delete()
         return DeleteMessage(success=True)
     

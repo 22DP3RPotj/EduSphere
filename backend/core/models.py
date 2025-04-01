@@ -14,7 +14,7 @@ class User(AbstractUser):
     avatar = models.ImageField(
         upload_to='avatars',
         default='default.svg',
-        validators=[FileExtensionValidator(allowed_extensions=['svg', 'png', 'jpg'])]
+        validators=[FileExtensionValidator(allowed_extensions=['svg', 'png', 'jpg', 'jpeg'])]
     )
     
     USERNAME_FIELD = 'email'

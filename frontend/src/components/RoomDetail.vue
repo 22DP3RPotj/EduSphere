@@ -216,18 +216,18 @@ onBeforeUnmount(() => {
             v-for="message in messages" 
             :key="message.id" 
             :message="message"
-            :is-host="isHost"
+            :current-user-id="authStore.user?.id"
             @delete-message="handleMessageDelete"
           />
         </div>
         
         <!-- Message input -->
         <div v-if="canSendMessage" class="message-input-container">
-          <form @submit.prevent="sendMessage">
+          <form id="messageForm" @submit.prevent="sendMessage">
             <input 
-              v-model="messageInput" 
-              type="text" 
-              placeholder="Type your message here..." 
+              v-model="messageInput"
+              type="text"
+              placeholder="Type your message here..."
             />
             <button type="submit" :disabled="!messageInput.trim()">
               Submit

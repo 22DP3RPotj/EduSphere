@@ -1,6 +1,6 @@
 # Course Marketplace Platform
 
-[![Project License](LICENSE)](https://opensource.org/licenses/MIT)
+[LICENSE](LICENSE)
 
 A full-stack course marketplace platform with real-time communication features. Built with Django (backend) and Vue.js (frontend).
 
@@ -9,11 +9,9 @@ A full-stack course marketplace platform with real-time communication features. 
 - [Architecture Overview](#architecture-overview)
 - [Installation Guide](#installation-guide)
   - [Prerequisites](#prerequisites)
-  - [Docker Setup (Recommended)](#docker-setup-recommended)
-  - [Manual Setup](#manual-setup)
-    - [Backend Setup](#backend-setup)
-    - [Frontend Setup](#frontend-setup)
-    - [Running the Application](#running-the-application)
+  - [Setup](#setup)
+- [PostgreSQL Backup & Restore](#postgresql-backup--restore)
+- [Testing](#testing)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [License](#license)
@@ -50,14 +48,9 @@ A full-stack course marketplace platform with real-time communication features. 
 ## Installation Guide
 
 ### Prerequisites
-- For Docker setup: Docker and Docker Compose
-- For manual setup:
-  - Python 3.9+
-  - Node.js 16+
-  - PostgreSQL 14+
-  - Redis 6+
+- Docker and Docker Compose
 
-### Docker Setup (Recommended)
+### Setup
 
 1. Clone the repository:
    ```bash
@@ -102,69 +95,27 @@ A full-stack course marketplace platform with real-time communication features. 
    - Django Admin: http://localhost/admin
 
 
-#### PostgreSQL Backup & Restore
+## PostgreSQL Backup & Restore
 
-##### Backup PostgreSQL Database
+### Backup PostgreSQL Database
 
 ```bash
 docker exec -t edusphere-postgres-1 pg_dump -U <db_user> -d coredb > backup.sql
 ```
 
-##### Restore PostgreSQL Backup
+### Restore PostgreSQL Backup
 
 ```bash
 docker exec -i edusphere-postgres-1 psql -U <db_user> -d coredb < backup.sql
 ```
 
-### Manual Setup
+## Testing
 
-#### Backend Setup
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt # Windows: add '--no-binary uvloop'
-   ```
-4. Configure environment variables (create `.env` file):
-   ```env
-   SECRET_KEY=secret_key
-   DB_NAME=coredb
-   DB_USER=db_user
-   DB_PASSWORD=db_password
-   DB_HOST=localhost
-   DB_PORT=5432
+### Running the tests
 
-   REDIS_HOST=localhost
-   REDIS_PORT=6379
-   ```
-5. Run migrations:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-#### Frontend Setup
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-#### Running the Application
 ```bash
-./scripts/run.sh
+docker-compose exec backend python manage.py test backend/core
 ```
-Access the application at [http://localhost](http://localhost)
 
 ## Project Structure
 ```
@@ -187,8 +138,6 @@ Access the application at [http://localhost](http://localhost)
 │   ├── run.sh           # Combined server startup
 │   └── test.sh          # Test runner
 ├── docker-compose.yml   # Docker Compose configuration
-├── docker-bake.hcl      # Docker Bake configuration
-├── docker-bake.sh       # Docker Bake helper script
 ├── README.md            # Main documentation (you are here)
 └── LICENSE
 ```
@@ -210,4 +159,4 @@ Access the application at [http://localhost](http://localhost)
 5. Submit a pull request
 
 ## License
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+Distributed under the MIT License. See [LICENSE](https://opensource.org/licenses/MIT) for more information.

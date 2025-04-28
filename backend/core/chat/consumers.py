@@ -1,15 +1,13 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from graphql_jwt.shortcuts import get_user_by_token
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Extract token and validate
-        token = self.scope['query_string'].decode().split('=')[-1]
-        user = await self.get_user_from_token(token)
+        user = self.scope.get('user')
         
-        if not user:
+        if not user or not user.is_authenticated:
             await self.close()
             return
 
@@ -28,13 +26,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
-    @database_sync_to_async
-    def get_user_from_token(self, token):
-        try:
-            return get_user_by_token(token)
-        except:
-            return None
-
     async def disconnect(self, close_code):
         # Remove the WebSocket connection from the room group
         await self.channel_layer.group_discard(
@@ -50,7 +41,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message_body = data.get('message')  # The message text
         
-        from .models import Room, Message
+        from ..models import Room, Message
 
         # Save the message to the database
         room = await database_sync_to_async(Room.objects.get)(

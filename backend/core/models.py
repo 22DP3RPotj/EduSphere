@@ -32,6 +32,9 @@ class User(AbstractUser):
         
     class Meta:
         app_label = 'core'
+        indexes = [
+            models.Index(fields=['username']),
+        ]
     
 
 class Topic(models.Model):
@@ -64,7 +67,9 @@ class Room(models.Model):
             )
         ]
         indexes = [
-            models.Index(fields=['host', 'slug'])
+            models.Index(fields=['host', 'slug']),
+            models.Index(fields=['topic']),
+            models.Index(fields=['updated']),
         ]
         
     def save(self, *args, **kwargs):

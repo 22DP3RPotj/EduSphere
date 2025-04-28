@@ -32,16 +32,29 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  const isAuthenticated = authStore.isAuthenticated;
 
-  if (to.meta.requireGuest && isAuthenticated) {
-    next({ path: "/" });
-  } else if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ path: "/login", query: { redirect: to.fullPath } });
-  } else {
-    next();
+  try {
+    // Ensure auth state is initialized before proceeding
+    await authStore.initialize();
+
+    const isAuthenticated = authStore.isAuthenticated;
+    console.log("Auth status:", isAuthenticated);
+
+    if (to.meta.requireGuest && isAuthenticated) {
+      // Redirect authenticated users away from guest-only pages
+      next({ path: "/" });
+    } else if (to.meta.requiresAuth && !isAuthenticated) {
+      // Redirect unauthenticated users to the login page
+      next({ path: "/login", query: { redirect: to.fullPath } });
+    } else {
+      // Allow navigation
+      next();
+    }
+  } catch (error) {
+    console.error("Authentication check failed:", error);
+    next({ path: "/login" });
   }
 });
 

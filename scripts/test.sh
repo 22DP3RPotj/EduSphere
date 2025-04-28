@@ -1,5 +1,5 @@
 #!/bin/bash
 
-export DJANGO_SETTINGS_MODULE=backend.config.settings
+source ./scripts/setup.sh
 
-pytest
+python manage.py test backend/core

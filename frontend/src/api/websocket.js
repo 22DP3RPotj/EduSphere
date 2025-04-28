@@ -1,6 +1,4 @@
 import { ref } from 'vue';
-import { apolloClient } from '@/api/apollo.client';
-import { gql } from '@apollo/client/core';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from './room.api';
 import { useApi } from '@/composables/useApi';
@@ -19,8 +17,7 @@ export function useWebSocket(username, roomSlug) {
   const RECONNECT_DELAY = 3000; // 3 seconds
 
   async function initializeWebSocket() {
-    const token = authStore.token;
-    if (!token) {
+    if (!authStore.isAuthenticated) {
       notifications.error({message: 'Authentication required'});
       return null;
     }
@@ -35,7 +32,7 @@ export function useWebSocket(username, roomSlug) {
       notifications.error({message: 'Failed to load messages'});
     }
 
-    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost/ws/chat/${username}/${roomSlug}/?token=${token}`;
+    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost/ws/chat/${username}/${roomSlug}`;
     
     function createWebSocket() {
       socket.value = new WebSocket(wsUrl);

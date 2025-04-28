@@ -1,5 +1,6 @@
+import graphene
 from graphene_django.types import DjangoObjectType
-from .models import User, Room, Topic, Message
+from ..models import User, Room, Topic, Message
 
 
 class UserType(DjangoObjectType):
@@ -21,3 +22,8 @@ class MessageType(DjangoObjectType):
     class Meta:
         model = Message
         fields = ("id", "user", "room", "body", "created", "updated")
+
+
+class AuthStatusType(graphene.ObjectType):
+    is_authenticated = graphene.Boolean(required=True)
+    user = graphene.Field(UserType)

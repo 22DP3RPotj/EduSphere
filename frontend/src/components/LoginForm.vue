@@ -45,7 +45,7 @@ async function handleLogin() {
   isLoading.value = false;
 
   if (success) {
-    router.push("/create-room");
+    router.push("/");
   }
 }
 </script>

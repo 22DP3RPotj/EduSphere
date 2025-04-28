@@ -21,3 +21,6 @@ backup.sql
 local*
 *.pem
 TODO
+
+# Logs
+*.log

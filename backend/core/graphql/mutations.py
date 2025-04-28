@@ -1,14 +1,22 @@
 import graphene
 import graphql_jwt
-from .types import UserType, RoomType
-from .models import Room, Topic, Message
-from .forms import UserForm, RegisterForm, RoomForm
 from django.shortcuts import get_object_or_404
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required
-from graphql_jwt.shortcuts import get_token
 from graphql import GraphQLError
 
+from .types import UserType, RoomType
+from ..models import Room, Topic, Message
+from ..forms import UserForm, RegisterForm, RoomForm
+
+
+class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
+    user = graphene.Field(UserType)
+    success = graphene.Boolean()
+
+    @classmethod
+    def resolve(cls, root, info, **kwargs):
+        return cls(user=info.context.user, success=True)
 
 class RegisterUser(graphene.Mutation):
     class Arguments:
@@ -19,22 +27,17 @@ class RegisterUser(graphene.Mutation):
         password2 = graphene.String(required=True)
 
     user = graphene.Field(UserType)
-    token = graphene.String()
+    success = graphene.Boolean()
 
     def mutate(self, info, **kwargs):
         form = RegisterForm(kwargs)
-        
+
         if form.is_valid():
             user = form.save()
-            # Remove the Django session login to prevent session/token mismatch
-            # user.backend = "django.contrib.auth.backends.ModelBackend"
-            # login(info.context, user, backend=user.backend)
-            token = get_token(user)
-            return RegisterUser(user=user, token=token)
+            return RegisterUser(user=user, success=True)
         else:
             raise GraphQLError(form.errors.as_json())
-    
-
+     
 class UpdateUser(graphene.Mutation):
     class Arguments:
         username = graphene.String(required=False)
@@ -146,20 +149,8 @@ class JoinRoom(graphene.Mutation):
         return JoinRoom(room=room)
     
 
-# Add logout mutation to clear the session
-class LogoutUser(graphene.Mutation):
-    success = graphene.Boolean()
-
-    @login_required
-    def mutate(self, info):
-        from django.contrib.auth import logout
-        logout(info.context)
-        return LogoutUser(success=True)
-
-
 class AppMutation(graphene.ObjectType):
     register_user = RegisterUser.Field()
-    logout_user = LogoutUser.Field()
     update_user = UpdateUser.Field()
     create_room = CreateRoom.Field()
     delete_room = DeleteRoom.Field()
@@ -167,9 +158,11 @@ class AppMutation(graphene.ObjectType):
     delete_message = DeleteMessage.Field()
 
 class AuthMutation(graphene.ObjectType):
-    token_auth = graphql_jwt.ObtainJSONWebToken.Field()
+    token_auth = ObtainJSONWebToken.Field()
     verify_token = graphql_jwt.Verify.Field()
     refresh_token = graphql_jwt.Refresh.Field()
+    delete_token  = graphql_jwt.DeleteJSONWebTokenCookie.Field()
+    delete_refresh_token = graphql_jwt.DeleteRefreshTokenCookie.Field()
 
 class Mutation(AppMutation, AuthMutation, graphene.ObjectType):
     pass

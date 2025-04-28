@@ -1,72 +1,144 @@
+// src/stores/auth.store.js
 import { defineStore } from "pinia";
-import { apolloClient } from "@/api/apollo.client";
-import { gql } from "@apollo/client/core";
-import { useNotifications } from "@/composables/useNotifications";
+
+// Grace period in seconds for token expiration checks
+const TOKEN_EXPIRATION_GRACE_PERIOD = 30;
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    token: localStorage.getItem("token") || null,
+    isAuthenticated: false,
     user: null,
-    isLoadingUser: false,
+    tokenExpiration: null, // JWT token exp claim (in seconds)
+    tokenIssueTime: null,  // Time when token was issued/refreshed (in seconds)
+    refreshTokenExpiration: null, // When the refresh token expires (in seconds)
+    tokenRevoked: false,  // Flag to track if token has been manually revoked
   }),
+
   getters: {
     currentUser: (state) => state.user,
-    isAuthenticated: (state) => !!state.token,
+    
+    // Check if token is expired with grace period
+    isTokenExpired: (state) => {
+      if (!state.tokenExpiration) return true;
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      // Subtract grace period from expiration to give buffer time for operations
+      return currentTime >= (state.tokenExpiration - TOKEN_EXPIRATION_GRACE_PERIOD);
+    },
+    
+    // Check if refresh token is expired
+    isRefreshTokenExpired: (state) => {
+      if (!state.refreshTokenExpiration) return true;
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      return currentTime >= state.refreshTokenExpiration;
+    },
+    
+    // Calculate percentage of token life elapsed
+    tokenLifePercentage: (state) => {
+      if (!state.tokenExpiration || !state.tokenIssueTime) return 100;
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      const totalLifespan = state.tokenExpiration - state.tokenIssueTime;
+      
+      if (totalLifespan <= 0) return 100;
+      
+      const elapsed = currentTime - state.tokenIssueTime;
+      const percentage = (elapsed / totalLifespan) * 100;
+      
+      return Math.max(0, Math.min(100, percentage));
+    },
+    
+    // Calculate remaining token lifetime in seconds
+    tokenRemainingSeconds: (state) => {
+      if (!state.tokenExpiration) return 0;
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      const remaining = state.tokenExpiration - currentTime;
+      
+      return Math.max(0, remaining);
+    },
+    
+    // Calculate total token lifespan in seconds
+    tokenTotalLifespan: (state) => {
+      if (!state.tokenExpiration || !state.tokenIssueTime) return 0;
+      
+      return Math.max(0, state.tokenExpiration - state.tokenIssueTime);
+    },
+    
+    // Check if auth state is valid
+    hasValidAuthState: (state) => {
+      return state.isAuthenticated && 
+             state.user && 
+             state.tokenExpiration && 
+             !state.tokenRevoked &&
+             !state.isTokenExpired;
+    }
   },
+
   actions: {
-    setToken(token) {
-      if (token) {
-        localStorage.setItem("token", token);
-        this.token = token;
-      } else {
-        this.clearToken();
-      }
+    setAuthenticated(status) {
+      this.isAuthenticated = status;
     },
-    clearToken() {
-      localStorage.removeItem("token");
-      this.token = null;
+
+    setUser(user) {
+      this.user = user;
+    },
+
+    setTokenExpiration(exp) {
+      this.tokenExpiration = exp;
+      // Store the issue time when setting expiration
+      this.tokenIssueTime = Math.floor(Date.now() / 1000);
+    },
+    
+    setRefreshTokenExpiration(exp) {
+      this.refreshTokenExpiration = exp;
+    },
+    
+    markTokenRevoked() {
+      this.tokenRevoked = true;
+    },
+    
+    resetTokenRevoked() {
+      this.tokenRevoked = false;
+    },
+
+    clearAuth() {
+      this.isAuthenticated = false;
       this.user = null;
+      this.tokenExpiration = null;
+      this.tokenIssueTime = null;
+      this.refreshTokenExpiration = null;
+      this.tokenRevoked = false;
     },
-    async fetchUser() {
-      const notifications = useNotifications();
 
-      if (!this.token) return;
-      this.isLoadingUser = true;
-      try {
-        const { data } = await apolloClient.query({
-          query: gql`
-            query GetCurrentUser {
-              me {
-                id
-                username
-                email
-                name
-              }
-            }
-          `,
-          fetchPolicy: "network-only",
-        });
-        this.user = data.me;
-        return data.me;
-      } catch (error) {
-        notifications.error(error);
-        this.clearToken();
-        throw error;
-      } finally {
-        this.isLoadingUser = false;
-      }
-    },
-    async initialize() {
-      window.addEventListener("storage", (event) => {
-        if (event.key === "token") {
-          this.token = event.newValue;
-          this.token ? this.fetchUser() : this.clearToken();
+    initialize() {
+      // Check if stored auth state is valid
+      if (this.isAuthenticated) {
+        // Check if token is expired or refresh token is expired
+        if (this.isTokenExpired || this.isRefreshTokenExpired || this.tokenRevoked) {
+          console.log("Auth state invalid during initialization, clearing auth");
+          this.clearAuth();
         }
-      });
-
-      if (this.token && !this.user) {
-        await this.fetchUser();
       }
-    },
+    }
   },
+  
+  persist: {
+    enabled: true,
+    strategies: [
+      {
+        key: 'auth',
+        storage: localStorage,
+        paths: [
+          'isAuthenticated', 
+          'user', 
+          'tokenExpiration', 
+          'tokenIssueTime',
+          'refreshTokenExpiration',
+          'tokenRevoked'
+        ]
+      }
+    ]
+  }
 });

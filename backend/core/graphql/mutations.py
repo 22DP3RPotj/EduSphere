@@ -43,7 +43,6 @@ class UpdateUser(graphene.Mutation):
     class Arguments:
         username = graphene.String(required=False)
         name = graphene.String(required=False)
-        email = graphene.String(required=False)
         bio = graphene.String(required=False)
         avatar = Upload(required=False)
 
@@ -54,8 +53,14 @@ class UpdateUser(graphene.Mutation):
         user = info.context.user
         avatar = kwargs.pop("avatar", None)
         
+        data = {
+            "username": kwargs.get("username", user.username),
+            "name": kwargs.get("name", user.name),
+            "bio": kwargs.get("bio", user.bio),
+        }
+        
         form = UserForm(
-            data=kwargs,
+            data=data,
             files={"avatar": avatar} if avatar else None,
             instance=user
         )

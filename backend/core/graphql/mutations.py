@@ -1,13 +1,14 @@
 import graphene
 import graphql_jwt
-from django.shortcuts import get_object_or_404
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from .types import UserType, RoomType
+from .types import UserType, RoomType, MessageType
 from ..models import Room, Topic, Message
 from ..forms import UserForm, RegisterForm, RoomForm
+
+from .utils import format_form_errors
 
 
 class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
@@ -36,7 +37,7 @@ class RegisterUser(graphene.Mutation):
             user = form.save()
             return RegisterUser(user=user, success=True)
         else:
-            raise GraphQLError(form.errors.as_json())
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
      
 class UpdateUser(graphene.Mutation):
     class Arguments:
@@ -63,7 +64,7 @@ class UpdateUser(graphene.Mutation):
             form.save()
             return UpdateUser(user=user)
         else:
-            raise GraphQLError(form.errors.as_json())
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
 
 class CreateRoom(graphene.Mutation):
     class Arguments:
@@ -87,9 +88,10 @@ class CreateRoom(graphene.Mutation):
             room = form.save(commit=False)
             room.host = info.context.user
             room.save()
+            room.participants.add(info.context.user)
             return CreateRoom(room=room)
         else:
-            raise GraphQLError(form.errors.as_json())
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
 
 
 class DeleteRoom(graphene.Mutation):
@@ -101,14 +103,16 @@ class DeleteRoom(graphene.Mutation):
 
     @login_required
     def mutate(self, info, host_slug, room_slug):
-        room = get_object_or_404(
-            Room,
-            host__slug=host_slug,
-            slug=room_slug
-        )
+        try:
+            room = Room.objects.get(
+                host__slug=host_slug,
+                slug=room_slug
+            )
+        except Room.DoesNotExist:
+            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
         
         if room.host != info.context.user:
-            raise GraphQLError(f"Permission denied")
+            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
             
         room.delete()
         return DeleteRoom(success=True)
@@ -121,14 +125,37 @@ class DeleteMessage(graphene.Mutation):
 
     @login_required
     def mutate(self, info, message_id):
-        message = Message.objects.get(id=message_id)
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            raise GraphQLError("Message not found", extensions={"code": "NOT_FOUND"})
         
         if message.user != info.context.user:
-            raise GraphQLError(f"Permission denied")
+            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
         
         message.delete()
         return DeleteMessage(success=True)
     
+    
+class UpdateMessage(graphene.Mutation):
+    class Arguments:
+        message_id = graphene.UUID(required=True)
+        body = graphene.String(required=True)
+
+    message = graphene.Field(MessageType)
+
+    @login_required
+    def mutate(self, info, message_id, body):
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            raise GraphQLError("Message not found", extensions={"code": "NOT_FOUND"})
+        
+        if message.user != info.context.user:
+            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
+        
+        message.update(body)
+        return UpdateMessage(message=message)
     
 
 class JoinRoom(graphene.Mutation):
@@ -140,11 +167,14 @@ class JoinRoom(graphene.Mutation):
 
     @login_required
     def mutate(self, info, host_slug, room_slug):
-        room = get_object_or_404(
-            Room,
-            host__slug=host_slug,
-            slug=room_slug
-        )
+        try:
+            room = Room.objects.get(
+                host__slug=host_slug,
+                slug=room_slug
+            )
+        except Room.DoesNotExist:
+            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+
         room.participants.add(info.context.user)
         return JoinRoom(room=room)
     
@@ -156,6 +186,7 @@ class AppMutation(graphene.ObjectType):
     delete_room = DeleteRoom.Field()
     join_room = JoinRoom.Field()
     delete_message = DeleteMessage.Field()
+    update_message = UpdateMessage.Field()
 
 class AuthMutation(graphene.ObjectType):
     token_auth = ObtainJSONWebToken.Field()

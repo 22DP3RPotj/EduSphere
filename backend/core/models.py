@@ -94,8 +94,6 @@ class Message(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        if len(self.body) > 50:
-            return self.body[:50] + '...'
         return self.body
 
     class Meta:
@@ -118,3 +116,11 @@ class Message(models.Model):
             'created': self.created.isoformat(),
             'updated': self.updated.isoformat(),
         }
+        
+    def update(self, body):
+        """
+        Update the message body and save it to the database.
+        """
+        self.body = body
+        self.save()
+        

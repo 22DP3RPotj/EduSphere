@@ -64,6 +64,7 @@ class Room(models.Model):
             models.UniqueConstraint(
                 fields=['host', 'name'],
                 name='unique_room_per_host',
+                violation_error_message='You already have a room with this name.'
             )
         ]
         indexes = [
@@ -73,10 +74,9 @@ class Room(models.Model):
         ]
         
     def save(self, *args, **kwargs):
-        if not self.slug or self.name != Room.objects.get(pk=self.pk).name:
+        if not self.slug:
             self.slug = slugify(self.name)
-            while Room.objects.filter(host=self.host, slug=self.slug).exists():
-                self.slug = f"{self.slug}-{uuid.uuid4().hex[:4]}"
+        self.full_clean()
         super().save(*args, **kwargs)
         
     def get_absolute_url(self):
@@ -88,8 +88,9 @@ class Room(models.Model):
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey('Room', on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
     body = models.TextField()
+    edited = models.BooleanField(default=False)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -98,8 +99,8 @@ class Message(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['room', 'created']),  # Optimized queries for fetching room messages
-            models.Index(fields=['user']),             # Optimized queries for fetching user messages
+            models.Index(fields=['room', 'created']),
+            models.Index(fields=['user']),
         ]
         ordering = ['-created']
 
@@ -122,5 +123,6 @@ class Message(models.Model):
         Update the message body and save it to the database.
         """
         self.body = body
+        self.edited = True
         self.save()
         

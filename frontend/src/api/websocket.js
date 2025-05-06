@@ -1,12 +1,10 @@
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from './room.api';
-import { useApi } from '@/composables/useApi';
 import { useNotifications } from '@/composables/useNotifications';
 
 export function useWebSocket(username, roomSlug) {
   const { fetchRoomMessages } = useRoomApi();
-  const api = useApi();
   const socket = ref(null);
   const messages = ref([]);
   const connectionStatus = ref('disconnected');
@@ -22,15 +20,8 @@ export function useWebSocket(username, roomSlug) {
       return null;
     }
 
-    try {
-      const room_messages = await api.call(
-        () => fetchRoomMessages(username, roomSlug),
-        'Messages fetched'
-      )
-      messages.value = [...room_messages];
-    } catch (error) {
-      notifications.error({message: 'Failed to load messages'});
-    }
+    const room_messages = await fetchRoomMessages(username, roomSlug);
+    messages.value = [...room_messages];
 
     const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost/ws/chat/${username}/${roomSlug}`;
     

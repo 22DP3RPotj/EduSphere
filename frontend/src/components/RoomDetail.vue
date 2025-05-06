@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
 import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
-import { useApi } from '@/composables/useApi';
 import { apolloClient } from '@/api/apollo.client';
 import { gql } from '@apollo/client/core';
 import { inject } from 'vue';
@@ -16,7 +15,6 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const notifications = useNotifications();
-const api = useApi();
 const { deleteRoom, joinRoom, deleteMessage } = useRoomApi();
 
 // Room and WebSocket state
@@ -92,18 +90,10 @@ async function fetchRoom() {
 }
 
 async function handleMessageDelete(messageId) {
-  try {
-    const success = await api.call(
-      () => deleteMessage(messageId),
-      'Message deleted successfully'
-    );
-    
-    if (success) {
-      // More efficient way to remove message
-      messages.value = messages.value.filter(msg => msg.id !== messageId);
-    }
-  } catch (error) {
-    // Error handled by api.call
+  const success = await deleteMessage(messageId);
+  
+  if (success) {
+    messages.value = messages.value.filter(msg => msg.id !== messageId);
   }
 }
 
@@ -119,15 +109,8 @@ async function handleRoomDelete() {
   });
 
   if (result.isConfirmed) {
-    try {
-      await api.call(
-        () => deleteRoom(room.value.host.slug, room.value.slug),
-        'Room deleted successfully'
-      );
-      router.push('/');
-    } catch (error) {
-      // Error handled by api.call
-    }
+    await deleteRoom(room.value.host.slug, room.value.slug);
+    router.push('/');
   }
 }
 
@@ -140,15 +123,8 @@ watch(messages, async () => {
 });
 
 async function handleJoin() {
-  try {
-    await api.call(
-      () => joinRoom(room.value.host.slug, room.value.slug),
-      'Successfully joined room'
-    );
+    await joinRoom(room.value.host.slug, room.value.slug);
     await fetchRoom();
-  } catch (error) {
-    // Error handled by api.call
-  }
 }
 
 // Modified send message to use WebSocket hook

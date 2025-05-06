@@ -3,10 +3,12 @@ import { gql } from "@apollo/client/core";
 import { apolloClient } from "./apollo.client";
 import { useAuthStore } from "../stores/auth.store";
 import { useNotifications } from "@/composables/useNotifications";
+import { useApiWrapper } from "@/composables/api.wrapper";
 
 export function useAuthApi() {
   const authStore = useAuthStore();
   const notifications = useNotifications();
+  const apiWrapper = useApiWrapper();
 
   const LOGIN_MUTATION = gql`
     mutation TokenAuth($email: String!, $password: String!) {
@@ -97,14 +99,16 @@ export function useAuthApi() {
   }
 
   async function login(email, password) {
-    // Reset any previous token revocation status
     authStore.resetTokenRevoked();
     
     try {
-      const response = await apolloClient.mutate({
-        mutation: LOGIN_MUTATION,
-        variables: { email, password },
-      });
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.mutate({
+          mutation: LOGIN_MUTATION,
+          variables: { email, password },
+        }),
+        { suppressNotifications: false}
+      );
 
       if (!response?.data?.tokenAuth?.success) {
         notifications.error('Login failed. Please check your credentials.');
@@ -136,11 +140,10 @@ export function useAuthApi() {
       const lifespan = payload.exp - Math.floor(Date.now() / 1000);
       console.log(`Token lifespan: ${lifespan} seconds`);
       
-      notifications.success('Login successful!');
       return true;
     } catch (error) {
       console.error("Login error:", error);
-      notifications.error(error?.message || 'An error occurred during login');
+      // Don't show notification here as apiWrapper already did
       return false;
     }
   }
@@ -159,10 +162,13 @@ export function useAuthApi() {
         return false;
       }
 
-      const response = await apolloClient.mutate({
-        mutation: REFRESH_TOKEN_MUTATION,
-        fetchPolicy: 'no-cache' // Always get a fresh token from server
-      });
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.mutate({
+          mutation: REFRESH_TOKEN_MUTATION,
+          fetchPolicy: 'no-cache' // Always get a fresh token from server
+        }),
+        { suppressNotifications: false}
+      );
       
       if (!response?.data?.refreshToken?.payload) {
         console.error("Token refresh failed: missing payload");
@@ -208,10 +214,13 @@ export function useAuthApi() {
         return false;
       }
   
-      const registerResponse = await apolloClient.mutate({
-        mutation: REGISTER_MUTATION,
-        variables: { username, name, email, password1, password2 },
-      });
+      const registerResponse = await apiWrapper.callApi(
+        async () => apolloClient.mutate({
+          mutation: REGISTER_MUTATION,
+          variables: { username, name, email, password1, password2 },
+        }),
+        { suppressNotifications: false}
+      );
       
       if (!registerResponse?.data?.registerUser?.success) {
         notifications.error('Registration failed');
@@ -222,22 +231,6 @@ export function useAuthApi() {
       return await login(email, password1);
     } catch (error) {
       console.error("Registration error:", error);
-      
-      // Extract specific error messages from GraphQL if available
-      let errorMessage = 'An error occurred during registration';
-      
-      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-        const messages = error.graphQLErrors
-          .map(e => e.message)
-          .filter(Boolean)
-          .join('. ');
-          
-        if (messages) {
-          errorMessage = messages;
-        }
-      }
-      
-      notifications.error(errorMessage);
       return false;
     }
   }
@@ -247,17 +240,18 @@ export function useAuthApi() {
       // Mark token as revoked to prevent refresh attempts during logout
       authStore.markTokenRevoked();
       
-      const response = await apolloClient.mutate({
-        mutation: LOGOUT_MUTATION
-      });
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.mutate({
+          mutation: LOGOUT_MUTATION
+        }),
+        { suppressNotifications: false}
+      );
 
       // Always clear client-side auth state
       authStore.clearAuth();
       await apolloClient.clearStore();
       
-      if (response?.data?.deleteToken?.deleted) {
-        notifications.success('Logged out successfully');
-      } else {
+      if (!response?.data?.deleteToken?.deleted) {
         console.warn("Server logout may not have completed successfully");
       }
       return true;

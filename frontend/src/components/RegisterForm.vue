@@ -83,7 +83,7 @@ async function handleRegister() {
   isLoading.value = false;
 
   if (success) {
-    router.push("/create-room");
+    router.push("/");
   }
 }
 </script>

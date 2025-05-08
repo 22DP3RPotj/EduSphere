@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.db.models.constraints import Q, CheckConstraint
+from django.db.models.functions import Lower
 from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractUser
@@ -8,6 +9,7 @@ from django.core.validators import FileExtensionValidator
 
 
 class User(AbstractUser):
+    id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     email = models.EmailField(unique=True)
@@ -44,6 +46,7 @@ class Topic(models.Model):
         return self.name
     
     class Meta:
+        ordering = [Lower('name')]
         constraints = [
             CheckConstraint(
                 check=Q(name__regex=r'^[A-Za-z]+$'),

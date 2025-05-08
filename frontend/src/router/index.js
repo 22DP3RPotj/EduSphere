@@ -7,18 +7,23 @@ const routes = [
     component: () => import("@/components/Home.vue"),
   },
   {
+    path: "/auth",
+    component: () => import("@/views/authPage.vue"),
+    meta: { requireGuest: true }
+  },
+  {
     path: "/login",
-    component: () => import("@/components/LoginForm.vue"),
+    redirect: "/auth",
     meta: { requireGuest: true }
   },
   {
     path: "/register",
-    component: () => import("@/components/RegisterForm.vue"),
+    redirect: "/auth",
     meta: { requireGuest: true }
   },
   { 
     path: "/create-room", 
-    component: () => import("@/components/CreateRoom.vue"), 
+    component: () => import("@/views/CreateRoomPage.vue"), 
     meta: { requiresAuth: true } 
   },
   {
@@ -47,14 +52,14 @@ router.beforeEach(async (to, from, next) => {
       next({ path: "/" });
     } else if (to.meta.requiresAuth && !isAuthenticated) {
       // Redirect unauthenticated users to the login page
-      next({ path: "/login", query: { redirect: to.fullPath } });
+      next({ path: "/auth", query: { redirect: to.fullPath } });
     } else {
       // Allow navigation
       next();
     }
   } catch (error) {
     console.error("Authentication check failed:", error);
-    next({ path: "/login" });
+    next({ path: "/auth" });
   }
 });
 

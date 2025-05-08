@@ -21,7 +21,7 @@ class TopicType(DjangoObjectType):
 class MessageType(DjangoObjectType):
     class Meta:
         model = Message
-        fields = ("id", "user", "room", "body", "created", "updated")
+        fields = ("id", "user", "room", "body", "edited", "created", "updated")
 
 
 class AuthStatusType(graphene.ObjectType):

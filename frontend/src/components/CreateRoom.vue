@@ -1,12 +1,45 @@
 <template>
-  <div>
-    <h2>Create Room</h2>
-    <input v-model="name" placeholder="Room Name">
-    <input v-model="topic_name" placeholder="Topic Name">
-    <input v-model="description" placeholder="Description">
-    <button @click="submitRoom" :disabled="isLoading">
-      {{ isLoading ? 'Creating...' : 'Create' }}
-    </button>
+  <div class="auth-form-container">
+    <form @submit.prevent="submitRoom" class="auth-form">
+      <h2 class="form-title">Create Room</h2>
+      
+      <div class="form-group">
+        <label for="room-name">Room Name</label>
+        <input
+          id="room-name"
+          v-model="name"
+          type="text"
+          placeholder="Enter room name"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="topic-name">Topic</label>
+        <input
+          id="topic-name"
+          v-model="topic_name"
+          type="text"
+          placeholder="Enter topic name"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description <span>(optional)</span></label>
+        <textarea
+          id="description"
+          v-model="description"
+          placeholder="Add a description"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" :disabled="isLoading">
+        <span v-if="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Creating...' : 'Create Room' }}
+      </button>
+    </form>
   </div>
 </template>
 
@@ -33,3 +66,29 @@ async function submitRoom() {
   isLoading.value = false;
 }
 </script>
+
+<style scoped>
+@import '@/assets/styles/form-styles.css';
+
+.form-group textarea {
+  width: 90%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background-color: var(--white);
+  transition: var(--transition);
+  resize: none; /* Changed from vertical to none */
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-group span {
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+</style>

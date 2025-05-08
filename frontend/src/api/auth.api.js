@@ -1,73 +1,19 @@
-// src/api/auth.api.js
-import { gql } from "@apollo/client/core";
 import { apolloClient } from "./apollo.client";
 import { useAuthStore } from "../stores/auth.store";
 import { useNotifications } from "@/composables/useNotifications";
 import { useApiWrapper } from "@/composables/api.wrapper";
 
+import {
+  LOGIN_MUTATION,
+  REFRESH_TOKEN_MUTATION,
+  REGISTER_MUTATION,
+  LOGOUT_MUTATION
+} from "./graphql/auth.mutations";
+
 export function useAuthApi() {
   const authStore = useAuthStore();
   const notifications = useNotifications();
   const apiWrapper = useApiWrapper();
-
-  const LOGIN_MUTATION = gql`
-    mutation TokenAuth($email: String!, $password: String!) {
-      tokenAuth(email: $email, password: $password) {
-        success
-        payload
-        refreshExpiresIn
-        user {
-          id
-          username
-          email
-          name
-        }
-      }
-    }
-  `;
-
-  const REFRESH_TOKEN_MUTATION = gql`
-    mutation RefreshToken {
-      refreshToken {
-        payload
-        refreshExpiresIn
-      }
-    }
-  `;
-
-  const REGISTER_MUTATION = gql`
-    mutation RegisterUser(
-      $username: String!
-      $name: String!
-      $email: String!
-      $password1: String!
-      $password2: String!
-    ) {
-      registerUser(
-        username: $username
-        name: $name
-        email: $email
-        password1: $password1
-        password2: $password2
-      ) {
-        success
-        user {
-          id
-          username
-          email
-          name
-        }
-      }
-    }
-  `;
-
-  const LOGOUT_MUTATION = gql`
-    mutation LogoutUser {
-      deleteToken {
-        deleted
-      }
-    }
-  `;
 
   // Helper function to validate JWT payload
   function validateTokenPayload(payload) {

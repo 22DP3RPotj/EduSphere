@@ -1,26 +1,22 @@
-import { gql } from "@apollo/client/core";
 import { apolloClient } from "./apollo.client";
 import { useRouter } from "vue-router";
 import { useApiWrapper } from "@/composables/api.wrapper";
 
+import {
+  ROOM_MESSAGES_QUERY,
+  TOPIC_QUERY
+} from "./graphql/room.queries";
+
+import {
+  CREATE_ROOM_MUTATION,
+  DELETE_ROOM_MUTATION,
+  JOIN_ROOM_MUTATION,
+  DELETE_MESSAGE_MUTATION
+} from "./graphql/room.mutations";
+
 export function useRoomApi() {
   const router = useRouter();
   const apiWrapper = useApiWrapper();
-
-  const ROOM_MESSAGES_QUERY = gql`
-    query RoomMessages($hostSlug: String!, $roomSlug: String!) {
-      messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-        id
-        user {
-          id
-          username
-          avatar
-        }
-        body
-        created
-      }
-    }
-  `;
 
   async function fetchRoomMessages(hostSlug, roomSlug) {
     try {
@@ -37,51 +33,6 @@ export function useRoomApi() {
       return [];
     }
   }
-
-  const CREATE_ROOM_MUTATION = gql`
-    mutation CreateRoom($name: String!, $topicName: String!, $description: String) {
-      createRoom(name: $name, topicName: $topicName, description: $description) {
-        room {
-          name
-          description
-          topic { name }
-          host {
-            id
-            username 
-          }
-        }
-      }
-    }
-  `;
-
-  const DELETE_ROOM_MUTATION = gql`
-    mutation DeleteRoom($hostSlug: String!, $roomSlug: String!) {
-      deleteRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-        success
-      }
-    }
-  `;
-
-  const JOIN_ROOM_MUTATION = gql`
-    mutation JoinRoom($hostSlug: String!, $roomSlug: String!) {
-      joinRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-        room {
-          participants {
-            id
-            username
-          }
-        }
-      }
-    }
-  `;
-
-  const DELETE_MESSAGE_MUTATION = gql`
-    mutation DeleteMessage($messageId: UUID!) {
-      deleteMessage(messageId: $messageId) {
-        success
-      }
-    }
-  `;
 
   async function createRoom(name, topic_name, description) {
     try {
@@ -153,14 +104,6 @@ export function useRoomApi() {
       return false;
     }
   }
-
-  const TOPIC_QUERY = gql`
-    query Topics {
-      topics {
-        name
-      }
-    }
-  `;
 
   async function fetchTopics() {
     try {

@@ -7,7 +7,11 @@ class QueryTests(JSONWebTokenTestCase):
     def setUp(self):
         from backend.core.models import Room, Topic, Message
         
-        self.user = get_user_model().objects.create(username="testuser", email="test@email.com")
+        self.user = get_user_model().objects.create_user(
+            name="Test User",
+            username="testuser",
+            email="test@email.com",
+        )
         self.topic = Topic.objects.create(name="Tech")
         self.room = Room.objects.create(
             host=self.user,

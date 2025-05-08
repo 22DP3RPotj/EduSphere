@@ -90,7 +90,11 @@ class UserMutationsTests(JSONWebTokenTestCase):
         self.assertIn("password2", result.errors[0].extensions["errors"])
 
     def test_update_user_success(self):
-        user = User.objects.create(name="TestUser", username="testuser", email="test@email.com")
+        user = User.objects.create_user(
+            name="TestUser",
+            username="testuser",
+            email="test@email.com",
+        )
         self.client.authenticate(user)
         mutation = """
             mutation UpdateUser($username: String) {
@@ -106,7 +110,11 @@ class UserMutationsTests(JSONWebTokenTestCase):
         self.assertEqual(result.data["updateUser"]["user"]["username"], "newusername")
 
     def test_update_user_avatar(self):
-        user = User.objects.create(name="TestUser", username="testuser", email="test@email.com")
+        user = User.objects.create_user(
+            name="TestUser",
+            username="testuser",
+            email="test@email.com",
+        )
         self.client.authenticate(user)
         avatar = SimpleUploadedFile("avatar.jpg", create_test_image(), content_type="image/jpeg")
         mutation = """
@@ -127,8 +135,12 @@ class UserMutationsTests(JSONWebTokenTestCase):
 class RoomMutationsTests(JSONWebTokenTestCase):
 
     def setUp(self):
-        self.user = User.objects.create(name="TestHost", username="testhost", email="host@email.com")
-        self.topic = Topic.objects.create(name="Existing Topic")
+        self.user = User.objects.create_user(
+            name="TestHost",
+            username="testhost",
+            email="host@email.com",
+        )
+        self.topic = Topic.objects.create(name="ExistingTopic")
 
     def test_create_room_success(self):
         self.client.authenticate(self.user)
@@ -143,10 +155,10 @@ class RoomMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"name": "New Room", "topicName": "New Topic"}
+        variables = {"name": "New Room", "topicName": "NewTopic"}
         result: ExecutionResult = self.client.execute(mutation, variables)
         room = Room.objects.get(name="New Room")
-        self.assertEqual(room.topic.name, "New Topic")
+        self.assertEqual(room.topic.name, "NewTopic")
         self.assertEqual(room.host, self.user)
 
     def test_delete_room_success(self):
@@ -167,11 +179,19 @@ class RoomMutationsTests(JSONWebTokenTestCase):
 class MessageMutationsTests(JSONWebTokenTestCase):
 
     def setUp(self):
-        self.user = User.objects.create(name="TestUser", username="testuser", email="test@email.com")
+        self.user = User.objects.create_user(
+            name="TestUser",
+            username="testuser",
+            email="test@email.com",
+        )
         self.room = Room.objects.create(
-            host=User.objects.create(username="hostuser"),
+            host=User.objects.create_user(
+                name="HostUser",
+                username="hostuser",
+                email="host@email.com",
+            ),
             name="Test Room",
-            topic=Topic.objects.create(name="Test Topic")
+            topic=Topic.objects.create(name="TestTopic")
         )
 
     def test_delete_message_success(self):

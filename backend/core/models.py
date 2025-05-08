@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.db.models.constraints import Q, CheckConstraint
 from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractUser
@@ -24,10 +25,9 @@ class User(AbstractUser):
         return self.username
     
     def save(self, *args, **kwargs):
-        if not self.slug or self.username != User.objects.get(pk=self.pk).username:
+        if not self.slug:
             self.slug = slugify(self.username)
-            while User.objects.filter(slug=self.slug).exists():
-                self.slug = f"{self.slug}-{uuid.uuid4().hex[:4]}"
+        self.full_clean()
         super().save(*args, **kwargs)
         
     class Meta:
@@ -42,6 +42,18 @@ class Topic(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                check=Q(name__regex=r'^[A-Za-z]+$'),
+                name='no_spaces_in_topic',
+                violation_error_message="Topic name must consist of letters only."),
+        ]
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class Room(models.Model):

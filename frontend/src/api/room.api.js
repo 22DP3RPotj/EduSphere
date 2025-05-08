@@ -1,28 +1,26 @@
 import { gql } from "@apollo/client/core";
 import { apolloClient } from "./apollo.client";
-import { useNotifications } from "@/composables/useNotifications";
 import { useRouter } from "vue-router";
 import { useApiWrapper } from "@/composables/api.wrapper";
 
 export function useRoomApi() {
-  const notifications = useNotifications();
   const router = useRouter();
   const apiWrapper = useApiWrapper();
 
   const ROOM_MESSAGES_QUERY = gql`
-  query RoomMessages($hostSlug: String!, $roomSlug: String!) {
-    messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-      id
-      user {
+    query RoomMessages($hostSlug: String!, $roomSlug: String!) {
+      messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
         id
-        username
-        avatar
+        user {
+          id
+          username
+          avatar
+        }
+        body
+        created
       }
-      body
-      created
     }
-  }
-`;
+  `;
 
   async function fetchRoomMessages(hostSlug, roomSlug) {
     try {
@@ -156,11 +154,35 @@ export function useRoomApi() {
     }
   }
 
+  const TOPIC_QUERY = gql`
+    query Topics {
+      topics {
+        name
+      }
+    }
+  `;
+
+  async function fetchTopics() {
+    try {
+      const result = await apiWrapper.callApi(
+        async () => apolloClient.query({
+          query: TOPIC_QUERY,
+        })
+      );
+
+      return result.data.topics;
+    } catch (error) {
+      console.error("Error fetching topics:", error);
+      return [];
+    }
+  }
+
   return {
     createRoom,
     deleteRoom,
     joinRoom,
     deleteMessage,
     fetchRoomMessages,
+    fetchTopics,
   };
 }

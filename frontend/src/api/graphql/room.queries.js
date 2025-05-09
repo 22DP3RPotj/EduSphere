@@ -10,6 +10,7 @@ export const ROOM_QUERY = gql`
             host {
                 id
                 username
+                name
                 slug
                 avatar
             }
@@ -35,7 +36,9 @@ export const ROOM_MESSAGES_QUERY = gql`
                 avatar
             }
             body
+            edited
             created
+            updated
         }
     }
 `;

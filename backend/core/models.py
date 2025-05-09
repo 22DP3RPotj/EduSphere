@@ -104,7 +104,7 @@ class Message(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    body = models.TextField()
+    body = models.TextField(max_length=1000)
     edited = models.BooleanField(default=False)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -126,11 +126,12 @@ class Message(models.Model):
         return {
             'id': str(self.id),
             'user': self.user.username,
-            'user_id': self.user.id,
-            'room': str(self.room.id),
+            'user_id': str(self.user.id),
             'body': self.body,
             'created': self.created.isoformat(),
+            'edited': self.edited,
             'updated': self.updated.isoformat(),
+            'userAvatar': self.user.avatar.url if self.user.avatar else None,
         }
         
     def update(self, body):

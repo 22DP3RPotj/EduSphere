@@ -18,7 +18,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const notifications = useNotifications();
-const { deleteRoom, joinRoom, deleteMessage } = useRoomApi();
+const { deleteRoom, joinRoom } = useRoomApi();
 
 // Room and WebSocket state
 const room = ref(null);
@@ -31,11 +31,10 @@ const {
   messages,
   initializeWebSocket,
   sendMessage: sendWebSocketMessage,
+  deleteMessage: deleteWebSocketMessage,
+  updateMessage: updateWebSocketMessage,
   closeWebSocket,
 } = useWebSocket(route.params.hostSlug, route.params.roomSlug);
-
-// Queries remain the same as in your previous implementation
-
 
 // Computed properties
 const isHost = computed(() => {
@@ -70,10 +69,26 @@ async function fetchRoom() {
 }
 
 async function handleMessageDelete(messageId) {
-  const success = await deleteMessage(messageId);
-  
-  if (success) {
-    messages.value = messages.value.filter(msg => msg.id !== messageId);
+  try {
+    const success = await deleteWebSocketMessage(messageId);
+    
+    if (!success) {
+      notifications.warning('Failed to delete message. WebSocket connection may be lost.');
+    }
+  } catch (error) {
+    notifications.error('Error deleting message: ' + error.message);
+  }
+}
+
+async function handleMessageUpdate(messageId, newBody) {
+  try {
+    const success = await updateWebSocketMessage(messageId, newBody);
+    
+    if (!success) {
+      notifications.warning('Failed to update message. WebSocket connection may be lost.');
+    }
+  } catch (error) {
+    notifications.error('Error updating message: ' + error.message);
   }
 }
 
@@ -178,6 +193,7 @@ onBeforeUnmount(() => {
             :message="message"
             :current-user-id="authStore.user?.id"
             @delete-message="handleMessageDelete"
+            @update-message="handleMessageUpdate"
           />
         </div>
         
@@ -213,3 +229,137 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Existing styles remain the same */
+.room-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.room-loading, .room-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #09f;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.room-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.room-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.back-button {
+  margin-right: 1rem;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+}
+
+.room-topic {
+  margin-left: 1rem;
+  background-color: #f0f0f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.delete-button {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+}
+
+.join-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+}
+
+.room-conversation {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.message-input-container {
+  padding: 1rem;
+  border-top: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+.message-input-container form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.message-input-container input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.message-input-container button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.message-input-container button:disabled {
+  background-color: #a5d6a7;
+  cursor: not-allowed;
+}
+
+.auth-prompt, .join-prompt {
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+</style>

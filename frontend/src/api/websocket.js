@@ -42,16 +42,22 @@ export function useWebSocket(username, roomSlug) {
           return;
         }
         
-        // Use received timestamp or generate a new one
-        const messageTimestamp = receivedMessage.timestamp 
-          ? new Date(receivedMessage.timestamp).toISOString() 
-          : new Date().toISOString();
-
-        messages.value.push({
-          ...receivedMessage,
-          created: messageTimestamp,
-          user: receivedMessage.user || { username: receivedMessage.username }
-        });
+        // Handle different message actions
+        const action = receivedMessage.action || 'new'; // Default to 'new' for backward compatibility
+        
+        switch (action) {
+          case 'new':
+            handleNewMessage(receivedMessage);
+            break;
+          case 'delete':
+            handleDeleteMessage(receivedMessage);
+            break;
+          case 'update':
+            handleUpdateMessage(receivedMessage);
+            break;
+          default:
+            handleNewMessage(receivedMessage);
+        }
       };
 
       socket.value.onerror = (error) => {
@@ -68,6 +74,35 @@ export function useWebSocket(username, roomSlug) {
       };
 
       return socket.value;
+    }
+
+    function handleNewMessage(receivedMessage) {
+      messages.value.push({
+        ...receivedMessage,
+        created: receivedMessage.created,
+        user: receivedMessage.user || { username: receivedMessage.username }
+      });
+    }
+
+    function handleDeleteMessage(receivedMessage) {
+      // Remove the message with the specified ID
+      const messageId = receivedMessage.id;
+      messages.value = messages.value.filter(msg => msg.id !== messageId);
+    }
+
+    function handleUpdateMessage(receivedMessage) {
+      // Update the message with the new content
+      const messageId = receivedMessage.id;
+      const messageIndex = messages.value.findIndex(msg => msg.id === messageId);
+      
+      if (messageIndex !== -1) {
+        messages.value[messageIndex] = {
+          ...messages.value[messageIndex],
+          body: receivedMessage.body,
+          edited: receivedMessage.edited,
+          updated: receivedMessage.updated
+        };
+      }
     }
 
     function attemptReconnect() {
@@ -96,12 +131,43 @@ export function useWebSocket(username, roomSlug) {
     }
   }
 
+  function deleteMessage(messageId) {
+    if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+      socket.value.send(JSON.stringify({
+        messageId,
+        type: 'delete',
+        timestamp: new Date().toISOString()
+      }));
+      return true;
+    } else {
+      notifications.warning('WebSocket is not connected. Cannot delete message.');
+      return false;
+    }
+  }
+
+  function updateMessage(messageId, newBody) {
+    if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+      socket.value.send(JSON.stringify({
+        messageId,
+        message: newBody,
+        type: 'update',
+        timestamp: new Date().toISOString()
+      }));
+      return true;
+    } else {
+      notifications.warning('WebSocket is not connected. Cannot update message.');
+      return false;
+    }
+  }
+
   return {
     socket,
     messages,
     connectionStatus,
     initializeWebSocket,
     sendMessage,
+    deleteMessage,
+    updateMessage,
     closeWebSocket: () => {
       if (socket.value) {
         socket.value.close();

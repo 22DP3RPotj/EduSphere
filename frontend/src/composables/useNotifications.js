@@ -19,7 +19,7 @@ export function useNotifications() {
         // Handle field-specific errors
         Object.entries(formErrors).forEach(([field, messages]) => {
           if (Array.isArray(messages)) {
-            messages.forEach(msg => errorMessages.push(msg));
+            messages.forEach(msg => errorMessages.push(`${field}: ${msg}`));
           } else if (typeof messages === 'string') {
             errorMessages.push(messages);
           }

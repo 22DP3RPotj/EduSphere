@@ -6,6 +6,11 @@ export function useNotifications() {
   const extractErrorMessages = (error) => {
     const errorMessages = [];
     
+    if (typeof error === 'object' && error !== null && error.error) {
+      errorMessages.push(error.error);
+      return errorMessages;
+    }
+    
     if (error.graphQLErrors && error.graphQLErrors.length > 0) {
       const gqlError = error.graphQLErrors[0];
       

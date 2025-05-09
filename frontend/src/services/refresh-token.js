@@ -238,10 +238,10 @@ class AuthTokenService {
     
     try {
       this.refreshInProgress = true;
-      const authApi = useAuthApi();
+      const { refreshToken } = useAuthApi();
       
       console.log("Refreshing token...");
-      const success = await authApi.refreshToken();
+      const success = await refreshToken();
       
       if (success) {
         // Reset retry counter on success

@@ -44,12 +44,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from ..models import Room, Message
 
         # Save the message to the database
-        room = await database_sync_to_async(Room.objects.get)(
+        room: Room = await database_sync_to_async(Room.objects.get)(
             host__slug=self.username,
             slug=self.room_slug
         )
         
-        new_message = await database_sync_to_async(Message.objects.create)(
+        # Check if the user is a participant in the room
+        if not await database_sync_to_async(room.participants.filter(id=self.user.id).exists)():
+            await self.send(text_data=json.dumps({"error": "You are not a participant in this room."}))
+            return
+        
+        new_message: Message = await database_sync_to_async(Message.objects.create)(
             user=self.user,
             room=room,
             body=message_body

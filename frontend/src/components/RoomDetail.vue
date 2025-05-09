@@ -6,9 +6,12 @@ import { useRoomApi } from '@/api/room.api';
 import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
 import { apolloClient } from '@/api/apollo.client';
-import { gql } from '@apollo/client/core';
 import { inject } from 'vue';
 import Message from '@/components/Message.vue';
+
+import {
+  ROOM_QUERY
+} from '@/api/graphql/room.queries';
 
 const Swal = inject('$swal');
 const authStore = useAuthStore();
@@ -32,30 +35,7 @@ const {
 } = useWebSocket(route.params.hostSlug, route.params.roomSlug);
 
 // Queries remain the same as in your previous implementation
-const ROOM_QUERY = gql`
-  query GetRoom($hostSlug: String!, $roomSlug: String!) {
-    room(hostSlug: $hostSlug, roomSlug: $roomSlug) {
-      name
-      slug
-      description
-      created
-      host {
-        id
-        username
-        slug
-        avatar
-      }
-      participants {
-        id
-        username
-        avatar
-      }
-      topic {
-        name
-      }
-    }
-  }
-`;
+
 
 // Computed properties
 const isHost = computed(() => {
@@ -131,8 +111,12 @@ async function handleJoin() {
 function sendMessage() {
   if (!messageInput.value.trim()) return;
   
-  sendWebSocketMessage(messageInput.value);
-  messageInput.value = '';
+  try {
+    sendWebSocketMessage(messageInput.value);
+    messageInput.value = '';
+  } catch (err) {
+    notifications.error(err);
+  }
 }
 
 // Lifecycle hooks

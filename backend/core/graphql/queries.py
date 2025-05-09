@@ -2,8 +2,8 @@ import graphene
 from .types import RoomType, TopicType, MessageType, UserType, AuthStatusType
 from ..models import Room, Topic, User
 from django.db.models import Q, Count
+from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
-from django.shortcuts import get_object_or_404
 
 class Query(graphene.ObjectType):
     rooms = graphene.List(
@@ -12,15 +12,15 @@ class Query(graphene.ObjectType):
         search=graphene.String(),
         topic=graphene.String()
     )
-    topics = graphene.List(
-        TopicType,
-        search=graphene.String(),
-        min_rooms=graphene.Int()
-    )
     room = graphene.Field(
         RoomType,
         host_slug=graphene.String(required=True),
         room_slug=graphene.String(required=True)
+    )
+    topics = graphene.List(
+        TopicType,
+        search=graphene.String(),
+        min_rooms=graphene.Int()
     )
     messages = graphene.List(
         MessageType,
@@ -30,6 +30,10 @@ class Query(graphene.ObjectType):
     users = graphene.List(
         UserType,
         search=graphene.String()
+    )
+    user =graphene.Field(
+        UserType,
+        id=graphene.UUID(required=True),
     )
     
     auth_status = graphene.Field(AuthStatusType)
@@ -79,18 +83,25 @@ class Query(graphene.ObjectType):
         return queryset.order_by('-room_count')
 
     def resolve_room(self, info, host_slug, room_slug):
-        return get_object_or_404(
-            Room,
-            host__slug=host_slug,
-            slug=room_slug
-        )
+        try:
+            room = Room.objects.get(
+                host__slug=host_slug,
+                slug=room_slug
+            )
+        except Room.DoesNotExist:
+            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+        
+        return room
 
     def resolve_messages(self, info, host_slug, room_slug):
-        room = get_object_or_404(
-            Room,
-            host__slug=host_slug,
-            slug=room_slug
-        )
+        try:
+            room = Room.objects.get(
+                host__slug=host_slug,
+                slug=room_slug
+            )
+        except Room.DoesNotExist:
+            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+
         return room.message_set.all().order_by('created')
 
     def resolve_users(self, info, search=None):
@@ -101,3 +112,11 @@ class Query(graphene.ObjectType):
                 Q(name__icontains=search)
             )
         return queryset
+    
+    def resolve_user(self, info, id):
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+
+        return user

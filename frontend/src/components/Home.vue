@@ -15,15 +15,15 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRouter, useRoute } from "vue-router";
 import { computed } from "vue";
 
-const authApi = useAuthApi();
+const { logout } = useAuthApi();
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
-const handleLogout = () => {
-    authApi.logout();
+const handleLogout = async () => {
+    await logout();
     
     if (route.meta.requiresAuth) {
         router.push('/');

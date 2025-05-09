@@ -93,7 +93,8 @@ const filteredTopics = computed(() => {
   if (!topicInput.value) return [];
   const searchTerm = topicInput.value.toString().toLowerCase();
   return topics.value.map(({ name }) => name).filter(topic => 
-    topic.toLowerCase().includes(searchTerm));
+    topic.toLowerCase().includes(searchTerm)
+  );
 });
 
 function onTopicInput() {

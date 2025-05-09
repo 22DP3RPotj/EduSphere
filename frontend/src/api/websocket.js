@@ -20,10 +20,11 @@ export function useWebSocket(username, roomSlug) {
       return null;
     }
 
-    const room_messages = await fetchRoomMessages(username, roomSlug);
-    messages.value = [...room_messages];
+    const fetchedMessages = await fetchRoomMessages(username, roomSlug);
+    messages.value = [...fetchedMessages];
 
-    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || `ws://localhost/ws/chat/${username}/${roomSlug}`;
+    // const wsUrl = import.meta.env.VITE_WS_URL
+    const wsUrl = `${window.location.protocol === 'https' ? 'wss' : 'ws'}://localhost/ws/chat/${username}/${roomSlug}`;
     
     function createWebSocket() {
       socket.value = new WebSocket(wsUrl);
@@ -35,6 +36,11 @@ export function useWebSocket(username, roomSlug) {
 
       socket.value.onmessage = (event) => {
         const receivedMessage = JSON.parse(event.data);
+
+        if (receivedMessage.error) {
+          notifications.error(receivedMessage);
+          return;
+        }
         
         // Use received timestamp or generate a new one
         const messageTimestamp = receivedMessage.timestamp 

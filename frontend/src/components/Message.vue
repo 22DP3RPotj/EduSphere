@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue';
 import { format } from 'timeago.js';
-import { useAuthStore } from '@/stores/auth.store';
 
 const props = defineProps({
   message: {

@@ -12,8 +12,11 @@ urlpatterns = [
     # path('', include('backend.core.urls')),
 ]
 
+# from django.conf.urls.static import static
+
 # if settings.DEBUG:
 #     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+#     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # handler400 = "backend.core.views.errors.custom_400"
 # handler403 = "backend.core.views.errors.custom_403"

@@ -5,14 +5,12 @@ The frontend is built using **Vue.js** and interacts with the **Django** backend
 ## Features
 - Course listing and search with filters
 - Secure authentication via JWT
-- Payment integration
 - Real-time chat with WebSocket support
-- User dashboards (Creator, Learner, Admin)
 
 ## Architecture Overview
 - **Framework**: Vue 3 + Vue Router
 - **State Management**: Pinia
-- **Styling**: Tailwind CSS
+- **Styling**: CSS
 - **API Communication**: Fetches data from Django backend
 
 ## Running the Frontend

@@ -1,15 +1,13 @@
-# Course Marketplace Platform
+# Real-time messaging platform
 
 [LICENSE](LICENSE)
 
-A full-stack course marketplace platform with real-time communication features. Built with Django (backend) and Vue.js (frontend).
+A full-stack real-time messaging platform. Built with Django (backend) and Vue.js (frontend).
 
 ## Table of Contents
 - [Features](#features)
 - [Architecture Overview](#architecture-overview)
 - [Installation Guide](#installation-guide)
-  - [Prerequisites](#prerequisites)
-  - [Setup](#setup)
 - [PostgreSQL Backup & Restore](#postgresql-backup--restore)
 - [Testing](#testing)
 - [Project Structure](#project-structure)
@@ -30,11 +28,10 @@ A full-stack course marketplace platform with real-time communication features. 
 - **Framework**: Django + Django Channels
 - **Database**: PostgreSQL (primary), Redis (real-time)
 - **APIs**: GraphQL endpoints
-- **Authentication**: JWT with OAuth2 social login
+- **Authentication**: JWT
 - **Key Features**:
   - WebSocket implementation for chat
-  - Commission-based payment system
-  - Role-based access control
+  - AdmModeration tools for managing users and content.
 
 ### Frontend (Vue.js)
 - **Framework**: Vue 3 + Vue Router
@@ -47,10 +44,79 @@ A full-stack course marketplace platform with real-time communication features. 
 
 ## Installation Guide
 
-### Prerequisites
+### Manual Setup
+
+#### Prerequisites
+  - Python 3.9+
+  - Node.js 16+
+  - PostgreSQL 14+
+  - Redis 6+
+
+#### Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/22DP3RPotj/EduSphere.git
+   cd EduSphere
+   ```
+2. Configure environment variables (create `.env` file):
+   ```env
+   SECRET_KEY=secret_key
+   DB_NAME=coredb
+   DB_USER=db_user
+   DB_PASSWORD=db_password
+   DB_HOST=localhost
+   DB_PORT=5432
+
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   ```
+
+#### Backend Setup
+1. Navigate to backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt # Windows: add '--no-binary uvloop'
+   ```
+4. Create database
+   ```bash
+   psql -U <db_user> -d postgres -c "CREATE DATABASE coredb;"
+   ```
+5. Run migrations:
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+
+#### Frontend Setup
+1. Navigate to frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+#### Running the Application
+```bash
+./scripts/run.sh
+```
+Access the application at [http://localhost](http://localhost)
+
+### Docker Setup
+
+#### Prerequisites
 - Docker and Docker Compose
 
-### Setup
+#### Setup
 
 1. Clone the repository:
    ```bash
@@ -93,20 +159,22 @@ A full-stack course marketplace platform with real-time communication features. 
 5. Access the application:
    - Frontend: http://localhost
    - Django Admin: http://localhost/admin
+   - Graphiql: http://ocalhost/graphql
 
 
 ## PostgreSQL Backup & Restore
 
+
 ### Backup PostgreSQL Database
 
 ```bash
-docker exec -t edusphere-postgres-1 pg_dump -U <db_user> -d coredb > backup.sql
+pg_dump -U <db_user> -d coredb > backup.sql
 ```
 
 ### Restore PostgreSQL Backup
 
 ```bash
-docker exec -i edusphere-postgres-1 psql -U <db_user> -d coredb < backup.sql
+psql -U <db_user> -d coredb < backup.sql
 ```
 
 ## Testing
@@ -114,7 +182,7 @@ docker exec -i edusphere-postgres-1 psql -U <db_user> -d coredb < backup.sql
 ### Running the tests
 
 ```bash
-docker-compose exec backend python manage.py test backend/core
+python manage.py test backend/core
 ```
 
 ## Project Structure

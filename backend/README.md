@@ -5,9 +5,7 @@ The backend is built using **Django** and **Django Channels** to support real-ti
 ## Features
 - User authentication (JWT-based with OAuth2 support)
 - Course management (CRUD operations for courses)
-- Payment processing (Stripe/PayPal)
 - WebSockets for real-time messaging
-- Role-based access control (Creator, Learner, Admin)
 - PostgreSQL database with Redis for real-time operations
 
 ## Architecture Overview

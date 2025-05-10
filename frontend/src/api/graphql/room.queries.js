@@ -50,3 +50,15 @@ export const TOPIC_QUERY = gql`
         }
     }
 `;
+
+export const USER_QUERY = gql`
+    query User($username: String!) {
+        user(userSlug: $username) {
+            username,
+            name,
+            slug,
+            avatar,
+            bio,
+        }
+    }
+`;

@@ -38,7 +38,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
                 ) {
                     user {
                         username
-                        email
                     }
                     success
                 }

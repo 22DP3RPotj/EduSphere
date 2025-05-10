@@ -9,7 +9,6 @@ export const LOGIN_MUTATION = gql`
             user {
                 id
                 username
-                email
                 name
             }
         }
@@ -44,7 +43,6 @@ export const REGISTER_MUTATION = gql`
             user {
                 id
                 username
-                email
                 name
             }
         }

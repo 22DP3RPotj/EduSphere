@@ -21,13 +21,13 @@
         
         <div class="form-content">
           <transition name="fade" mode="out-in">
-            <login-component
+            <login-form
               v-if="activeTab === 'login'"
               @login-success="handleLoginSuccess"
               @switch-to-register="activeTab = 'register'"
               key="login"
             />
-            <register-component
+            <register-form
               v-else
               @register-success="handleRegisterSuccess"
               @switch-to-login="activeTab = 'login'"
@@ -43,8 +43,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import LoginComponent from '@/components/LoginComponent.vue';
-import RegisterComponent from '@/components/RegisterComponent.vue';
+import LoginForm from '@/components/LoginForm.vue';
+import RegisterForm from '@/components/RegisterForm.vue';
 
 const router = useRouter();
 const route = useRoute();

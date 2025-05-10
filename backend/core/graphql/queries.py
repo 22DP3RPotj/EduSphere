@@ -31,9 +31,9 @@ class Query(graphene.ObjectType):
         UserType,
         search=graphene.String()
     )
-    user =graphene.Field(
+    user = graphene.Field(
         UserType,
-        id=graphene.UUID(required=True),
+        user_slug=graphene.String(required=True),
     )
     
     auth_status = graphene.Field(AuthStatusType)
@@ -113,9 +113,9 @@ class Query(graphene.ObjectType):
             )
         return queryset
     
-    def resolve_user(self, info, id):
+    def resolve_user(self, info, user_slug):
         try:
-            user = User.objects.get(id=id)
+            user = User.objects.get(slug=user_slug)
         except User.DoesNotExist:
             raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
 

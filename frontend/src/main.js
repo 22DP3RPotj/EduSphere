@@ -4,7 +4,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import { createPersistedStatePlugin } from 'pinia-plugin-persistedstate-2'
 import VueSweetalert2 from 'vue-sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+
 import "@/assets/styles/global.css";
+import "@/assets/styles/toasts.css";
+
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fas } from '@fortawesome/free-solid-svg-icons';

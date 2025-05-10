@@ -41,20 +41,13 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
   try {
-    // Ensure auth state is initialized before proceeding
-    await authStore.initialize();
-
     const isAuthenticated = authStore.isAuthenticated;
-    console.log("Auth status:", isAuthenticated);
 
     if (to.meta.requireGuest && isAuthenticated) {
-      // Redirect authenticated users away from guest-only pages
       next({ path: "/" });
     } else if (to.meta.requiresAuth && !isAuthenticated) {
-      // Redirect unauthenticated users to the login page
       next({ path: "/auth", query: { redirect: to.fullPath } });
     } else {
-      // Allow navigation
       next();
     }
   } catch (error) {

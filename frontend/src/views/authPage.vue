@@ -52,15 +52,11 @@ const route = useRoute();
 const activeTab = ref('login');
 
 function handleLoginSuccess() {
-  // Redirect to the homepage or intended destination
   const redirectPath = route.query.redirect || '/';
   router.push(redirectPath);
 }
 
 function handleRegisterSuccess() {
-  // After successful registration, you might want to:
-  // 1. Auto-login the user or
-  // 2. Switch to login tab with a success message
   router.push('/');
 }
 </script>

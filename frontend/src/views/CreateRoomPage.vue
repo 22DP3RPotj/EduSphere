@@ -21,7 +21,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 function handleRoomCreated() {
-  router.push('/'); // Or wherever you want to redirect after creation
+  router.push('/');
 }
 </script>
 

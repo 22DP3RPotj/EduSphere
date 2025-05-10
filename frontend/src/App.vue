@@ -17,13 +17,11 @@ export default {
     const isReady = ref(false);
 
     onMounted(() => {
-      // Initialize auth store
       authStore.initialize();
       
-      // Initialize token service
       authTokenService.init();
       
-      // Set up the watcher for auth state changes
+      // Watcher for auth state changes
       const unwatchAuth = watch(
         () => authStore.isAuthenticated,
         (isAuthenticated) => {
@@ -32,10 +30,8 @@ export default {
         { immediate: true }
       );
       
-      // App is ready to display
       isReady.value = true;
       
-      // Clean up on unmount
       onUnmounted(() => {
         unwatchAuth();
         authTokenService.cleanup();

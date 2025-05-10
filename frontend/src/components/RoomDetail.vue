@@ -20,13 +20,11 @@ const router = useRouter();
 const notifications = useNotifications();
 const { deleteRoom, joinRoom } = useRoomApi();
 
-// Room and WebSocket state
 const room = ref(null);
 const loading = ref(false);
 const messageInput = ref('');
 const messagesContainerRef = ref(null);
 
-// WebSocket specific state
 const {
   messages,
   initializeWebSocket,
@@ -36,7 +34,6 @@ const {
   closeWebSocket,
 } = useWebSocket(route.params.hostSlug, route.params.roomSlug);
 
-// Computed properties
 const isHost = computed(() => {
   return room.value?.host?.id === authStore.user?.id;
 });
@@ -50,7 +47,6 @@ const canSendMessage = computed(() => {
   return authStore.isAuthenticated && (isHost.value || isParticipant.value);
 });
 
-// Existing methods with minor modifications
 async function fetchRoom() {
   try {
     loading.value = true;
@@ -94,14 +90,25 @@ async function handleMessageUpdate(messageId, newBody) {
 
 async function handleRoomDelete() {
   const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: 'Do you want to delete this room?',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, delete it!'
-  });
+        title: '<h3>Are you sure?</h3>',
+        html: '<p>You want to delete this room?</p>',
+        background: '#f7f5f4',
+        showCloseButton: true,
+        closeButtonHtml: '&times;',
+        showCancelButton: true,
+        showConfirmButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        buttonsStyling: false,
+        reverseButtons: true,
+        customClass: {
+            popup: 'minimal-popup',
+            confirmButton: 'btn-confirm',
+            cancelButton: 'btn-cancel',
+            actions: 'center-buttons',
+            closeButton: 'close-btn',
+        },
+    });
 
   if (result.isConfirmed) {
     await deleteRoom(room.value.host.slug, room.value.slug);
@@ -122,7 +129,6 @@ async function handleJoin() {
     await fetchRoom();
 }
 
-// Modified send message to use WebSocket hook
 function sendMessage() {
   if (!messageInput.value.trim()) return;
   
@@ -140,14 +146,12 @@ onMounted(async () => {
     await authStore.initialize();
     await fetchRoom();
     
-    // Initialize WebSocket
     await initializeWebSocket();
   } catch (error) {
     notifications.error(error);
   }
 });
 
-// Cleanup WebSocket on component unmount
 onBeforeUnmount(() => {
   closeWebSocket();
 });
@@ -361,5 +365,87 @@ onBeforeUnmount(() => {
   padding: 1rem;
   text-align: center;
   border-top: 1px solid #eee;
+}
+</style>
+
+<style>
+.minimal-popup {
+    width: 425px;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #BDC3C7;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.center-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-confirm {
+    background-color: #f34075;
+    color: #ffffff;
+    font-family: Open Sans, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-confirm:hover {
+    background-color: #d53064;
+}
+
+.btn-cancel {
+    background-color: #f7f5f4;
+    color: #2C3E50;
+    font-family: Montserrat, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border: 1px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background-color: #e6e3e2;
+}
+
+
+.minimal-popup h3 {
+    color: #2C3E50;
+    font-size: 24px;
+    font-family: Montserrat, sans-serif;
+    font-weight: bold;
+    margin: 0 0 10px;
+    margin-bottom: 10px;
+}
+
+.minimal-popup p {
+    color: #2C3E50;
+    font-size: 14px;
+    font-family: Open Sans, sans-serif;
+    margin: 0 0 20px;
+    margin-bottom: 10px;
+}
+
+.close-btn {
+    font-size: 30px;
+    color: #2C3E50;
+    font-weight: bold;
+    position: absolute;
+    cursor: pointer;
+    background-color: transparent;
+    border-radius: 5px;
+}
+
+.close-btn:hover {
+    color: #1A252F;
+    background-color: #ececec;
 }
 </style>

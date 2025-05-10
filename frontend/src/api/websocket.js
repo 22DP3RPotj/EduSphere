@@ -43,7 +43,8 @@ export function useWebSocket(username, roomSlug) {
         }
         
         // Handle different message actions
-        const action = receivedMessage.action || 'new'; // Default to 'new' for backward compatibility
+        // Default to 'new' for backward compatibility
+        const action = receivedMessage.action || 'new';
         
         switch (action) {
           case 'new':
@@ -85,13 +86,11 @@ export function useWebSocket(username, roomSlug) {
     }
 
     function handleDeleteMessage(receivedMessage) {
-      // Remove the message with the specified ID
       const messageId = receivedMessage.id;
       messages.value = messages.value.filter(msg => msg.id !== messageId);
     }
 
     function handleUpdateMessage(receivedMessage) {
-      // Update the message with the new content
       const messageId = receivedMessage.id;
       const messageIndex = messages.value.findIndex(msg => msg.id === messageId);
       

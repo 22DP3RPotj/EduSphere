@@ -18,14 +18,12 @@ const emit = defineEmits(['delete-message', 'update-message']);
 const isEditing = ref(false);
 const editBody = ref('');
 
-// Check if current user can edit/delete message
 const isMessageOwner = computed(() => {
   return (props.message.user?.id || props.message.user_id) === props.currentUserId;
 });
 
 const formattedTimestamp = computed(() => {
   try {
-    // Ensure we're parsing a valid date and using local time
     const date = new Date(props.message.created);
     return format(date);
   } catch (error) {
@@ -34,8 +32,7 @@ const formattedTimestamp = computed(() => {
 });
 
 const userDisplayName = computed(() => {
-  // Handle both backend and dynamically generated message formats
-  return props.message.user?.username || props.message.user || 'Unknown User';
+  return props.message.user?.username || props.message.user || '[Unknown User]';
 });
 
 const userAvatar = computed(() => {

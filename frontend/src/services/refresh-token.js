@@ -1,4 +1,3 @@
-// src/services/refresh-token.js
 import { useAuthApi } from "@/api/auth.api";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNotifications } from "@/composables/useNotifications";
@@ -14,10 +13,10 @@ class AuthTokenService {
     // Default refresh at 75% of token lifetime
     this.REFRESH_PERCENTAGE = 75;
     
-    // Minimum time before refresh (15 seconds) to prevent rapid refresh cycles
+    // Minimum time before refresh (15 seconds)
     this.MIN_REFRESH_TIME = 15 * 1000;
     
-    // Maximum time before refresh (30 minutes) for very long-lived tokens
+    // Maximum time before refresh (30 minutes)
     this.MAX_REFRESH_TIME = 30 * 60 * 1000;
     
     // Time to wait before retrying after a failed refresh (5 seconds)
@@ -28,13 +27,11 @@ class AuthTokenService {
     this.retryCount = 0;
   }
 
-  // Initialize the service
   init() {
     if (this.initialized) return;
     
     const authStore = useAuthStore();
     
-    // Start refresh timer if user is already authenticated
     if (authStore.hasValidAuthState) {
       this.startRefreshTimer();
     }
@@ -76,7 +73,7 @@ class AuthTokenService {
     // Calculate elapsed percentage
     const elapsedPercentage = ((totalLifespanSeconds - remainingSeconds) / totalLifespanSeconds) * 100;
     
-    // If we've already passed the refresh threshold
+    // If the refresh threshold already passed
     if (elapsedPercentage >= this.REFRESH_PERCENTAGE) {
       return 0; // Refresh immediately
     }
@@ -127,9 +124,9 @@ class AuthTokenService {
       this.refreshToken();
     }, refreshTime);
     
-    const minutesUntilRefresh = Math.round(refreshTime / 60000);
-    console.log(`Token refresh scheduled in ${minutesUntilRefresh} ${minutesUntilRefresh === 1 ? 'minute' : 'minutes'} ` +
-                `(${this.REFRESH_PERCENTAGE}% of token lifetime)`);
+    // const minutesUntilRefresh = Math.round(refreshTime / 60000);
+    // console.log(`Token refresh scheduled in ${minutesUntilRefresh} ${minutesUntilRefresh === 1 ? 'minute' : 'minutes'} ` +
+    //             `(${this.REFRESH_PERCENTAGE}% of token lifetime)`);
   }
 
   // Stop refresh timer
@@ -179,7 +176,6 @@ class AuthTokenService {
 
   // Set the percentage of token lifetime at which to refresh
   setRefreshPercentage(percentage) {
-    // Validate percentage is between 10 and 90
     if (percentage < 10 || percentage > 90) {
       console.warn("Refresh percentage must be between 10 and 90, defaulting to 75");
       this.REFRESH_PERCENTAGE = 75;
@@ -251,7 +247,6 @@ class AuthTokenService {
         this.processRefreshQueue(true);
         return true;
       } else {
-        // Handle failed refresh
         this.handleRefreshFailure();
         this.processRefreshQueue(false);
         return false;
@@ -271,7 +266,7 @@ class AuthTokenService {
     const authStore = useAuthStore();
     this.retryCount++;
     
-    // If we haven't exceeded max retries and the refresh token isn't expired
+    // If max retries haven't exceeded and the refresh token isn't expired
     if (this.retryCount < this.MAX_RETRY_COUNT && !authStore.isRefreshTokenExpired) {
       console.log(`Token refresh failed, retrying in ${this.RETRY_DELAY/1000} seconds (attempt ${this.retryCount}/${this.MAX_RETRY_COUNT})`);
       
@@ -282,7 +277,7 @@ class AuthTokenService {
         }
       }, this.RETRY_DELAY);
     } else {
-      // We've exceeded max retries or refresh token is expired
+      // If max retries have exceeded  or refresh token is expired
       console.log("Max token refresh attempts exceeded or refresh token expired");
       const notifications = useNotifications();
       authStore.clearAuth();

@@ -27,8 +27,11 @@ class User(AbstractUser):
         return self.username
     
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.username)
+        if not self.slug or self.username != User.objects.get(pk=self.pk).username:
+            base_slug = slugify(self.username)
+            self.slug = base_slug
+            while User.objects.filter(slug=self.slug).exists():
+                self.slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
         self.full_clean()
         super().save(*args, **kwargs)
         
@@ -89,8 +92,11 @@ class Room(models.Model):
         ]
         
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
+        if not self.slug or self.name != Room.objects.get(pk=self.pk).name:
+            base_slug = slugify(self.name)
+            self.slug = base_slug
+            while Room.objects.filter(host=self.host, slug=self.slug).exists():
+                self.slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
         self.full_clean()
         super().save(*args, **kwargs)
         

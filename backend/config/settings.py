@@ -151,8 +151,8 @@ GRAPHENE = {
 
 GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
-    "JWT_EXPIRATION_DELTA": timedelta(minutes=3),
-    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=5),
+    "JWT_EXPIRATION_DELTA": timedelta(minutes=15),
+    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=7),
     "JWT_COOKIE_SECURE": False,  # TODO: HTTPS
     "JWT_COOKIE_HTTPONLY": True,
     "JWT_COOKIE_SAMESITE": "Lax",
@@ -241,15 +241,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static/"
+# STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+# ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-STATICFILES_STORAGE = "servestatic.storage.CompressedManifestStaticFilesStorage"
+# STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media files (User avatar)
 

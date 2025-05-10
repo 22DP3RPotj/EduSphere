@@ -1,4 +1,3 @@
-// src/stores/auth.store.js
 import { defineStore } from "pinia";
 
 // Grace period in seconds for token expiration checks
@@ -17,7 +16,6 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     currentUser: (state) => state.user,
     
-    // Check if token is expired with grace period
     isTokenExpired: (state) => {
       if (!state.tokenExpiration) return true;
       
@@ -26,7 +24,6 @@ export const useAuthStore = defineStore("auth", {
       return currentTime >= (state.tokenExpiration - TOKEN_EXPIRATION_GRACE_PERIOD);
     },
     
-    // Check if refresh token is expired
     isRefreshTokenExpired: (state) => {
       if (!state.refreshTokenExpiration) return true;
       
@@ -77,20 +74,32 @@ export const useAuthStore = defineStore("auth", {
   },
 
   actions: {
+    /**
+     * @param {boolean} status
+     */
     setAuthenticated(status) {
       this.isAuthenticated = status;
     },
 
+     /**
+     * @param {object|null} user
+     */
     setUser(user) {
       this.user = user;
     },
 
+    /**
+     * @param {number} exp
+     */
     setTokenExpiration(exp) {
       this.tokenExpiration = exp;
       // Store the issue time when setting expiration
       this.tokenIssueTime = Math.floor(Date.now() / 1000);
     },
     
+    /**
+     * @param {number} exp
+     */
     setRefreshTokenExpiration(exp) {
       this.refreshTokenExpiration = exp;
     },

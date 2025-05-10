@@ -96,16 +96,14 @@ const error = ref(null);
 const isLoading = ref(false);
 
 async function handleRegister() {
-  // Reset error
   error.value = null;
 
-  // Validate inputs
   if (!username.value || !name.value || !email.value || !password1.value || !password2.value) {
     error.value = "Please fill in all fields";
     return;
   }
 
-  // Password match validation
+
   if (password1.value !== password2.value) {
     error.value = "Passwords do not match";
     return;

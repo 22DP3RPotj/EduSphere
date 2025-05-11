@@ -4,11 +4,11 @@ import { useAuthStore } from "@/stores/auth.store";
 const routes = [
   {
     path: "/",
-    component: () => import("@/components/Home.vue"),
+    component: () => import("@/views/Home.vue"),
   },
   {
     path: "/auth",
-    component: () => import("@/views/authPage.vue"),
+    component: () => import("@/views/AuthPage.vue"),
     meta: { requireGuest: true }
   },
   {
@@ -28,12 +28,12 @@ const routes = [
   },
   {
     path: "/:hostSlug/:roomSlug",
-    component: () => import("@/components/RoomDetail.vue"),
+    component: () => import("@/views/RoomDetail.vue"),
   },
   {
     path: '/user/:username',
     name: 'UserProfile',
-    component: () => import('@/components/UserProfile.vue')
+    component: () => import('@/views/UserProfile.vue')
   }
 ];
 

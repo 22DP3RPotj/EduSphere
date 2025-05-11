@@ -15,8 +15,8 @@
 </template>
 
 <script setup>
-import CreateRoom from '@/components/CreateRoom.vue';
 import { useRouter } from 'vue-router';
+import CreateRoom from '@/components/CreateRoom.vue';
 
 const router = useRouter();
 

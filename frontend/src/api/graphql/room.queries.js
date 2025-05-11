@@ -1,7 +1,7 @@
 import { gql } from "@apollo/client";
 
 export const ROOM_QUERY = gql`
-    query GetRoom($hostSlug: String!, $roomSlug: String!) {
+    query Room($hostSlug: String!, $roomSlug: String!) {
         room(hostSlug: $hostSlug, roomSlug: $roomSlug) {
             name
             slug
@@ -26,6 +26,32 @@ export const ROOM_QUERY = gql`
     }
 `;
 
+export const ROOMS_QUERY = gql`
+    query Rooms($hostSlug: String, $search: String, $topic: String) {
+        rooms(hostSlug: $hostSlug, search: $search, topic: $topic) {
+            name
+            slug
+            description
+            created
+            topic {
+                name
+            }
+        }
+    }
+`;
+
+export const ROOM_PARTICIPATED_BY_USER_QUERY = gql`
+    query RoomParticipatedByUser($userSlug: String!) {
+        roomsParticipatedByUser(userSlug: $userSlug) {
+            name
+            slug
+            description
+            created
+            topic { name }
+        }
+    }
+`;
+
 export const ROOM_MESSAGES_QUERY = gql`
     query RoomMessages($hostSlug: String!, $roomSlug: String!) {
         messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
@@ -40,6 +66,21 @@ export const ROOM_MESSAGES_QUERY = gql`
             created
             updated
         }
+    }
+`;
+
+export const MESSAGES_BY_USER_QUERY = gql`
+    query MessagesByUser($userSlug: String!) {
+        messagesByUser(userSlug: $userSlug) {
+            body
+            edited
+            updated
+            created
+            room {
+                slug
+                name
+            }
+        } 
     }
 `;
 

@@ -7,11 +7,13 @@ import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
 import { apolloClient } from '@/api/apollo.client';
 import { inject } from 'vue';
-import Message from '@/components/Message.vue';
 
 import {
   ROOM_QUERY
 } from '@/api/graphql/room.queries';
+
+import Message from '@/components/Message.vue';
+// import UserAvatar from '@/components/UserAvatar.vue';
 
 const Swal = inject('$swal');
 const authStore = useAuthStore();
@@ -24,6 +26,7 @@ const room = ref(null);
 const loading = ref(false);
 const messageInput = ref('');
 const messagesContainerRef = ref(null);
+const showSidebar = ref(window.innerWidth > 768); // Show sidebar by default on desktop
 
 const {
   messages,
@@ -45,6 +48,33 @@ const isParticipant = computed(() => {
 
 const canSendMessage = computed(() => {
   return authStore.isAuthenticated && (isHost.value || isParticipant.value);
+});
+
+const participants = computed(() => {
+  if (!room.value) return [];
+  
+  // Add host to participants list if not already included
+  const allParticipants = [...room.value.participants];
+  
+  // Check if host is already in the participants list
+  const hostIncluded = allParticipants.some(p => p.id === room.value.host.id);
+  if (!hostIncluded) {
+    allParticipants.unshift({
+      ...room.value.host,
+      isHost: true
+    });
+  } else {
+    // Mark the host in the existing participants list
+    const hostIndex = allParticipants.findIndex(p => p.id === room.value.host.id);
+    if (hostIndex !== -1) {
+      allParticipants[hostIndex] = {
+        ...allParticipants[hostIndex],
+        isHost: true
+      };
+    }
+  }
+  
+  return allParticipants;
 });
 
 async function fetchRoom() {
@@ -116,6 +146,11 @@ async function handleRoomDelete() {
   }
 }
 
+// Toggle sidebar visibility
+function toggleSidebar() {
+  showSidebar.value = !showSidebar.value;
+}
+
 // Scroll to bottom when messages update
 watch(messages, async () => {
   await nextTick();
@@ -140,6 +175,19 @@ function sendMessage() {
   }
 }
 
+function navigateToUserProfile(username) {
+  router.push(`/user/${username}`);
+}
+
+// Handle window resize events for responsive sidebar
+function handleResize() {
+  if (window.innerWidth <= 768) {
+    showSidebar.value = false;
+  } else {
+    showSidebar.value = true;
+  }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   try {
@@ -147,6 +195,9 @@ onMounted(async () => {
     await fetchRoom();
     
     await initializeWebSocket();
+    
+    // Add resize event listener
+    window.addEventListener('resize', handleResize);
   } catch (error) {
     notifications.error(error);
   }
@@ -154,6 +205,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   closeWebSocket();
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
@@ -172,15 +224,17 @@ onBeforeUnmount(() => {
         <div class="room-header-left">
           <button @click="$router.push('/')" class="back-button">
             <font-awesome-icon icon="arrow-left" />
-            Back
           </button>
           <h2>{{ room.name }}</h2>
           <span class="room-topic" v-if="room.topic">{{ room.topic.name }}</span>
         </div>
         
         <div class="room-header-right">
+          <button @click="toggleSidebar" class="sidebar-toggle">
+            <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
+          </button>
           <button v-if="isHost" @click="handleRoomDelete" class="delete-button">
-            Delete
+            <font-awesome-icon icon="trash" />
           </button>
           <button v-if="!isParticipant && authStore.isAuthenticated" @click="handleJoin" class="join-button">
             Join Room
@@ -188,40 +242,66 @@ onBeforeUnmount(() => {
         </div>
       </div>
       
-      <!-- Room conversation -->
-      <div class="room-conversation">
-        <div ref="messagesContainerRef" class="messages-container">
-          <Message 
-            v-for="message in messages" 
-            :key="message.id" 
-            :message="message"
-            :current-user-id="authStore.user?.id"
-            @delete-message="handleMessageDelete"
-            @update-message="handleMessageUpdate"
-          />
+      <!-- Main content area with sidebar and conversation -->
+      <div class="room-main-content">
+        <!-- Sidebar with participants -->
+        <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar }">
+          <h3 class="sidebar-title">Participants</h3>
+          <div class="participants-list">
+            <div 
+              v-for="participant in participants" 
+              :key="participant.id" 
+              class="participant-item"
+              @click="navigateToUserProfile(participant.username)"
+            >
+              <img 
+                :src="participant.avatar ? `/media/${participant.avatar}` : '/default.svg'" 
+                :alt="`${participant.username}'s avatar`" 
+                class="participant-avatar"
+              />
+              <div class="participant-info">
+                <span class="participant-name">{{ participant.username }}</span>
+                <span v-if="participant.isHost" class="host-badge">Host</span>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <!-- Message input -->
-        <div v-if="canSendMessage" class="message-input-container">
-          <form id="messageForm" @submit.prevent="sendMessage">
-            <input 
-              v-model="messageInput"
-              type="text"
-              placeholder="Type your message here..."
+        <!-- Room conversation -->
+        <div class="room-conversation">
+          <div ref="messagesContainerRef" class="messages-container">
+            <Message 
+              v-for="message in messages" 
+              :key="message.id" 
+              :message="message"
+              :current-user-id="authStore.user?.id"
+              @delete-message="handleMessageDelete"
+              @update-message="handleMessageUpdate"
             />
-            <button type="submit" :disabled="!messageInput.trim()">
-              Submit
+          </div>
+          
+          <!-- Message input -->
+          <div v-if="canSendMessage" class="message-input-container">
+            <form id="messageForm" @submit.prevent="sendMessage">
+              <input 
+                v-model="messageInput"
+                type="text"
+                placeholder="Type your message here..."
+              />
+              <button type="submit" :disabled="!messageInput.trim()">
+                <font-awesome-icon icon="paper-plane" />
+              </button>
+            </form>
+          </div>
+          <div v-else-if="!authStore.isAuthenticated" class="auth-prompt">
+            <p>Please <router-link to="/login">login</router-link> to join the conversation</p>
+          </div>
+          <div v-else class="join-prompt">
+            <p>You need to join this room to participate in the conversation</p>
+            <button @click="handleJoin" class="join-button">
+              Join Room
             </button>
-          </form>
-        </div>
-        <div v-else-if="!authStore.isAuthenticated" class="auth-prompt">
-          <p>Please <router-link to="/login">login</router-link> to join the conversation</p>
-        </div>
-        <div v-else class="join-prompt">
-          <p>You need to join this room to participate in the conversation</p>
-          <button @click="handleJoin" class="join-button">
-            Join Room
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -235,11 +315,13 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Existing styles remain the same */
 .room-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg-color);
 }
 
 .room-loading, .room-error {
@@ -255,7 +337,7 @@ onBeforeUnmount(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border-left-color: #09f;
+  border-left-color: var(--primary-color);
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
@@ -276,7 +358,10 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid #eee;
+  background-color: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  z-index: 10;
 }
 
 .room-header-left {
@@ -288,32 +373,167 @@ onBeforeUnmount(() => {
   margin-right: 1rem;
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-light);
   cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.back-button:hover {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.room-header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .room-topic {
   margin-left: 1rem;
-  background-color: #f0f0f0;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  background-color: var(--bg-color);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
   font-size: 0.8rem;
+  color: var(--primary-color);
+  font-weight: 500;
 }
 
 .delete-button {
-  background-color: #ff4d4d;
-  color: white;
+  background-color: var(--error-color);
+  color: var(--white);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.delete-button:hover {
+  opacity: 0.9;
 }
 
 .join-button {
-  background-color: #4caf50;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--white);
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.join-button:hover {
+  background-color: var(--primary-hover);
+}
+
+.room-main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.room-sidebar {
+  width: 280px;
+  background-color: var(--white);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: var(--transition);
+}
+
+@media (max-width: 768px) {
+  .room-sidebar {
+    position: absolute;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    box-shadow: var(--shadow);
+  }
+  
+  .sidebar-visible {
+    left: 0;
+  }
+}
+
+.sidebar-title {
+  padding: 1rem;
+  margin: 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.participants-list {
+  padding: 0.5rem;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  padding: 0, 0.5rem;
+  margin: 0.5rem 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.participant-item:hover {
+  background-color: var(--bg-color);
+}
+
+.participant-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.75rem;
+}
+
+.participant-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.participant-name {
+  font-weight: 500;
+}
+
+.host-badge {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  margin-top: 0.1rem;
+  font-weight: 500;
 }
 
 .room-conversation {
@@ -331,8 +551,8 @@ onBeforeUnmount(() => {
 
 .message-input-container {
   padding: 1rem;
-  border-top: 1px solid #eee;
-  background-color: #f9f9f9;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--white);
 }
 
 .message-input-container form {
@@ -342,110 +562,57 @@ onBeforeUnmount(() => {
 
 .message-input-container input {
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.message-input-container input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
 }
 
 .message-input-container button {
-  background-color: #4a90e2;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--white);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
   cursor: pointer;
 }
 
+.message-input-container button:hover {
+  background-color: var(--primary-hover);
+}
+
 .message-input-container button:disabled {
-  background-color: #a5d6a7;
+  background-color: var(--border-color);
   cursor: not-allowed;
 }
 
 .auth-prompt, .join-prompt {
   padding: 1rem;
   text-align: center;
-  border-top: 1px solid #eee;
-}
-</style>
-
-<style>
-.minimal-popup {
-    width: 425px;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #BDC3C7;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--white);
 }
 
-.center-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
+.auth-prompt a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
 }
 
-.btn-confirm {
-    background-color: #f34075;
-    color: #ffffff;
-    font-family: Open Sans, sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 15px 30px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.btn-confirm:hover {
-    background-color: #d53064;
-}
-
-.btn-cancel {
-    background-color: #f7f5f4;
-    color: #2C3E50;
-    font-family: Montserrat, sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 15px 30px;
-    border: 1px solid black;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.btn-cancel:hover {
-    background-color: #e6e3e2;
-}
-
-
-.minimal-popup h3 {
-    color: #2C3E50;
-    font-size: 24px;
-    font-family: Montserrat, sans-serif;
-    font-weight: bold;
-    margin: 0 0 10px;
-    margin-bottom: 10px;
-}
-
-.minimal-popup p {
-    color: #2C3E50;
-    font-size: 14px;
-    font-family: Open Sans, sans-serif;
-    margin: 0 0 20px;
-    margin-bottom: 10px;
-}
-
-.close-btn {
-    font-size: 30px;
-    color: #2C3E50;
-    font-weight: bold;
-    position: absolute;
-    cursor: pointer;
-    background-color: transparent;
-    border-radius: 5px;
-}
-
-.close-btn:hover {
-    color: #1A252F;
-    background-color: #ececec;
+.auth-prompt a:hover {
+  text-decoration: underline;
 }
 </style>

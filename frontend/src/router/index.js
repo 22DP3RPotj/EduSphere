@@ -29,6 +29,11 @@ const routes = [
   {
     path: "/:hostSlug/:roomSlug",
     component: () => import("@/components/RoomDetail.vue"),
+  },
+  {
+    path: '/user/:username',
+    name: 'UserProfile',
+    component: () => import('@/components/UserProfile.vue')
   }
 ];
 

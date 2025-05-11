@@ -17,6 +17,7 @@ const emit = defineEmits(['delete-message', 'update-message']);
 
 const isEditing = ref(false);
 const editBody = ref('');
+const showActions = ref(false);
 
 const isMessageOwner = computed(() => {
   return (props.message.user?.id || props.message.user_id) === props.currentUserId;
@@ -32,14 +33,13 @@ const formattedTimestamp = computed(() => {
 });
 
 const userDisplayName = computed(() => {
-  return props.message.user?.username || props.message.user || '[Unknown User]';
+  return props.message.user?.username || props.message.user || '[Unknown]';
 });
 
 const userAvatar = computed(() => {
-  if (props.message.userAvatar) return props.message.userAvatar;
-  if (props.message.user?.avatar) return `/media/${props.message.user?.avatar}`;
-  return '/media/default-avatar.png';
-});
+  const avatar = props.message.user?.avatar || props.message.userAvatar;
+  return avatar ? `/media/${avatar}` : '/default.svg';
+})
 
 function handleMessageDelete() {
   emit('delete-message', props.message.id);
@@ -61,145 +61,226 @@ function saveEdit() {
   }
   isEditing.value = false;
 }
+
+function toggleActions() {
+  showActions.value = !showActions.value;
+}
+
+// Auto-resize textarea
+function adjustTextareaHeight(event) {
+  const textarea = event.target;
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
 </script>
 
 <template>
-  <div class="message-item" :class="{ 'edited': props.message.edited }">
-    <div class="message-header">
-      <div class="message-author">
-        <img 
-          :src="userAvatar" 
-          alt="User avatar" 
-          class="avatar-tiny" 
-        />
-        <span class="username">{{ userDisplayName }}</span>
-      </div>
-      <div class="message-meta">
-        <span 
-          class="message-time" 
-          :title="new Date(props.message.created).toLocaleString()"
-        >
-          {{ formattedTimestamp }}
-          <span v-if="props.message.edited" class="edited-indicator">(edited)</span>
-        </span>
+  <div class="message-item" :class="{ 'edited': props.message.edited, 'own-message': isMessageOwner }">
+    <div class="message-avatar">
+      <img 
+        :src="userAvatar" 
+        :alt="`${userDisplayName}'s avatar`" 
+        class="avatar-img" 
+      />
+    </div>
+    <div class="message-content">
+      <div class="message-header">
+        <div class="message-author">
+          <span class="username">{{ userDisplayName }}</span>
+          <span 
+            class="message-time" 
+            :title="new Date(props.message.created).toLocaleString()"
+          >
+            {{ formattedTimestamp }}
+            <span v-if="props.message.edited" class="edited-indicator">(edited)</span>
+          </span>
+        </div>
         
         <div v-if="isMessageOwner" class="message-actions">
           <button 
-            v-if="!isEditing"
-            @click="startEditing"
-            class="edit-message-button"
-            title="Edit message"
+            @click="toggleActions"
+            class="action-toggle-button"
           >
-            Edit
+            <font-awesome-icon icon="ellipsis-v" />
           </button>
-          <button 
-            v-if="!isEditing"
-            @click="handleMessageDelete"
-            class="delete-message-button"
-            title="Delete message"
-          >
-            Delete
+          
+          <div v-if="showActions" class="action-dropdown">
+            <button 
+              @click="startEditing"
+              class="dropdown-action"
+            >
+              <font-awesome-icon icon="edit" class="action-icon" />
+              Edit
+            </button>
+            <button 
+              @click="handleMessageDelete"
+              class="dropdown-action delete-action"
+            >
+              <font-awesome-icon icon="trash" class="action-icon" />
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Message content - edit mode -->
+      <div v-if="isEditing" class="message-edit-form">
+        <textarea 
+          v-model="editBody"
+          class="message-edit-input"
+          rows="1"
+          @input="adjustTextareaHeight"
+          @keydown.esc="cancelEditing"
+          @keydown.enter.ctrl="saveEdit"
+          ref="editTextarea"
+        ></textarea>
+        <div class="edit-hint">Press Ctrl+Enter to save, Esc to cancel</div>
+        <div class="edit-actions">
+          <button @click="cancelEditing" class="cancel-edit-button">
+            Cancel
+          </button>
+          <button @click="saveEdit" class="save-edit-button" :disabled="!editBody.trim()">
+            Save
           </button>
         </div>
       </div>
+      
+      <!-- Message content - display mode -->
+      <div v-else class="message-body">{{ props.message.body }}</div>
     </div>
-    
-    <!-- Message content - edit mode -->
-    <div v-if="isEditing" class="message-edit-form">
-      <textarea 
-        v-model="editBody"
-        class="message-edit-input"
-        rows="1"
-        @keydown.esc="cancelEditing"
-        @keydown.enter.prevent="saveEdit"
-      ></textarea>
-      <div class="edit-actions">
-        <button @click="cancelEditing" class="cancel-edit-button">
-          Cancel
-        </button>
-        <button @click="saveEdit" class="save-edit-button" :disabled="!editBody.trim()">
-          Save
-        </button>
-      </div>
-    </div>
-    
-    <!-- Message content - display mode -->
-    <div v-else class="message-body">{{ props.message.body }}</div>
   </div>
 </template>
 
 <style scoped>
-.message-body {
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
 .message-item {
   display: flex;
-  flex-direction: column;
   margin-bottom: 1rem;
-  padding: 0.5rem;
-  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.message-avatar {
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.message-content {
+  flex: 1;
+  min-width: 0; /* Ensures text wrapping works properly */
 }
 
 .message-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
 }
 
 .message-author {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.avatar-tiny {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  margin-right: 0.5rem;
-}
-
-.message-meta {
-  display: flex;
-  align-items: center;
+.username {
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 .message-time {
-  margin-right: 0.5rem;
-  color: #666;
-  font-size: 0.85rem;
+  color: var(--text-light);
+  font-size: 0.75rem;
 }
 
 .edited-indicator {
   font-style: italic;
-  margin-left: 5px;
-  font-size: 0.8rem;
-  color: #999;
+  margin-left: 2px;
+  font-size: 0.7rem;
+  color: var(--text-light);
+}
+
+.message-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-color);
+  line-height: 1.5;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 0.25rem 0;
 }
 
 .message-actions {
+  position: relative;
+}
+
+.action-toggle-button {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 0.25rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: var(--transition);
+  opacity: 0;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
 }
 
-.edit-message-button {
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+.message-item:hover .action-toggle-button {
+  opacity: 1;
 }
 
-.delete-message-button {
-  background-color: #ff4d4d;
-  color: white;
+.action-toggle-button:hover {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.action-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 120px;
+  background-color: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.dropdown-action {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: none;
   border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: var(--transition);
+  color: var(--text-color);
+}
+
+.dropdown-action:hover {
+  background-color: var(--bg-color);
+}
+
+.action-icon {
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.delete-action {
+  color: var(--error-color);
 }
 
 .message-edit-form {
@@ -208,38 +289,76 @@ function saveEdit() {
 
 .message-edit-input {
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
   padding: 0.5rem;
-  margin-bottom: 0.5rem;
   font-family: inherit;
   font-size: inherit;
   resize: none;
+  overflow-y: hidden;
+  min-height: 38px;
+  transition: var(--transition);
+}
+
+.message-edit-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.edit-hint {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin: 0.25rem 0 0.5rem;
+  text-align: right;
 }
 
 .edit-actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  margin-top: 0.5rem;
 }
 
 .cancel-edit-button {
-  background-color: #ddd;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.cancel-edit-button:hover {
+  background-color: var(--bg-color);
 }
 
 .save-edit-button {
-  background-color: #4caf50;
+  background-color: var(--primary-color);
   color: white;
   border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.save-edit-button:hover:not(:disabled) {
+  background-color: var(--primary-hover);
 }
 
 .save-edit-button:disabled {
-  background-color: #a5d6a7;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Styling for own messages */
+.own-message {
+  justify-content: flex-start;
+}
+
+.own-message .message-body {
+  color: var(--text-color);
 }
 </style>

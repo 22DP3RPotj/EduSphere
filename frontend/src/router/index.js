@@ -23,7 +23,7 @@ const routes = [
   },
   { 
     path: "/create-room", 
-    component: () => import("@/views/CreateRoomPage.vue"), 
+    component: () => import("@/views/CreateRoom.vue"), 
     meta: { requiresAuth: true } 
   },
   {

@@ -7,7 +7,7 @@
         </div>
         
         <div class="form-content">
-          <create-room @room-created="handleRoomCreated" />
+          <create-room-form @room-created="handleRoomCreated" />
         </div>
       </div>
     </div>
@@ -16,7 +16,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
-import CreateRoom from '@/components/CreateRoom.vue';
+import CreateRoomForm from '@/components/CreateRoomForm.vue';
 
 const router = useRouter();
 

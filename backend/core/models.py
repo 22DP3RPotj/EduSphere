@@ -5,7 +5,7 @@ from django.db.models.functions import Lower
 from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxLengthValidator
 
 
 class User(AbstractUser):
@@ -13,10 +13,11 @@ class User(AbstractUser):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     email = models.EmailField(unique=True)
-    bio = models.TextField(blank=True, default='')
+    bio = models.TextField(blank=True, default='', validators=[MaxLengthValidator(500)])
     avatar = models.ImageField(
         upload_to='avatars',
-        default='default.svg',
+        blank=True,
+        null=True,
         validators=[FileExtensionValidator(allowed_extensions=['svg', 'png', 'jpg', 'jpeg'])]
     )
     
@@ -68,7 +69,7 @@ class Room(models.Model):
     name = models.CharField(max_length=200)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
-    description = models.TextField(blank=True, default='')
+    description = models.TextField(blank=True, default='', validators=[MaxLengthValidator(500)])
     participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -110,7 +111,7 @@ class Message(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    body = models.TextField(max_length=1000)
+    body = models.TextField(max_length=500, validators=[MaxLengthValidator(500)])
     edited = models.BooleanField(default=False)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -124,6 +125,10 @@ class Message(models.Model):
             models.Index(fields=['user']),
         ]
         ordering = ['-created']
+        
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def serialize(self):
         """

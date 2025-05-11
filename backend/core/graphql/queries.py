@@ -1,9 +1,9 @@
 import graphene
-from .types import RoomType, TopicType, MessageType, UserType, AuthStatusType
-from ..models import Room, Topic, User
 from django.db.models import Q, Count
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
+from .types import RoomType, TopicType, MessageType, UserType, AuthStatusType
+from ..models import Room, Topic, User
 
 class Query(graphene.ObjectType):
     rooms = graphene.List(
@@ -11,6 +11,10 @@ class Query(graphene.ObjectType):
         host_slug=graphene.String(),
         search=graphene.String(),
         topic=graphene.String()
+    )
+    rooms_participated_by_user = graphene.List(
+        RoomType,
+        user_slug=graphene.String(required=True)
     )
     room = graphene.Field(
         RoomType,
@@ -26,6 +30,10 @@ class Query(graphene.ObjectType):
         MessageType,
         host_slug=graphene.String(required=True),
         room_slug=graphene.String(required=True)
+    )
+    messages_by_user = graphene.List(
+        MessageType,
+        user_slug=graphene.String(required=True),   
     )
     users = graphene.List(
         UserType,
@@ -68,6 +76,18 @@ class Query(graphene.ObjectType):
             queryset = queryset.filter(topic__name__iexact=topic)
 
         return queryset.order_by('-created')
+    
+    def resolve_rooms_participated_by_user(self, info, user_slug):
+        try:
+            user = User.objects.get(slug=user_slug)
+        except User.DoesNotExist:
+            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+
+        queryset = Room.objects.filter(participants=user).annotate(
+            participants_count=Count('participants')
+        ).order_by('-participants_count', '-created')
+
+        return queryset
 
     def resolve_topics(self, info, search=None, min_rooms=None):
         queryset = Topic.objects.annotate(
@@ -103,6 +123,15 @@ class Query(graphene.ObjectType):
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
 
         return room.message_set.all().order_by('created')
+    
+    def resolve_messages_by_user(self, info, user_slug):
+        try:
+            user = User.objects.get(slug=user_slug)
+        except User.DoesNotExist:
+            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+
+        return user.message_set.all().order_by('-created')
+    
 
     def resolve_users(self, info, search=None):
         queryset = User.objects.all().prefetch_related('hosted_rooms')

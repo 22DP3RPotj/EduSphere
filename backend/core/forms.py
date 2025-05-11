@@ -80,7 +80,8 @@ class RoomForm(ModelForm):
         exclude = ['host', 'participants', 'slug']
 
 class UserForm(ModelForm):
-    avatar = forms.ImageField(widget=forms.FileInput)
+    avatar = forms.ImageField(widget=forms.FileInput, required=False)
+    
     class Meta:
         model = User
         fields = ['username', 'name', 'avatar', 'bio']

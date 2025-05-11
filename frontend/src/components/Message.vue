@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { format } from 'timeago.js';
 
 const props = defineProps({
@@ -66,12 +66,34 @@ function toggleActions() {
   showActions.value = !showActions.value;
 }
 
+function closeActions(event) {
+  if (showActions.value && !event.target.closest('.message-actions')) {
+    showActions.value = false;
+  }
+}
+
+function handleEscKey(event) {
+  if (event.key === 'Escape' && showActions.value) {
+    showActions.value = false;
+  }
+}
+
 // Auto-resize textarea
 function adjustTextareaHeight(event) {
   const textarea = event.target;
   textarea.style.height = 'auto';
   textarea.style.height = textarea.scrollHeight + 'px';
 }
+
+onMounted(() => {
+  document.addEventListener('click', closeActions);
+  document.addEventListener('keydown', handleEscKey);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeActions);
+  document.removeEventListener('keydown', handleEscKey);
+});
 </script>
 
 <template>
@@ -230,14 +252,9 @@ function adjustTextareaHeight(event) {
   border-radius: 50%;
   cursor: pointer;
   transition: var(--transition);
-  opacity: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.message-item:hover .action-toggle-button {
-  opacity: 1;
 }
 
 .action-toggle-button:hover {

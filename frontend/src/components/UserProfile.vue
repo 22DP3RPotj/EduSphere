@@ -1,11 +1,14 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { apolloClient } from '@/api/apollo.client';
 import { useNotifications } from '@/composables/useNotifications';
 
 import {
-    USER_QUERY
+    USER_QUERY,
+    MESSAGES_BY_USER_QUERY,
+    ROOMS_QUERY,
+    ROOM_PARTICIPATED_BY_USER_QUERY
 } from '@/api/graphql/room.queries';
 
 import UserAvatar from '@/components/UserAvatar.vue';
@@ -18,7 +21,29 @@ const user = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-// Fetch the user data
+// Tab data
+const activeTab = ref('messages');
+const tabsData = ref({
+  messages: {
+    loaded: false,
+    loading: false,
+    data: [],
+    error: null
+  },
+  hostedRooms: {
+    loaded: false,
+    loading: false,
+    data: [],
+    error: null
+  },
+  joinedRooms: {
+    loaded: false,
+    loading: false,
+    data: [],
+    error: null
+  }
+});
+
 async function fetchUser() {
   loading.value = true;
   error.value = null;
@@ -31,6 +56,8 @@ async function fetchUser() {
     });
     
     user.value = data.user;
+    
+    loadTabData(activeTab.value);
   } catch (err) {
     error.value = err;
     notifications.error('Error loading user profile');
@@ -39,13 +66,100 @@ async function fetchUser() {
   }
 }
 
-// Navigate back
-function goBack() {
-  router.back();
+async function loadTabData(tab) {
+  if (tabsData.value[tab].loaded || tabsData.value[tab].loading) {
+    return;
+  }
+  
+  tabsData.value[tab].loading = true;
+  tabsData.value[tab].error = null;
+  
+  try {
+    switch (tab) {
+      case 'messages':
+        await fetchUserMessages();
+        break;
+      case 'hostedRooms':
+        await fetchHostedRooms();
+        break;
+      case 'joinedRooms':
+        await fetchJoinedRooms();
+        break;
+    }
+    
+    tabsData.value[tab].loaded = true;
+  } catch (err) {
+    tabsData.value[tab].error = err;
+    notifications.error(`Error loading ${tab}`);
+  } finally {
+    tabsData.value[tab].loading = false;
+  }
+}
+
+async function fetchUserMessages() {
+  const { data } = await apolloClient.query({
+    query: MESSAGES_BY_USER_QUERY,
+    variables: { userSlug: user.value.slug },
+    fetchPolicy: 'network-only'
+  });
+  
+  tabsData.value.messages.data = data.messagesByUser || [];
+}
+
+async function fetchHostedRooms() {
+  const { data } = await apolloClient.query({
+    query: ROOMS_QUERY,
+    variables: { hostSlug: user.value.slug },
+    fetchPolicy: 'network-only'
+  });
+  
+  tabsData.value.hostedRooms.data = data.rooms || [];
+}
+
+async function fetchJoinedRooms() {
+  const { data } = await apolloClient.query({
+    query: ROOM_PARTICIPATED_BY_USER_QUERY,
+    variables: { userSlug: user.value.slug },
+    fetchPolicy: 'network-only'
+  });
+  
+  tabsData.value.joinedRooms.data = data.roomsParticipatedByUser || [];
+}
+
+function setActiveTab(tab) {
+  activeTab.value = tab;
+  loadTabData(tab);
+}
+
+// Navigation to room
+function navigateToRoom(room) {
+  router.push(`/${room.host?.slug || user.value.slug}/${room.slug}`);
+}
+
+// Format date for display
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 }
 
 onMounted(() => {
   fetchUser();
+});
+
+// Watch for route changes to reload when username changes
+watch(() => route.params.username, (newUsername) => {
+  if (newUsername) {
+    // Reset all tabs data when user changes
+    Object.keys(tabsData.value).forEach(tab => {
+      tabsData.value[tab].loaded = false;
+      tabsData.value[tab].data = [];
+    });
+    fetchUser();
+  }
 });
 </script>
 
@@ -53,7 +167,7 @@ onMounted(() => {
   <div class="profile-container">
     <!-- Header with back button -->
     <div class="profile-header">
-      <button @click="goBack" class="back-button">
+      <button @click="$router.back()" class="back-button">
         <font-awesome-icon icon="arrow-left" />
       </button>
       <h1>Profile</h1>
@@ -95,17 +209,135 @@ onMounted(() => {
         </div>
       </div>
       
-      <!-- Profile tabs - can be expanded later -->
+      <!-- Profile tabs -->
       <div class="profile-tabs">
-        <div class="tab active">Activity</div>
-        <div class="tab">Rooms</div>
+        <div 
+          class="tab" 
+          :class="{ active: activeTab === 'messages' }"
+          @click="setActiveTab('messages')"
+        >
+          Messages
+        </div>
+        <div 
+          class="tab" 
+          :class="{ active: activeTab === 'hostedRooms' }"
+          @click="setActiveTab('hostedRooms')"
+        >
+          Hosted Rooms
+        </div>
+        <div 
+          class="tab" 
+          :class="{ active: activeTab === 'joinedRooms' }"
+          @click="setActiveTab('joinedRooms')"
+        >
+          Joined Rooms
+        </div>
       </div>
       
-      <!-- Placeholder for user activity feed -->
-      <div class="profile-feed">
-        <div class="empty-feed">
-          <font-awesome-icon icon="comment-alt" size="2x" />
-          <p>No recent activity to show</p>
+      <!-- Tab content -->
+      <div class="tab-content">
+        <!-- Messages Tab -->
+        <div v-if="activeTab === 'messages'" class="messages-tab">
+          <div v-if="tabsData.messages.loading" class="tab-loading">
+            <div class="spinner"></div>
+            <p>Loading messages...</p>
+          </div>
+          
+          <div v-else-if="tabsData.messages.error" class="tab-error">
+            <p>Failed to load messages</p>
+            <button @click="loadTabData('messages')" class="retry-button-small">
+              <font-awesome-icon icon="sync" /> Retry
+            </button>
+          </div>
+          
+          <div v-else-if="tabsData.messages.data.length === 0" class="empty-tab">
+            <font-awesome-icon icon="comment-alt" size="2x" />
+            <p>No messages yet</p>
+          </div>
+          
+          <div v-else class="messages-list">
+            <div v-for="message in tabsData.messages.data" :key="message.id" class="message-item-preview">
+              <div class="message-room">
+                <font-awesome-icon icon="comments" class="room-icon" />
+                <span>{{ message.room.name }}</span>
+                <span class="message-date">{{ formatDate(message.created) }}</span>
+              </div>
+              <div class="message-content-preview">
+                {{ message.body }}
+              </div>
+              <div class="message-actions">
+                <button @click="navigateToRoom(message.room)" class="view-room-button">
+                  <font-awesome-icon icon="eye" /> View Room
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Hosted Rooms Tab -->
+        <div v-if="activeTab === 'hostedRooms'" class="rooms-tab">
+          <div v-if="tabsData.hostedRooms.loading" class="tab-loading">
+            <div class="spinner"></div>
+            <p>Loading rooms...</p>
+          </div>
+          
+          <div v-else-if="tabsData.hostedRooms.error" class="tab-error">
+            <p>Failed to load hosted rooms</p>
+            <button @click="loadTabData('hostedRooms')" class="retry-button-small">
+              <font-awesome-icon icon="sync" /> Retry
+            </button>
+          </div>
+          
+          <div v-else-if="tabsData.hostedRooms.data.length === 0" class="empty-tab">
+            <font-awesome-icon icon="door-closed" size="2x" />
+            <p>No rooms hosted yet</p>
+          </div>
+          
+          <div v-else class="rooms-list">
+            <div v-for="room in tabsData.hostedRooms.data" :key="room.slug" class="room-card" @click="navigateToRoom(room)">
+              <div class="room-card-header">
+                <h3 class="room-name">{{ room.name }}</h3>
+                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+              </div>
+              <div class="room-description">{{ room.description }}</div>
+              <div class="room-footer">
+                <span class="room-date">Created {{ formatDate(room.created) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Joined Rooms Tab -->
+        <div v-if="activeTab === 'joinedRooms'" class="rooms-tab">
+          <div v-if="tabsData.joinedRooms.loading" class="tab-loading">
+            <div class="spinner"></div>
+            <p>Loading joined rooms...</p>
+          </div>
+          
+          <div v-else-if="tabsData.joinedRooms.error" class="tab-error">
+            <p>Failed to load joined rooms</p>
+            <button @click="loadTabData('joinedRooms')" class="retry-button-small">
+              <font-awesome-icon icon="sync" /> Retry
+            </button>
+          </div>
+          
+          <div v-else-if="tabsData.joinedRooms.data.length === 0" class="empty-tab">
+            <font-awesome-icon icon="door-open" size="2x" />
+            <p>Not participating in any rooms yet</p>
+          </div>
+          
+          <div v-else class="rooms-list">
+            <div v-for="room in tabsData.joinedRooms.data" :key="room.slug" class="room-card" @click="navigateToRoom(room)">
+              <div class="room-card-header">
+                <h3 class="room-name">{{ room.name }}</h3>
+                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+              </div>
+              <div class="room-description">{{ room.description }}</div>
+              <div class="room-footer">
+                <span class="room-date">Created {{ formatDate(room.created) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -115,7 +347,7 @@ onMounted(() => {
       <font-awesome-icon icon="user-slash" size="3x" />
       <h2>User not found</h2>
       <p>The user you're looking for doesn't exist or is unavailable.</p>
-      <button @click="goBack" class="back-link">
+      <button @click="$router.back()" class="back-link">
         Go back
       </button>
     </div>
@@ -195,12 +427,11 @@ onMounted(() => {
   100% { transform: rotate(360deg); }
 }
 
-.retry-button {
+.retry-button, .retry-button-small {
   margin-top: 1rem;
   background-color: var(--primary-color);
   color: var(--white);
   border: none;
-  padding: 0.5rem 1rem;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
@@ -209,7 +440,16 @@ onMounted(() => {
   transition: var(--transition);
 }
 
-.retry-button:hover {
+.retry-button {
+  padding: 0.5rem 1rem;
+}
+
+.retry-button-small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.retry-button:hover, .retry-button-small:hover {
   background-color: var(--primary-hover);
 }
 
@@ -264,12 +504,14 @@ onMounted(() => {
 }
 
 .tab {
-  padding: 1rem 1.5rem;
+  padding: 1rem;
   font-weight: 500;
   color: var(--text-light);
   cursor: pointer;
   transition: var(--transition);
   position: relative;
+  text-align: center;
+  flex: 1;
 }
 
 .tab:hover {
@@ -291,24 +533,167 @@ onMounted(() => {
   background-color: var(--primary-color);
 }
 
-.profile-feed {
+.tab-content {
   flex: 1;
-  padding: 2rem 1rem;
+  padding: 1rem;
+  background-color: var(--white);
 }
 
-.empty-feed {
+.tab-loading, .tab-error, .empty-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1rem;
-  color: var(--text-light);
+  padding: 2rem 1rem;
   text-align: center;
 }
 
-.empty-feed svg {
+.tab-loading .spinner {
+  width: 24px;
+  height: 24px;
+}
+
+.empty-tab {
+  color: var(--text-light);
+}
+
+.empty-tab svg {
   margin-bottom: 1rem;
   opacity: 0.5;
+}
+
+/* Messages list styling */
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-item-preview {
+  background-color: var(--bg-color);
+  border-radius: var(--radius);
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+}
+
+.message-room {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.room-icon {
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.message-date {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: normal;
+}
+
+.message-content-preview {
+  margin-bottom: 0.75rem;
+  color: var(--text-color);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-room-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.view-room-button:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Rooms list styling */
+.rooms-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.room-card {
+  background-color: var(--bg-color);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  transition: var(--transition);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card:hover {
+  box-shadow: var(--shadow);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.room-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.room-name {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.room-topic {
+  background-color: var(--bg-color);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
+}
+
+.room-description {
+  flex: 1;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.room-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-light);
+  font-size: 0.8rem;
 }
 
 .back-link {
@@ -343,10 +728,13 @@ onMounted(() => {
     margin: 0 auto;
   }
   
+  .rooms-list {
+    grid-template-columns: 1fr;
+  }
+  
   .tab {
-    flex: 1;
-    text-align: center;
-    padding: 1rem 0;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
   }
 }
 </style>

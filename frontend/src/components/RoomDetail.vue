@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
@@ -13,7 +13,6 @@ import {
 } from '@/api/graphql/room.queries';
 
 import Message from '@/components/Message.vue';
-// import UserAvatar from '@/components/UserAvatar.vue';
 
 const Swal = inject('$swal');
 const authStore = useAuthStore();
@@ -26,7 +25,8 @@ const room = ref(null);
 const loading = ref(false);
 const messageInput = ref('');
 const messagesContainerRef = ref(null);
-const showSidebar = ref(window.innerWidth > 768); // Show sidebar by default on desktop
+const showSidebar = ref(window.innerWidth > 768);
+const isMobileView = ref(window.innerWidth <= 768);
 
 const {
   messages,
@@ -53,25 +53,15 @@ const canSendMessage = computed(() => {
 const participants = computed(() => {
   if (!room.value) return [];
   
-  // Add host to participants list if not already included
   const allParticipants = [...room.value.participants];
-  
-  // Check if host is already in the participants list
-  const hostIncluded = allParticipants.some(p => p.id === room.value.host.id);
-  if (!hostIncluded) {
-    allParticipants.unshift({
-      ...room.value.host,
+
+  // Mark the host in the existing participants list
+  const hostIndex = allParticipants.findIndex(p => p.id === room.value.host.id);
+  if (hostIndex !== -1) {
+    allParticipants[hostIndex] = {
+      ...allParticipants[hostIndex],
       isHost: true
-    });
-  } else {
-    // Mark the host in the existing participants list
-    const hostIndex = allParticipants.findIndex(p => p.id === room.value.host.id);
-    if (hostIndex !== -1) {
-      allParticipants[hostIndex] = {
-        ...allParticipants[hostIndex],
-        isHost: true
-      };
-    }
+    };
   }
   
   return allParticipants;
@@ -96,7 +86,7 @@ async function fetchRoom() {
 
 async function handleMessageDelete(messageId) {
   try {
-    const success = await deleteWebSocketMessage(messageId);
+    const success = deleteWebSocketMessage(messageId);
     
     if (!success) {
       notifications.warning('Failed to delete message. WebSocket connection may be lost.');
@@ -108,7 +98,7 @@ async function handleMessageDelete(messageId) {
 
 async function handleMessageUpdate(messageId, newBody) {
   try {
-    const success = await updateWebSocketMessage(messageId, newBody);
+    const success = updateWebSocketMessage(messageId, newBody);
     
     if (!success) {
       notifications.warning('Failed to update message. WebSocket connection may be lost.');
@@ -146,18 +136,22 @@ async function handleRoomDelete() {
   }
 }
 
-// Toggle sidebar visibility
-function toggleSidebar() {
-  showSidebar.value = !showSidebar.value;
+
+function handleResize() {
+  isMobileView.value = window.innerWidth <= 768;
+  
+  if (!isMobileView.value) {
+    showSidebar.value = true;
+  } else if (!showSidebar.value) {
+    showSidebar.value = false;
+  }
 }
 
-// Scroll to bottom when messages update
-watch(messages, async () => {
-  await nextTick();
-  if (messagesContainerRef.value) {
-    messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight;
+function toggleSidebar() {
+  if (isMobileView.value) {
+    showSidebar.value = !showSidebar.value;
   }
-});
+}
 
 async function handleJoin() {
     await joinRoom(room.value.host.slug, room.value.slug);
@@ -179,15 +173,6 @@ function navigateToUserProfile(username) {
   router.push(`/user/${username}`);
 }
 
-// Handle window resize events for responsive sidebar
-function handleResize() {
-  if (window.innerWidth <= 768) {
-    showSidebar.value = false;
-  } else {
-    showSidebar.value = true;
-  }
-}
-
 // Lifecycle hooks
 onMounted(async () => {
   try {
@@ -196,7 +181,6 @@ onMounted(async () => {
     
     await initializeWebSocket();
     
-    // Add resize event listener
     window.addEventListener('resize', handleResize);
   } catch (error) {
     notifications.error(error);
@@ -222,7 +206,7 @@ onBeforeUnmount(() => {
       <!-- Room header -->
       <div class="room-header">
         <div class="room-header-left">
-          <button @click="$router.push('/')" class="back-button">
+          <button @click="$router.back()" class="back-button">
             <font-awesome-icon icon="arrow-left" />
           </button>
           <h2>{{ room.name }}</h2>
@@ -230,7 +214,7 @@ onBeforeUnmount(() => {
         </div>
         
         <div class="room-header-right">
-          <button @click="toggleSidebar" class="sidebar-toggle">
+          <button v-if="isMobileView" @click="toggleSidebar" class="sidebar-toggle">
             <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
           </button>
           <button v-if="isHost" @click="handleRoomDelete" class="delete-button">
@@ -245,8 +229,13 @@ onBeforeUnmount(() => {
       <!-- Main content area with sidebar and conversation -->
       <div class="room-main-content">
         <!-- Sidebar with participants -->
-        <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar }">
-          <h3 class="sidebar-title">Participants</h3>
+        <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
+          <div class="sidebar-header">
+            <h3 class="sidebar-title">Participants</h3>
+            <button v-if="isMobileView" @click="toggleSidebar" class="close-sidebar-button">
+              <font-awesome-icon icon="times" />
+            </button>
+          </div>
           <div class="participants-list">
             <div 
               v-for="participant in participants" 
@@ -392,6 +381,62 @@ onBeforeUnmount(() => {
 .room-header-right {
   display: flex;
   gap: 0.5rem;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.close-sidebar-button {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.close-sidebar-button:hover {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.mobile-sidebar {
+  position: absolute;
+  left: -280px;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
+  box-shadow: var(--shadow);
+}
+
+.mobile-sidebar.sidebar-visible {
+  left: 0;
+}
+
+/* Update media query */
+@media (max-width: 768px) {
+  .room-sidebar {
+    position: absolute;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    box-shadow: var(--shadow);
+  }
+  
+  .sidebar-visible {
+    left: 0;
+  }
 }
 
 .sidebar-toggle {

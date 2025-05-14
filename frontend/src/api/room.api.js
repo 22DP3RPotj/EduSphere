@@ -49,7 +49,7 @@ export function useRoomApi() {
       );
 
       const room = response.data.createRoom.room;
-      router.push(`/${room.host.username}/${room.name.toLowerCase().replace(/\s+/g, '-')}`);
+      router.push(`/user/${room.host.username}/${room.slug}`);
       return room;
     } catch (error) {
       console.error("Error creating room:", error);

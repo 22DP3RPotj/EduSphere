@@ -21,7 +21,7 @@ import CreateRoomForm from '@/components/CreateRoomForm.vue';
 const router = useRouter();
 
 function handleRoomCreated() {
-  router.push('/');
+  // router.push('/');
 }
 </script>
 

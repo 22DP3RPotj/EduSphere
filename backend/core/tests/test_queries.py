@@ -74,7 +74,7 @@ class QueryTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"hostSlug": self.user.slug, "roomSlug": self.room.slug}
+        variables = {"hostSlug": self.user.username, "roomSlug": self.room.slug}
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertEqual(result.data["messages"][0]["body"], self.message.body)
     

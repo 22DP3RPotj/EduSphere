@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from './room.api';
 import { useNotifications } from '@/composables/useNotifications';
 
-export function useWebSocket(username, roomSlug) {
+export function useWebSocket(userSlug, roomSlug) {
   const { fetchRoomMessages } = useRoomApi();
   const socket = ref(null);
   const messages = ref([]);
@@ -20,11 +20,11 @@ export function useWebSocket(username, roomSlug) {
       return null;
     }
 
-    const fetchedMessages = await fetchRoomMessages(username, roomSlug);
+    const fetchedMessages = await fetchRoomMessages(userSlug, roomSlug);
     messages.value = [...fetchedMessages];
 
     // const wsUrl = import.meta.env.VITE_WS_URL
-    const wsUrl = `${window.location.protocol === 'https' ? 'wss' : 'ws'}://localhost/ws/chat/${username}/${roomSlug}`;
+    const wsUrl = `${window.location.protocol === 'https' ? 'wss' : 'ws'}://localhost/ws/chat/${userSlug}/${roomSlug}`;
     
     function createWebSocket() {
       socket.value = new WebSocket(wsUrl);

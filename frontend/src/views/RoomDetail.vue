@@ -131,7 +131,7 @@ async function handleRoomDelete() {
     });
 
   if (result.isConfirmed) {
-    await deleteRoom(room.value.host.slug, room.value.slug);
+    await deleteRoom(room.value.host.username, room.value.slug);
     router.push('/');
   }
 }
@@ -154,7 +154,7 @@ function toggleSidebar() {
 }
 
 async function handleJoin() {
-    await joinRoom(room.value.host.slug, room.value.slug);
+    await joinRoom(room.value.host.username, room.value.slug);
     await fetchRoom();
 }
 
@@ -169,8 +169,8 @@ function sendMessage() {
   }
 }
 
-function navigateToUserProfile(username) {
-  router.push(`/user/${username}`);
+function navigateToUserProfile(userSlug) {
+  router.push(`/user/${userSlug}`);
 }
 
 // Lifecycle hooks
@@ -211,6 +211,9 @@ onBeforeUnmount(() => {
           </button>
           <h2>{{ room.name }}</h2>
           <span class="room-topic" v-if="room.topic">{{ room.topic.name }}</span>
+          <span class="participants-count" v-if="participants.length > 0">
+            <font-awesome-icon icon="users" /> {{ participants.length }}
+          </span>
         </div>
         
         <div class="room-header-right">
@@ -446,7 +449,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 20%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -468,13 +471,25 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
+.participants-count {
+  margin-left: 1rem;
+  background-color: var(--bg-color);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .delete-button {
   background-color: var(--error-color);
   color: var(--white);
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 20%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -659,5 +674,87 @@ onBeforeUnmount(() => {
 
 .auth-prompt a:hover {
   text-decoration: underline;
+}
+</style>
+
+<style>
+.minimal-popup {
+    width: 425px;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #BDC3C7;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.center-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-confirm {
+    background-color: #f34075;
+    color: #ffffff;
+    font-family: Open Sans, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-confirm:hover {
+    background-color: #d53064;
+}
+
+.btn-cancel {
+    background-color: #f7f5f4;
+    color: #2C3E50;
+    font-family: Montserrat, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border: 1px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background-color: #e6e3e2;
+}
+
+
+.minimal-popup h3 {
+    color: #2C3E50;
+    font-size: 24px;
+    font-family: Montserrat, sans-serif;
+    font-weight: bold;
+    margin: 0 0 10px;
+    margin-bottom: 10px;
+}
+
+.minimal-popup p {
+    color: #2C3E50;
+    font-size: 14px;
+    font-family: Open Sans, sans-serif;
+    margin: 0 0 20px;
+    margin-bottom: 10px;
+}
+
+.close-btn {
+    font-size: 30px;
+    color: #2C3E50;
+    font-weight: bold;
+    position: absolute;
+    cursor: pointer;
+    background-color: transparent;
+    border-radius: 5px;
+}
+
+.close-btn:hover {
+    color: #1A252F;
+    background-color: #ececec;
 }
 </style>

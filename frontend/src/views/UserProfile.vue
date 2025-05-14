@@ -51,7 +51,7 @@ async function fetchUser() {
   try {
     const { data } = await apolloClient.query({
       query: USER_QUERY,
-      variables: { username: route.params.username },
+      variables: { username: route.params.userSlug },
       fetchPolicy: 'network-only'
     });
     
@@ -99,7 +99,7 @@ async function loadTabData(tab) {
 async function fetchUserMessages() {
   const { data } = await apolloClient.query({
     query: MESSAGES_BY_USER_QUERY,
-    variables: { userSlug: user.value.slug },
+    variables: { userSlug: user.value.username },
     fetchPolicy: 'network-only'
   });
   
@@ -109,7 +109,7 @@ async function fetchUserMessages() {
 async function fetchHostedRooms() {
   const { data } = await apolloClient.query({
     query: ROOMS_QUERY,
-    variables: { hostSlug: user.value.slug },
+    variables: { hostSlug: user.value.username },
     fetchPolicy: 'network-only'
   });
   
@@ -119,7 +119,7 @@ async function fetchHostedRooms() {
 async function fetchJoinedRooms() {
   const { data } = await apolloClient.query({
     query: ROOM_PARTICIPATED_BY_USER_QUERY,
-    variables: { userSlug: user.value.slug },
+    variables: { userSlug: user.value.username },
     fetchPolicy: 'network-only'
   });
   
@@ -133,7 +133,7 @@ function setActiveTab(tab) {
 
 // Navigation to room
 function navigateToRoom(room) {
-  router.push(`/${room.host?.slug || user.value.slug}/${room.slug}`);
+  router.push(`/user/${room.host?.username || user.value.username}/${room.slug}`);
 }
 
 // Format date for display
@@ -151,7 +151,7 @@ onMounted(() => {
 });
 
 // Watch for route changes to reload when username changes
-watch(() => route.params.username, (newUsername) => {
+watch(() => route.params.userSlug, (newUsername) => {
   if (newUsername) {
     // Reset all tabs data when user changes
     Object.keys(tabsData.value).forEach(tab => {

@@ -1,6 +1,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink, from } from "@apollo/client/core";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
+import Cookies from "js-cookie";
 import authTokenService from "@/services/refresh-token";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -13,6 +14,7 @@ const authLink = setContext((_, { headers }) => {
   return {
     headers: {
       ...headers,
+      "X-CSRFToken": Cookies.get("csrftoken"),
     },
   };
 });

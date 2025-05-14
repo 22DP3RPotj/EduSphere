@@ -27,14 +27,14 @@ const routes = [
     meta: { requiresAuth: true } 
   },
   {
-    path: "/:hostSlug/:roomSlug",
-    component: () => import("@/views/RoomDetail.vue"),
-  },
-  {
-    path: '/user/:username',
+    path: '/user/:userSlug',
     name: 'UserProfile',
     component: () => import('@/views/UserProfile.vue')
-  }
+  },
+  {
+    path: "/user/:hostSlug/:roomSlug",
+    component: () => import("@/views/RoomDetail.vue"),
+  },
 ];
 
 const router = createRouter({

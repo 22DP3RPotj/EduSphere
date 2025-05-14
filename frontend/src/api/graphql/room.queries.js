@@ -11,7 +11,6 @@ export const ROOM_QUERY = gql`
                 id
                 username
                 name
-                slug
                 avatar
             }
             participants {
@@ -95,11 +94,10 @@ export const TOPIC_QUERY = gql`
 export const USER_QUERY = gql`
     query User($username: String!) {
         user(userSlug: $username) {
-            username,
-            name,
-            slug,
-            avatar,
-            bio,
+            username
+            name
+            avatar
+            bio
         }
     }
 `;

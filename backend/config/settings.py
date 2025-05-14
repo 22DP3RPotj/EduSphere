@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_cleanup.apps.CleanupConfig",
     "backend.core.apps.CoreConfig",
+    "backend.api.apps.ApiConfig",
     "channels",
     "corsheaders",
     "graphene_django",
@@ -151,7 +152,7 @@ GRAPHENE = {
 
 GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
-    "JWT_EXPIRATION_DELTA": timedelta(minutes=15),
+    "JWT_EXPIRATION_DELTA": timedelta(minutes=3),
     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=7),
     "JWT_COOKIE_SECURE": False,  # TODO: HTTPS
     "JWT_COOKIE_HTTPONLY": True,
@@ -164,11 +165,12 @@ GRAPHQL_JWT = {
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax" # TODO: "Strict"
 
-CSRF_COOKIE_HTTPONLY = True  
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax" # TODO: "Strict"
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
+    "http://127.0.0.1",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

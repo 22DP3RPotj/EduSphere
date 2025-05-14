@@ -4,43 +4,38 @@ from django.db.models.constraints import Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.urls import reverse
 from django.utils.text import slugify
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import FileExtensionValidator, MaxLengthValidator
 
+from .managers import CustomUserManager
 
-class User(AbstractUser):
-    id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
+class User(AbstractBaseUser, PermissionsMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
+    username = models.SlugField(max_length=200, unique=True)
+    name = models.CharField(max_length=200)
     bio = models.TextField(blank=True, default='', validators=[MaxLengthValidator(500)])
     avatar = models.ImageField(
         upload_to='avatars',
-        blank=True,
-        null=True,
-        validators=[FileExtensionValidator(allowed_extensions=['svg', 'png', 'jpg', 'jpeg'])]
+        blank=True, null=True,
+        validators=[FileExtensionValidator(['svg','png','jpg','jpeg'])]
     )
-    
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    objects = CustomUserManager()
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'name']
-    
+
     def __str__(self):
         return self.username
-    
+
     def save(self, *args, **kwargs):
-        if not self.slug or self.username != User.objects.get(pk=self.pk).username:
-            base_slug = slugify(self.username)
-            self.slug = base_slug
-            while User.objects.filter(slug=self.slug).exists():
-                self.slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+        self.username = slugify(self.username)
         self.full_clean()
         super().save(*args, **kwargs)
-        
-    class Meta:
-        app_label = 'core'
-        indexes = [
-            models.Index(fields=['username']),
-        ]
     
 
 class Topic(models.Model):
@@ -65,8 +60,8 @@ class Topic(models.Model):
 
 class Room(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    slug = models.SlugField(max_length=200, unique=True)
     name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
     description = models.TextField(blank=True, default='', validators=[MaxLengthValidator(500)])
@@ -87,7 +82,7 @@ class Room(models.Model):
             )
         ]
         indexes = [
-            models.Index(fields=['host', 'slug']),
+            models.Index(fields=['host', 'name']),
             models.Index(fields=['topic']),
             models.Index(fields=['updated']),
         ]
@@ -103,8 +98,8 @@ class Room(models.Model):
         
     def get_absolute_url(self):
         return reverse('room', kwargs={
-            'username': self.host.slug,
-            'room': self.slug,
+            'username': self.host.username,
+            'room': self.name,
         })
 
 class Message(models.Model):

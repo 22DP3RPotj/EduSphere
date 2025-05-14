@@ -36,6 +36,11 @@ app.component('font-awesome-icon', FontAwesomeIcon);
 const initApp = async () => {
   const authStore = useAuthStore();
   await authStore.initialize();
+
+  await fetch('/api/csrf/', {
+    method: 'GET',
+    credentials: 'include',
+  });
   
   app.mount("#app");
 };

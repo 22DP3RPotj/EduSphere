@@ -5,6 +5,7 @@ export const CREATE_ROOM_MUTATION = gql`
         createRoom(name: $name, topicName: $topicName, description: $description) {
             room {
                 name
+                slug
                 description
                 topic { name }
                 host {

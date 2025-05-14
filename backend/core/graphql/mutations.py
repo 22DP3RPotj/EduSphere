@@ -111,7 +111,7 @@ class DeleteRoom(graphene.Mutation):
     def mutate(self, info, host_slug, room_slug):
         try:
             room = Room.objects.get(
-                host__slug=host_slug,
+                host__username=host_slug,
                 slug=room_slug
             )
         except Room.DoesNotExist:
@@ -134,7 +134,7 @@ class JoinRoom(graphene.Mutation):
     def mutate(self, info, host_slug, room_slug):
         try:
             room = Room.objects.get(
-                host__slug=host_slug,
+                host__username=host_slug,
                 slug=room_slug
             )
         except Room.DoesNotExist:

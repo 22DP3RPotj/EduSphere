@@ -64,7 +64,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         try:
             room = await database_sync_to_async(Room.objects.get)(
-                host__slug=self.username,
+                host__username=self.username,
                 slug=self.room_slug
             )
         except Room.DoesNotExist:

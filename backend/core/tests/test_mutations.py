@@ -170,7 +170,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"hostSlug": self.user.slug, "roomSlug": room.slug}
+        variables = {"hostSlug": self.user.username, "roomSlug": room.slug}
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertTrue(result.data["deleteRoom"]["success"])
         self.assertFalse(Room.objects.filter(id=room.id).exists())

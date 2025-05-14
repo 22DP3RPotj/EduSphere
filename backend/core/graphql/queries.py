@@ -16,6 +16,10 @@ class Query(graphene.ObjectType):
         RoomType,
         user_slug=graphene.String(required=True)
     )
+    rooms_not_participated_by_user = graphene.List(
+        RoomType,
+        user_slug=graphene.String(required=True)
+    )
     room = graphene.Field(
         RoomType,
         host_slug=graphene.String(required=True),
@@ -64,7 +68,7 @@ class Query(graphene.ObjectType):
         ).select_related('host', 'topic')
 
         if host_slug:
-            queryset = queryset.filter(host__slug=host_slug)
+            queryset = queryset.filter(host__username=host_slug)
             
         if search:
             queryset = queryset.filter(
@@ -79,11 +83,23 @@ class Query(graphene.ObjectType):
     
     def resolve_rooms_participated_by_user(self, info, user_slug):
         try:
-            user = User.objects.get(slug=user_slug)
+            user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
             raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
 
         queryset = Room.objects.filter(participants=user).annotate(
+            participants_count=Count('participants')
+        ).order_by('-participants_count', '-created')
+
+        return queryset
+    
+    def resolve_rooms_not_participated_by_user(self, info, user_slug):
+        try:
+            user = User.objects.get(username=user_slug)
+        except User.DoesNotExist:
+            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+
+        queryset = Room.objects.exclude(participants=user).annotate(
             participants_count=Count('participants')
         ).order_by('-participants_count', '-created')
 
@@ -105,7 +121,7 @@ class Query(graphene.ObjectType):
     def resolve_room(self, info, host_slug, room_slug):
         try:
             room = Room.objects.get(
-                host__slug=host_slug,
+                host__username=host_slug,
                 slug=room_slug
             )
         except Room.DoesNotExist:
@@ -116,7 +132,7 @@ class Query(graphene.ObjectType):
     def resolve_messages(self, info, host_slug, room_slug):
         try:
             room = Room.objects.get(
-                host__slug=host_slug,
+                host__username=host_slug,
                 slug=room_slug
             )
         except Room.DoesNotExist:
@@ -126,7 +142,7 @@ class Query(graphene.ObjectType):
     
     def resolve_messages_by_user(self, info, user_slug):
         try:
-            user = User.objects.get(slug=user_slug)
+            user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
             raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
 
@@ -144,7 +160,7 @@ class Query(graphene.ObjectType):
     
     def resolve_user(self, info, user_slug):
         try:
-            user = User.objects.get(slug=user_slug)
+            user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
             raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
 

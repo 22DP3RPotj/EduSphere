@@ -7,7 +7,7 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('is_staff',)
     search_fields = ('name', 'username', 'email')
     
-    readonly_fields = ('slug', 'username', 'email', 'password', 'avatar')
+    readonly_fields = ('username', 'email', 'password', 'avatar')
     
     list_per_page = 25
 
@@ -17,7 +17,7 @@ class RoomAdmin(admin.ModelAdmin):
     list_editable = ('description',)
     search_fields = ('name', 'topic__name', 'description')
     
-    readonly_fields = ('slug', 'name', 'host')
+    readonly_fields = ('name', 'host')
     
     list_per_page = 25
 
@@ -34,7 +34,7 @@ class TopicAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('user', 'room', 'body', 'edited', 'updated', 'created')
     list_filter = ('edited',)
-    search_fields = ('user__name', 'room__name', 'body')
+    search_fields = ('user__username', 'room__name', 'body')
     
     readonly_fields = ('user', 'room', 'body', 'edited', 'updated', 'created')
     

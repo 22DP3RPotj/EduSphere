@@ -27,60 +27,53 @@
           <font-awesome-icon icon="sign-in-alt" />
           <span>Login</span>
         </router-link>
-        <router-link to="/register" class="register-btn">Register</router-link>
       </template>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
 import { useNotifications } from '@/composables/useNotifications';
 import { apolloClient } from '@/api/apollo.client';
-import { USER_QUERY } from '@/api/graphql/room.queries';
+import { GET_USER } from '@/api/graphql/auth.queries';
 
-const router = useRouter();
 const authStore = useAuthStore();
 const { logout } = useAuthApi();
-const notifications = useNotifications();
 
-// User state
-const isAuthenticated = computed(() => authStore.isAuthenticated);
 const currentUser = ref(null);
+const isAuthenticated = computed(() => authStore.isAuthenticated);
+
+async function handleLogout() {
+  await logout();
+}
 
 async function fetchCurrentUser() {
-  if (!authStore.user?.username) return;
-  
   try {
     const { data } = await apolloClient.query({
-      query: USER_QUERY,
-      variables: { username: authStore.user.username },
+      query: GET_USER,
       fetchPolicy: 'network-only'
     });
     
-    currentUser.value = data.user;
+    if (data?.me) {
+      currentUser.value = data.me;
+      authStore.setUser(data.me);
+    }
   } catch (error) {
     console.error('Error fetching current user:', error);
   }
 }
 
-async function handleLogout() {
-  try {
-    await logout();
-    router.push('/login');
-  } catch (error) {
-    notifications.error('Error logging out');
-  }
-}
-
-onMounted(async () => {
-  if (authStore.isAuthenticated) {
-    await fetchCurrentUser();
-  }
-});
+watch(
+  isAuthenticated,
+  async (newVal) => {
+    if (newVal) await fetchCurrentUser();
+    else currentUser.value = null;
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
@@ -95,6 +88,7 @@ onMounted(async () => {
   position: sticky;
   top: 0;
   z-index: 50;
+  height: 65px; /* Fixed height for header */
 }
 
 .header-logo {
@@ -175,19 +169,5 @@ onMounted(async () => {
 .logout-btn:hover, .login-btn:hover {
   background-color: var(--bg-color);
   border-color: var(--text-color);
-}
-
-.register-btn {
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius);
-  background-color: var(--primary-color);
-  color: white;
-  font-weight: 500;
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.register-btn:hover {
-  background-color: var(--primary-hover);
 }
 </style>

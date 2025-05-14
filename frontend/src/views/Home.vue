@@ -56,16 +56,12 @@
               placeholder="Search rooms..." 
               @keyup.enter="applyFilters"
             />
-            <button v-if="searchQuery" @click="clearSearch" class="clear-search-btn">
-              <font-awesome-icon icon="times" />
-            </button>
           </div>
           <button @click="applyFilters" class="btn-search">
             Search
           </button>
           <button v-if="isMobileView" @click="toggleSidebar" class="filter-toggle-btn">
             <font-awesome-icon icon="sliders-h" />
-            Filters
           </button>
         </div>
 
@@ -487,7 +483,6 @@ onMounted(async () => {
       fetchTopics()
     ]);
     
-    // Initialize pendingTopics with the current selected topics
     pendingTopics.value = [...selectedTopics.value];
     
     // Fetch user-specific data
@@ -564,6 +559,7 @@ onBeforeUnmount(() => {
   left: -260px;
   top: 64px;
   bottom: 0;
+  padding-top: 0;
   z-index: 20;
   box-shadow: var(--shadow);
 }
@@ -766,29 +762,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
 }
 
-.clear-search-btn {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--text-light);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  transition: var(--transition);
-}
-
-.clear-search-btn:hover {
-  color: var(--text-color);
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
 .btn-search {
   padding: 0 1rem;
   background-color: var(--primary-color);
@@ -805,7 +778,9 @@ onBeforeUnmount(() => {
 }
 
 .filter-toggle-btn {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 1rem;
   background-color: var(--white);
   color: var(--text-color);

@@ -1,7 +1,10 @@
 <template>
-  <router-view v-if="isReady"></router-view>
-  <div v-else class="loading-container">
-    <p>Loading...</p>
+  <div>
+    <app-header></app-header>
+    <router-view v-if="isReady"></router-view>
+    <div v-else class="loading-container">
+      <p>Loading...</p>
+    </div>
   </div>
 </template>
 
@@ -9,9 +12,13 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import authTokenService from '@/services/refresh-token';
+import AppHeader from '@/components/AppHeader.vue';
 
 export default {
   name: 'App',
+  components: {
+    AppHeader
+  },
   setup() {
     const authStore = useAuthStore();
     const isReady = ref(false);

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
@@ -191,6 +191,11 @@ onBeforeUnmount(() => {
   closeWebSocket();
   window.removeEventListener('resize', handleResize);
 });
+
+watch(() => route.params.room, () => {
+  closeWebSocket();
+  initializeWebSocket();
+});
 </script>
 
 <template>
@@ -211,7 +216,7 @@ onBeforeUnmount(() => {
           </button>
           <h2>{{ room.name }}</h2>
           <span class="room-topic" v-if="room.topic">{{ room.topic.name }}</span>
-          <span class="participants-count" v-if="participants.length > 0">
+          <span class="participants-count">
             <font-awesome-icon icon="users" /> {{ participants.length }}
           </span>
         </div>

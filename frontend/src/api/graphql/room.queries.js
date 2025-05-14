@@ -26,7 +26,7 @@ export const ROOM_QUERY = gql`
 `;
 
 export const ROOMS_QUERY = gql`
-    query Rooms($hostSlug: String, $search: String, $topic: String) {
+    query Rooms($hostSlug: String, $search: String, $topic: [String]) {
         rooms(hostSlug: $hostSlug, search: $search, topic: $topic) {
             name
             slug
@@ -35,18 +35,33 @@ export const ROOMS_QUERY = gql`
             topic {
                 name
             }
+            host { username }
         }
     }
 `;
 
-export const ROOM_PARTICIPATED_BY_USER_QUERY = gql`
-    query RoomParticipatedByUser($userSlug: String!) {
+export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
+    query RoomsParticipatedByUser($userSlug: String!) {
         roomsParticipatedByUser(userSlug: $userSlug) {
             name
             slug
             description
             created
             topic { name }
+            host { username }
+        }
+    }
+`;
+
+export const ROOMS_NOT_PARTICIPATED_BY_USER_QUERY = gql`
+    query RoomsNotParticipatedByUser($userSlug: String!) {
+        roomsParticipatedByUser(userSlug: $userSlug) {
+            name
+            slug
+            description
+            created
+            topic { name }
+            host { username }
         }
     }
 `;

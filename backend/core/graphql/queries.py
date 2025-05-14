@@ -10,7 +10,7 @@ class Query(graphene.ObjectType):
         RoomType,
         host_slug=graphene.String(),
         search=graphene.String(),
-        topic=graphene.String()
+        topic=graphene.List(graphene.String)
     )
     rooms_participated_by_user = graphene.List(
         RoomType,
@@ -77,9 +77,9 @@ class Query(graphene.ObjectType):
             )
             
         if topic:
-            queryset = queryset.filter(topic__name__iexact=topic)
+            queryset = queryset.filter(topic__name__in=topic)
 
-        return queryset.order_by('-created')
+        return queryset.order_by('-participants_count' , '-created')
     
     def resolve_rooms_participated_by_user(self, info, user_slug):
         try:

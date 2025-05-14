@@ -8,7 +8,7 @@ import {
     USER_QUERY,
     MESSAGES_BY_USER_QUERY,
     ROOMS_QUERY,
-    ROOM_PARTICIPATED_BY_USER_QUERY
+    ROOMS_PARTICIPATED_BY_USER_QUERY
 } from '@/api/graphql/room.queries';
 
 import UserAvatar from '@/components/UserAvatar.vue';
@@ -118,7 +118,7 @@ async function fetchHostedRooms() {
 
 async function fetchJoinedRooms() {
   const { data } = await apolloClient.query({
-    query: ROOM_PARTICIPATED_BY_USER_QUERY,
+    query: ROOMS_PARTICIPATED_BY_USER_QUERY,
     variables: { userSlug: user.value.username },
     fetchPolicy: 'network-only'
   });

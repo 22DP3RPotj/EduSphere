@@ -1,10 +1,12 @@
 <template>
-  <div>
-    <app-header></app-header>
-    <router-view v-if="isReady"></router-view>
-    <div v-else class="loading-container">
-      <p>Loading...</p>
-    </div>
+  <div class="app-container">
+    <side-panel></side-panel>
+    <main class="main-content">
+      <router-view v-if="isReady"></router-view>
+      <div v-else class="loading-container">
+        <p>Loading...</p>
+      </div>
+    </main>
   </div>
 </template>
 
@@ -12,12 +14,12 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import authTokenService from '@/services/refresh-token';
-import AppHeader from '@/components/AppHeader.vue';
+import SidePanel from '@/components/SidePanel.vue';
 
 export default {
   name: 'App',
   components: {
-    AppHeader
+    SidePanel
   },
   setup() {
     const authStore = useAuthStore();
@@ -53,6 +55,16 @@ export default {
 </script>
 
 <style scoped>
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex-grow: 1;
+  width: 100%;
+}
+
 .loading-container {
   display: flex;
   justify-content: center;

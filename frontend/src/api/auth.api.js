@@ -10,6 +10,10 @@ import {
   LOGOUT_MUTATION
 } from "./graphql/auth.mutations";
 
+import {
+  GET_AUTH_STATUS
+} from "./graphql/auth.queries";
+
 export function useAuthApi() {
   const authStore = useAuthStore();
   const notifications = useNotifications();
@@ -203,11 +207,28 @@ export function useAuthApi() {
     return true;
   }
 
+  async function fetchAuthStatus() {
+    try {
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.query({
+          query: GET_AUTH_STATUS,
+          fetchPolicy: 'network-only'
+        }),
+      );
+
+      return response.data.authStatus;
+    } catch (error) {
+      console.error("Error checking auth status:", error);
+      return null;
+    }
+  }
+
   return {
     login,
     registerUser,
     logout,
     refreshToken,
-    verifyAuthState
+    verifyAuthState,
+    fetchAuthStatus
   };
 }

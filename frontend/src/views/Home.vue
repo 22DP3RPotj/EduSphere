@@ -89,7 +89,7 @@
               <font-awesome-icon :icon="['fas', 'comments']" />
               Active Rooms
             </h2>
-            <div class="section-controls">
+            <div v-if="!isMobileView" class="section-controls">
               <button 
                 class="view-toggle-btn"
                 @click="toggleView"
@@ -644,6 +644,7 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid var(--border-color);
+  box-sizing: border-box;
   border-radius: var(--radius);
   font-size: 0.9rem;
 }

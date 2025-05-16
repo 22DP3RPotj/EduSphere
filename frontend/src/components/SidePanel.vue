@@ -183,6 +183,7 @@ watch(
 
 .panel-section {
   padding: 1rem;
+  box-sizing: border-box;
   width: 100%;
 }
 

@@ -3,6 +3,7 @@ import { useRouter } from "vue-router";
 import { useApiWrapper } from "@/composables/api.wrapper";
 
 import {
+  ROOM_QUERY,
   ROOM_MESSAGES_QUERY,
   TOPIC_QUERY
 } from "./graphql/room.queries";
@@ -19,16 +20,33 @@ export function useRoomApi() {
   const router = useRouter();
   const apiWrapper = useApiWrapper();
 
+  async function fetchRoom(hostSlug, roomSlug) {
+    try {
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.query({
+          query: ROOM_QUERY,
+          variables: { hostSlug, roomSlug },
+          fetchPolicy: 'network-only'
+        })
+      );
+
+      return response.data.room;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }
+
   async function fetchRoomMessages(hostSlug, roomSlug) {
     try {
-      const result = await apiWrapper.callApi(
+      const response = await apiWrapper.callApi(
         async () => apolloClient.query({
           query: ROOM_MESSAGES_QUERY,
           variables: { hostSlug, roomSlug }
         })
       );
 
-      return result.data.messages;
+      return response.data.messages;
     } catch (error) {
       console.error("Error fetching room messages:", error);
       return [];
@@ -124,13 +142,13 @@ export function useRoomApi() {
 
   async function fetchTopics() {
     try {
-      const result = await apiWrapper.callApi(
+      const response = await apiWrapper.callApi(
         async () => apolloClient.query({
           query: TOPIC_QUERY,
         })
       );
 
-      return result.data.topics;
+      return response.data.topics;
     } catch (error) {
       console.error("Error fetching topics:", error);
       return [];
@@ -138,6 +156,7 @@ export function useRoomApi() {
   }
 
   return {
+    fetchRoom,
     createRoom,
     deleteRoom,
     joinRoom,

@@ -1,16 +1,10 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, inject, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
 import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
-import { apolloClient } from '@/api/apollo.client';
-import { inject } from 'vue';
-
-import {
-  ROOM_QUERY
-} from '@/api/graphql/room.queries';
 
 import Message from '@/components/Message.vue';
 
@@ -19,7 +13,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const notifications = useNotifications();
-const { deleteRoom, joinRoom } = useRoomApi();
+const { deleteRoom, joinRoom, fetchRoom } = useRoomApi();
 
 const room = ref(null);
 const loading = ref(false);
@@ -47,7 +41,7 @@ const isParticipant = computed(() => {
 });
 
 const canSendMessage = computed(() => {
-  return authStore.isAuthenticated && (isHost.value || isParticipant.value);
+  return authStore.isAuthenticated && isParticipant.value;
 });
 
 const participants = computed(() => {
@@ -66,23 +60,6 @@ const participants = computed(() => {
   
   return allParticipants;
 });
-
-async function fetchRoom() {
-  try {
-    loading.value = true;
-    const { data } = await apolloClient.query({
-      query: ROOM_QUERY,
-      variables: route.params,
-      fetchPolicy: 'network-only'
-    });
-    room.value = data.room;
-  } catch (error) {
-    notifications.error(error);
-    router.push('/');
-  } finally {
-    loading.value = false;
-  }
-}
 
 async function handleMessageDelete(messageId) {
   try {
@@ -155,7 +132,9 @@ function toggleSidebar() {
 
 async function handleJoin() {
     await joinRoom(room.value.host.username, room.value.slug);
-    await fetchRoom();
+    loading.value = true;
+    room.value = await fetchRoom(room.value.host.username, room.value.slug);
+    loading.value = false;
 }
 
 function sendMessage() {
@@ -177,7 +156,9 @@ function navigateToUserProfile(userSlug) {
 onMounted(async () => {
   try {
     await authStore.initialize();
-    await fetchRoom();
+    loading.value = true;
+    room.value = await fetchRoom(route.params.hostSlug, route.params.roomSlug);
+    loading.value = false;
     
     await initializeWebSocket();
     

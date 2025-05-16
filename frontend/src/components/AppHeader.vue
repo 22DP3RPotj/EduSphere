@@ -36,7 +36,6 @@
 import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
-import { useNotifications } from '@/composables/useNotifications';
 import { apolloClient } from '@/api/apollo.client';
 import { GET_USER } from '@/api/graphql/auth.queries';
 

@@ -55,7 +55,7 @@ export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
 
 export const ROOMS_NOT_PARTICIPATED_BY_USER_QUERY = gql`
     query RoomsNotParticipatedByUser($userSlug: String!) {
-        roomsParticipatedByUser(userSlug: $userSlug) {
+        roomsNotParticipatedByUser(userSlug: $userSlug) {
             name
             slug
             description

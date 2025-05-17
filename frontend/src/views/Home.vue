@@ -461,7 +461,7 @@ async function fetchRecommendedRooms() {
     });
     
     // Show only a few recommendations
-    recommendedRooms.value = (data.roomsParticipatedByUser || []).slice(0, 3);
+    recommendedRooms.value = (data.roomsNotParticipatedByUser || []).slice(0, 3);
   } catch (error) {
     console.error('Error loading recommended rooms:', error);
   } finally {

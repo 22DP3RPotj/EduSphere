@@ -77,7 +77,7 @@ class Query(graphene.ObjectType):
             )
             
         if topic:
-            queryset = queryset.filter(topic__name__in=topic)
+            queryset = queryset.filter(topic__name__in=topic).distinct()
 
         return queryset.order_by('-participants_count' , '-created')
     

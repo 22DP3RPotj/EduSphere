@@ -131,10 +131,14 @@ function toggleSidebar() {
 }
 
 async function handleJoin() {
-    await joinRoom(room.value.host.username, room.value.slug);
-    loading.value = true;
-    room.value = await fetchRoom(room.value.host.username, room.value.slug);
-    loading.value = false;
+  await joinRoom(room.value.host.username, room.value.slug);
+  loading.value = true;
+  room.value = await fetchRoom(room.value.host.username, room.value.slug);
+  loading.value = false;
+  
+  if (authStore.isAuthenticated && isParticipant.value) {
+    await initializeWebSocket();
+  }
 }
 
 function sendMessage() {
@@ -160,7 +164,9 @@ onMounted(async () => {
     room.value = await fetchRoom(route.params.hostSlug, route.params.roomSlug);
     loading.value = false;
     
-    await initializeWebSocket();
+    if (authStore.isAuthenticated && isParticipant.value) {
+      await initializeWebSocket();
+    }
     
     window.addEventListener('resize', handleResize);
   } catch (error) {
@@ -173,9 +179,19 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-watch(() => route.params.room, () => {
+watch(() => authStore.isAuthenticated, async (newValue) => {
+  if (newValue && isParticipant.value && room.value) {
+    await initializeWebSocket();
+  } else if (!newValue) {
+    closeWebSocket();
+  }
+});
+
+watch(() => route.params.room, async () => {
   closeWebSocket();
-  initializeWebSocket();
+  if (authStore.isAuthenticated && isParticipant.value) {
+    await initializeWebSocket();
+  }
 });
 </script>
 

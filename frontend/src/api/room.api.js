@@ -42,7 +42,8 @@ export function useRoomApi() {
       const response = await apiWrapper.callApi(
         async () => apolloClient.query({
           query: ROOM_MESSAGES_QUERY,
-          variables: { hostSlug, roomSlug }
+          variables: { hostSlug, roomSlug },
+          fetchPolicy: 'network-only'
         })
       );
 

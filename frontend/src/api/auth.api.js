@@ -7,7 +7,8 @@ import {
   LOGIN_MUTATION,
   REFRESH_TOKEN_MUTATION,
   REGISTER_MUTATION,
-  LOGOUT_MUTATION
+  LOGOUT_MUTATION,
+  UPDATE_USER_MUTATION
 } from "./graphql/auth.mutations";
 
 import {
@@ -165,6 +166,35 @@ export function useAuthApi() {
     }
   }
 
+  async function updateUser(data) {
+    try {
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.mutate({
+          mutation: UPDATE_USER_MUTATION,
+          variables: data,
+          context: {
+            useMultipart: true
+          }
+        }),
+        { suppressNotifications: false }
+      );
+
+      if (!response?.data?.updateUser?.user) {
+        notifications.error('Failed to update profile');
+        return { success: false };
+      }
+
+      const updatedUser = response.data.updateUser.user;
+      
+      authStore.setUser(updatedUser);
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      console.error("Update user error:", error);
+      return { success: false, error };
+    }
+  }
+
   async function logout() {
     try {
       authStore.markTokenRevoked();
@@ -226,6 +256,7 @@ export function useAuthApi() {
   return {
     login,
     registerUser,
+    updateUser,
     logout,
     refreshToken,
     verifyAuthState,

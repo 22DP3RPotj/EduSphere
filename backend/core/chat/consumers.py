@@ -89,7 +89,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.handle_new_message(room, data.get('message'))
 
         elif message_type == 'delete':
-            await self.handle__delete_message(data.get('messageId'))
+            await self.handle_delete_message(data.get('messageId'))
 
         elif message_type == 'update':
             await self.handle_update_message(
@@ -130,7 +130,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
-    async def handle__delete_message(self, message_id):
+    async def handle_delete_message(self, message_id):
         """Handle deletion of a message"""
         from ..models import Message
 

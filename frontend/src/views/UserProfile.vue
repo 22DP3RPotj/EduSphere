@@ -1,8 +1,11 @@
+
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { apolloClient } from '@/api/apollo.client';
 import { useNotifications } from '@/composables/useNotifications';
+import { useAuthStore } from '@/stores/auth.store';
+import { useAuthApi } from '@/api/auth.api';
 
 import {
     USER_QUERY,
@@ -16,10 +19,27 @@ import UserAvatar from '@/components/UserAvatar.vue';
 const route = useRoute();
 const router = useRouter();
 const notifications = useNotifications();
+const authStore = useAuthStore();
+const authApi = useAuthApi();
 
 const user = ref(null);
 const loading = ref(true);
 const error = ref(null);
+
+// Edit mode state
+const isEditing = ref(false);
+const editLoading = ref(false);
+const editForm = ref({
+  name: '',
+  bio: '',
+  avatar: null
+});
+const avatarPreview = ref(null);
+
+// Check if current user is viewing their own profile
+const isOwnProfile = computed(() => {
+  return authStore.user && user.value && authStore.user.username === user.value.username;
+});
 
 // Tab data
 const activeTab = ref('messages');
@@ -56,6 +76,15 @@ async function fetchUser() {
     });
     
     user.value = data.user;
+    
+    // Initialize edit form with current user data
+    if (user.value) {
+      editForm.value = {
+        name: user.value.name || '',
+        bio: user.value.bio || '',
+        avatar: null
+      };
+    }
     
     loadTabData(activeTab.value);
   } catch (err) {
@@ -146,6 +175,79 @@ function formatDate(dateString) {
   });
 }
 
+// Edit profile functions
+function startEditing() {
+  isEditing.value = true;
+  editForm.value = {
+    name: user.value.name || '',
+    bio: user.value.bio || '',
+    avatar: null
+  };
+  avatarPreview.value = null;
+}
+
+function cancelEditing() {
+  isEditing.value = false;
+  editForm.value = {
+    name: user.value.name || '',
+    bio: user.value.bio || '',
+    avatar: null
+  };
+  avatarPreview.value = null;
+}
+
+function handleAvatarChange(event) {
+  const file = event.target.files[0];
+  if (file) {
+    editForm.value.avatar = file;
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      avatarPreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function saveProfile() {
+  editLoading.value = true;
+  
+  try {
+    const updateData = {
+      name: editForm.value.name.trim() || null,
+      bio: editForm.value.bio.trim() || null
+    };
+    
+    // Add avatar if selected
+    if (editForm.value.avatar) {
+      updateData.avatar = editForm.value.avatar;
+    }
+    
+    const result = await authApi.updateUser(updateData);
+    
+    if (result.success) {
+      // Update local user data
+      user.value = { ...user.value, ...result.user };
+      
+      // Check if username changed, if so redirect
+      if (result.user.username !== route.params.userSlug) {
+        router.replace(`/user/${result.user.username}`);
+      }
+      
+      isEditing.value = false;
+      avatarPreview.value = null;
+    } else {
+      notifications.error('Failed to update profile');
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    notifications.error('An error occurred while updating your profile');
+  } finally {
+    editLoading.value = false;
+  }
+}
+
 onMounted(() => {
   fetchUser();
 });
@@ -158,6 +260,10 @@ watch(() => route.params.userSlug, (newUsername) => {
       tabsData.value[tab].loaded = false;
       tabsData.value[tab].data = [];
     });
+    
+    // Cancel editing if switching users
+    isEditing.value = false;
+    
     fetchUser();
   }
 });
@@ -171,6 +277,14 @@ watch(() => route.params.userSlug, (newUsername) => {
         <font-awesome-icon icon="arrow-left" />
       </button>
       <h1>Profile</h1>
+      
+      <!-- Edit button for own profile -->
+      <div v-if="isOwnProfile && !isEditing" class="header-actions">
+        <button @click="startEditing" class="edit-button">
+          <font-awesome-icon icon="edit" />
+          Edit
+        </button>
+      </div>
     </div>
     
     <!-- Loading state -->
@@ -191,7 +305,96 @@ watch(() => route.params.userSlug, (newUsername) => {
     <!-- User profile content -->
     <div v-else-if="user" class="profile-content">
       <div class="profile-overview">
-        <div class="profile-main">
+        <!-- Editing mode -->
+        <div v-if="isEditing" class="edit-profile">
+          <h3>Edit Profile</h3>
+          
+          <form @submit.prevent="saveProfile" class="edit-form">
+            <!-- Avatar upload -->
+            <div class="form-group">
+              <label class="form-label">Profile Picture</label>
+              <div class="avatar-upload">
+                <div class="current-avatar">
+                  <UserAvatar 
+                    v-if="!avatarPreview" 
+                    :user="user" 
+                    size="large" 
+                  />
+                  <img 
+                    v-else 
+                    :src="avatarPreview" 
+                    alt="Avatar preview" 
+                    class="avatar-preview"
+                  />
+                </div>
+                <input
+                  type="file"
+                  id="avatar-input"
+                  accept="image/*"
+                  @change="handleAvatarChange"
+                  class="avatar-input"
+                />
+                <label for="avatar-input" class="avatar-upload-button">
+                  <font-awesome-icon icon="camera" />
+                  Change Picture
+                </label>
+              </div>
+            </div>
+            
+            <!-- Name input -->
+            <div class="form-group">
+              <label for="name-input" class="form-label">Display Name</label>
+              <input
+                id="name-input"
+                v-model="editForm.name"
+                type="text"
+                class="form-input"
+                placeholder="Enter your display name"
+                maxlength="150"
+              />
+            </div>
+            
+            <!-- Bio input -->
+            <div class="form-group">
+              <label for="bio-input" class="form-label">Bio</label>
+              <textarea
+                id="bio-input"
+                v-model="editForm.bio"
+                class="form-textarea"
+                placeholder="Tell us about yourself..."
+                rows="4"
+                maxlength="500"
+              ></textarea>
+              <div class="char-count">
+                {{ editForm.bio.length }}/500
+              </div>
+            </div>
+            
+            <!-- Action buttons -->
+            <div class="form-actions">
+              <button 
+                type="button" 
+                @click="cancelEditing" 
+                class="cancel-button"
+                :disabled="editLoading"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                class="save-button"
+                :disabled="editLoading"
+              >
+                <font-awesome-icon v-if="editLoading" icon="spinner" spin />
+                <font-awesome-icon v-else icon="check" />
+                {{ editLoading ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- View mode -->
+        <div v-else class="profile-main">
           <UserAvatar :user="user" size="large" />
           
           <div class="profile-names">
@@ -200,17 +403,19 @@ watch(() => route.params.userSlug, (newUsername) => {
           </div>
         </div>
         
-        <!-- Bio section -->
-        <div v-if="user.bio" class="profile-bio">
-          {{ user.bio }}
-        </div>
-        <div v-else class="profile-bio no-bio">
-          This user hasn't added a bio yet.
+        <!-- Bio section (only in view mode) -->
+        <div v-if="!isEditing">
+          <div v-if="user.bio" class="profile-bio">
+            {{ user.bio }}
+          </div>
+          <div v-else class="profile-bio no-bio">
+            {{ isOwnProfile ? "You haven't added a bio yet." : "This user hasn't added a bio yet." }}
+          </div>
         </div>
       </div>
       
-      <!-- Profile tabs -->
-      <div class="profile-tabs">
+      <!-- Profile tabs (hidden during editing) -->
+      <div v-if="!isEditing" class="profile-tabs">
         <div 
           class="tab" 
           :class="{ active: activeTab === 'messages' }"
@@ -234,8 +439,8 @@ watch(() => route.params.userSlug, (newUsername) => {
         </div>
       </div>
       
-      <!-- Tab content -->
-      <div class="tab-content">
+      <!-- Tab content (hidden during editing) -->
+      <div v-if="!isEditing" class="tab-content">
         <!-- Messages Tab -->
         <div v-if="activeTab === 'messages'" class="messages-tab">
           <div v-if="tabsData.messages.loading" class="tab-loading">
@@ -400,6 +605,30 @@ watch(() => route.params.userSlug, (newUsername) => {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-button {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.edit-button:hover {
+  background-color: var(--primary-hover);
 }
 
 .profile-loading, .profile-error, .profile-not-found {
@@ -495,6 +724,148 @@ watch(() => route.params.userSlug, (newUsername) => {
 .no-bio {
   color: var(--text-light);
   font-style: italic;
+}
+
+/* Edit profile styles */
+.edit-profile {
+  margin-bottom: 1rem;
+}
+
+.edit-profile h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.form-input, .form-textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: var(--transition);
+  background-color: var(--white);
+}
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.char-count {
+  align-self: flex-end;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 0.25rem;
+}
+
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.current-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--white);
+  box-shadow: var(--shadow);
+}
+
+.avatar-input {
+  display: none;
+}
+
+.avatar-upload-button {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.avatar-upload-button:hover {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.cancel-button, .save-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.cancel-button {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: var(--border-color);
+}
+
+.save-button {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.cancel-button:disabled, .save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .profile-tabs {

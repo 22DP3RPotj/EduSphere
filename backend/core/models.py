@@ -137,7 +137,7 @@ class Message(models.Model):
             'created': self.created.isoformat(),
             'edited': self.edited,
             'updated': self.updated.isoformat(),
-            'userAvatar': self.user.avatar.url if self.user.avatar else None,
+            'userAvatar': self.user.avatar.name if self.user.avatar else None,
         }
         
     def update(self, body):

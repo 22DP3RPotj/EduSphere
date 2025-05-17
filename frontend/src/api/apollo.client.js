@@ -1,11 +1,12 @@
-import { ApolloClient, InMemoryCache, createHttpLink, from } from "@apollo/client/core";
+import { ApolloClient, InMemoryCache, from } from "@apollo/client/core";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import Cookies from "js-cookie";
 import authTokenService from "@/services/refresh-token";
 import { useAuthStore } from "@/stores/auth.store";
+import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 
-const httpLink = createHttpLink({
+const uploadLink = createUploadLink({
   uri: "/graphql/",
   credentials: "include"
 });
@@ -75,6 +76,6 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 });
 
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([errorLink, authLink, uploadLink]),
   cache: new InMemoryCache(),
 });

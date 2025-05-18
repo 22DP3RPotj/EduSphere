@@ -13,7 +13,8 @@ import {
   DELETE_ROOM_MUTATION,
   JOIN_ROOM_MUTATION,
   DELETE_MESSAGE_MUTATION,
-  UPDATE_MESSAGE_MUTATION
+  UPDATE_MESSAGE_MUTATION,
+  UPDATE_ROOM_MUTATION
 } from "./graphql/room.mutations";
 
 export function useRoomApi() {
@@ -93,6 +94,22 @@ export function useRoomApi() {
     }
   }
 
+  async function updateRoom(data) {
+    try {
+      const response = await apiWrapper.callApi(
+        async () => apolloClient.mutate({
+          mutation: UPDATE_ROOM_MUTATION,
+          variables: data
+        })
+      );
+
+      return response.data.updateRoom.room;
+    } catch (error) {
+      console.error("Error updating room:", error);
+      return false;
+    }
+  }
+
   async function joinRoom(hostSlug, roomSlug) {
     try {
       const response = await apiWrapper.callApi(
@@ -160,6 +177,7 @@ export function useRoomApi() {
     fetchRoom,
     createRoom,
     deleteRoom,
+    updateRoom,
     joinRoom,
     deleteMessage,
     updateMessage,

@@ -8,4 +8,7 @@ if [ -z "$DJANGO_SETTINGS_MODULE" ]; then
   sudo service nginx start
 
   mkdir -p logs
+  mkdir -p media/avatars
+
+  python manage.py collectstatic --noinput
 fi

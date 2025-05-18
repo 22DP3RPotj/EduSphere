@@ -7,6 +7,7 @@ import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
 
 import Message from '@/components/Message.vue';
+import EditRoomForm from '@/components/EditRoomForm.vue';
 
 const Swal = inject('$swal');
 const authStore = useAuthStore();
@@ -21,6 +22,7 @@ const messageInput = ref('');
 const messagesContainerRef = ref(null);
 const showSidebar = ref(window.innerWidth > 768);
 const isMobileView = ref(window.innerWidth <= 768);
+const showEditForm = ref(false);
 
 const {
   messages,
@@ -113,6 +115,19 @@ async function handleRoomDelete() {
   }
 }
 
+function handleEditRoom() {
+  showEditForm.value = true;
+}
+
+function handleEditCancel() {
+  showEditForm.value = false;
+}
+
+async function handleEditComplete(updatedRoom) {
+  showEditForm.value = false;
+  room.value = updatedRoom;
+  notifications.success('Room updated successfully!');
+}
 
 function handleResize() {
   isMobileView.value = window.innerWidth <= 768;
@@ -197,6 +212,17 @@ watch(() => route.params.room, async () => {
 
 <template>
   <div class="room-container">
+    <!-- Edit Form Modal -->
+    <div v-if="showEditForm" class="edit-modal-overlay" @click="handleEditCancel">
+      <div class="edit-modal-content" @click.stop>
+        <EditRoomForm 
+          :room="room"
+          @cancel="handleEditCancel"
+          @updated="handleEditComplete"
+        />
+      </div>
+    </div>
+
     <!-- Loading state -->
     <div v-if="loading || authStore.isLoadingUser" class="room-loading">
       <div class="spinner"></div>
@@ -222,7 +248,10 @@ watch(() => route.params.room, async () => {
           <button v-if="isMobileView" @click="toggleSidebar" class="sidebar-toggle">
             <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
           </button>
-          <button v-if="isHost" @click="handleRoomDelete" class="delete-button">
+          <button v-if="isHost" @click="handleEditRoom" class="edit-button" title="Edit Room">
+            <font-awesome-icon icon="edit" />
+          </button>
+          <button v-if="isHost" @click="handleRoomDelete" class="delete-button" title="Delete Room">
             <font-awesome-icon icon="trash" />
           </button>
           <button v-if="!isParticipant && authStore.isAuthenticated" @click="handleJoin" class="join-button">
@@ -316,6 +345,47 @@ watch(() => route.params.room, async () => {
   max-height: 100vh;
   overflow: hidden;
   background-color: var(--bg-color);
+}
+
+.edit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.edit-modal-content {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .room-loading, .room-error {
@@ -483,6 +553,24 @@ watch(() => route.params.room, async () => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.edit-button {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 20%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.edit-button:hover {
+  background-color: var(--primary-hover);
 }
 
 .delete-button {

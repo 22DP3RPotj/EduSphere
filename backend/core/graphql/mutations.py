@@ -100,6 +100,44 @@ class CreateRoom(graphene.Mutation):
         else:
             raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
 
+class UpdateRoom(graphene.Mutation):
+    class Arguments:
+        host_slug = graphene.String(required=True)
+        room_slug = graphene.String(required=True)
+        name = graphene.String(required=False)
+        topic_name = graphene.String(required=False)
+        description = graphene.String(required=False)
+
+    room = graphene.Field(RoomType)
+
+    @login_required
+    def mutate(self, info, host_slug, room_slug, **kwargs):
+        try:
+            room = Room.objects.get(
+                host__username=host_slug,
+                slug=room_slug
+            )
+        except Room.DoesNotExist:
+            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+        
+        if room.host != info.context.user:
+            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
+        
+        topic, created = Topic.objects.get_or_create(name=kwargs.get("topic_name"))
+        
+        form = RoomForm({
+            "name": kwargs.get("name", room.name),
+            "topic": topic.id,
+            "description": kwargs.get("description", room.description)
+        }, instance=room)
+
+        if form.is_valid():
+            form.save()
+            return UpdateRoom(room=room)
+        else:
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
+    
+
 class DeleteRoom(graphene.Mutation):
     class Arguments:
         host_slug = graphene.String(required=True)
@@ -189,6 +227,7 @@ class AppMutation(graphene.ObjectType):
     update_user = UpdateUser.Field()
     create_room = CreateRoom.Field()
     delete_room = DeleteRoom.Field()
+    update_room = UpdateRoom.Field()
     join_room = JoinRoom.Field()
     delete_message = DeleteMessage.Field()
     update_message = UpdateMessage.Field()

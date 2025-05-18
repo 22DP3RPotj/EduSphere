@@ -2,12 +2,12 @@ from django.contrib import admin
 from .models import User, Room, Topic, Message
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('name', 'username', 'email', 'bio', 'is_staff')
-    list_editable = ('is_staff',)
-    list_filter = ('is_staff',)
+    list_display = ('name', 'username', 'email', 'bio', 'is_staff', 'is_active', 'last_login')
+    list_editable = ('is_staff', 'is_active')
+    list_filter = ('is_staff', 'is_active')
     search_fields = ('name', 'username', 'email')
     
-    readonly_fields = ('username', 'email', 'password', 'avatar')
+    readonly_fields = ('username', 'email', 'password', 'avatar', 'last_login')
     
     list_per_page = 25
 

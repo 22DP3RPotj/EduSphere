@@ -25,6 +25,39 @@ export const DELETE_ROOM_MUTATION = gql`
     }
 `;
 
+export const UPDATE_ROOM_MUTATION = gql`
+    mutation UpdateRoom(
+        $hostSlug: String!,
+        $roomSlug: String!,
+        $name: String,
+        $topicName: String,
+        $description: String
+    ) {
+        updateRoom(
+            hostSlug: $hostSlug,
+            roomSlug: $roomSlug,
+            name: $name,
+            topicName: $topicName,
+            description: $description
+        ) {
+            room {
+                id
+                name
+                topic { name }
+                description
+                participants {
+                    id
+                    username
+                }
+                host {
+                    id
+                    username
+                }
+            }    
+        }
+    }
+`;
+
 export const JOIN_ROOM_MUTATION = gql`
     mutation JoinRoom($hostSlug: String!, $roomSlug: String!) {
         joinRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {

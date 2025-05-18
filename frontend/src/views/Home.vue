@@ -141,11 +141,11 @@
         </section>
 
         <!-- Your Rooms Section (if authenticated) -->
-        <section v-if="isAuthenticated" class="rooms-section your-rooms-section">
+        <section v-if="isAuthenticated" class="rooms-section joined-rooms-section">
           <div class="section-header">
             <h2>
               <font-awesome-icon :icon="['fas', 'user-circle']" />
-              Your Rooms
+              Joined Rooms
             </h2>
           </div>
 
@@ -884,7 +884,7 @@ onBeforeUnmount(() => {
   gap: 0.5rem;
 }
 
-.your-rooms-section h2, .recommended-section h2 {
+.joined-rooms-section h2, .recommended-section h2 {
   color: var(--primary-color);
 }
 

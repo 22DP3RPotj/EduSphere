@@ -1,9 +1,13 @@
 <template>
   <div>
     <!-- Collapsed Side Panel Button (Tab) -->
-    <div class="panel-tab" :class="{ 'open': isPanelOpen }" @click="togglePanel">
-      <font-awesome-icon :icon="isPanelOpen ? 'chevron-right' : 'chevron-left'" />
-    </div>
+  <button 
+    class="panel-tab" 
+    :class="{ 'open': isPanelOpen }" 
+    @click="togglePanel"
+  >
+    <font-awesome-icon :icon="isPanelOpen ? 'chevron-right' : 'chevron-left'" />
+  </button>
     
     <!-- Backdrop (only visible when panel is open) -->
     <div 

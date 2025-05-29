@@ -194,6 +194,7 @@ async function submitRoom() {
   min-height: 100px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
+  color: var(--text-color);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   background-color: var(--white);

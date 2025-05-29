@@ -93,6 +93,9 @@ export const MESSAGES_BY_USER_QUERY = gql`
             room {
                 slug
                 name
+                host {
+                    username
+                }
             }
         } 
     }

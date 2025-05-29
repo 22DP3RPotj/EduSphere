@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -6,13 +5,6 @@ import { apolloClient } from '@/api/apollo.client';
 import { useNotifications } from '@/composables/useNotifications';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
-
-import {
-    USER_QUERY,
-    MESSAGES_BY_USER_QUERY,
-    ROOMS_QUERY,
-    ROOMS_PARTICIPATED_BY_USER_QUERY
-} from '@/api/graphql/room.queries';
 
 import UserAvatar from '@/components/UserAvatar.vue';
 
@@ -36,11 +28,6 @@ const editForm = ref({
 });
 const avatarPreview = ref(null);
 
-// Check if current user is viewing their own profile
-const isOwnProfile = computed(() => {
-  return authStore.user && user.value && authStore.user.username === user.value.username;
-});
-
 // Tab data
 const activeTab = ref('messages');
 const tabsData = ref({
@@ -63,6 +50,18 @@ const tabsData = ref({
     error: null
   }
 });
+
+// Check if current user is viewing their own profile
+const isOwnProfile = computed(() => {
+  return authStore.user && user.value && authStore.user.username === user.value.username;
+});
+
+import {
+    USER_QUERY,
+    MESSAGES_BY_USER_QUERY,
+    ROOMS_QUERY,
+    ROOMS_PARTICIPATED_BY_USER_QUERY
+} from '@/api/graphql/room.queries';
 
 async function fetchUser() {
   loading.value = true;
@@ -162,7 +161,7 @@ function setActiveTab(tab) {
 
 // Navigation to room
 function navigateToRoom(room) {
-  router.push(`/user/${room.host?.username || user.value.username}/${room.slug}`);
+  router.push(`/user/${room.host.username}/${room.slug}`);
 }
 
 // Format date for display
@@ -304,69 +303,72 @@ watch(() => route.params.userSlug, (newUsername) => {
     
     <!-- User profile content -->
     <div v-else-if="user" class="profile-content">
-      <div class="profile-overview">
+      <div class="profile-overview" :class="{ 'edit-mode': isEditing }">
         <!-- Editing mode -->
         <div v-if="isEditing" class="edit-profile">
-          <h3>Edit Profile</h3>
+          <div class="edit-header">
+            <h3>Edit Profile</h3>
+          </div>
           
           <form @submit.prevent="saveProfile" class="edit-form">
-            <!-- Avatar upload -->
-            <div class="form-group">
-              <label class="form-label">Profile Picture</label>
-              <div class="avatar-upload">
-                <div class="current-avatar">
-                  <UserAvatar 
-                    v-if="!avatarPreview" 
-                    :user="user" 
-                    size="large" 
+            <div class="form-content">
+              <!-- Avatar upload -->
+              <div class="form-group">
+                <label class="form-label">Profile Picture</label>
+                <div class="avatar-upload">
+                  <div class="current-avatar">
+                    <UserAvatar 
+                      v-if="!avatarPreview" 
+                      :user="user" 
+                      size="large" 
+                    />
+                    <img 
+                      v-else 
+                      :src="avatarPreview" 
+                      alt="Avatar preview" 
+                      class="avatar-preview"
+                    />
+                  </div>
+                  <input
+                    type="file"
+                    id="avatar-input"
+                    accept=".svg, .png, .jpg, .jpeg"
+                    @change="handleAvatarChange"
+                    class="avatar-input"
                   />
-                  <img 
-                    v-else 
-                    :src="avatarPreview" 
-                    alt="Avatar preview" 
-                    class="avatar-preview"
-                  />
+                  <label for="avatar-input" class="avatar-upload-button">
+                    <font-awesome-icon icon="camera" />
+                    Change Picture
+                  </label>
                 </div>
-                <input
-                  type="file"
-                  id="avatar-input"
-                  accept="image/*"
-                  @change="handleAvatarChange"
-                  class="avatar-input"
-                />
-                <label for="avatar-input" class="avatar-upload-button">
-                  <font-awesome-icon icon="camera" />
-                  Change Picture
-                </label>
               </div>
-            </div>
-            
-            <!-- Name input -->
-            <div class="form-group">
-              <label for="name-input" class="form-label">Display Name</label>
-              <input
-                id="name-input"
-                v-model="editForm.name"
-                type="text"
-                class="form-input"
-                placeholder="Enter your display name"
-                maxlength="150"
-              />
-            </div>
-            
-            <!-- Bio input -->
-            <div class="form-group">
-              <label for="bio-input" class="form-label">Bio</label>
-              <textarea
-                id="bio-input"
-                v-model="editForm.bio"
-                class="form-textarea"
-                placeholder="Tell us about yourself..."
-                rows="4"
-                maxlength="500"
-              ></textarea>
-              <div class="char-count">
-                {{ editForm.bio.length }}/500
+              
+              <!-- Name input -->
+              <div class="form-group">
+                <label for="name-input" class="form-label">Display Name</label>
+                <input
+                  id="name-input"
+                  v-model="editForm.name"
+                  type="text"
+                  class="form-input"
+                  placeholder="Enter your display name"
+                  maxlength="150"
+                />
+              </div>
+              
+              <!-- Bio input -->
+              <div class="form-group bio-group">
+                <label for="bio-input" class="form-label">Bio</label>
+                <textarea
+                  id="bio-input"
+                  v-model="editForm.bio"
+                  class="form-textarea"
+                  placeholder="Tell us about yourself..."
+                  maxlength="500"
+                ></textarea>
+                <div class="char-count">
+                  {{ editForm.bio.length }}/500
+                </div>
               </div>
             </div>
             
@@ -565,8 +567,9 @@ watch(() => route.params.userSlug, (newUsername) => {
   flex-direction: column;
   max-width: 800px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
   background-color: var(--bg-color);
+  overflow: hidden;
 }
 
 .profile-header {
@@ -575,10 +578,9 @@ watch(() => route.params.userSlug, (newUsername) => {
   padding: 1rem;
   background-color: var(--white);
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 10;
   box-shadow: var(--shadow);
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .back-button {
@@ -686,12 +688,22 @@ watch(() => route.params.userSlug, (newUsername) => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .profile-overview {
   padding: 2rem 1rem;
   background-color: var(--white);
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.profile-overview.edit-mode {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 .profile-main {
@@ -728,16 +740,35 @@ watch(() => route.params.userSlug, (newUsername) => {
 
 /* Edit profile styles */
 .edit-profile {
-  margin-bottom: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.edit-header {
+  padding: 2rem 2rem 1rem 2rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .edit-profile h3 {
-  margin: 0 0 1.5rem 0;
+  margin: 0;
   font-size: 1.3rem;
   font-weight: 600;
 }
 
 .edit-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.form-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -748,18 +779,28 @@ watch(() => route.params.userSlug, (newUsername) => {
   flex-direction: column;
 }
 
+.bio-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .form-label {
   margin-bottom: 0.5rem;
   font-weight: 500;
   color: var(--text-color);
+  flex-shrink: 0;
 }
 
 .form-input, .form-textarea {
+  box-sizing: border-box;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   font-size: 1rem;
   transition: var(--transition);
+  color: var(--text-color);
   background-color: var(--white);
 }
 
@@ -770,8 +811,9 @@ watch(() => route.params.userSlug, (newUsername) => {
 }
 
 .form-textarea {
-  resize: vertical;
-  min-height: 100px;
+  resize: none;
+  flex: 1;
+  min-height: 200px;
   font-family: inherit;
 }
 
@@ -780,6 +822,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   font-size: 0.8rem;
   color: var(--text-light);
   margin-top: 0.25rem;
+  flex-shrink: 0;
 }
 
 .avatar-upload {
@@ -828,8 +871,10 @@ watch(() => route.params.userSlug, (newUsername) => {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  padding-top: 1rem;
+  padding: 1.5rem 2rem;
   border-top: 1px solid var(--border-color);
+  background-color: var(--white);
+  flex-shrink: 0;
 }
 
 .cancel-button, .save-button {
@@ -872,6 +917,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   display: flex;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--white);
+  flex-shrink: 0;
 }
 
 .tab {
@@ -908,6 +954,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   flex: 1;
   padding: 1rem;
   background-color: var(--white);
+  overflow-y: auto;
 }
 
 .tab-loading, .tab-error, .empty-tab {
@@ -1106,6 +1153,18 @@ watch(() => route.params.userSlug, (newUsername) => {
   .tab {
     padding: 0.75rem 0.5rem;
     font-size: 0.9rem;
+  }
+  
+  .form-content {
+    padding: 1rem;
+  }
+  
+  .form-actions {
+    padding: 1rem;
+  }
+  
+  .edit-header {
+    padding: 1rem;
   }
 }
 </style>

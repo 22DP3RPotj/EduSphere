@@ -41,6 +41,11 @@
         
         <!-- User Section (bottom) -->
         <div class="panel-section user-section">
+          <button @click="toggleTheme" class="theme-toggle-btn">
+            <font-awesome-icon :icon="isDarkMode ? 'sun' : 'moon'" />
+            <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+          </button>
+
           <template v-if="isAuthenticated">
             <router-link :to="`/user/${currentUser?.username}`" class="user-profile" @click="closePanel">
               <img 
@@ -71,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
 
@@ -81,6 +86,7 @@ const { logout, fetchAuthStatus } = useAuthApi();
 const currentUser = ref(null);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const isPanelOpen = ref(false);
+const isDarkMode = ref(false);
 
 function togglePanel() {
   isPanelOpen.value = !isPanelOpen.value;
@@ -88,6 +94,12 @@ function togglePanel() {
 
 function closePanel() {
   isPanelOpen.value = false;
+}
+
+function toggleTheme() {
+  isDarkMode.value = !isDarkMode.value
+  document.documentElement.classList.toggle('dark', isDarkMode.value)
+  localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
 }
 
 async function handleLogout() {
@@ -112,6 +124,23 @@ watch(
   },
   { immediate: true }
 );
+
+watch(
+  () => authStore.user,
+  (newUser) => {
+    if (newUser && isAuthenticated.value) {
+      currentUser.value = newUser;
+    }
+  },
+  { deep: true }
+);
+
+onMounted(() => {
+  isDarkMode.value = localStorage.getItem('theme') === 'dark'
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark')
+  }
+})
 </script>
 
 <style scoped>
@@ -169,12 +198,12 @@ watch(
 }
 
 .panel-tab.open {
-  right: 250px; /* Match the panel width */
+  right: 250px;
 }
 
 @media (max-width: 768px) {
   .panel-tab.open {
-    right: 220px; /* Match the smaller panel width for mobile */
+    right: 250px;
   }
 }
 
@@ -189,6 +218,27 @@ watch(
   padding: 1rem;
   box-sizing: border-box;
   width: 100%;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: var(--transition);
+  margin-bottom: 0.5rem;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--bg-color);
+  border-color: var(--text-color);
 }
 
 .logo-section {
@@ -307,7 +357,7 @@ watch(
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .side-panel.open {
-    width: 220px;
+    width: 250px;
   }
 }
 </style>

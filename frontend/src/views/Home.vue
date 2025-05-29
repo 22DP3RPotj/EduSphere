@@ -547,25 +547,23 @@ onBeforeUnmount(() => {
   background-color: var(--white);
   border-right: 1px solid var(--border-color);
   padding: 0;
-  height: calc(100vh - 64px);
-  position: sticky;
-  top: 64px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow-y: auto;
   transition: all 0.3s ease;
+  z-index: 30;
 }
 
 .mobile-sidebar {
   position: fixed;
   left: -260px;
-  top: 64px;
+  top: 0;
   bottom: 0;
-  padding-top: 0;
+  height: 100vh;
   z-index: 20;
   box-shadow: var(--shadow);
-}
-
-.mobile-sidebar.sidebar-visible {
-  left: 0;
 }
 
 .close-sidebar-button {
@@ -647,6 +645,8 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   border-radius: var(--radius);
   font-size: 0.9rem;
+  color: var(--text-color);
+  background-color: var(--bg-color);
 }
 
 .topic-search-input:focus {
@@ -724,6 +724,7 @@ onBeforeUnmount(() => {
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
+  margin-left: 260px; /* Add this line to create space for the sidebar */
 }
 
 /* Home search (in content area) */
@@ -754,6 +755,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-color);
   font-size: 0.9rem;
   transition: var(--transition);
+  color: var(--text-color);
   background-color: var(--bg-color);
 }
 
@@ -1026,6 +1028,10 @@ onBeforeUnmount(() => {
   
   .filter-toggle-btn {
     display: flex;
+  }
+  
+  .content-area {
+    margin-left: 0; /* Remove margin on mobile */
   }
 }
 </style>

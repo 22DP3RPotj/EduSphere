@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
@@ -8,8 +8,8 @@ import { useNotifications } from '@/composables/useNotifications';
 
 import Message from '@/components/Message.vue';
 import EditRoomForm from '@/components/EditRoomForm.vue';
+import ConfirmationModal from '@/components/ConfirmationModal.vue';
 
-const Swal = inject('$swal');
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
@@ -23,6 +23,8 @@ const messagesContainerRef = ref(null);
 const showSidebar = ref(window.innerWidth > 768);
 const isMobileView = ref(window.innerWidth <= 768);
 const showEditForm = ref(false);
+const showRoomActionsMenu = ref(false);
+const showDeleteConfirmation = ref(false);
 
 const {
   messages,
@@ -88,34 +90,22 @@ async function handleMessageUpdate(messageId, newBody) {
 }
 
 async function handleRoomDelete() {
-  const result = await Swal.fire({
-        title: '<h3>Are you sure?</h3>',
-        html: '<p>You want to delete this room?</p>',
-        background: '#f7f5f4',
-        showCloseButton: true,
-        closeButtonHtml: '&times;',
-        showCancelButton: true,
-        showConfirmButton: true,
-        confirmButtonText: 'Delete',
-        cancelButtonText: 'Cancel',
-        buttonsStyling: false,
-        reverseButtons: true,
-        customClass: {
-            popup: 'minimal-popup',
-            confirmButton: 'btn-confirm',
-            cancelButton: 'btn-cancel',
-            actions: 'center-buttons',
-            closeButton: 'close-btn',
-        },
-    });
+  showRoomActionsMenu.value = false;
+  showDeleteConfirmation.value = true;
+}
 
-  if (result.isConfirmed) {
-    await deleteRoom(room.value.host.username, room.value.slug);
-    router.push('/');
-  }
+async function confirmRoomDeletion() {
+  showDeleteConfirmation.value = false;
+  await deleteRoom(room.value.host.username, room.value.slug);
+  router.push('/');
+}
+
+function cancelRoomDeletion() {
+  showDeleteConfirmation.value = false;
 }
 
 function handleEditRoom() {
+  showRoomActionsMenu.value = false;
   showEditForm.value = true;
 }
 
@@ -126,7 +116,14 @@ function handleEditCancel() {
 async function handleEditComplete(updatedRoom) {
   showEditForm.value = false;
   room.value = updatedRoom;
-  notifications.success('Room updated successfully!');
+}
+
+function toggleRoomActionsMenu() {
+  showRoomActionsMenu.value = !showRoomActionsMenu.value;
+}
+
+function closeRoomActionsMenu() {
+  showRoomActionsMenu.value = false;
 }
 
 function handleResize() {
@@ -184,6 +181,7 @@ onMounted(async () => {
     }
     
     window.addEventListener('resize', handleResize);
+    window.addEventListener('click', closeRoomActionsMenu);
   } catch (error) {
     notifications.error(error);
   }
@@ -192,6 +190,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   closeWebSocket();
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener('click', closeRoomActionsMenu);
 });
 
 watch(() => authStore.isAuthenticated, async (newValue) => {
@@ -223,6 +222,17 @@ watch(() => route.params.room, async () => {
       </div>
     </div>
 
+    <ConfirmationModal
+      :is-visible="showDeleteConfirmation"
+      title="Are you sure?"
+      message="You want to delete this room?"
+      confirm-text="Delete"
+      cancel-text="Cancel"
+      @confirm="confirmRoomDeletion"
+      @cancel="cancelRoomDeletion"
+      @close="cancelRoomDeletion"
+    />
+
     <!-- Loading state -->
     <div v-if="loading || authStore.isLoadingUser" class="room-loading">
       <div class="spinner"></div>
@@ -238,7 +248,7 @@ watch(() => route.params.room, async () => {
             <font-awesome-icon icon="arrow-left" />
           </button>
           <h2>{{ room.name }}</h2>
-          <span class="room-topic" v-if="room.topic">{{ room.topic.name }}</span>
+          <span class="room-topic">{{ room.topic.name }}</span>
           <span class="participants-count">
             <font-awesome-icon icon="users" /> {{ participants.length }}
           </span>
@@ -248,12 +258,24 @@ watch(() => route.params.room, async () => {
           <button v-if="isMobileView" @click="toggleSidebar" class="sidebar-toggle">
             <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
           </button>
-          <button v-if="isHost" @click="handleEditRoom" class="edit-button" title="Edit Room">
-            <font-awesome-icon icon="edit" />
-          </button>
-          <button v-if="isHost" @click="handleRoomDelete" class="delete-button" title="Delete Room">
-            <font-awesome-icon icon="trash" />
-          </button>
+          
+          <!-- Room Actions Menu for Host -->
+          <div v-if="isHost" class="room-actions-menu" @click.stop>
+            <button @click="toggleRoomActionsMenu" class="room-actions-button">
+              <font-awesome-icon icon="ellipsis-vertical" />
+            </button>
+            <div v-if="showRoomActionsMenu" class="room-actions-dropdown">
+              <button @click="handleEditRoom" class="room-action-item">
+                <font-awesome-icon icon="edit" />
+                <span>Edit Room</span>
+              </button>
+              <button @click="handleRoomDelete" class="room-action-item delete-action">
+                <font-awesome-icon icon="trash" />
+                <span>Delete Room</span>
+              </button>
+            </div>
+          </div>
+          
           <button v-if="!isParticipant && authStore.isAuthenticated" @click="handleJoin" class="join-button">
             Join Room
           </button>
@@ -363,8 +385,8 @@ watch(() => route.params.room, async () => {
 
 .edit-modal-content {
   background: var(--white);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
@@ -380,11 +402,11 @@ watch(() => route.params.room, async () => {
 @keyframes slideIn {
   from { 
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-20px) scale(0.95);
   }
   to { 
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -456,6 +478,80 @@ watch(() => route.params.room, async () => {
 .room-header-right {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+}
+
+/* Room Actions Menu Styles */
+.room-actions-menu {
+  position: relative;
+}
+
+.room-actions-button {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.room-actions-button:hover {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.room-actions-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 1000;
+  min-width: 150px;
+  margin-top: 0.25rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.room-action-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.room-action-item:hover {
+  background-color: var(--bg-color);
+}
+
+.room-action-item:first-child {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.room-action-item:last-child {
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.room-action-item.delete-action {
+  color: var(--error-color);
+}
+
+.room-action-item.delete-action:hover {
+  background-color: rgba(244, 67, 54, 0.1);
 }
 
 .sidebar-header {
@@ -553,41 +649,6 @@ watch(() => route.params.room, async () => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-}
-
-.edit-button {
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 20%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-  cursor: pointer;
-}
-
-.edit-button:hover {
-  background-color: var(--primary-hover);
-}
-
-.delete-button {
-  background-color: var(--error-color);
-  color: var(--white);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 20%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-}
-
-.delete-button:hover {
-  opacity: 0.9;
 }
 
 .join-button {
@@ -717,6 +778,8 @@ watch(() => route.params.room, async () => {
   border-radius: var(--radius);
   font-family: inherit;
   font-size: 1rem;
+  color: var(--text-color);
+  background-color: var(--bg-color);
   transition: var(--transition);
 }
 
@@ -764,87 +827,5 @@ watch(() => route.params.room, async () => {
 
 .auth-prompt a:hover {
   text-decoration: underline;
-}
-</style>
-
-<style>
-.minimal-popup {
-    width: 425px;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #BDC3C7;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
-
-.center-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-}
-
-.btn-confirm {
-    background-color: #f34075;
-    color: #ffffff;
-    font-family: Open Sans, sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 15px 30px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.btn-confirm:hover {
-    background-color: #d53064;
-}
-
-.btn-cancel {
-    background-color: #f7f5f4;
-    color: #2C3E50;
-    font-family: Montserrat, sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 15px 30px;
-    border: 1px solid black;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.btn-cancel:hover {
-    background-color: #e6e3e2;
-}
-
-
-.minimal-popup h3 {
-    color: #2C3E50;
-    font-size: 24px;
-    font-family: Montserrat, sans-serif;
-    font-weight: bold;
-    margin: 0 0 10px;
-    margin-bottom: 10px;
-}
-
-.minimal-popup p {
-    color: #2C3E50;
-    font-size: 14px;
-    font-family: Open Sans, sans-serif;
-    margin: 0 0 20px;
-    margin-bottom: 10px;
-}
-
-.close-btn {
-    font-size: 30px;
-    color: #2C3E50;
-    font-weight: bold;
-    position: absolute;
-    cursor: pointer;
-    background-color: transparent;
-    border-radius: 5px;
-}
-
-.close-btn:hover {
-    color: #1A252F;
-    background-color: #ececec;
 }
 </style>

@@ -210,6 +210,7 @@ input, textarea {
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   font-size: 1rem;
+  color: var(--text-color);
   background: var(--white);
   transition: var(--transition);
 }

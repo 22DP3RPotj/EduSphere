@@ -25,14 +25,14 @@
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  justify-content: center !important; /* or flex-start depending on your needs */
-  gap: 8px !important; /* adds spacing between icon and text */
+  justify-content: center !important;
+  gap: 8px !important;
   text-align: left !important;
-  width: 100%; /* ensures full use of available space */
+  width: 100%;
 }
 
 .Vue-Toastification__icon {
-  margin: 0 !important; /* remove unwanted spacing */
+  margin: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -42,10 +42,9 @@
   display: flex !important;
   justify-content: flex-start !important;
   align-items: center !important;
-  flex-direction: row !important; /* Make sure parent stays in row too */
+  flex-direction: row !important;
 }
 
-  /* Center the close button */
   .mobile-toast .Vue-Toastification__close-button {
     position: absolute !important;
     right: 8px !important;

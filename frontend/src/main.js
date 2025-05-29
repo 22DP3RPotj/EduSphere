@@ -2,12 +2,10 @@ import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { useAuthStore } from "@/stores/auth.store";
 import { createPersistedStatePlugin } from 'pinia-plugin-persistedstate-2'
-import VueSweetalert2 from 'vue-sweetalert2';
-import 'sweetalert2/dist/sweetalert2.min.css';
 
-import "@/assets/styles/global.css";
+import "@/assets/styles/main.css";
+import "@/assets/styles/theme.css";
 import "@/assets/styles/toasts.css";
-
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fas } from '@fortawesome/free-solid-svg-icons';
@@ -29,7 +27,6 @@ const app = createApp(App);
 app.use(pinia);
 app.use(router);
 app.use(toast);
-app.use(VueSweetalert2);
 
 app.component('font-awesome-icon', FontAwesomeIcon);
 

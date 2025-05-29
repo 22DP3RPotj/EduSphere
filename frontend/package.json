@@ -18,6 +18,7 @@
     "@vue/apollo-composable": "^4.2.1",
     "@vueuse/core": "^13.1.0",
     "apollo-upload-client": "^18.0.1",
+    "eslint-plugin-vue": "^10.1.0",
     "graphql": "^16.10.0",
     "js-cookie": "^3.0.5",
     "pinia": "^3.0.2",
@@ -25,7 +26,6 @@
     "timeago.js": "^4.0.2",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "vue-sweetalert2": "^5.0.11",
     "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
@@ -33,7 +33,6 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/eslint-config-prettier": "^10.1.0",
     "eslint": "^9.18.0",
-    "eslint-plugin-vue": "^9.32.0",
     "prettier": "^3.4.2",
     "vite": "^6.3.5",
     "vite-plugin-vue-devtools": "^7.7.1"

@@ -58,15 +58,17 @@
                 <span class="user-username">@{{ currentUser?.username }}</span>
               </div>
             </router-link>
-            <button @click="handleLogout" class="logout-btn">
+            <button class="logout-btn" @click="handleLogout">
               <font-awesome-icon icon="sign-out-alt" />
               <span>Logout</span>
             </button>
           </template>
           <template v-else>
-            <router-link to="/login" class="login-btn compact" @click="closePanel">
-              <font-awesome-icon icon="sign-in-alt" />
-              <span>Login</span>
+            <router-link to="/login" custom v-slot="{ navigate }">
+              <button class="login-btn" @click="() => { navigate(); closePanel(); }">
+                <font-awesome-icon icon="sign-in-alt" />
+                <span>Login</span>
+              </button>
             </router-link>
           </template>
         </div>
@@ -341,12 +343,6 @@ onMounted(() => {
   border: 1px solid var(--border-color);
   color: var(--text-color);
   text-decoration: none;
-}
-
-.login-btn.compact {
-  width: auto;
-  display: inline-flex;
-  padding: 0.5rem 1rem;
 }
 
 .logout-btn:hover, .login-btn:hover {

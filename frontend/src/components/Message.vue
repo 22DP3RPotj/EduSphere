@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { format } from 'timeago.js';
 
 const props = defineProps({
@@ -18,6 +18,7 @@ const emit = defineEmits(['delete-message', 'update-message']);
 const isEditing = ref(false);
 const editBody = ref('');
 const showActions = ref(false);
+const editTextarea = ref(null);
 
 const isMessageOwner = computed(() => {
   return (props.message.user?.id || props.message.user_id) === props.currentUserId;
@@ -42,12 +43,21 @@ const userAvatar = computed(() => {
 })
 
 function handleMessageDelete() {
+  showActions.value = false;
   emit('delete-message', props.message.id);
 }
 
-function startEditing() {
+async function startEditing() {
   editBody.value = props.message.body;
+  showActions.value = false;
   isEditing.value = true;
+  
+  await nextTick();
+  if (editTextarea.value) {
+    editTextarea.value.focus();
+    editTextarea.value.setSelectionRange(editBody.value.length, editBody.value.length);
+    adjustTextareaHeight({ target: editTextarea.value });
+  }
 }
 
 function cancelEditing() {
@@ -73,8 +83,12 @@ function closeActions(event) {
 }
 
 function handleEscKey(event) {
-  if (event.key === 'Escape' && showActions.value) {
-    showActions.value = false;
+  if (event.key === 'Escape') {
+    if (isEditing.value) {
+      cancelEditing();
+    } else if (showActions.value) {
+      showActions.value = false;
+    }
   }
 }
 
@@ -83,6 +97,17 @@ function adjustTextareaHeight(event) {
   const textarea = event.target;
   textarea.style.height = 'auto';
   textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+// Handle keyboard shortcuts in edit mode
+function handleEditKeydown(event) {
+  if (event.key === 'Enter' && event.ctrlKey) {
+    event.preventDefault();
+    saveEdit();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    cancelEditing();
+  }
 }
 
 onMounted(() => {
@@ -118,43 +143,46 @@ onBeforeUnmount(() => {
           </span>
         </div>
         
-        <div v-if="isMessageOwner" class="message-actions">
+        <div v-if="isMessageOwner && !isEditing" class="message-actions">
           <button 
             @click="toggleActions"
             class="action-toggle-button"
+            :class="{ 'active': showActions }"
           >
             <font-awesome-icon icon="ellipsis-v" />
           </button>
           
-          <div v-if="showActions" class="action-dropdown">
-            <button 
-              @click="startEditing"
-              class="dropdown-action"
-            >
-              <font-awesome-icon icon="edit" class="action-icon" />
-              Edit
-            </button>
-            <button 
-              @click="handleMessageDelete"
-              class="dropdown-action delete-action"
-            >
-              <font-awesome-icon icon="trash" class="action-icon" />
-              Delete
-            </button>
-          </div>
+          <transition name="dropdown">
+            <div v-if="showActions" class="action-dropdown">
+              <button 
+                @click="startEditing"
+                class="dropdown-action"
+              >
+                <font-awesome-icon icon="edit" class="action-icon" />
+                Edit
+              </button>
+              <button 
+                @click="handleMessageDelete"
+                class="dropdown-action delete-action"
+              >
+                <font-awesome-icon icon="trash" class="action-icon" />
+                Delete
+              </button>
+            </div>
+          </transition>
         </div>
       </div>
       
       <!-- Message content - edit mode -->
       <div v-if="isEditing" class="message-edit-form">
         <textarea 
+          ref="editTextarea"
           v-model="editBody"
           class="message-edit-input"
           rows="1"
           @input="adjustTextareaHeight"
-          @keydown.esc="cancelEditing"
-          @keydown.enter.ctrl="saveEdit"
-          ref="editTextarea"
+          @keydown="handleEditKeydown"
+          placeholder="Edit your message..."
         ></textarea>
         <div class="edit-hint">Press Ctrl+Enter to save, Esc to cancel</div>
         <div class="edit-actions">
@@ -257,7 +285,8 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.action-toggle-button:hover {
+.action-toggle-button:hover,
+.action-toggle-button.active {
   background-color: var(--bg-color);
   color: var(--text-color);
 }
@@ -306,6 +335,7 @@ onBeforeUnmount(() => {
 
 .message-edit-input {
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 0.5rem;
@@ -377,5 +407,16 @@ onBeforeUnmount(() => {
 
 .own-message .message-body {
   color: var(--text-color);
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.15s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
 }
 </style>

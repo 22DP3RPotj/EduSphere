@@ -1,6 +1,6 @@
 <template>
   <div class="auth-form-container">
-    <form @submit.prevent="handleLogin" class="auth-form">
+    <form class="auth-form" @submit.prevent="handleLogin">
       <h2 class="form-title">Login</h2>
       
       <div class="form-group">
@@ -41,7 +41,7 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, defineEmits } from 'vue';
 import { useAuthApi } from "@/api/auth.api";
 
@@ -49,9 +49,9 @@ const emit = defineEmits(['loginSuccess', 'switchToRegister']);
 
 const { login } = useAuthApi();
 
-const email = ref('');
-const password = ref('');
-const isLoading = ref(false);
+const email = ref<string>('');
+const password = ref<string>('');
+const isLoading = ref<boolean>(false);
 
 async function handleLogin() {
   if (!email.value || !password.value) return;

@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import App from "@/App.vue";
 import router from "@/router";
 import toast from "@/plugins/toast";
+import { provideApollo } from "./api/apollo.client";
 
 library.add(fas);
 
@@ -28,11 +29,13 @@ app.use(pinia);
 app.use(router);
 app.use(toast);
 
-app.component('font-awesome-icon', FontAwesomeIcon);
+provideApollo(app);
+
+app.component('FontAwesomeIcon', FontAwesomeIcon);
 
 const initApp = async () => {
   const authStore = useAuthStore();
-  await authStore.initialize();
+  authStore.initialize();
 
   await fetch('/api/csrf/', {
     method: 'GET',

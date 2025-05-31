@@ -5,7 +5,7 @@
       <div class="sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
         <div class="sidebar-header">
           <h3 class="sidebar-title">Filters</h3>
-          <button v-if="isMobileView" @click="toggleSidebar" class="close-sidebar-button">
+          <button v-if="isMobileView" class="close-sidebar-button" @click="toggleSidebar">
             <font-awesome-icon icon="times" />
           </button>
         </div>
@@ -15,8 +15,8 @@
             <label>Topics</label>
             <div class="topic-search">
               <input 
-                type="text" 
                 v-model="topicSearchQuery" 
+                type="text" 
                 placeholder="Search topics..." 
                 class="topic-search-input"
               />
@@ -33,12 +33,12 @@
             </div>
           </div>
           
-          <button @click="applyFilters" class="btn-apply-filters">
+          <button class="btn-apply-filters" @click="applyFilters">
             <font-awesome-icon icon="filter" />
             Apply Filters
           </button>
           
-          <button v-if="hasActiveFilters" @click="resetFilters" class="btn-reset-filters">
+          <button v-if="hasActiveFilters" class="btn-reset-filters" @click="resetFilters">
             <font-awesome-icon icon="times-circle" />
             Reset Filters
           </button>
@@ -51,16 +51,16 @@
           <div class="search-input-container">
             <font-awesome-icon icon="search" class="search-icon" />
             <input 
-              type="text" 
               v-model="searchQuery" 
+              type="text" 
               placeholder="Search rooms..." 
               @keyup.enter="applyFilters"
             />
           </div>
-          <button @click="applyFilters" class="btn-search">
+          <button class="btn-search" @click="applyFilters">
             Search
           </button>
-          <button v-if="isMobileView" @click="toggleSidebar" class="filter-toggle-btn">
+          <button v-if="isMobileView" class="filter-toggle-btn" @click="toggleSidebar">
             <font-awesome-icon icon="sliders-h" />
           </button>
         </div>
@@ -92,8 +92,8 @@
             <div v-if="!isMobileView" class="section-controls">
               <button 
                 class="view-toggle-btn"
-                @click="toggleView"
                 :title="isGridView ? 'Switch to list view' : 'Switch to grid view'"
+                @click="toggleView"
               >
                 <font-awesome-icon :icon="isGridView ? 'list' : 'th-large'" />
               </button>
@@ -110,14 +110,14 @@
           <div v-else-if="filteredRooms.length === 0" class="no-rooms">
             <font-awesome-icon icon="comment-slash" size="3x" />
             <p>No rooms found matching your criteria</p>
-            <button @click="resetFilters" class="btn-reset-filters">Reset filters</button>
+            <button class="btn-reset-filters" @click="resetFilters">Reset filters</button>
           </div>
 
           <!-- Rooms grid/list -->
           <div :class="['rooms-container', isGridView ? 'grid-view' : 'list-view']">
             <div 
               v-for="room in filteredRooms" 
-              :key="room.slug"
+              :key="room.id"
               class="room-card"
               @click="navigateToRoom(room)"
             >
@@ -131,7 +131,7 @@
                   <font-awesome-icon icon="calendar-alt" />
                   {{ formatDate(room.created) }}
                 </span>
-                <span class="room-host" v-if="room.host">
+                <span v-if="room.host" class="room-host">
                   <font-awesome-icon icon="user" />
                   {{ room.host.username }}
                 </span>
@@ -224,7 +224,7 @@
                   <font-awesome-icon icon="calendar-alt" />
                   {{ formatDate(room.created) }}
                 </span>
-                <span class="room-host" v-if="room.host">
+                <span v-if="room.host" class="room-host">
                   <font-awesome-icon icon="user" />
                   {{ room.host.username }}
                 </span>
@@ -237,11 +237,10 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { useAuthApi } from '@/api/auth.api';
 import { useNotifications } from '@/composables/useNotifications';
 import { apolloClient } from '@/api/apollo.client';
 
@@ -253,36 +252,37 @@ import {
   USER_QUERY
 } from '@/api/graphql/room.queries';
 
+import type { User, Room, Topic } from '@/types';
+
 const router = useRouter();
 const authStore = useAuthStore();
-const { logout } = useAuthApi();
 const notifications = useNotifications();
 
 // User state
 const isAuthenticated = computed(() => authStore.isAuthenticated);
-const currentUser = ref(null);
+const currentUser = ref<User | null>(null);
 
 // UI state
-const isGridView = ref(true);
-const loadingRooms = ref(true);
-const loadingUserRooms = ref(false);
-const loadingRecommendations = ref(false);
-const showSidebar = ref(window.innerWidth > 768);
-const isMobileView = ref(window.innerWidth <= 768);
+const isGridView = ref<boolean>(true);
+const loadingRooms = ref<boolean>(true);
+const loadingUserRooms = ref<boolean>(false);
+const loadingRecommendations = ref<boolean>(false);
+const showSidebar = ref<boolean>(window.innerWidth > 768);
+const isMobileView = ref<boolean>(window.innerWidth <= 768);
 
 // Room data
-const allRooms = ref([]);
-const filteredRoomsResult = ref([]);
-const userRooms = ref([]);
-const recommendedRooms = ref([]);
-const topics = ref([]);
+const allRooms = ref<Room[]>([]);
+const filteredRoomsResult = ref<Room[]>([]);
+const userRooms = ref<Room[]>([]);
+const recommendedRooms = ref<Room[]>([]);
+const topics = ref<Topic[]>([]);
 
 // Filter state
-const searchQuery = ref('');
-const topicSearchQuery = ref('');
-const selectedTopics = ref([]);
-const pendingTopics = ref([]);
-const pendingSearch = ref('');
+const searchQuery = ref<string>('');
+const topicSearchQuery = ref<string>('');
+const selectedTopics = ref<string[]>([]);
+const pendingTopics = ref<string[]>([]);
+const pendingSearch = ref<string>('');
 
 // Get filtered topics based on search query
 const filteredTopics = computed(() => {
@@ -307,7 +307,7 @@ const filteredRooms = computed(() => {
 });
 
 // Helper function to format dates
-function formatDate(dateString) {
+function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -333,13 +333,13 @@ function toggleSidebar() {
 }
 
 // Functions for search and filters
-function clearSearch() {
-  searchQuery.value = '';
-  pendingSearch.value = '';
-  applyFilters();
-}
+// function clearSearch() {
+//   searchQuery.value = '';
+//   pendingSearch.value = '';
+//   applyFilters();
+// }
 
-function toggleTopic(topicName) {
+function toggleTopic(topicName: string) {
   if (pendingTopics.value.includes(topicName)) {
     pendingTopics.value = pendingTopics.value.filter(t => t !== topicName);
   } else {
@@ -367,7 +367,7 @@ function toggleView() {
 }
 
 // Navigation functions
-function navigateToRoom(room) {
+function navigateToRoom(room: Room) {
   router.push(`/user/${room.host?.username}/${room.slug}`);
 }
 

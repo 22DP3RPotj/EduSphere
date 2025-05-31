@@ -15,12 +15,75 @@ import {
   GET_AUTH_STATUS
 } from "./graphql/auth.queries";
 
+import type {
+  User,
+  LoginInput,
+  RegisterInput,
+  UpdateUserInput,
+  AuthPayload,
+  RegisterPayload,
+  LogoutPayload,
+  RefreshTokenPayload,
+  AuthStatus
+} from "@/types";
+
+interface TokenPayload {
+  exp: number;
+  origIat?: number;
+  [key: string]: unknown;
+}
+
+interface LoginResponse {
+  data?: {
+    tokenAuth?: AuthPayload;
+  } | null;
+}
+
+interface RegisterResponse {
+  data?: {
+    registerUser?: RegisterPayload;
+  } | null;
+}
+
+interface UpdateUserResponse {
+  data?: {
+    updateUser?: {
+      user: User;
+    };
+  } | null;
+}
+
+interface LogoutResponse {
+  data?: {
+    deleteToken?: LogoutPayload;
+  } | null;
+}
+
+interface RefreshTokenResponse {
+  data?: {
+    refreshToken?: RefreshTokenPayload;
+  } | null;
+}
+
+interface AuthStatusResponse {
+  data?: {
+    authStatus?: AuthStatus;
+  } | null;
+}
+
+// Return type for updateUser function
+interface UpdateUserResult {
+  success: boolean;
+  user?: User;
+  error?: unknown;
+}
+
 export function useAuthApi() {
   const authStore = useAuthStore();
   const notifications = useNotifications();
   const apiWrapper = useApiWrapper();
 
-  function validateTokenPayload(payload) {
+  function validateTokenPayload(payload: TokenPayload): boolean {
     if (!payload) {
       console.error("Token payload is missing");
       return false;
@@ -46,14 +109,14 @@ export function useAuthApi() {
     return true;
   }
 
-  async function login(email, password) {
+  async function login(email: string, password: string): Promise<boolean> {
     authStore.resetTokenRevoked();
     
     try {
       const response = await apiWrapper.callApi(
-        async () => apolloClient.mutate({
+        async (): Promise<LoginResponse> => apolloClient.mutate({
           mutation: LOGIN_MUTATION,
-          variables: { email, password },
+          variables: { email, password } satisfies LoginInput,
         }),
         { suppressNotifications: false }
       );
@@ -65,7 +128,7 @@ export function useAuthApi() {
 
       const { payload, refreshExpiresIn, user } = response.data.tokenAuth;
       
-      if (!validateTokenPayload(payload)) {
+      if (!validateTokenPayload(payload as TokenPayload)) {
         notifications.error('Authentication token is invalid or has too short a lifespan');
         return false;
       }
@@ -75,7 +138,7 @@ export function useAuthApi() {
         return false;
       }
       
-      authStore.setTokenExpiration(payload.exp);
+      authStore.setTokenExpiration((payload as TokenPayload).exp);
       if (refreshExpiresIn) {
         authStore.setRefreshTokenExpiration(refreshExpiresIn);
       }
@@ -89,7 +152,7 @@ export function useAuthApi() {
     }
   }
 
-  async function refreshToken() {
+  async function refreshToken(): Promise<boolean> {
     if (authStore.tokenRevoked) {
       console.log("Token was revoked, skipping refresh");
       return false;
@@ -102,7 +165,7 @@ export function useAuthApi() {
       }
 
       const response = await apiWrapper.callApi(
-        async () => apolloClient.mutate({
+        async (): Promise<RefreshTokenResponse> => apolloClient.mutate({
           mutation: REFRESH_TOKEN_MUTATION,
           fetchPolicy: 'no-cache'
         }),
@@ -116,30 +179,37 @@ export function useAuthApi() {
       
       const { payload, refreshExpiresIn } = response.data.refreshToken;
       
-      if (!validateTokenPayload(payload)) {
+      if (!validateTokenPayload(payload as TokenPayload)) {
         console.error("Token refresh failed: invalid payload");
         return false;
       }
       
-      authStore.setTokenExpiration(payload.exp);
+      authStore.setTokenExpiration((payload as TokenPayload).exp);
       if (refreshExpiresIn) {
         authStore.setRefreshTokenExpiration(refreshExpiresIn);
       }
 
       return true;
     } catch (error) {
-      if (error.message?.includes('Signature has expired')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage?.includes('Signature has expired')) {
         console.error("Token refresh failed: Signature has expired");
         authStore.clearAuth();
         notifications.error("Your session has expired. Please login again.");
       } else {
-        console.error("Error refreshing token:", error?.message || error);
+        console.error("Error refreshing token:", errorMessage);
       }
       return false;
     }
   }
 
-  async function registerUser(username, name, email, password1, password2) {
+  async function registerUser(
+    username: string, 
+    name: string, 
+    email: string, 
+    password1: string, 
+    password2: string
+  ): Promise<boolean> {
     try {
       if (password1 !== password2) {
         notifications.error("Passwords do not match");
@@ -147,9 +217,9 @@ export function useAuthApi() {
       }
   
       const registerResponse = await apiWrapper.callApi(
-        async () => apolloClient.mutate({
+        async (): Promise<RegisterResponse> => apolloClient.mutate({
           mutation: REGISTER_MUTATION,
-          variables: { username, name, email, password1, password2 },
+          variables: { username, name, email, password1, password2 } satisfies RegisterInput,
         }),
         { suppressNotifications: false }
       );
@@ -166,10 +236,10 @@ export function useAuthApi() {
     }
   }
 
-  async function updateUser(data) {
+  async function updateUser(data: UpdateUserInput): Promise<UpdateUserResult> {
     try {
       const response = await apiWrapper.callApi(
-        async () => apolloClient.mutate({
+        async (): Promise<UpdateUserResponse> => apolloClient.mutate({
           mutation: UPDATE_USER_MUTATION,
           variables: data,
           context: {
@@ -195,12 +265,12 @@ export function useAuthApi() {
     }
   }
 
-  async function logout() {
+  async function logout(): Promise<boolean> {
     try {
       authStore.markTokenRevoked();
       
       const response = await apiWrapper.callApi(
-        async () => apolloClient.mutate({
+        async (): Promise<LogoutResponse> => apolloClient.mutate({
           mutation: LOGOUT_MUTATION
         }),
         { suppressNotifications: false }
@@ -214,7 +284,8 @@ export function useAuthApi() {
       }
       return true;
     } catch (error) {
-      console.error("Error during logout:", error?.message || error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error during logout:", errorMessage);
       authStore.clearAuth();
       await apolloClient.clearStore();
       notifications.error('Logout completed with errors');
@@ -222,7 +293,7 @@ export function useAuthApi() {
     }
   }
 
-  async function verifyAuthState() {
+  async function verifyAuthState(): Promise<boolean> {
     if (!authStore.hasValidAuthState) {
       console.log("Auth state is invalid, clearing");
       authStore.clearAuth();
@@ -237,19 +308,19 @@ export function useAuthApi() {
     return true;
   }
 
-  async function fetchAuthStatus() {
+  async function fetchAuthStatus(): Promise<AuthStatus> {
     try {
       const response = await apiWrapper.callApi(
-        async () => apolloClient.query({
+        async (): Promise<AuthStatusResponse> => apolloClient.query({
           query: GET_AUTH_STATUS,
           fetchPolicy: 'network-only'
         }),
       );
 
-      return response.data.authStatus;
+      return response.data!.authStatus!;
     } catch (error) {
       console.error("Error checking auth status:", error);
-      return null;
+      return { isAuthenticated: false, user: null };
     }
   }
 

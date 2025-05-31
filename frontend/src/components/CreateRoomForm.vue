@@ -1,6 +1,6 @@
 <template>
   <div class="auth-form-container">
-    <form @submit.prevent="submitRoom" class="auth-form">
+    <form class="auth-form" @submit.prevent="submitRoom">
       <h2 class="form-title">Create Room</h2>
       
       <div class="form-group">
@@ -36,8 +36,8 @@
             <div
               v-for="(topic, index) in filteredTopics"
               :key="topic"
-              @click="selectTopic(topic)"
               :class="['suggestion-item', { active: index === selectedTopicIndex }]"
+              @click="selectTopic(topic)"
             >
               {{ topic }}
             </div>
@@ -66,19 +66,23 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useRoomApi } from "@/api/room.api";
 
+import type { Topic } from '@/types';
+
+const router = useRouter();
 const { createRoom, fetchTopics } = useRoomApi();
 
-const name = ref('');
-const topicInput = ref('');
-const description = ref('');
-const isLoading = ref(false);
-const topics = ref([]);
-const showSuggestions = ref(false);
-const selectedTopicIndex = ref(-1);
+const name = ref<string>('');
+const topicInput = ref<string>('');
+const description = ref<string>('');
+const isLoading = ref<boolean>(false);
+const topics = ref<Topic[]>([]);
+const showSuggestions = ref<boolean>(false);
+const selectedTopicIndex = ref<number>(-1);
 
 onMounted(async () => {
   try {
@@ -114,7 +118,7 @@ function onArrowUp() {
   }
 }
 
-function onEnter(event) {
+function onEnter(event: KeyboardEvent) {
   if (!showSuggestions.value) {
     return;
   }
@@ -130,7 +134,7 @@ function onEnter(event) {
   showSuggestions.value = false;
 }
 
-function selectTopic(topic) {
+function selectTopic(topic: string) {
   topicInput.value = topic;
   showSuggestions.value = false;
 }
@@ -140,11 +144,15 @@ async function submitRoom() {
 
   isLoading.value = true;
   try {
-    await createRoom(
+    const room = await createRoom(
       name.value, 
-      topicInput.value, 
-      description.value || null
+      topicInput.value,
+      description.value || undefined
     );
+
+    if (room) {
+      router.push(`/user/${room.host.username}/${room.slug}`);
+    }
   } finally {
     isLoading.value = false;
   }

@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { apolloClient } from '@/api/apollo.client';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
 
 import UserAvatar from '@/components/UserAvatar.vue';
+import type { User, Room, Message } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
@@ -14,41 +15,40 @@ const notifications = useNotifications();
 const authStore = useAuthStore();
 const authApi = useAuthApi();
 
-const user = ref(null);
-const loading = ref(true);
-const error = ref(null);
+const user = ref<User | null>(null);
+const loading = ref<boolean>(true);
+const error = ref<Error | null>(null);
 
 // Edit mode state
-const isEditing = ref(false);
-const editLoading = ref(false);
-const editForm = ref({
+type EditForm = { name: string; bio: string; avatar: File | null };
+const isEditing = ref<boolean>(false);
+const editLoading = ref<boolean>(false);
+const editForm = ref<EditForm>({
   name: '',
   bio: '',
   avatar: null
 });
-const avatarPreview = ref(null);
+const avatarPreview = ref<string | null>(null);
 
 // Tab data
-const activeTab = ref('messages');
-const tabsData = ref({
-  messages: {
-    loaded: false,
-    loading: false,
-    data: [],
-    error: null
-  },
-  hostedRooms: {
-    loaded: false,
-    loading: false,
-    data: [],
-    error: null
-  },
-  joinedRooms: {
-    loaded: false,
-    loading: false,
-    data: [],
-    error: null
-  }
+type TabKey = 'messages' | 'hostedRooms' | 'joinedRooms';
+type TabData<T> = {
+  loaded: boolean;
+  loading: boolean;
+  data: T[];
+  error: Error | null;
+};
+interface TabTypes {
+  messages: Message;
+  hostedRooms: Room;
+  joinedRooms: Room;
+}
+
+const activeTab = ref<TabKey>('messages');
+const tabsData = ref<{ [K in TabKey]: TabData<TabTypes[K]> }>({
+  messages: { loaded: false, loading: false, data: [], error: null },
+  hostedRooms: { loaded: false, loading: false, data: [], error: null },
+  joinedRooms: { loaded: false, loading: false, data: [], error: null }
 });
 
 // Check if current user is viewing their own profile
@@ -87,14 +87,14 @@ async function fetchUser() {
     
     loadTabData(activeTab.value);
   } catch (err) {
-    error.value = err;
+    error.value = err instanceof Error ? err : new Error(String(err));
     notifications.error('Error loading user profile');
   } finally {
     loading.value = false;
   }
 }
 
-async function loadTabData(tab) {
+async function loadTabData(tab: TabKey) {
   if (tabsData.value[tab].loaded || tabsData.value[tab].loading) {
     return;
   }
@@ -117,7 +117,7 @@ async function loadTabData(tab) {
     
     tabsData.value[tab].loaded = true;
   } catch (err) {
-    tabsData.value[tab].error = err;
+    tabsData.value[tab].error = err instanceof Error ? err : new Error(String(err));
     notifications.error(`Error loading ${tab}`);
   } finally {
     tabsData.value[tab].loading = false;
@@ -127,7 +127,7 @@ async function loadTabData(tab) {
 async function fetchUserMessages() {
   const { data } = await apolloClient.query({
     query: MESSAGES_BY_USER_QUERY,
-    variables: { userSlug: user.value.username },
+    variables: { userSlug: user.value!.username },
     fetchPolicy: 'network-only'
   });
   
@@ -137,7 +137,7 @@ async function fetchUserMessages() {
 async function fetchHostedRooms() {
   const { data } = await apolloClient.query({
     query: ROOMS_QUERY,
-    variables: { hostSlug: user.value.username },
+    variables: { hostSlug: user.value!.username },
     fetchPolicy: 'network-only'
   });
   
@@ -147,25 +147,25 @@ async function fetchHostedRooms() {
 async function fetchJoinedRooms() {
   const { data } = await apolloClient.query({
     query: ROOMS_PARTICIPATED_BY_USER_QUERY,
-    variables: { userSlug: user.value.username },
+    variables: { userSlug: user.value!.username },
     fetchPolicy: 'network-only'
   });
   
   tabsData.value.joinedRooms.data = data.roomsParticipatedByUser || [];
 }
 
-function setActiveTab(tab) {
+function setActiveTab(tab: TabKey) {
   activeTab.value = tab;
   loadTabData(tab);
 }
 
 // Navigation to room
-function navigateToRoom(room) {
+function navigateToRoom(room: Room) {
   router.push(`/user/${room.host.username}/${room.slug}`);
 }
 
 // Format date for display
-function formatDate(dateString) {
+function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -178,8 +178,8 @@ function formatDate(dateString) {
 function startEditing() {
   isEditing.value = true;
   editForm.value = {
-    name: user.value.name || '',
-    bio: user.value.bio || '',
+    name: user.value!.name || '',
+    bio: user.value!.bio || '',
     avatar: null
   };
   avatarPreview.value = null;
@@ -188,36 +188,53 @@ function startEditing() {
 function cancelEditing() {
   isEditing.value = false;
   editForm.value = {
-    name: user.value.name || '',
-    bio: user.value.bio || '',
+    name: user.value!.name || '',
+    bio: user.value!.bio || '',
     avatar: null
   };
   avatarPreview.value = null;
 }
 
-function handleAvatarChange(event) {
-  const file = event.target.files[0];
+function handleAvatarChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files && target.files[0];
   if (file) {
     editForm.value.avatar = file;
     
     // Create preview URL
     const reader = new FileReader();
     reader.onload = (e) => {
-      avatarPreview.value = e.target.result;
+      avatarPreview.value = (e.target as FileReader).result as string;
     };
     reader.readAsDataURL(file);
   }
 }
 
+function mergeUserData(
+  original: User,
+  incoming: Partial<User>
+): User {
+  return {
+    id: incoming.id ?? original.id,
+    username: incoming.username ?? original.username,
+    name: incoming.name ?? original.name,
+    bio: incoming.bio ?? original.bio,
+    avatar: incoming.avatar ?? original.avatar
+  };
+}
+
+
 async function saveProfile() {
   editLoading.value = true;
   
   try {
-    const updateData = {
-      name: editForm.value.name.trim() || null,
-      bio: editForm.value.bio.trim() || null
-    };
-    
+    const updateData: { name?: string; bio?: string; avatar?: File | null } = {};
+    if (editForm.value.name.trim()) {
+      updateData.name = editForm.value.name.trim();
+    }
+    if (editForm.value.bio.trim()) {
+      updateData.bio = editForm.value.bio.trim();
+    }
     // Add avatar if selected
     if (editForm.value.avatar) {
       updateData.avatar = editForm.value.avatar;
@@ -227,11 +244,13 @@ async function saveProfile() {
     
     if (result.success) {
       // Update local user data
-      user.value = { ...user.value, ...result.user };
+      // TODO: refactor this to use a store or state management
+
+      user.value = mergeUserData(user.value!, result.user!);
       
       // Check if username changed, if so redirect
-      if (result.user.username !== route.params.userSlug) {
-        router.replace(`/user/${result.user.username}`);
+      if (result.user!.username !== route.params.userSlug) {
+        router.replace(`/user/${result.user!.username}`);
       }
       
       isEditing.value = false;
@@ -255,7 +274,7 @@ onMounted(() => {
 watch(() => route.params.userSlug, (newUsername) => {
   if (newUsername) {
     // Reset all tabs data when user changes
-    Object.keys(tabsData.value).forEach(tab => {
+    (Object.keys(tabsData.value) as TabKey[]).forEach(tab => {
       tabsData.value[tab].loaded = false;
       tabsData.value[tab].data = [];
     });
@@ -272,14 +291,14 @@ watch(() => route.params.userSlug, (newUsername) => {
   <div class="profile-container">
     <!-- Header with back button -->
     <div class="profile-header">
-      <button @click="$router.back()" class="back-button">
+      <button class="back-button" @click="$router.back()">
         <font-awesome-icon icon="arrow-left" />
       </button>
       <h1>Profile</h1>
       
       <!-- Edit button for own profile -->
       <div v-if="isOwnProfile && !isEditing" class="header-actions">
-        <button @click="startEditing" class="edit-button">
+        <button class="edit-button" @click="startEditing">
           <font-awesome-icon icon="edit" />
           Edit
         </button>
@@ -295,7 +314,7 @@ watch(() => route.params.userSlug, (newUsername) => {
     <!-- Error state -->
     <div v-else-if="error" class="profile-error">
       <p>Sorry, we couldn't load this profile.</p>
-      <button @click="fetchUser" class="retry-button">
+      <button class="retry-button" @click="fetchUser">
         <font-awesome-icon icon="sync" />
         Retry
       </button>
@@ -310,7 +329,7 @@ watch(() => route.params.userSlug, (newUsername) => {
             <h3>Edit Profile</h3>
           </div>
           
-          <form @submit.prevent="saveProfile" class="edit-form">
+          <form class="edit-form" @submit.prevent="saveProfile">
             <div class="form-content">
               <!-- Avatar upload -->
               <div class="form-group">
@@ -330,11 +349,11 @@ watch(() => route.params.userSlug, (newUsername) => {
                     />
                   </div>
                   <input
-                    type="file"
                     id="avatar-input"
+                    type="file"
                     accept=".svg, .png, .jpg, .jpeg"
-                    @change="handleAvatarChange"
                     class="avatar-input"
+                    @change="handleAvatarChange"
                   />
                   <label for="avatar-input" class="avatar-upload-button">
                     <font-awesome-icon icon="camera" />
@@ -376,9 +395,9 @@ watch(() => route.params.userSlug, (newUsername) => {
             <div class="form-actions">
               <button 
                 type="button" 
-                @click="cancelEditing" 
-                class="cancel-button"
+                class="cancel-button" 
                 :disabled="editLoading"
+                @click="cancelEditing"
               >
                 Cancel
               </button>
@@ -452,7 +471,7 @@ watch(() => route.params.userSlug, (newUsername) => {
           
           <div v-else-if="tabsData.messages.error" class="tab-error">
             <p>Failed to load messages</p>
-            <button @click="loadTabData('messages')" class="retry-button-small">
+            <button class="retry-button-small" @click="loadTabData('messages')">
               <font-awesome-icon icon="sync" /> Retry
             </button>
           </div>
@@ -473,7 +492,7 @@ watch(() => route.params.userSlug, (newUsername) => {
                 {{ message.body }}
               </div>
               <div class="message-actions">
-                <button @click="navigateToRoom(message.room)" class="view-room-button">
+                <button class="view-room-button" @click="navigateToRoom(message.room)">
                   <font-awesome-icon icon="eye" /> View Room
                 </button>
               </div>
@@ -490,7 +509,7 @@ watch(() => route.params.userSlug, (newUsername) => {
           
           <div v-else-if="tabsData.hostedRooms.error" class="tab-error">
             <p>Failed to load hosted rooms</p>
-            <button @click="loadTabData('hostedRooms')" class="retry-button-small">
+            <button class="retry-button-small" @click="loadTabData('hostedRooms')">
               <font-awesome-icon icon="sync" /> Retry
             </button>
           </div>
@@ -501,7 +520,7 @@ watch(() => route.params.userSlug, (newUsername) => {
           </div>
           
           <div v-else class="rooms-list">
-            <div v-for="room in tabsData.hostedRooms.data" :key="room.slug" class="room-card" @click="navigateToRoom(room)">
+            <div v-for="room in tabsData.hostedRooms.data" :key="room.id" class="room-card" @click="navigateToRoom(room)">
               <div class="room-card-header">
                 <h3 class="room-name">{{ room.name }}</h3>
                 <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
@@ -523,7 +542,7 @@ watch(() => route.params.userSlug, (newUsername) => {
           
           <div v-else-if="tabsData.joinedRooms.error" class="tab-error">
             <p>Failed to load joined rooms</p>
-            <button @click="loadTabData('joinedRooms')" class="retry-button-small">
+            <button class="retry-button-small" @click="loadTabData('joinedRooms')">
               <font-awesome-icon icon="sync" /> Retry
             </button>
           </div>
@@ -534,7 +553,7 @@ watch(() => route.params.userSlug, (newUsername) => {
           </div>
           
           <div v-else class="rooms-list">
-            <div v-for="room in tabsData.joinedRooms.data" :key="room.slug" class="room-card" @click="navigateToRoom(room)">
+            <div v-for="room in tabsData.joinedRooms.data" :key="room.id" class="room-card" @click="navigateToRoom(room)">
               <div class="room-card-header">
                 <h3 class="room-name">{{ room.name }}</h3>
                 <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
@@ -554,7 +573,7 @@ watch(() => route.params.userSlug, (newUsername) => {
       <font-awesome-icon icon="user-slash" size="3x" />
       <h2>User not found</h2>
       <p>The user you're looking for doesn't exist or is unavailable.</p>
-      <button @click="$router.back()" class="back-link">
+      <button class="back-link" @click="$router.back()">
         Go back
       </button>
     </div>

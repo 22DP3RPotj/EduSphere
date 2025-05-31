@@ -23,15 +23,15 @@
           <transition name="fade" mode="out-in">
             <login-form
               v-if="activeTab === 'login'"
+              key="login"
               @login-success="handleLoginSuccess"
               @switch-to-register="activeTab = 'register'"
-              key="login"
             />
             <register-form
               v-else
+              key="register"
               @register-success="handleRegisterSuccess"
               @switch-to-login="activeTab = 'login'"
-              key="register"
             />
           </transition>
         </div>
@@ -40,7 +40,7 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
@@ -53,8 +53,11 @@ const route = useRoute();
 const activeTab = ref('login');
 
 function handleLoginSuccess() {
-  const redirectPath = route.query.redirect || '/';
-  router.push(redirectPath);
+  let redirectPath = route.query.redirect || '/';
+  if (Array.isArray(redirectPath)) {
+    redirectPath = redirectPath[0] || '/';
+  }
+  router.push(redirectPath as string);
 }
 
 function handleRegisterSuccess() {

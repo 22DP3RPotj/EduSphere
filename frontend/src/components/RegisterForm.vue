@@ -1,6 +1,6 @@
 <template>
   <div class="auth-form-container">
-    <form @submit.prevent="handleRegister" class="auth-form">
+    <form class="auth-form" @submit.prevent="handleRegister">
       <h2 class="form-title">Register</h2>
       
       <div class="form-group">
@@ -79,7 +79,7 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, defineEmits } from 'vue';
 import { useAuthApi } from "@/api/auth.api";
 
@@ -87,13 +87,13 @@ const emit = defineEmits(['registerSuccess', 'switchToLogin']);
 
 const { registerUser } = useAuthApi();
 
-const username = ref('');
-const name = ref('');
-const email = ref('');
-const password1 = ref('');
-const password2 = ref('');
-const error = ref(null);
-const isLoading = ref(false);
+const username = ref<string>('');
+const name = ref<string>('');
+const email = ref<string>('');
+const password1 = ref<string>('');
+const password2 = ref<string>('');
+const error = ref<string | null>(null);
+const isLoading = ref<boolean>(false);
 
 async function handleRegister() {
   error.value = null;

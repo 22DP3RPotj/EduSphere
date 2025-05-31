@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { format } from 'timeago.js';
 
@@ -15,10 +15,10 @@ const props = defineProps({
 
 const emit = defineEmits(['delete-message', 'update-message']);
 
-const isEditing = ref(false);
-const editBody = ref('');
-const showActions = ref(false);
-const editTextarea = ref(null);
+const isEditing = ref<boolean>(false);
+const editBody = ref<string>('');
+const showActions = ref<boolean>(false);
+const editTextarea = ref<HTMLTextAreaElement | null>(null);
 
 const isMessageOwner = computed(() => {
   return (props.message.user?.id || props.message.user_id) === props.currentUserId;
@@ -28,7 +28,7 @@ const formattedTimestamp = computed(() => {
   try {
     const date = new Date(props.message.created);
     return format(date);
-  } catch (error) {
+  } catch {
     return props.message.created;
   }
 });
@@ -56,7 +56,7 @@ async function startEditing() {
   if (editTextarea.value) {
     editTextarea.value.focus();
     editTextarea.value.setSelectionRange(editBody.value.length, editBody.value.length);
-    adjustTextareaHeight({ target: editTextarea.value });
+    adjustTextareaHeight(editTextarea.value);
   }
 }
 
@@ -76,13 +76,13 @@ function toggleActions() {
   showActions.value = !showActions.value;
 }
 
-function closeActions(event) {
-  if (showActions.value && !event.target.closest('.message-actions')) {
+function closeActions(event: MouseEvent) {
+  if (showActions.value && !(event.target as HTMLElement).closest('.message-actions')) {
     showActions.value = false;
   }
 }
 
-function handleEscKey(event) {
+function handleEscKey(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (isEditing.value) {
       cancelEditing();
@@ -92,15 +92,20 @@ function handleEscKey(event) {
   }
 }
 
-// Auto-resize textarea
-function adjustTextareaHeight(event) {
-  const textarea = event.target;
-  textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
+function adjustTextareaHeight(eventOrElement: Event | HTMLTextAreaElement) {
+  let textarea: HTMLTextAreaElement | null = null;
+  if (eventOrElement instanceof Event) {
+    textarea = eventOrElement.target as HTMLTextAreaElement;
+  } else {
+    textarea = eventOrElement;
+  }
+  if (textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  }
 }
 
-// Handle keyboard shortcuts in edit mode
-function handleEditKeydown(event) {
+function handleEditKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && event.ctrlKey) {
     event.preventDefault();
     saveEdit();
@@ -145,9 +150,9 @@ onBeforeUnmount(() => {
         
         <div v-if="isMessageOwner && !isEditing" class="message-actions">
           <button 
-            @click="toggleActions"
             class="action-toggle-button"
             :class="{ 'active': showActions }"
+            @click="toggleActions"
           >
             <font-awesome-icon icon="ellipsis-v" />
           </button>
@@ -155,15 +160,15 @@ onBeforeUnmount(() => {
           <transition name="dropdown">
             <div v-if="showActions" class="action-dropdown">
               <button 
-                @click="startEditing"
                 class="dropdown-action"
+                @click="startEditing"
               >
                 <font-awesome-icon icon="edit" class="action-icon" />
                 Edit
               </button>
               <button 
-                @click="handleMessageDelete"
                 class="dropdown-action delete-action"
+                @click="handleMessageDelete"
               >
                 <font-awesome-icon icon="trash" class="action-icon" />
                 Delete
@@ -180,16 +185,16 @@ onBeforeUnmount(() => {
           v-model="editBody"
           class="message-edit-input"
           rows="1"
+          placeholder="Edit your message..."
           @input="adjustTextareaHeight"
           @keydown="handleEditKeydown"
-          placeholder="Edit your message..."
         ></textarea>
         <div class="edit-hint">Press Ctrl+Enter to save, Esc to cancel</div>
         <div class="edit-actions">
-          <button @click="cancelEditing" class="cancel-edit-button">
+          <button class="cancel-edit-button" @click="cancelEditing">
             Cancel
           </button>
-          <button @click="saveEdit" class="save-edit-button" :disabled="!editBody.trim()">
+          <button class="save-edit-button" :disabled="!editBody.trim()" @click="saveEdit">
             Save
           </button>
         </div>

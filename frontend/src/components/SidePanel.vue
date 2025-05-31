@@ -41,7 +41,7 @@
         
         <!-- User Section (bottom) -->
         <div class="panel-section user-section">
-          <button @click="toggleTheme" class="theme-toggle-btn">
+          <button class="theme-toggle-btn" @click="toggleTheme">
             <font-awesome-icon :icon="isDarkMode ? 'sun' : 'moon'" />
             <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
           </button>
@@ -64,7 +64,7 @@
             </button>
           </template>
           <template v-else>
-            <router-link to="/login" custom v-slot="{ navigate }">
+            <router-link v-slot="{ navigate }" to="/login" custom>
               <button class="login-btn" @click="() => { navigate(); closePanel(); }">
                 <font-awesome-icon icon="sign-in-alt" />
                 <span>Login</span>
@@ -77,17 +77,19 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
 
+import type { User } from '@/types';
+
 const authStore = useAuthStore();
 const { logout, fetchAuthStatus } = useAuthApi();
 
-const currentUser = ref(null);
-const isAuthenticated = computed(() => authStore.isAuthenticated);
-const isPanelOpen = ref(false);
+const currentUser = ref<User | null>(null);
+const isAuthenticated = computed<boolean>(() => authStore.isAuthenticated);
+const isPanelOpen = ref<boolean>(false);
 const isDarkMode = ref(false);
 
 function togglePanel() {

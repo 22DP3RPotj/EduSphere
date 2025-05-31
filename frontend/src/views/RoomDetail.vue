@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
@@ -6,9 +6,10 @@ import { useRoomApi } from '@/api/room.api';
 import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
 
-import Message from '@/components/Message.vue';
+import MessageView from '@/components/MessageView.vue';
 import EditRoomForm from '@/components/EditRoomForm.vue';
 import ConfirmationModal from '@/components/ConfirmationModal.vue';
+import type { Room } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -16,15 +17,15 @@ const router = useRouter();
 const notifications = useNotifications();
 const { deleteRoom, joinRoom, fetchRoom } = useRoomApi();
 
-const room = ref(null);
-const loading = ref(false);
-const messageInput = ref('');
-const messagesContainerRef = ref(null);
-const showSidebar = ref(window.innerWidth > 768);
-const isMobileView = ref(window.innerWidth <= 768);
-const showEditForm = ref(false);
-const showRoomActionsMenu = ref(false);
-const showDeleteConfirmation = ref(false);
+const room = ref<Room | null>(null);
+const loading = ref<boolean>(false);
+const messageInput = ref<string>('');
+const messagesContainerRef = ref<HTMLElement | null>(null);
+const showSidebar = ref<boolean>(window.innerWidth > 768);
+const isMobileView = ref<boolean>(window.innerWidth <= 768);
+const showEditForm = ref<boolean>(false);
+const showRoomActionsMenu = ref<boolean>(false);
+const showDeleteConfirmation = ref<boolean>(false);
 
 const {
   messages,
@@ -33,28 +34,34 @@ const {
   deleteMessage: deleteWebSocketMessage,
   updateMessage: updateWebSocketMessage,
   closeWebSocket,
-} = useWebSocket(route.params.hostSlug, route.params.roomSlug);
+} = useWebSocket(
+  route.params.hostSlug as string,
+  route.params.roomSlug as string
+);
 
 const isHost = computed(() => {
   return room.value?.host?.id === authStore.user?.id;
 });
 
 const isParticipant = computed(() => {
-  if (!room.value || !authStore.user) return false;
-  return room.value.participants.some(p => p.id === authStore.user.id);
+  const user = authStore.user;
+  if (!room.value || !user) return false;
+  return room.value.participants.some(p => p.id === user.id);
 });
 
 const canSendMessage = computed(() => {
   return authStore.isAuthenticated && isParticipant.value;
 });
 
-const participants = computed(() => {
+type ParticipantWithHost = Room['participants'][number] & { isHost?: boolean };
+
+const participants = computed<ParticipantWithHost[]>(() => {
   if (!room.value) return [];
   
-  const allParticipants = [...room.value.participants];
+  const allParticipants: ParticipantWithHost[] = [...room.value.participants];
 
   // Mark the host in the existing participants list
-  const hostIndex = allParticipants.findIndex(p => p.id === room.value.host.id);
+  const hostIndex = allParticipants.findIndex(p => p.id === room.value!.host.id);
   if (hostIndex !== -1) {
     allParticipants[hostIndex] = {
       ...allParticipants[hostIndex],
@@ -65,7 +72,7 @@ const participants = computed(() => {
   return allParticipants;
 });
 
-async function handleMessageDelete(messageId) {
+async function handleMessageDelete(messageId: string) {
   try {
     const success = deleteWebSocketMessage(messageId);
     
@@ -73,11 +80,11 @@ async function handleMessageDelete(messageId) {
       notifications.warning('Failed to delete message. WebSocket connection may be lost.');
     }
   } catch (error) {
-    notifications.error('Error deleting message: ' + error.message);
+    notifications.error('Error deleting message: ' + (error instanceof Error ? error.message : String(error)));
   }
 }
 
-async function handleMessageUpdate(messageId, newBody) {
+async function handleMessageUpdate(messageId: string, newBody: string) {
   try {
     const success = updateWebSocketMessage(messageId, newBody);
     
@@ -85,7 +92,7 @@ async function handleMessageUpdate(messageId, newBody) {
       notifications.warning('Failed to update message. WebSocket connection may be lost.');
     }
   } catch (error) {
-    notifications.error('Error updating message: ' + error.message);
+    notifications.error('Error updating message: ' + (error instanceof Error ? error.message : String(error)));
   }
 }
 
@@ -96,8 +103,11 @@ async function handleRoomDelete() {
 
 async function confirmRoomDeletion() {
   showDeleteConfirmation.value = false;
-  await deleteRoom(room.value.host.username, room.value.slug);
-  router.push('/');
+
+  const success = await deleteRoom(room.value!.host.username, room.value!.slug);
+  if (success) {
+    router.push('/');
+  }
 }
 
 function cancelRoomDeletion() {
@@ -113,7 +123,7 @@ function handleEditCancel() {
   showEditForm.value = false;
 }
 
-async function handleEditComplete(updatedRoom) {
+async function handleEditComplete(updatedRoom: Room) {
   showEditForm.value = false;
   room.value = updatedRoom;
 }
@@ -142,10 +152,11 @@ function toggleSidebar() {
   }
 }
 
+//  TODO: Why fetch twice?
 async function handleJoin() {
-  await joinRoom(room.value.host.username, room.value.slug);
+  await joinRoom(room.value!.host.username, room.value!.slug);
   loading.value = true;
-  room.value = await fetchRoom(room.value.host.username, room.value.slug);
+  room.value = await fetchRoom(room.value!.host.username, room.value!.slug);
   loading.value = false;
   
   if (authStore.isAuthenticated && isParticipant.value) {
@@ -164,16 +175,19 @@ function sendMessage() {
   }
 }
 
-function navigateToUserProfile(userSlug) {
+function navigateToUserProfile(userSlug: string) {
   router.push(`/user/${userSlug}`);
 }
 
 // Lifecycle hooks
 onMounted(async () => {
   try {
-    await authStore.initialize();
+    authStore.initialize();
     loading.value = true;
-    room.value = await fetchRoom(route.params.hostSlug, route.params.roomSlug);
+    room.value = await fetchRoom(
+      route.params.hostSlug as string,
+      route.params.roomSlug as string
+    );
     loading.value = false;
     
     if (authStore.isAuthenticated && isParticipant.value) {
@@ -215,7 +229,7 @@ watch(() => route.params.room, async () => {
     <div v-if="showEditForm" class="edit-modal-overlay" @click="handleEditCancel">
       <div class="edit-modal-content" @click.stop>
         <EditRoomForm 
-          :room="room"
+          :room="room!"
           @cancel="handleEditCancel"
           @updated="handleEditComplete"
         />
@@ -234,7 +248,7 @@ watch(() => route.params.room, async () => {
     />
 
     <!-- Loading state -->
-    <div v-if="loading || authStore.isLoadingUser" class="room-loading">
+    <div v-if="loading" class="room-loading">
       <div class="spinner"></div>
       <p>Loading room...</p>
     </div>
@@ -244,7 +258,7 @@ watch(() => route.params.room, async () => {
       <!-- Room header -->
       <div class="room-header">
         <div class="room-header-left">
-          <button @click="$router.back()" class="back-button">
+          <button class="back-button" @click="$router.back()">
             <font-awesome-icon icon="arrow-left" />
           </button>
           <h2>{{ room.name }}</h2>
@@ -255,28 +269,28 @@ watch(() => route.params.room, async () => {
         </div>
         
         <div class="room-header-right">
-          <button v-if="isMobileView" @click="toggleSidebar" class="sidebar-toggle">
+          <button v-if="isMobileView" class="sidebar-toggle" @click="toggleSidebar">
             <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
           </button>
           
           <!-- Room Actions Menu for Host -->
           <div v-if="isHost" class="room-actions-menu" @click.stop>
-            <button @click="toggleRoomActionsMenu" class="room-actions-button">
+            <button class="room-actions-button" @click="toggleRoomActionsMenu">
               <font-awesome-icon icon="ellipsis-vertical" />
             </button>
             <div v-if="showRoomActionsMenu" class="room-actions-dropdown">
-              <button @click="handleEditRoom" class="room-action-item">
+              <button class="room-action-item" @click="handleEditRoom">
                 <font-awesome-icon icon="edit" />
                 <span>Edit Room</span>
               </button>
-              <button @click="handleRoomDelete" class="room-action-item delete-action">
+              <button class="room-action-item delete-action" @click="handleRoomDelete">
                 <font-awesome-icon icon="trash" />
                 <span>Delete Room</span>
               </button>
             </div>
           </div>
           
-          <button v-if="!isParticipant && authStore.isAuthenticated" @click="handleJoin" class="join-button">
+          <button v-if="!isParticipant && authStore.isAuthenticated" class="join-button" @click="handleJoin">
             Join Room
           </button>
         </div>
@@ -288,7 +302,7 @@ watch(() => route.params.room, async () => {
         <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
           <div class="sidebar-header">
             <h3 class="sidebar-title">Participants</h3>
-            <button v-if="isMobileView" @click="toggleSidebar" class="close-sidebar-button">
+            <button v-if="isMobileView" class="close-sidebar-button" @click="toggleSidebar">
               <font-awesome-icon icon="times" />
             </button>
           </div>
@@ -315,7 +329,7 @@ watch(() => route.params.room, async () => {
         <!-- Room conversation -->
         <div class="room-conversation">
           <div ref="messagesContainerRef" class="messages-container">
-            <Message 
+            <MessageView
               v-for="message in messages" 
               :key="message.id" 
               :message="message"
@@ -343,7 +357,7 @@ watch(() => route.params.room, async () => {
           </div>
           <div v-else class="join-prompt">
             <p>You need to join this room to participate in the conversation</p>
-            <button @click="handleJoin" class="join-button">
+            <button class="join-button" @click="handleJoin">
               Join Room
             </button>
           </div>

@@ -1,6 +1,6 @@
 <template>
   <div class="auth-form-container">
-    <form @submit.prevent="submitUpdate" class="auth-form">
+    <form class="auth-form" @submit.prevent="submitUpdate">
       <h2 class="form-title">Edit Room</h2>
       
       <div class="form-group">
@@ -24,8 +24,8 @@
             <div
               v-for="(topic, index) in filteredTopics"
               :key="topic"
-              @click="selectTopic(topic)"
               :class="['suggestion-item', { active: index === selectedTopicIndex }]"
+              @click="selectTopic(topic)"
             >
               {{ topic }}
             </div>
@@ -47,7 +47,7 @@
       </div>
 
       <div class="form-actions">
-        <button type="button" @click="$emit('cancel')" class="btn btn-secondary">
+        <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
           Cancel
         </button>
         <button type="submit" class="btn btn-primary" :disabled="isLoading">
@@ -59,9 +59,11 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoomApi } from "@/api/room.api";
+
+import type { Topic } from '@/types';
 
 const props = defineProps({
   room: {
@@ -74,18 +76,18 @@ const emit = defineEmits(['cancel', 'updated']);
 
 const { updateRoom, fetchTopics } = useRoomApi();
 
-const topicInput = ref('');
-const description = ref('');
-const isLoading = ref(false);
-const topics = ref([]);
-const showSuggestions = ref(false);
-const selectedTopicIndex = ref(-1);
+const topicInput = ref<string>('');
+const description = ref<string | undefined>(undefined);
+const isLoading = ref<boolean>(false);
+const topics = ref<Topic[]>([]);
+const showSuggestions = ref<boolean>(false);
+const selectedTopicIndex = ref<number>(-1);
 
-// Initialize form with current room data
+
 watch(() => props.room, (newRoom) => {
   if (newRoom) {
     topicInput.value = newRoom.topic?.name || '';
-    description.value = newRoom.description || '';
+    description.value = newRoom.description || undefined;
   }
 }, { immediate: true });
 
@@ -123,7 +125,7 @@ function onArrowUp() {
   }
 }
 
-function onEnter(event) {
+function onEnter(event: KeyboardEvent) {
   if (!showSuggestions.value) {
     return;
   }
@@ -139,7 +141,7 @@ function onEnter(event) {
   showSuggestions.value = false;
 }
 
-function selectTopic(topic) {
+function selectTopic(topic: string) {
   topicInput.value = topic;
   showSuggestions.value = false;
 }
@@ -153,7 +155,7 @@ async function submitUpdate() {
       hostSlug: props.room.host.username,
       roomSlug: props.room.slug,
       topicName: topicInput.value,
-      description: description.value || null
+      description: description.value
     });
     
     if (updatedRoom) {

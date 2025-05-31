@@ -4,7 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 const routes = [
   {
     path: "/",
-    component: () => import("@/views/Home.vue"),
+    component: () => import("@/views/HomePage.vue"),
   },
   {
     path: "/auth",

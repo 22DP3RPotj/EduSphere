@@ -11,10 +11,10 @@
         </div>
         
         <div class="confirmation-actions">
-          <button @click="handleCancel" class="btn btn-secondary">
+          <button class="btn btn-secondary" @click="handleCancel">
             {{ cancelText }}
           </button>
-          <button @click="handleConfirm" class="btn btn-danger">
+          <button class="btn btn-danger" @click="handleConfirm">
             {{ confirmText }}
           </button>
         </div>
@@ -23,7 +23,7 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { watch } from 'vue';
 
 const props = defineProps({
@@ -71,7 +71,7 @@ function handleOverlayClick() {
   }
 }
 
-function handleEscapeKey(event) {
+function handleEscapeKey(event: KeyboardEvent) {
   if (event.key === 'Escape' && props.isVisible) {
     handleCancel();
   }

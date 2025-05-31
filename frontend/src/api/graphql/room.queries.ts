@@ -3,6 +3,7 @@ import { gql } from "@apollo/client";
 export const ROOM_QUERY = gql`
     query Room($hostSlug: String!, $roomSlug: String!) {
         room(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+            id
             name
             slug
             description
@@ -43,6 +44,7 @@ export const ROOMS_QUERY = gql`
 export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
     query RoomsParticipatedByUser($userSlug: String!) {
         roomsParticipatedByUser(userSlug: $userSlug) {
+            id
             name
             slug
             description

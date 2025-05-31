@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -9,7 +9,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'medium', // small, medium, large
-    validator: (value) => ['small', 'medium', 'large'].includes(value)
+    validator: (value: string) => ['small', 'medium', 'large'].includes(value)
   },
   showStatus: {
     type: Boolean,

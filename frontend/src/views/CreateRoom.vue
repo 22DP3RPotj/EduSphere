@@ -7,22 +7,15 @@
         </div>
         
         <div class="form-content">
-          <create-room-form @room-created="handleRoomCreated" />
+          <create-room-form />
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { useRouter } from 'vue-router';
+<script lang="ts" setup>
 import CreateRoomForm from '@/components/CreateRoomForm.vue';
-
-const router = useRouter();
-
-function handleRoomCreated() {
-  // router.push('/');
-}
 </script>
 
 <style scoped>

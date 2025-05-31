@@ -6,7 +6,7 @@ import { onError } from "@apollo/client/link/error";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import Cookies from "js-cookie";
 
-import { useAuthStore } from "@/stores/auth.store.js";
+import { useAuthStore } from "@/stores/auth.store";
 import authTokenService from "@/services/refresh-token";
 
 import type { FetchResult, Operation, NextLink } from "@apollo/client/core";

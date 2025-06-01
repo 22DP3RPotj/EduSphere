@@ -76,7 +76,7 @@ class Room(models.Model):
         ordering = ['-updated', '-created']
         constraints = [
             models.UniqueConstraint(
-                fields=['host', 'name'],
+                'host', Lower('name'),
                 name='unique_room_per_host',
                 violation_error_message='You already have a room with this name.'
             )

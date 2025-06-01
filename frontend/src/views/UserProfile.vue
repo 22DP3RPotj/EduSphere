@@ -161,7 +161,7 @@ function setActiveTab(tab: TabKey) {
 
 // Navigation to room
 function navigateToRoom(room: Room) {
-  router.push(`/user/${room.host.username}/${room.slug}`);
+  router.push(`/u/${room.host.username}/${room.slug}`);
 }
 
 // Format date for display
@@ -250,7 +250,7 @@ async function saveProfile() {
       
       // Check if username changed, if so redirect
       if (result.user!.username !== route.params.userSlug) {
-        router.replace(`/user/${result.user!.username}`);
+        router.replace(`/u/${result.user!.username}`);
       }
       
       isEditing.value = false;

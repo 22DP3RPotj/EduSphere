@@ -131,7 +131,7 @@
                   <font-awesome-icon icon="calendar-alt" />
                   {{ formatDate(room.created) }}
                 </span>
-                <span v-if="room.host" class="room-host">
+                <span class="room-host">
                   <font-awesome-icon icon="user" />
                   {{ room.host.username }}
                 </span>
@@ -180,6 +180,10 @@
                   <font-awesome-icon icon="calendar-alt" />
                   {{ formatDate(room.created) }}
                 </span>
+                <span class="room-host">
+                  <font-awesome-icon icon="user" />
+                  {{ room.host.username }}
+                </span>
               </div>
             </div>
           </div>
@@ -224,7 +228,7 @@
                   <font-awesome-icon icon="calendar-alt" />
                   {{ formatDate(room.created) }}
                 </span>
-                <span v-if="room.host" class="room-host">
+                <span class="room-host">
                   <font-awesome-icon icon="user" />
                   {{ room.host.username }}
                 </span>
@@ -368,7 +372,7 @@ function toggleView() {
 
 // Navigation functions
 function navigateToRoom(room: Room) {
-  router.push(`/user/${room.host?.username}/${room.slug}`);
+  router.push(`/u/${room.host?.username}/${room.slug}`);
 }
 
 // Data fetching functions

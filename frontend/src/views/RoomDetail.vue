@@ -176,7 +176,7 @@ function sendMessage() {
 }
 
 function navigateToUserProfile(userSlug: string) {
-  router.push(`/user/${userSlug}`);
+  router.push(`/u/${userSlug}`);
 }
 
 // Lifecycle hooks

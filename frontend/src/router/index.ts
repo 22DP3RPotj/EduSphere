@@ -27,12 +27,12 @@ const routes = [
     meta: { requiresAuth: true } 
   },
   {
-    path: '/user/:userSlug',
+    path: '/u/:userSlug',
     name: 'UserProfile',
     component: () => import('@/views/UserProfile.vue')
   },
   {
-    path: "/user/:hostSlug/:roomSlug",
+    path: "/u/:hostSlug/:roomSlug",
     component: () => import("@/views/RoomDetail.vue"),
   },
 ];

@@ -151,7 +151,7 @@ async function submitRoom() {
     );
 
     if (room) {
-      router.push(`/user/${room.host.username}/${room.slug}`);
+      router.push(`/u/${room.host.username}/${room.slug}`);
     }
   } finally {
     isLoading.value = false;

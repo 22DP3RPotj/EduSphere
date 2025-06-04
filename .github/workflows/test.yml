@@ -33,11 +33,9 @@ jobs:
           --health-retries 5
 
     env:
-      # Django settings environment variables
       DJANGO_SETTINGS_MODULE: backend.config.settings
       SECRET_KEY: test_secret_key
       DEBUG: 'False'
-      # Database configuration that matches your settings.py
       DB_NAME: test_db
       DB_USER: test_user
       DB_PASSWORD: test_pass

@@ -41,6 +41,54 @@ export const ROOMS_QUERY = gql`
     }
 `;
 
+// Combined query for authenticated users - gets user data and their rooms in one request
+export const USER_WITH_ROOMS_QUERY = gql`
+    query UserWithRooms($userSlug: String!) {
+        user(userSlug: $userSlug) {
+            username
+            name
+            avatar
+            bio
+        }
+        roomsParticipatedByUser(userSlug: $userSlug) {
+            id
+            name
+            slug
+            description
+            created
+            topic { name }
+            host { username }
+        }
+        roomsNotParticipatedByUser(userSlug: $userSlug) {
+            name
+            slug
+            description
+            created
+            topic { name }
+            host { username }
+        }
+    }
+`;
+
+// Combined query for initial page load - gets rooms and topics together
+export const HOMEPAGE_INITIAL_QUERY = gql`
+    query HomepageInitial($search: String, $topic: [String]) {
+        rooms(search: $search, topic: $topic) {
+            name
+            slug
+            description
+            created
+            topic {
+                name
+            }
+            host { username }
+        }
+        topics {
+            name
+        }
+    }
+`;
+
 export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
     query RoomsParticipatedByUser($userSlug: String!) {
         roomsParticipatedByUser(userSlug: $userSlug) {

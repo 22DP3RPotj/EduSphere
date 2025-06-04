@@ -78,6 +78,11 @@ class RoomForm(ModelForm):
         model = Room
         fields = '__all__'
         exclude = ['host', 'participants', 'slug']
+        
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        return ' '.join(name.strip().split())
+
 
 class UserForm(ModelForm):
     avatar = forms.ImageField(widget=forms.FileInput, required=False)

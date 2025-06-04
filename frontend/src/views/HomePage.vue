@@ -12,9 +12,10 @@
 
         <div class="sidebar-section">
           <div class="filter-group">
-            <label>Topics</label>
+            <label for="topic-search">Topics</label>
             <div class="topic-search">
-              <input 
+              <input
+                id="topic-search"
                 v-model="topicSearchQuery" 
                 type="text" 
                 placeholder="Search topics..." 
@@ -50,8 +51,9 @@
         <div class="home-search">
           <div class="search-input-container">
             <font-awesome-icon icon="search" class="search-icon" />
-            <input 
-              v-model="searchQuery" 
+            <input
+              id="room-search"
+              v-model="searchInputQuery" 
               type="text" 
               placeholder="Search rooms..." 
               @keyup.enter="applyFilters"
@@ -101,13 +103,13 @@
           </div>
 
           <!-- Loading state -->
-          <div v-if="loadingRooms" class="rooms-loading">
+          <div v-if="loadingHomepage" class="rooms-loading">
             <div class="spinner"></div>
             <p>Loading rooms...</p>
           </div>
 
           <!-- No results state -->
-          <div v-else-if="filteredRooms.length === 0" class="no-rooms">
+          <div v-else-if="rooms.length === 0" class="no-rooms">
             <font-awesome-icon icon="comment-slash" size="3x" />
             <p>No rooms found matching your criteria</p>
             <button class="btn-reset-filters" @click="resetFilters">Reset filters</button>
@@ -116,8 +118,8 @@
           <!-- Rooms grid/list -->
           <div :class="['rooms-container', isGridView ? 'grid-view' : 'list-view']">
             <div 
-              v-for="room in filteredRooms" 
-              :key="room.id"
+              v-for="room in rooms" 
+              :key="room.slug"
               class="room-card"
               @click="navigateToRoom(room)"
             >
@@ -199,7 +201,7 @@
           </div>
 
           <!-- Loading state -->
-          <div v-if="loadingRecommendations" class="rooms-loading">
+          <div v-if="loadingUserRooms" class="rooms-loading">
             <div class="spinner"></div>
             <p>Finding recommendations...</p>
           </div>
@@ -244,19 +246,16 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useQuery } from '@vue/apollo-composable';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotifications } from '@/composables/useNotifications';
-import { apolloClient } from '@/api/apollo.client';
 
 import { 
-  ROOMS_QUERY, 
-  TOPIC_QUERY, 
-  ROOMS_PARTICIPATED_BY_USER_QUERY,
-  ROOMS_NOT_PARTICIPATED_BY_USER_QUERY,
-  USER_QUERY
+  HOMEPAGE_INITIAL_QUERY,
+  USER_WITH_ROOMS_QUERY
 } from '@/api/graphql';
 
-import type { User, Room, Topic } from '@/types';
+import type { Room, Topic } from '@/types';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -264,29 +263,55 @@ const notifications = useNotifications();
 
 // User state
 const isAuthenticated = computed(() => authStore.isAuthenticated);
-const currentUser = ref<User | null>(null);
 
 // UI state
 const isGridView = ref<boolean>(true);
-const loadingRooms = ref<boolean>(true);
-const loadingUserRooms = ref<boolean>(false);
-const loadingRecommendations = ref<boolean>(false);
 const showSidebar = ref<boolean>(window.innerWidth > 768);
 const isMobileView = ref<boolean>(window.innerWidth <= 768);
 
-// Room data
-const allRooms = ref<Room[]>([]);
-const filteredRoomsResult = ref<Room[]>([]);
-const userRooms = ref<Room[]>([]);
-const recommendedRooms = ref<Room[]>([]);
-const topics = ref<Topic[]>([]);
-
 // Filter state
-const searchQuery = ref<string>('');
+const searchInputQuery = ref<string>('');
+const appliedSearchQuery = ref<string>('');
 const topicSearchQuery = ref<string>('');
 const selectedTopics = ref<string[]>([]);
 const pendingTopics = ref<string[]>([]);
-const pendingSearch = ref<string>('');
+
+// Computed variables for GraphQL queries
+const homepageVariables = computed(() => ({
+  search: appliedSearchQuery.value || null,
+  topic: selectedTopics.value.length > 0 ? selectedTopics.value : null
+}));
+
+const userVariables = computed(() => ({
+  userSlug: authStore.user?.username || ''
+}));
+
+// Main homepage query (rooms + topics)
+const { 
+  result: homepageResult, 
+  loading: loadingHomepage
+} = useQuery(HOMEPAGE_INITIAL_QUERY, homepageVariables, {
+  errorPolicy: 'all'
+});
+
+// User-specific query (user data + participated rooms + recommendations)
+const { 
+  result: userResult, 
+  loading: loadingUserRooms, 
+  refetch: refetchUserRooms 
+} = useQuery(USER_WITH_ROOMS_QUERY, userVariables, {
+  enabled: computed(() => isAuthenticated.value && !!authStore.user?.username),
+  errorPolicy: 'all'
+});
+
+// Computed data from queries
+const rooms = computed(() => homepageResult.value?.rooms || []);
+const topics = computed(() => homepageResult.value?.topics || []);
+const userRooms = computed(() => userResult.value?.roomsParticipatedByUser || []);
+const allRecommendedRooms = computed(() => userResult.value?.roomsNotParticipatedByUser || []);
+
+// Show only first 3 recommendations
+const recommendedRooms = computed(() => allRecommendedRooms.value.slice(0, 3));
 
 // Get filtered topics based on search query
 const filteredTopics = computed(() => {
@@ -295,19 +320,14 @@ const filteredTopics = computed(() => {
   }
   
   const query = topicSearchQuery.value.toLowerCase();
-  return topics.value.filter(topic => 
+  return topics.value.filter((topic: Topic) => 
     topic.name.toLowerCase().includes(query)
   );
 });
 
-// Check if filters are active
+// Check if filters are active - Updated to use applied search
 const hasActiveFilters = computed(() => {
-  return selectedTopics.value.length > 0 || searchQuery.value !== '';
-});
-
-// Get filtered rooms based on applied filters
-const filteredRooms = computed(() => {
-  return filteredRoomsResult.value;
+  return selectedTopics.value.length > 0 || appliedSearchQuery.value !== '';
 });
 
 // Helper function to format dates
@@ -336,13 +356,7 @@ function toggleSidebar() {
   showSidebar.value = !showSidebar.value;
 }
 
-// Functions for search and filters
-// function clearSearch() {
-//   searchQuery.value = '';
-//   pendingSearch.value = '';
-//   applyFilters();
-// }
-
+// Functions for search and filters - Updated to apply search query
 function toggleTopic(topicName: string) {
   if (pendingTopics.value.includes(topicName)) {
     pendingTopics.value = pendingTopics.value.filter(t => t !== topicName);
@@ -353,17 +367,15 @@ function toggleTopic(topicName: string) {
 
 function applyFilters() {
   selectedTopics.value = [...pendingTopics.value];
-  pendingSearch.value = searchQuery.value;
-  fetchRooms();
+  appliedSearchQuery.value = searchInputQuery.value; // Apply the search term
 }
 
 function resetFilters() {
-  searchQuery.value = '';
-  pendingSearch.value = '';
+  searchInputQuery.value = '';
+  appliedSearchQuery.value = '';
   selectedTopics.value = [];
   pendingTopics.value = [];
   topicSearchQuery.value = '';
-  fetchRooms();
 }
 
 function toggleView() {
@@ -375,151 +387,41 @@ function navigateToRoom(room: Room) {
   router.push(`/u/${room.host?.username}/${room.slug}`);
 }
 
-// Data fetching functions
-async function fetchCurrentUser() {
-  if (!authStore.user?.username) return;
-  
-  try {
-    const { data } = await apolloClient.query({
-      query: USER_QUERY,
-      variables: { username: authStore.user.username },
-      fetchPolicy: 'network-only'
-    });
-    
-    currentUser.value = data.user;
-  } catch (error) {
-    console.error('Error fetching current user:', error);
-  }
-}
-
-async function fetchRooms() {
-  try {
-    loadingRooms.value = true;
-    
-    const variables = {
-      search: pendingSearch.value || null,
-      topic: selectedTopics.value.length > 0 ? selectedTopics.value : null
-    };
-    
-    const { data } = await apolloClient.query({
-      query: ROOMS_QUERY,
-      variables,
-      fetchPolicy: 'network-only'
-    });
-    
-    allRooms.value = data.rooms || [];
-    filteredRoomsResult.value = allRooms.value;
-  } catch (error) {
-    notifications.error('Error loading rooms');
-    console.error(error);
-  } finally {
-    loadingRooms.value = false;
-  }
-}
-
-async function fetchTopics() {
-  try {
-    const { data } = await apolloClient.query({
-      query: TOPIC_QUERY,
-      fetchPolicy: 'network-only'
-    });
-    
-    topics.value = data.topics || [];
-  } catch (error) {
-    console.error('Error loading topics:', error);
-  }
-}
-
-async function fetchUserRooms() {
-  if (!authStore.isAuthenticated || !currentUser.value) return;
-  
-  try {
-    loadingUserRooms.value = true;
-    
-    const { data } = await apolloClient.query({
-      query: ROOMS_PARTICIPATED_BY_USER_QUERY,
-      variables: { userSlug: currentUser.value.username },
-      fetchPolicy: 'network-only'
-    });
-    
-    userRooms.value = data.roomsParticipatedByUser || [];
-  } catch (error) {
-    console.error('Error loading user rooms:', error);
-  } finally {
-    loadingUserRooms.value = false;
-  }
-}
-
-async function fetchRecommendedRooms() {
-  if (!authStore.isAuthenticated || !currentUser.value) return;
-  
-  try {
-    loadingRecommendations.value = true;
-    
-    // TODO: refactor this to use a more sophisticated recommendation algorithm
-    // Using the not-participated-by-user query as a simple recommendation system
-    const { data } = await apolloClient.query({
-      query: ROOMS_NOT_PARTICIPATED_BY_USER_QUERY,
-      variables: { userSlug: currentUser.value.username },
-      fetchPolicy: 'network-only'
-    });
-    
-    // Show only a few recommendations
-    recommendedRooms.value = (data.roomsNotParticipatedByUser || []).slice(0, 3);
-  } catch (error) {
-    console.error('Error loading recommended rooms:', error);
-  } finally {
-    loadingRecommendations.value = false;
-  }
-}
-
 // Lifecycle hooks
 onMounted(async () => {
   try {
     window.addEventListener('resize', handleResize);
     handleResize(); // Initialize the view state
     
-    await authStore.initialize();
+    authStore.initialize();
     
-    // Fetch initial data
-    await Promise.all([
-      fetchRooms(),
-      fetchTopics()
-    ]);
-    
+    // Set initial pending topics to match selected topics
     pendingTopics.value = [...selectedTopics.value];
-    
-    // Fetch user-specific data
-    if (authStore.isAuthenticated) {
-      await fetchCurrentUser();
-      
-      if (currentUser.value) {
-        await Promise.all([
-          fetchUserRooms(),
-          fetchRecommendedRooms()
-        ]);
-      }
-    }
   } catch (error) {
     notifications.error('Error initializing home page');
     console.error(error);
   }
 });
 
-// Watch for authentication changes
-watch(() => authStore.isAuthenticated, async (isAuthenticated) => {
-  if (isAuthenticated) {
-    await fetchCurrentUser();
-    if (currentUser.value) {
-      await Promise.all([
-        fetchUserRooms(),
-        fetchRecommendedRooms()
-      ]);
-    }
-  } else {
-    currentUser.value = null;
-    userRooms.value = [];
-    recommendedRooms.value = [];
+// Watch for authentication changes to refetch user data
+watch(() => authStore.isAuthenticated, () => {
+  if (isAuthenticated.value && authStore.user?.username) {
+    refetchUserRooms();
+  }
+});
+
+// Watch for GraphQL errors
+watch(homepageResult, (result) => {
+  if (result?.error) {
+    notifications.error('Error loading rooms and topics');
+    console.error(result.error);
+  }
+});
+
+watch(userResult, (result) => {
+  if (result?.error) {
+    notifications.error('Error loading user data');
+    console.error(result.error);
   }
 });
 
@@ -754,6 +656,7 @@ onBeforeUnmount(() => {
 
 .search-input-container input {
   width: 100%;
+  box-sizing: border-box;
   padding: 0.6rem 2.5rem;
   border-radius: var(--radius);
   border: 1px solid var(--border-color);
@@ -778,6 +681,7 @@ onBeforeUnmount(() => {
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
+  z-index: 10;
 }
 
 .btn-search:hover {
@@ -1035,7 +939,7 @@ onBeforeUnmount(() => {
   }
   
   .content-area {
-    margin-left: 0; /* Remove margin on mobile */
+    margin-left: 0;
   }
 }
 </style>

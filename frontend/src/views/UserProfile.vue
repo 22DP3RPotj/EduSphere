@@ -1,291 +1,3 @@
-<script lang="ts" setup>
-import { ref, onMounted, watch, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { apolloClient } from '@/api/apollo.client';
-import { useNotifications } from '@/composables/useNotifications';
-import { useAuthStore } from '@/stores/auth.store';
-import { useAuthApi } from '@/api/auth.api';
-
-import UserAvatar from '@/components/UserAvatar.vue';
-import type { User, Room, Message } from '@/types';
-
-const route = useRoute();
-const router = useRouter();
-const notifications = useNotifications();
-const authStore = useAuthStore();
-const authApi = useAuthApi();
-
-const user = ref<User | null>(null);
-const loading = ref<boolean>(true);
-const error = ref<Error | null>(null);
-
-// Edit mode state
-type EditForm = { name: string; bio: string; avatar: File | null };
-const isEditing = ref<boolean>(false);
-const editLoading = ref<boolean>(false);
-const editForm = ref<EditForm>({
-  name: '',
-  bio: '',
-  avatar: null
-});
-const avatarPreview = ref<string | null>(null);
-
-// Tab data
-type TabKey = 'messages' | 'hostedRooms' | 'joinedRooms';
-type TabData<T> = {
-  loaded: boolean;
-  loading: boolean;
-  data: T[];
-  error: Error | null;
-};
-interface TabTypes {
-  messages: Message;
-  hostedRooms: Room;
-  joinedRooms: Room;
-}
-
-const activeTab = ref<TabKey>('messages');
-const tabsData = ref<{ [K in TabKey]: TabData<TabTypes[K]> }>({
-  messages: { loaded: false, loading: false, data: [], error: null },
-  hostedRooms: { loaded: false, loading: false, data: [], error: null },
-  joinedRooms: { loaded: false, loading: false, data: [], error: null }
-});
-
-// Check if current user is viewing their own profile
-const isOwnProfile = computed(() => {
-  return authStore.user && user.value && authStore.user.username === user.value.username;
-});
-
-import {
-    USER_QUERY,
-    MESSAGES_BY_USER_QUERY,
-    ROOMS_QUERY,
-    ROOMS_PARTICIPATED_BY_USER_QUERY
-} from '@/api/graphql';
-
-async function fetchUser() {
-  loading.value = true;
-  error.value = null;
-  
-  try {
-    const { data } = await apolloClient.query({
-      query: USER_QUERY,
-      variables: { username: route.params.userSlug },
-      fetchPolicy: 'network-only'
-    });
-    
-    user.value = data.user;
-    
-    // Initialize edit form with current user data
-    if (user.value) {
-      editForm.value = {
-        name: user.value.name || '',
-        bio: user.value.bio || '',
-        avatar: null
-      };
-    }
-    
-    loadTabData(activeTab.value);
-  } catch (err) {
-    error.value = err instanceof Error ? err : new Error(String(err));
-    notifications.error('Error loading user profile');
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function loadTabData(tab: TabKey) {
-  if (tabsData.value[tab].loaded || tabsData.value[tab].loading) {
-    return;
-  }
-  
-  tabsData.value[tab].loading = true;
-  tabsData.value[tab].error = null;
-  
-  try {
-    switch (tab) {
-      case 'messages':
-        await fetchUserMessages();
-        break;
-      case 'hostedRooms':
-        await fetchHostedRooms();
-        break;
-      case 'joinedRooms':
-        await fetchJoinedRooms();
-        break;
-    }
-    
-    tabsData.value[tab].loaded = true;
-  } catch (err) {
-    tabsData.value[tab].error = err instanceof Error ? err : new Error(String(err));
-    notifications.error(`Error loading ${tab}`);
-  } finally {
-    tabsData.value[tab].loading = false;
-  }
-}
-
-async function fetchUserMessages() {
-  const { data } = await apolloClient.query({
-    query: MESSAGES_BY_USER_QUERY,
-    variables: { userSlug: user.value!.username },
-    fetchPolicy: 'network-only'
-  });
-  
-  tabsData.value.messages.data = data.messagesByUser || [];
-}
-
-async function fetchHostedRooms() {
-  const { data } = await apolloClient.query({
-    query: ROOMS_QUERY,
-    variables: { hostSlug: user.value!.username },
-    fetchPolicy: 'network-only'
-  });
-  
-  tabsData.value.hostedRooms.data = data.rooms || [];
-}
-
-async function fetchJoinedRooms() {
-  const { data } = await apolloClient.query({
-    query: ROOMS_PARTICIPATED_BY_USER_QUERY,
-    variables: { userSlug: user.value!.username },
-    fetchPolicy: 'network-only'
-  });
-  
-  tabsData.value.joinedRooms.data = data.roomsParticipatedByUser || [];
-}
-
-function setActiveTab(tab: TabKey) {
-  activeTab.value = tab;
-  loadTabData(tab);
-}
-
-// Navigation to room
-function navigateToRoom(room: Room) {
-  router.push(`/u/${room.host.username}/${room.slug}`);
-}
-
-// Format date for display
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
-
-// Edit profile functions
-function startEditing() {
-  isEditing.value = true;
-  editForm.value = {
-    name: user.value!.name || '',
-    bio: user.value!.bio || '',
-    avatar: null
-  };
-  avatarPreview.value = null;
-}
-
-function cancelEditing() {
-  isEditing.value = false;
-  editForm.value = {
-    name: user.value!.name || '',
-    bio: user.value!.bio || '',
-    avatar: null
-  };
-  avatarPreview.value = null;
-}
-
-function handleAvatarChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files && target.files[0];
-  if (file) {
-    editForm.value.avatar = file;
-    
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      avatarPreview.value = (e.target as FileReader).result as string;
-    };
-    reader.readAsDataURL(file);
-  }
-}
-
-function mergeUserData(
-  original: User,
-  incoming: Partial<User>
-): User {
-  return {
-    id: incoming.id ?? original.id,
-    username: incoming.username ?? original.username,
-    name: incoming.name ?? original.name,
-    bio: incoming.bio ?? original.bio,
-    avatar: incoming.avatar ?? original.avatar
-  };
-}
-
-
-async function saveProfile() {
-  editLoading.value = true;
-  
-  try {
-    const updateData: { name?: string; bio?: string; avatar?: File | null } = {};
-    if (editForm.value.name.trim()) {
-      updateData.name = editForm.value.name.trim();
-    }
-
-    updateData.bio = editForm.value.bio.trim();
-
-    // Add avatar if selected
-    if (editForm.value.avatar) {
-      updateData.avatar = editForm.value.avatar;
-    }
-    
-    const result = await authApi.updateUser(updateData);
-    
-    if (result.success) {
-      // Update local user data
-      // TODO: refactor this to use a store or state management
-      user.value = mergeUserData(user.value!, result.user!);
-      
-      // Check if username changed, if so redirect
-      if (result.user!.username !== route.params.userSlug) {
-        router.replace(`/u/${result.user!.username}`);
-      }
-      
-      isEditing.value = false;
-      avatarPreview.value = null;
-    } else {
-      notifications.error('Failed to update profile');
-    }
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    notifications.error('An error occurred while updating your profile');
-  } finally {
-    editLoading.value = false;
-  }
-}
-
-onMounted(() => {
-  fetchUser();
-});
-
-// Watch for route changes to reload when username changes
-watch(() => route.params.userSlug, (newUsername) => {
-  if (newUsername) {
-    // Reset all tabs data when user changes
-    (Object.keys(tabsData.value) as TabKey[]).forEach(tab => {
-      tabsData.value[tab].loaded = false;
-      tabsData.value[tab].data = [];
-    });
-    
-    // Cancel editing if switching users
-    isEditing.value = false;
-    
-    fetchUser();
-  }
-});
-</script>
-
 <template>
   <div class="profile-container">
     <!-- Header with back button -->
@@ -578,6 +290,296 @@ watch(() => route.params.userSlug, (newUsername) => {
     </div>
   </div>
 </template>
+
+<script lang="ts" setup>
+import { ref, onMounted, watch, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { apolloClient } from '@/api/apollo.client';
+import { useNotifications } from '@/composables/useNotifications';
+import { useAuthStore } from '@/stores/auth.store';
+import { useAuthApi } from '@/api/auth.api';
+
+import UserAvatar from '@/components/UserAvatar.vue';
+import type { User, Room, Message } from '@/types';
+
+import {
+    USER_QUERY,
+    MESSAGES_BY_USER_QUERY,
+    ROOMS_QUERY,
+    ROOMS_PARTICIPATED_BY_USER_QUERY
+} from '@/api/graphql';
+
+const route = useRoute();
+const router = useRouter();
+const notifications = useNotifications();
+const authStore = useAuthStore();
+const authApi = useAuthApi();
+
+const user = ref<User | null>(null);
+const loading = ref<boolean>(true);
+const error = ref<Error | null>(null);
+
+// Edit mode state
+type EditForm = { name: string; bio: string; avatar: File | null };
+const isEditing = ref<boolean>(false);
+const editLoading = ref<boolean>(false);
+const editForm = ref<EditForm>({
+  name: '',
+  bio: '',
+  avatar: null
+});
+const avatarPreview = ref<string | null>(null);
+
+// Tab data
+type TabKey = 'messages' | 'hostedRooms' | 'joinedRooms';
+type TabData<T> = {
+  loaded: boolean;
+  loading: boolean;
+  data: T[];
+  error: Error | null;
+};
+interface TabTypes {
+  messages: Message;
+  hostedRooms: Room;
+  joinedRooms: Room;
+}
+
+const activeTab = ref<TabKey>('messages');
+const tabsData = ref<{ [K in TabKey]: TabData<TabTypes[K]> }>({
+  messages: { loaded: false, loading: false, data: [], error: null },
+  hostedRooms: { loaded: false, loading: false, data: [], error: null },
+  joinedRooms: { loaded: false, loading: false, data: [], error: null }
+});
+
+// Check if current user is viewing their own profile
+const isOwnProfile = computed(() => {
+  return authStore.user && user.value && authStore.user.username === user.value.username;
+});
+
+
+
+async function fetchUser() {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const { data } = await apolloClient.query({
+      query: USER_QUERY,
+      variables: { username: route.params.userSlug },
+      fetchPolicy: 'network-only'
+    });
+    
+    user.value = data.user;
+    
+    // Initialize edit form with current user data
+    if (user.value) {
+      editForm.value = {
+        name: user.value.name || '',
+        bio: user.value.bio || '',
+        avatar: null
+      };
+    }
+    
+    loadTabData(activeTab.value);
+  } catch (err) {
+    error.value = err instanceof Error ? err : new Error(String(err));
+    notifications.error('Error loading user profile');
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadTabData(tab: TabKey) {
+  if (tabsData.value[tab].loaded || tabsData.value[tab].loading) {
+    return;
+  }
+  
+  tabsData.value[tab].loading = true;
+  tabsData.value[tab].error = null;
+  
+  try {
+    switch (tab) {
+      case 'messages':
+        await fetchUserMessages();
+        break;
+      case 'hostedRooms':
+        await fetchHostedRooms();
+        break;
+      case 'joinedRooms':
+        await fetchJoinedRooms();
+        break;
+    }
+    
+    tabsData.value[tab].loaded = true;
+  } catch (err) {
+    tabsData.value[tab].error = err instanceof Error ? err : new Error(String(err));
+    notifications.error(`Error loading ${tab}`);
+  } finally {
+    tabsData.value[tab].loading = false;
+  }
+}
+
+async function fetchUserMessages() {
+  const { data } = await apolloClient.query({
+    query: MESSAGES_BY_USER_QUERY,
+    variables: { userSlug: user.value!.username },
+    fetchPolicy: 'network-only'
+  });
+  
+  tabsData.value.messages.data = data.messagesByUser || [];
+}
+
+async function fetchHostedRooms() {
+  const { data } = await apolloClient.query({
+    query: ROOMS_QUERY,
+    variables: { hostSlug: user.value!.username },
+    fetchPolicy: 'network-only'
+  });
+  
+  tabsData.value.hostedRooms.data = data.rooms || [];
+}
+
+async function fetchJoinedRooms() {
+  const { data } = await apolloClient.query({
+    query: ROOMS_PARTICIPATED_BY_USER_QUERY,
+    variables: { userSlug: user.value!.username },
+    fetchPolicy: 'network-only'
+  });
+  
+  tabsData.value.joinedRooms.data = data.roomsParticipatedByUser || [];
+}
+
+function setActiveTab(tab: TabKey) {
+  activeTab.value = tab;
+  loadTabData(tab);
+}
+
+// Navigation to room
+function navigateToRoom(room: Room) {
+  router.push(`/u/${room.host.username}/${room.slug}`);
+}
+
+// Format date for display
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+// Edit profile functions
+function startEditing() {
+  isEditing.value = true;
+  editForm.value = {
+    name: user.value!.name || '',
+    bio: user.value!.bio || '',
+    avatar: null
+  };
+  avatarPreview.value = null;
+}
+
+function cancelEditing() {
+  isEditing.value = false;
+  editForm.value = {
+    name: user.value!.name || '',
+    bio: user.value!.bio || '',
+    avatar: null
+  };
+  avatarPreview.value = null;
+}
+
+function handleAvatarChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files && target.files[0];
+  if (file) {
+    editForm.value.avatar = file;
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      avatarPreview.value = (e.target as FileReader).result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function mergeUserData(
+  original: User,
+  incoming: Partial<User>
+): User {
+  return {
+    id: incoming.id ?? original.id,
+    username: incoming.username ?? original.username,
+    name: incoming.name ?? original.name,
+    bio: incoming.bio ?? original.bio,
+    avatar: incoming.avatar ?? original.avatar
+  };
+}
+
+
+async function saveProfile() {
+  editLoading.value = true;
+  
+  try {
+    const updateData: { name?: string; bio?: string; avatar?: File | null } = {};
+    if (editForm.value.name.trim()) {
+      updateData.name = editForm.value.name.trim();
+    }
+
+    updateData.bio = editForm.value.bio.trim();
+
+    // Add avatar if selected
+    if (editForm.value.avatar) {
+      updateData.avatar = editForm.value.avatar;
+    }
+    
+    const result = await authApi.updateUser(updateData);
+    
+    if (result.success) {
+      // Update local user data
+      // TODO: refactor this to use a store or state management
+      user.value = mergeUserData(user.value!, result.user!);
+      
+      // Check if username changed, if so redirect
+      if (result.user!.username !== route.params.userSlug) {
+        router.replace(`/u/${result.user!.username}`);
+      }
+      
+      isEditing.value = false;
+      avatarPreview.value = null;
+    } else {
+      notifications.error('Failed to update profile');
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    notifications.error('An error occurred while updating your profile');
+  } finally {
+    editLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchUser();
+});
+
+// Watch for route changes to reload when username changes
+watch(() => route.params.userSlug, (newUsername) => {
+  if (newUsername) {
+    // Reset all tabs data when user changes
+    (Object.keys(tabsData.value) as TabKey[]).forEach(tab => {
+      tabsData.value[tab].loaded = false;
+      tabsData.value[tab].data = [];
+    });
+    
+    // Cancel editing if switching users
+    isEditing.value = false;
+    
+    fetchUser();
+  }
+});
+</script>
 
 <style scoped>
 .profile-container {

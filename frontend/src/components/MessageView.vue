@@ -1,3 +1,83 @@
+<template>
+  <div class="message-item" :class="{ 'edited': props.message.edited, 'own-message': isMessageOwner }">
+    <div class="message-avatar">
+      <img 
+        :src="userAvatar" 
+        :alt="`${userDisplayName}'s avatar`" 
+        class="avatar-img" 
+      />
+    </div>
+    <div class="message-content">
+      <div class="message-header">
+        <div class="message-author">
+          <span class="username">{{ userDisplayName }}</span>
+          <span 
+            class="message-time" 
+            :title="new Date(props.message.created).toLocaleString()"
+          >
+            {{ formattedTimestamp }}
+            <span v-if="props.message.edited" class="edited-indicator">(edited)</span>
+          </span>
+        </div>
+        
+        <div v-if="isMessageOwner && !isEditing" class="message-actions">
+          <button 
+            class="action-toggle-button"
+            :class="{ 'active': showActions }"
+            @click="toggleActions"
+          >
+            <font-awesome-icon icon="ellipsis-v" />
+          </button>
+          
+          <transition name="dropdown">
+            <div v-if="showActions" class="action-dropdown">
+              <button 
+                class="dropdown-action"
+                @click="startEditing"
+              >
+                <font-awesome-icon icon="edit" class="action-icon" />
+                Edit
+              </button>
+              <button 
+                class="dropdown-action delete-action"
+                @click="handleMessageDelete"
+              >
+                <font-awesome-icon icon="trash" class="action-icon" />
+                Delete
+              </button>
+            </div>
+          </transition>
+        </div>
+      </div>
+      
+      <!-- Message content - edit mode -->
+      <div v-if="isEditing" class="message-edit-form">
+        <textarea 
+          ref="editTextarea"
+          v-model="editBody"
+          class="message-edit-input"
+          rows="1"
+          placeholder="Edit your message..."
+          @input="adjustTextareaHeight"
+          @keydown="handleEditKeydown"
+        ></textarea>
+        <div class="edit-hint">Press Ctrl+Enter to save, Esc to cancel</div>
+        <div class="edit-actions">
+          <button class="cancel-edit-button" @click="cancelEditing">
+            Cancel
+          </button>
+          <button class="save-edit-button" :disabled="!editBody.trim()" @click="saveEdit">
+            Save
+          </button>
+        </div>
+      </div>
+      
+      <!-- Message content - display mode -->
+      <div v-else class="message-body">{{ props.message.body }}</div>
+    </div>
+  </div>
+</template>
+
 <script lang="ts" setup>
 import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { format } from 'timeago.js';
@@ -125,86 +205,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleEscKey);
 });
 </script>
-
-<template>
-  <div class="message-item" :class="{ 'edited': props.message.edited, 'own-message': isMessageOwner }">
-    <div class="message-avatar">
-      <img 
-        :src="userAvatar" 
-        :alt="`${userDisplayName}'s avatar`" 
-        class="avatar-img" 
-      />
-    </div>
-    <div class="message-content">
-      <div class="message-header">
-        <div class="message-author">
-          <span class="username">{{ userDisplayName }}</span>
-          <span 
-            class="message-time" 
-            :title="new Date(props.message.created).toLocaleString()"
-          >
-            {{ formattedTimestamp }}
-            <span v-if="props.message.edited" class="edited-indicator">(edited)</span>
-          </span>
-        </div>
-        
-        <div v-if="isMessageOwner && !isEditing" class="message-actions">
-          <button 
-            class="action-toggle-button"
-            :class="{ 'active': showActions }"
-            @click="toggleActions"
-          >
-            <font-awesome-icon icon="ellipsis-v" />
-          </button>
-          
-          <transition name="dropdown">
-            <div v-if="showActions" class="action-dropdown">
-              <button 
-                class="dropdown-action"
-                @click="startEditing"
-              >
-                <font-awesome-icon icon="edit" class="action-icon" />
-                Edit
-              </button>
-              <button 
-                class="dropdown-action delete-action"
-                @click="handleMessageDelete"
-              >
-                <font-awesome-icon icon="trash" class="action-icon" />
-                Delete
-              </button>
-            </div>
-          </transition>
-        </div>
-      </div>
-      
-      <!-- Message content - edit mode -->
-      <div v-if="isEditing" class="message-edit-form">
-        <textarea 
-          ref="editTextarea"
-          v-model="editBody"
-          class="message-edit-input"
-          rows="1"
-          placeholder="Edit your message..."
-          @input="adjustTextareaHeight"
-          @keydown="handleEditKeydown"
-        ></textarea>
-        <div class="edit-hint">Press Ctrl+Enter to save, Esc to cancel</div>
-        <div class="edit-actions">
-          <button class="cancel-edit-button" @click="cancelEditing">
-            Cancel
-          </button>
-          <button class="save-edit-button" :disabled="!editBody.trim()" @click="saveEdit">
-            Save
-          </button>
-        </div>
-      </div>
-      
-      <!-- Message content - display mode -->
-      <div v-else class="message-body">{{ props.message.body }}</div>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .message-item {

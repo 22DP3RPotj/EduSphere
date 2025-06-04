@@ -1,3 +1,154 @@
+<template>
+  <div class="room-container">
+    <!-- Edit Form Modal -->
+    <div v-if="showEditForm" class="edit-modal-overlay" @click="handleEditCancel">
+      <div class="edit-modal-content" @click.stop>
+        <EditRoomForm 
+          :room="room!"
+          @cancel="handleEditCancel"
+          @updated="handleEditComplete"
+        />
+      </div>
+    </div>
+
+    <ConfirmationModal
+      :is-visible="showDeleteConfirmation"
+      title="Are you sure?"
+      message="You want to delete this room?"
+      confirm-text="Delete"
+      cancel-text="Cancel"
+      @confirm="confirmRoomDeletion"
+      @cancel="cancelRoomDeletion"
+      @close="cancelRoomDeletion"
+    />
+
+    <!-- Loading state -->
+    <div v-if="loading" class="room-loading">
+      <div class="spinner"></div>
+      <p>Loading room...</p>
+    </div>
+    
+    <!-- Room content -->
+    <div v-else-if="room" class="room-content">
+      <!-- Room header -->
+      <div class="room-header">
+        <div class="room-header-left">
+          <button class="back-button" @click="$router.back()">
+            <font-awesome-icon icon="arrow-left" />
+          </button>
+          <h2>{{ room.name }}</h2>
+          <span class="room-topic">{{ room.topic.name }}</span>
+          <span class="participants-count">
+            <font-awesome-icon icon="users" /> {{ participants.length }}
+          </span>
+        </div>
+        
+        <div class="room-header-right">
+          <button v-if="isMobileView" class="sidebar-toggle" @click="toggleSidebar">
+            <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
+          </button>
+          
+          <!-- Room Actions Menu for Host -->
+          <div v-if="isHost" class="room-actions-menu" @click.stop>
+            <button class="room-actions-button" @click="toggleRoomActionsMenu">
+              <font-awesome-icon icon="ellipsis-vertical" />
+            </button>
+            <div v-if="showRoomActionsMenu" class="room-actions-dropdown">
+              <button class="room-action-item" @click="handleEditRoom">
+                <font-awesome-icon icon="edit" />
+                <span>Edit Room</span>
+              </button>
+              <button class="room-action-item delete-action" @click="handleRoomDelete">
+                <font-awesome-icon icon="trash" />
+                <span>Delete Room</span>
+              </button>
+            </div>
+          </div>
+          
+          <button v-if="!isParticipant && authStore.isAuthenticated" class="join-button" @click="handleJoin">
+            Join Room
+          </button>
+        </div>
+      </div>
+      
+      <!-- Main content area with sidebar and conversation -->
+      <div class="room-main-content">
+        <!-- Sidebar with participants -->
+        <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
+          <div class="sidebar-header">
+            <h3 class="sidebar-title">Participants</h3>
+            <button v-if="isMobileView" class="close-sidebar-button" @click="toggleSidebar">
+              <font-awesome-icon icon="times" />
+            </button>
+          </div>
+          <div class="participants-list">
+            <div 
+              v-for="participant in participants" 
+              :key="participant.id" 
+              class="participant-item"
+              @click="navigateToUserProfile(participant.username)"
+            >
+              <img 
+                :src="participant.avatar ? `/media/${participant.avatar}` : '/default.svg'" 
+                :alt="`${participant.username}'s avatar`" 
+                class="participant-avatar"
+              />
+              <div class="participant-info">
+                <span class="participant-name">{{ participant.username }}</span>
+                <span v-if="participant.isHost" class="host-badge">Host</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Room conversation -->
+        <div class="room-conversation">
+          <div ref="messagesContainerRef" class="messages-container">
+            <MessageView
+              v-for="message in messages" 
+              :key="message.id" 
+              :message="message"
+              :current-user-id="authStore.user?.id"
+              @delete-message="handleMessageDelete"
+              @update-message="handleMessageUpdate"
+            />
+          </div>
+          
+          <!-- Message input -->
+          <div v-if="canSendMessage" class="message-input-container">
+            <form id="messageForm" @submit.prevent="sendMessage">
+              <input 
+                id="messageInput"
+                v-model="messageInput"
+                type="text"
+                placeholder="Type your message here..."
+              />
+              <button type="submit" :disabled="!messageInput.trim()">
+                <font-awesome-icon icon="paper-plane" />
+              </button>
+            </form>
+          </div>
+          <div v-else-if="!authStore.isAuthenticated" class="auth-prompt">
+            <p>Please <router-link to="/login">login</router-link> to join the conversation</p>
+          </div>
+          <div v-else class="join-prompt">
+            <p>You need to join this room to participate in the conversation</p>
+            <button class="join-button" @click="handleJoin">
+              Join Room
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Error state -->
+    <div v-else class="room-error">
+      <p>Room not found or you don't have access.</p>
+      <router-link to="/">Go back to home</router-link>
+    </div>
+  </div>
+</template>
+
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -222,157 +373,6 @@ watch(() => route.params.room, async () => {
   }
 });
 </script>
-
-<template>
-  <div class="room-container">
-    <!-- Edit Form Modal -->
-    <div v-if="showEditForm" class="edit-modal-overlay" @click="handleEditCancel">
-      <div class="edit-modal-content" @click.stop>
-        <EditRoomForm 
-          :room="room!"
-          @cancel="handleEditCancel"
-          @updated="handleEditComplete"
-        />
-      </div>
-    </div>
-
-    <ConfirmationModal
-      :is-visible="showDeleteConfirmation"
-      title="Are you sure?"
-      message="You want to delete this room?"
-      confirm-text="Delete"
-      cancel-text="Cancel"
-      @confirm="confirmRoomDeletion"
-      @cancel="cancelRoomDeletion"
-      @close="cancelRoomDeletion"
-    />
-
-    <!-- Loading state -->
-    <div v-if="loading" class="room-loading">
-      <div class="spinner"></div>
-      <p>Loading room...</p>
-    </div>
-    
-    <!-- Room content -->
-    <div v-else-if="room" class="room-content">
-      <!-- Room header -->
-      <div class="room-header">
-        <div class="room-header-left">
-          <button class="back-button" @click="$router.back()">
-            <font-awesome-icon icon="arrow-left" />
-          </button>
-          <h2>{{ room.name }}</h2>
-          <span class="room-topic">{{ room.topic.name }}</span>
-          <span class="participants-count">
-            <font-awesome-icon icon="users" /> {{ participants.length }}
-          </span>
-        </div>
-        
-        <div class="room-header-right">
-          <button v-if="isMobileView" class="sidebar-toggle" @click="toggleSidebar">
-            <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
-          </button>
-          
-          <!-- Room Actions Menu for Host -->
-          <div v-if="isHost" class="room-actions-menu" @click.stop>
-            <button class="room-actions-button" @click="toggleRoomActionsMenu">
-              <font-awesome-icon icon="ellipsis-vertical" />
-            </button>
-            <div v-if="showRoomActionsMenu" class="room-actions-dropdown">
-              <button class="room-action-item" @click="handleEditRoom">
-                <font-awesome-icon icon="edit" />
-                <span>Edit Room</span>
-              </button>
-              <button class="room-action-item delete-action" @click="handleRoomDelete">
-                <font-awesome-icon icon="trash" />
-                <span>Delete Room</span>
-              </button>
-            </div>
-          </div>
-          
-          <button v-if="!isParticipant && authStore.isAuthenticated" class="join-button" @click="handleJoin">
-            Join Room
-          </button>
-        </div>
-      </div>
-      
-      <!-- Main content area with sidebar and conversation -->
-      <div class="room-main-content">
-        <!-- Sidebar with participants -->
-        <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
-          <div class="sidebar-header">
-            <h3 class="sidebar-title">Participants</h3>
-            <button v-if="isMobileView" class="close-sidebar-button" @click="toggleSidebar">
-              <font-awesome-icon icon="times" />
-            </button>
-          </div>
-          <div class="participants-list">
-            <div 
-              v-for="participant in participants" 
-              :key="participant.id" 
-              class="participant-item"
-              @click="navigateToUserProfile(participant.username)"
-            >
-              <img 
-                :src="participant.avatar ? `/media/${participant.avatar}` : '/default.svg'" 
-                :alt="`${participant.username}'s avatar`" 
-                class="participant-avatar"
-              />
-              <div class="participant-info">
-                <span class="participant-name">{{ participant.username }}</span>
-                <span v-if="participant.isHost" class="host-badge">Host</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Room conversation -->
-        <div class="room-conversation">
-          <div ref="messagesContainerRef" class="messages-container">
-            <MessageView
-              v-for="message in messages" 
-              :key="message.id" 
-              :message="message"
-              :current-user-id="authStore.user?.id"
-              @delete-message="handleMessageDelete"
-              @update-message="handleMessageUpdate"
-            />
-          </div>
-          
-          <!-- Message input -->
-          <div v-if="canSendMessage" class="message-input-container">
-            <form id="messageForm" @submit.prevent="sendMessage">
-              <input 
-                id="messageInput"
-                v-model="messageInput"
-                type="text"
-                placeholder="Type your message here..."
-              />
-              <button type="submit" :disabled="!messageInput.trim()">
-                <font-awesome-icon icon="paper-plane" />
-              </button>
-            </form>
-          </div>
-          <div v-else-if="!authStore.isAuthenticated" class="auth-prompt">
-            <p>Please <router-link to="/login">login</router-link> to join the conversation</p>
-          </div>
-          <div v-else class="join-prompt">
-            <p>You need to join this room to participate in the conversation</p>
-            <button class="join-button" @click="handleJoin">
-              Join Room
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Error state -->
-    <div v-else class="room-error">
-      <p>Room not found or you don't have access.</p>
-      <router-link to="/">Go back to home</router-link>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .room-container {

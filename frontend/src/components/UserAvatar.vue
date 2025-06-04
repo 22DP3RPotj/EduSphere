@@ -1,3 +1,18 @@
+<template>
+  <div :class="avatarClasses">
+    <img 
+      v-if="avatarSrc" 
+      :src="avatarSrc" 
+      :alt="`${username}'s avatar`" 
+      class="avatar-image"
+    />
+    <div v-else class="avatar-fallback">
+      {{ initials }}
+    </div>
+    <span v-if="showStatus" class="status-indicator"></span>
+  </div>
+</template>
+
 <script lang="ts" setup>
 import { computed } from 'vue';
 
@@ -43,21 +58,6 @@ const avatarClasses = computed(() => {
   return classes;
 });
 </script>
-
-<template>
-  <div :class="avatarClasses">
-    <img 
-      v-if="avatarSrc" 
-      :src="avatarSrc" 
-      :alt="`${username}'s avatar`" 
-      class="avatar-image"
-    />
-    <div v-else class="avatar-fallback">
-      {{ initials }}
-    </div>
-    <span v-if="showStatus" class="status-indicator"></span>
-  </div>
-</template>
 
 <style scoped>
 .user-avatar {

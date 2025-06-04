@@ -1,3 +1,4 @@
+# docker/backend/Dockerfile
 FROM python:slim
 
 WORKDIR /app
@@ -19,7 +20,13 @@ RUN pip install uvicorn gunicorn psycopg2
 COPY . .
 
 # Create directories if they don't exist
-RUN mkdir -p staticfiles media
+RUN mkdir -p staticfiles media logs
+
+# Expose port
+EXPOSE 8000
+
+# Collect static files at build time
+# RUN python manage.py collectstatic --noinput --clear
 
 # Command to run the server
 ENTRYPOINT ["uvicorn", "backend.config.asgi:application"]

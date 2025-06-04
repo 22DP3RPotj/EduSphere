@@ -1,14 +1,25 @@
-FROM node:slim
+# docker/frontend/Dockerfile
+# Build stage
+FROM node:slim AS builder
 
 WORKDIR /app
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
 # Copy the package.json and install dependencies
-COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install
 
-# Copy the rest of the application
-COPY . .
+# Copy the frontend source code
+COPY frontend/ ./
+RUN pnpm build
 
-# Command to run the dev server
-ENTRYPOINT ["npm", "--prefix", "frontend", "run"]
-CMD ["dev", "--", "--host", "0.0.0.0"]
+# Serve stage - copy built files to nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx config if you have one for frontend
+# COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

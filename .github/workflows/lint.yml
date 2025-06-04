@@ -21,10 +21,13 @@ jobs:
         with:
           node-version: 24.0.1
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: pnpm install
 
       - name: Run ESLint
         working-directory: ./frontend
-        run: npx eslint .
+        run: pnpm exec eslint .

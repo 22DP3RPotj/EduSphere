@@ -77,12 +77,12 @@ class CreateRoom(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         topic_name = graphene.String(required=True)
-        description = graphene.String()
+        description = graphene.String(required=True)
 
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info, name, topic_name, description=None):
+    def mutate(self, info, name, topic_name, description):
         topic, created = Topic.objects.get_or_create(name=topic_name)
         
         form = RoomForm({
@@ -102,20 +102,17 @@ class CreateRoom(graphene.Mutation):
 
 class UpdateRoom(graphene.Mutation):
     class Arguments:
-        host_slug = graphene.String(required=True)
-        room_slug = graphene.String(required=True)
-        name = graphene.String(required=False)
+        room_id = graphene.UUID(required=True)
         topic_name = graphene.String(required=False)
         description = graphene.String(required=False)
 
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info, host_slug, room_slug, **kwargs):
+    def mutate(self, info, room_id, **kwargs):
         try:
             room = Room.objects.get(
-                host__username=host_slug,
-                slug=room_slug
+                id=room_id,
             )
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
@@ -126,7 +123,7 @@ class UpdateRoom(graphene.Mutation):
         topic, created = Topic.objects.get_or_create(name=kwargs.get("topic_name"))
         
         form = RoomForm({
-            "name": kwargs.get("name", room.name),
+            "name": room.name,
             "topic": topic.id,
             "description": kwargs.get("description", room.description)
         }, instance=room)
@@ -140,17 +137,15 @@ class UpdateRoom(graphene.Mutation):
 
 class DeleteRoom(graphene.Mutation):
     class Arguments:
-        host_slug = graphene.String(required=True)
-        room_slug = graphene.String(required=True)
+        room_id = graphene.UUID(required=True)
 
     success = graphene.Boolean()
 
     @login_required
-    def mutate(self, info, host_slug, room_slug):
+    def mutate(self, info, room_id):
         try:
             room = Room.objects.get(
-                host__username=host_slug,
-                slug=room_slug
+                id=room_id,
             )
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
@@ -163,17 +158,15 @@ class DeleteRoom(graphene.Mutation):
 
 class JoinRoom(graphene.Mutation):
     class Arguments:
-        host_slug = graphene.String(required=True)
-        room_slug = graphene.String(required=True)
+        room_id = graphene.UUID(required=True)
 
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info, host_slug, room_slug):
+    def mutate(self, info, room_id):
         try:
             room = Room.objects.get(
-                host__username=host_slug,
-                slug=room_slug
+                id=room_id,
             )
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})

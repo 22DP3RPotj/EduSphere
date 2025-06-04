@@ -104,7 +104,7 @@ async function handleRoomDelete() {
 async function confirmRoomDeletion() {
   showDeleteConfirmation.value = false;
 
-  const success = await deleteRoom(room.value!.host.username, room.value!.slug);
+  const success = await deleteRoom(room.value!.id);
   if (success) {
     router.push('/');
   }
@@ -154,7 +154,7 @@ function toggleSidebar() {
 
 //  TODO: Why fetch twice?
 async function handleJoin() {
-  await joinRoom(room.value!.host.username, room.value!.slug);
+  await joinRoom(room.value!.id);
   loading.value = true;
   room.value = await fetchRoom(room.value!.host.username, room.value!.slug);
   loading.value = false;
@@ -343,6 +343,7 @@ watch(() => route.params.room, async () => {
           <div v-if="canSendMessage" class="message-input-container">
             <form id="messageForm" @submit.prevent="sendMessage">
               <input 
+                id="messageInput"
                 v-model="messageInput"
                 type="text"
                 placeholder="Type your message here..."

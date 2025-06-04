@@ -1,5 +1,5 @@
-import { apolloClient } from "./apollo.client";
-import { useAuthStore } from "../stores/auth.store";
+import { apolloClient } from "@/api/apollo.client";
+import { useAuthStore } from "@/stores/auth.store";
 import { useNotifications } from "@/composables/useNotifications";
 import { useApiWrapper } from "@/composables/api.wrapper";
 
@@ -8,12 +8,10 @@ import {
   REFRESH_TOKEN_MUTATION,
   REGISTER_MUTATION,
   LOGOUT_MUTATION,
-  UPDATE_USER_MUTATION
-} from "./graphql/auth.mutations";
+  UPDATE_USER_MUTATION,
 
-import {
   GET_AUTH_STATUS
-} from "./graphql/auth.queries";
+} from "@/api/graphql";
 
 import type {
   User,
@@ -203,15 +201,9 @@ export function useAuthApi() {
     }
   }
 
-  async function registerUser(
-    username: string, 
-    name: string, 
-    email: string, 
-    password1: string, 
-    password2: string
-  ): Promise<boolean> {
+  async function registerUser(data: RegisterInput): Promise<boolean> {
     try {
-      if (password1 !== password2) {
+      if (data.password1 !== data.password2) {
         notifications.error("Passwords do not match");
         return false;
       }
@@ -219,7 +211,7 @@ export function useAuthApi() {
       const registerResponse = await apiWrapper.callApi(
         async (): Promise<RegisterResponse> => apolloClient.mutate({
           mutation: REGISTER_MUTATION,
-          variables: { username, name, email, password1, password2 } satisfies RegisterInput,
+          variables: data satisfies RegisterInput,
         }),
         { suppressNotifications: false }
       );
@@ -229,7 +221,7 @@ export function useAuthApi() {
         return false;
       }
       
-      return await login(email, password1);
+      return await login(data.email, data.password1);
     } catch (error) {
       console.error("Registration error:", error);
       return false;

@@ -254,7 +254,7 @@ import {
   ROOMS_PARTICIPATED_BY_USER_QUERY,
   ROOMS_NOT_PARTICIPATED_BY_USER_QUERY,
   USER_QUERY
-} from '@/api/graphql/room.queries';
+} from '@/api/graphql';
 
 import type { User, Room, Topic } from '@/types';
 

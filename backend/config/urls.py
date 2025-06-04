@@ -9,8 +9,8 @@ from graphene_file_upload.django import FileUploadGraphQLView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("graphql/", jwt_cookie(
-        csrf_protect(ensure_csrf_cookie(
-            FileUploadGraphQLView.as_view(graphiql=settings.DEBUG)
+        csrf_exempt(ensure_csrf_cookie(
+            FileUploadGraphQLView.as_view(graphiql=True)
         ))
     )),
     path("api/", include("backend.api.urls")),

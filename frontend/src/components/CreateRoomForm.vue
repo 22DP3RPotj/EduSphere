@@ -7,7 +7,7 @@
         <label for="room-name">Room Name</label>
         <input
           id="room-name"
-          v-model="name"
+          v-model="roomForm.name"
           type="text"
           placeholder="Enter room name"
           autocomplete="off"
@@ -20,7 +20,7 @@
         <div class="autocomplete-wrapper">
           <input
             id="topic-name"
-            v-model="topicInput"
+            v-model="roomForm.topicName"
             type="text"
             placeholder="Search or create topic"
             autocomplete="off"
@@ -52,7 +52,7 @@
         <label for="description">Description <span>(optional)</span></label>
         <textarea
           id="description"
-          v-model="description"
+          v-model="roomForm.description"
           placeholder="Add a description"
           rows="4"
         ></textarea>
@@ -71,14 +71,16 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRoomApi } from "@/api/room.api";
 
-import type { Topic } from '@/types';
+import type { Topic, CreateRoomInput } from '@/types';
 
 const router = useRouter();
 const { createRoom, fetchTopics } = useRoomApi();
 
-const name = ref<string>('');
-const topicInput = ref<string>('');
-const description = ref<string>('');
+const roomForm = ref<CreateRoomInput>({
+  name: '',
+  topicName: '',
+  description: ''
+});
 const isLoading = ref<boolean>(false);
 const topics = ref<Topic[]>([]);
 const showSuggestions = ref<boolean>(false);
@@ -94,8 +96,8 @@ onMounted(async () => {
 });
 
 const filteredTopics = computed(() => {
-  if (!topicInput.value) return [];
-  const searchTerm = topicInput.value.toString().toLowerCase();
+  if (!roomForm.value.topicName) return [];
+  const searchTerm = roomForm.value.topicName.toString().toLowerCase();
   return topics.value.map(({ name }) => name).filter(topic => 
     topic.toLowerCase().includes(searchTerm)
   );
@@ -135,20 +137,16 @@ function onEnter(event: KeyboardEvent) {
 }
 
 function selectTopic(topic: string) {
-  topicInput.value = topic;
+  roomForm.value.topicName = topic;
   showSuggestions.value = false;
 }
 
 async function submitRoom() {
-  if (!name.value || !topicInput.value) return;
+  if (!roomForm.value.name || !roomForm.value.topicName) return;
 
   isLoading.value = true;
   try {
-    const room = await createRoom(
-      name.value, 
-      topicInput.value,
-      description.value || undefined
-    );
+    const room = await createRoom({ ...roomForm.value });
 
     if (room) {
       router.push(`/u/${room.host.username}/${room.slug}`);

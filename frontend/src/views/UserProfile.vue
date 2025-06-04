@@ -61,7 +61,7 @@ import {
     MESSAGES_BY_USER_QUERY,
     ROOMS_QUERY,
     ROOMS_PARTICIPATED_BY_USER_QUERY
-} from '@/api/graphql/room.queries';
+} from '@/api/graphql';
 
 async function fetchUser() {
   loading.value = true;
@@ -232,9 +232,9 @@ async function saveProfile() {
     if (editForm.value.name.trim()) {
       updateData.name = editForm.value.name.trim();
     }
-    if (editForm.value.bio.trim()) {
-      updateData.bio = editForm.value.bio.trim();
-    }
+
+    updateData.bio = editForm.value.bio.trim();
+
     // Add avatar if selected
     if (editForm.value.avatar) {
       updateData.avatar = editForm.value.avatar;
@@ -245,7 +245,6 @@ async function saveProfile() {
     if (result.success) {
       // Update local user data
       // TODO: refactor this to use a store or state management
-
       user.value = mergeUserData(user.value!, result.user!);
       
       // Check if username changed, if so redirect

@@ -8,7 +8,7 @@
         <div class="autocomplete-wrapper">
           <input
             id="topic-name"
-            v-model="topicInput"
+            v-model="roomForm.topicName"
             type="text"
             placeholder="Search or create topic"
             autocomplete="off"
@@ -40,7 +40,7 @@
         <label for="description">Description <span>(optional)</span></label>
         <textarea
           id="description"
-          v-model="description"
+          v-model="roomForm.description"
           placeholder="Add a description"
           rows="4"
         ></textarea>
@@ -63,7 +63,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoomApi } from "@/api/room.api";
 
-import type { Topic } from '@/types';
+import type { Topic, UpdateRoomForm } from '@/types';
 
 const props = defineProps({
   room: {
@@ -76,8 +76,11 @@ const emit = defineEmits(['cancel', 'updated']);
 
 const { updateRoom, fetchTopics } = useRoomApi();
 
-const topicInput = ref<string>('');
-const description = ref<string | undefined>(undefined);
+const roomForm = ref<UpdateRoomForm>({
+  topicName: '',
+  description: ''
+});
+
 const isLoading = ref<boolean>(false);
 const topics = ref<Topic[]>([]);
 const showSuggestions = ref<boolean>(false);
@@ -86,8 +89,8 @@ const selectedTopicIndex = ref<number>(-1);
 
 watch(() => props.room, (newRoom) => {
   if (newRoom) {
-    topicInput.value = newRoom.topic?.name || '';
-    description.value = newRoom.description || undefined;
+    roomForm.value.topicName = newRoom.topic?.name || '';
+    roomForm.value.description = newRoom.description || '';
   }
 }, { immediate: true });
 
@@ -101,8 +104,8 @@ onMounted(async () => {
 });
 
 const filteredTopics = computed(() => {
-  if (!topicInput.value) return [];
-  const searchTerm = topicInput.value.toString().toLowerCase();
+  if (!roomForm.value.topicName) return [];
+  const searchTerm = roomForm.value.topicName.toString().toLowerCase();
   return topics.value.map(({ name }) => name).filter(topic => 
     topic.toLowerCase().includes(searchTerm)
   );
@@ -142,20 +145,18 @@ function onEnter(event: KeyboardEvent) {
 }
 
 function selectTopic(topic: string) {
-  topicInput.value = topic;
+  roomForm.value.topicName = topic;
   showSuggestions.value = false;
 }
 
 async function submitUpdate() {
-  if (!topicInput.value) return;
+  if (!roomForm.value.topicName) return;
 
   isLoading.value = true;
   try {
     const updatedRoom = await updateRoom({
-      hostSlug: props.room.host.username,
-      roomSlug: props.room.slug,
-      topicName: topicInput.value,
-      description: description.value
+      roomId: props.room.id,
+      ...roomForm.value
     });
     
     if (updatedRoom) {

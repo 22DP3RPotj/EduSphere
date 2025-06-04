@@ -7,7 +7,7 @@
         <label for="username">Username</label>
         <input 
           id="username"
-          v-model="username" 
+          v-model="registerForm.username" 
           type="text" 
           placeholder="Choose a username"
           autocomplete="username" 
@@ -19,7 +19,7 @@
         <label for="name">Full Name</label>
         <input 
           id="name"
-          v-model="name" 
+          v-model="registerForm.name" 
           type="text" 
           placeholder="Enter your full name"
           autocomplete="name" 
@@ -31,7 +31,7 @@
         <label for="reg-email">Email</label>
         <input 
           id="reg-email"
-          v-model="email" 
+          v-model="registerForm.email" 
           type="email" 
           placeholder="Enter your email"
           autocomplete="email" 
@@ -43,7 +43,7 @@
         <label for="password1">Password</label>
         <input 
           id="password1"
-          v-model="password1" 
+          v-model="registerForm.password1" 
           type="password" 
           placeholder="Create a password"
           autocomplete="new-password" 
@@ -55,7 +55,7 @@
         <label for="password2">Confirm Password</label>
         <input 
           id="password2"
-          v-model="password2" 
+          v-model="registerForm.password2" 
           type="password" 
           placeholder="Confirm your password"
           autocomplete="new-password" 
@@ -87,36 +87,32 @@ const emit = defineEmits(['registerSuccess', 'switchToLogin']);
 
 const { registerUser } = useAuthApi();
 
-const username = ref<string>('');
-const name = ref<string>('');
-const email = ref<string>('');
-const password1 = ref<string>('');
-const password2 = ref<string>('');
+const registerForm = ref({
+  username: '',
+  name: '',
+  email: '',
+  password1: '',
+  password2: ''
+});
 const error = ref<string | null>(null);
 const isLoading = ref<boolean>(false);
 
+function validateRegisterForm(form: typeof registerForm.value): string | null {
+  if (!form.username || !form.name || !form.email || !form.password1 || !form.password2) {
+    return "Please fill in all fields";
+  }
+  if (form.password1 !== form.password2) {
+    return "Passwords do not match";
+  }
+  return null;
+}
+
 async function handleRegister() {
-  error.value = null;
-
-  if (!username.value || !name.value || !email.value || !password1.value || !password2.value) {
-    error.value = "Please fill in all fields";
-    return;
-  }
-
-
-  if (password1.value !== password2.value) {
-    error.value = "Passwords do not match";
-    return;
-  }
+  error.value = validateRegisterForm(registerForm.value);
+  if (error.value) return;
 
   isLoading.value = true;
-  const success = await registerUser(
-    username.value, 
-    name.value, 
-    email.value, 
-    password1.value, 
-    password2.value
-  );
+  const success = await registerUser({ ...registerForm.value });
   isLoading.value = false;
 
   if (success) {

@@ -144,8 +144,8 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_create_room_success(self):
         self.client.authenticate(self.user)
         mutation = """
-            mutation CreateRoom($name: String!, $topicName: String!) {
-                createRoom(name: $name, topicName: $topicName) {
+            mutation CreateRoom($name: String!, $topicName: String!, $description: String!) {
+                createRoom(name: $name, topicName: $topicName, description: $description) {
                     room {
                         name
                         topic { name }
@@ -154,7 +154,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"name": "New Room", "topicName": "NewTopic"}
+        variables = {"name": "New Room", "topicName": "NewTopic", "description": ""}
         result: ExecutionResult = self.client.execute(mutation, variables)
         room = Room.objects.get(name="New Room")
         self.assertEqual(room.topic.name, "NewTopic")
@@ -164,13 +164,13 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         room = Room.objects.create(host=self.user, name="Test Room", topic=self.topic)
         self.client.authenticate(self.user)
         mutation = """
-            mutation DeleteRoom($hostSlug: String!, $roomSlug: String!) {
-                deleteRoom(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+            mutation DeleteRoom($roomId: UUID!) {
+                deleteRoom(roomId: $roomId) {
                     success
                 }
             }
         """
-        variables = {"hostSlug": self.user.username, "roomSlug": room.slug}
+        variables = {"roomId": str(room.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertTrue(result.data["deleteRoom"]["success"])
         self.assertFalse(Room.objects.filter(id=room.id).exists())

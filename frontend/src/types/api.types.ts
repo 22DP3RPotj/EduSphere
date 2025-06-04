@@ -23,13 +23,11 @@ export interface UpdateUserInput {
 export interface CreateRoomInput {
   name: string;
   topicName: string;
-  description?: string;
+  description: string;
 }
 
 export interface UpdateRoomInput {
-  hostSlug: string;
-  roomSlug: string;
-  name?: string;
+  roomId: string;
   topicName?: string;
   description?: string;
 }
@@ -131,4 +129,9 @@ export interface RoomMessagesQueryResponse {
 
 export interface TopicsQueryResponse {
   topics: Topic[];
+}
+
+export interface UpdateRoomForm {
+  topicName?: string;
+  description?: string;
 }

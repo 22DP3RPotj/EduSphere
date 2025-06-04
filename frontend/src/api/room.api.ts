@@ -2,19 +2,17 @@ import { apolloClient } from "./apollo.client";
 import { useApiWrapper } from "@/composables/api.wrapper";
 
 import {
-  ROOM_QUERY,
-  ROOM_MESSAGES_QUERY,
-  TOPIC_QUERY
-} from "./graphql/room.queries";
-
-import {
   CREATE_ROOM_MUTATION,
   DELETE_ROOM_MUTATION,
   JOIN_ROOM_MUTATION,
   DELETE_MESSAGE_MUTATION,
   UPDATE_MESSAGE_MUTATION,
-  UPDATE_ROOM_MUTATION
-} from "./graphql/room.mutations";
+  UPDATE_ROOM_MUTATION,
+
+  ROOM_QUERY,
+  ROOM_MESSAGES_QUERY,
+  TOPIC_QUERY
+} from "@/api/graphql";
 
 import type {
   Room,
@@ -130,16 +128,13 @@ export function useRoomApi() {
     }
   }
 
-  async function createRoom(name: string, topicName: string, description?: string): Promise<Room | null> {
+  async function createRoom(data: CreateRoomInput): Promise<Room | null> {
+    console.log(data);
     try {
       const response = await apiWrapper.callApi(
         async (): Promise<CreateRoomResponse> => apolloClient.mutate({
           mutation: CREATE_ROOM_MUTATION,
-          variables: {
-            name,
-            topicName,
-            description
-          } satisfies CreateRoomInput,
+          variables: data satisfies CreateRoomInput,
         })
       );
 
@@ -150,12 +145,12 @@ export function useRoomApi() {
     }
   }
 
-  async function deleteRoom(hostSlug: string, roomSlug: string): Promise<boolean> {
+  async function deleteRoom(id: string): Promise<boolean> {
     try {
       const response = await apiWrapper.callApi(
         async (): Promise<DeleteRoomResponse> => apolloClient.mutate({
           mutation: DELETE_ROOM_MUTATION,
-          variables: { hostSlug, roomSlug }
+          variables: { id } satisfies { id: string }
         })
       );
 
@@ -166,28 +161,28 @@ export function useRoomApi() {
     }
   }
 
-  async function updateRoom(data: UpdateRoomInput): Promise<Room | false> {
+  async function updateRoom(data: UpdateRoomInput): Promise<Room | null> {
     try {
       const response = await apiWrapper.callApi(
         async (): Promise<UpdateRoomResponse> => apolloClient.mutate({
           mutation: UPDATE_ROOM_MUTATION,
-          variables: data
+          variables: data satisfies UpdateRoomInput
         })
       );
 
-      return response.data?.updateRoom?.room || false;
+      return response.data?.updateRoom?.room || null;
     } catch (error) {
       console.error("Error updating room:", error);
-      return false;
+      return null;
     }
   }
 
-  async function joinRoom(hostSlug: string, roomSlug: string): Promise<Room | null> {
+  async function joinRoom(roomId: string): Promise<Room | null> {
     try {
       const response = await apiWrapper.callApi(
         async (): Promise<JoinRoomResponse> => apolloClient.mutate({
           mutation: JOIN_ROOM_MUTATION,
-          variables: { hostSlug, roomSlug }
+          variables: { roomId }
         })
       );
 
@@ -214,7 +209,7 @@ export function useRoomApi() {
     }
   }
 
-  async function updateMessage(messageId: string, body: string): Promise<Message | false> {
+  async function updateMessage(messageId: string, body: string): Promise<Message | null> {
     try {
       const response = await apiWrapper.callApi(
         async (): Promise<UpdateMessageResponse> => apolloClient.mutate({
@@ -223,10 +218,10 @@ export function useRoomApi() {
         })
       );
 
-      return response.data?.updateMessage?.message || false;
+      return response.data?.updateMessage?.message || null;
     } catch (error) {
       console.error("Error updating message:", error);
-      return false;
+      return null;
     }
   }
 

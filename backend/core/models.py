@@ -14,7 +14,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     username = models.SlugField(max_length=200, unique=True)
     name = models.CharField(max_length=200)
-    bio = models.TextField(blank=True, default='', validators=[MaxLengthValidator(500)])
+    bio = models.TextField(blank=True, default='', max_length=500, validators=[MaxLengthValidator(500)])
     avatar = models.ImageField(
         upload_to='avatars',
         blank=True, null=True,
@@ -64,7 +64,7 @@ class Room(models.Model):
     slug = models.SlugField(max_length=200)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
-    description = models.TextField(blank=True, default='', validators=[MaxLengthValidator(500)])
+    description = models.TextField(blank=True, default='', max_length=500, validators=[MaxLengthValidator(500)])
     participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -76,7 +76,7 @@ class Room(models.Model):
         ordering = ['-updated', '-created']
         constraints = [
             models.UniqueConstraint(
-                'host', Lower('name'),
+                fields=['host', 'slug'],
                 name='unique_room_per_host',
                 violation_error_message='You already have a room with this name.'
             )
@@ -88,11 +88,8 @@ class Room(models.Model):
         ]
         
     def save(self, *args, **kwargs):
-        if not self.slug or self.name != Room.objects.get(pk=self.pk).name:
-            base_slug = slugify(self.name)
-            self.slug = base_slug
-            while Room.objects.filter(host=self.host, slug=self.slug).exists():
-                self.slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+        if not self.slug:
+            self.slug = slugify(self.name)
         self.full_clean()
         super().save(*args, **kwargs)
         

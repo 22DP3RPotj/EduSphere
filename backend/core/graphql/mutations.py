@@ -42,7 +42,6 @@ class RegisterUser(graphene.Mutation):
      
 class UpdateUser(graphene.Mutation):
     class Arguments:
-        username = graphene.String(required=False)
         name = graphene.String(required=False)
         bio = graphene.String(required=False)
         avatar = Upload(required=False)
@@ -52,13 +51,14 @@ class UpdateUser(graphene.Mutation):
     @login_required
     def mutate(self, info, **kwargs):
         user = info.context.user
-        avatar = kwargs.pop("avatar", None)
         
         data = {
-            "username": kwargs.get("username", user.username),
+            "username": user.username,
             "name": kwargs.get("name", user.name),
             "bio": kwargs.get("bio", user.bio),
         }
+        
+        avatar = kwargs.pop("avatar", None)
         
         form = UserForm(
             data=data,

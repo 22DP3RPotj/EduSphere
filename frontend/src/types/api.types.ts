@@ -14,7 +14,6 @@ export interface RegisterInput {
 }
 
 export interface UpdateUserInput {
-  username?: string;
   name?: string;
   bio?: string;
   avatar?: File | null;

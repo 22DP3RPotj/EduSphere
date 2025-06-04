@@ -96,17 +96,17 @@ class UserMutationsTests(JSONWebTokenTestCase):
         )
         self.client.authenticate(user)
         mutation = """
-            mutation UpdateUser($username: String) {
-                updateUser(username: $username) {
-                    user { username }
+            mutation UpdateUser($name: String) {
+                updateUser(name: $name) {
+                    user { name }
                 }
             }
         """
-        variables = {"username": "newusername"}
+        variables = {"name": "newusername"}
         result: ExecutionResult = self.client.execute(mutation, variables)
         user.refresh_from_db()
-        self.assertEqual(user.username, "newusername")
-        self.assertEqual(result.data["updateUser"]["user"]["username"], "newusername")
+        self.assertEqual(user.name, "newusername")
+        self.assertEqual(result.data["updateUser"]["user"]["name"], "newusername")
 
     def test_update_user_avatar(self):
         user = User.objects.create_user(

@@ -59,13 +59,11 @@ export const LOGOUT_MUTATION = gql`
 
 export const UPDATE_USER_MUTATION = gql`
     mutation UpdateUser(
-        $username: String
         $name: String
         $bio: String
         $avatar: Upload
     ) {
         updateUser(
-            username: $username
             name: $name
             bio: $bio
             avatar: $avatar

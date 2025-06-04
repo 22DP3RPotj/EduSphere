@@ -4,9 +4,12 @@ on:
   push:
     paths:
       - 'frontend/**'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'frontend/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
 
 jobs:
   eslint:

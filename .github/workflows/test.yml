@@ -11,6 +11,7 @@ on:
       - 'backend/**'
       - 'requirements.txt'
       - '.github/workflows/**'
+  workflow_dispatch:
 
 jobs:
   test:

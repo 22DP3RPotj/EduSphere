@@ -22,12 +22,6 @@ COPY . .
 # Create directories if they don't exist
 RUN mkdir -p staticfiles media logs
 
-# Expose port
-EXPOSE 8000
-
-# Collect static files at build time
-# RUN python manage.py collectstatic --noinput --clear
-
 # Command to run the server
 ENTRYPOINT ["uvicorn", "backend.config.asgi:application"]
 CMD ["--host", "0.0.0.0", "--port", "8000", "--lifespan", "off"]

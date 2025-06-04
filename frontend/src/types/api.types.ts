@@ -1,4 +1,4 @@
-import type { User, Room, Message, Topic } from './main.types';
+import type { User, Room, Message } from './main.types';
 
 export interface LoginInput {
   email: string;
@@ -90,12 +90,6 @@ export interface JoinRoomPayload {
   };
 }
 
-export interface CreateMessagePayload {
-  success: boolean;
-  message?: Message;
-  errors?: string[];
-}
-
 export interface UpdateMessagePayload {
   updateMessage: {
     message: Message;
@@ -115,19 +109,6 @@ export interface LogoutPayload {
 export interface RefreshTokenPayload {
   payload?: unknown;
   refreshExpiresIn?: number;
-}
-
-// Query response types
-export interface RoomQueryResponse {
-  room: Room;
-}
-
-export interface RoomMessagesQueryResponse {
-  messages: Message[];
-}
-
-export interface TopicsQueryResponse {
-  topics: Topic[];
 }
 
 export interface UpdateRoomForm {

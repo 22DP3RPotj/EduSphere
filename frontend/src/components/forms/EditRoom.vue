@@ -42,8 +42,12 @@
           id="description"
           v-model="roomForm.description"
           placeholder="Add a description"
+          maxlength="500"
           rows="4"
         ></textarea>
+        <div class="char-count">
+          {{ roomForm.description!.length }}/500
+        </div>
       </div>
 
       <div class="form-actions">
@@ -267,6 +271,15 @@ textarea {
   gap: 1rem;
   justify-content: flex-end;
   margin-top: 2rem;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 0.25rem;
+  flex-shrink: 0;
 }
 
 .btn {

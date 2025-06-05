@@ -54,8 +54,12 @@
           id="description"
           v-model="roomForm.description"
           placeholder="Add a description"
+          maxlength="500"
           rows="4"
         ></textarea>
+        <div class="char-count">
+          {{ roomForm.description.length }}/500
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary" :disabled="isLoading">
@@ -196,7 +200,8 @@ async function submitRoom() {
 }
 
 .form-group textarea {
-  width: 90%;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 100px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
@@ -217,5 +222,14 @@ async function submitRoom() {
 .form-group span {
   color: var(--text-light);
   font-size: 0.875rem;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 0.25rem;
+  flex-shrink: 0;
 }
 </style>

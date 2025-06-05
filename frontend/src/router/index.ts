@@ -49,9 +49,9 @@ router.beforeEach(async (to, from, next) => {
     const isAuthenticated = authStore.isAuthenticated;
 
     if (to.meta.requireGuest && isAuthenticated) {
-      next({ path: "/" });
+      next({ path: from.fullPath });
     } else if (to.meta.requiresAuth && !isAuthenticated) {
-      next({ path: "/auth", query: { redirect: to.fullPath } });
+      next({ path: "/auth" });
     } else {
       next();
     }

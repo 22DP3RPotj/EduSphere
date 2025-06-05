@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts" setup>
-import CreateRoomForm from '@/components/CreateRoomForm.vue';
+import CreateRoomForm from '@/components/forms/CreateRoom.vue';
 </script>
 
 <style scoped>

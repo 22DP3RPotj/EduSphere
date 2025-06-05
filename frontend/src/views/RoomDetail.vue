@@ -158,9 +158,9 @@ import { useRoomApi } from '@/api/room.api';
 import { useWebSocket } from '@/api/websocket';
 import { useNotifications } from '@/composables/useNotifications';
 
-import MessageView from '@/components/MessageView.vue';
-import EditRoomForm from '@/components/EditRoomForm.vue';
-import ConfirmationModal from '@/components/ConfirmationModal.vue';
+import MessageView from '@/components/common/MessageView.vue';
+import EditRoomForm from '@/components/forms/EditRoom.vue';
+import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
 import type { Room } from '@/types';
 
 const authStore = useAuthStore();

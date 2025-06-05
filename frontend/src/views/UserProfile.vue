@@ -299,7 +299,7 @@ import { useNotifications } from '@/composables/useNotifications';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuthApi } from '@/api/auth.api';
 
-import UserAvatar from '@/components/UserAvatar.vue';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 import type { User, Room, Message } from '@/types';
 
 import {

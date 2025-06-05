@@ -14,7 +14,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import authTokenService from '@/services/refresh-token';
-import SidePanel from '@/components/SidePanel.vue';
+import SidePanel from '@/components/layout/SidePanel.vue';
 
 export default {
   name: 'App',

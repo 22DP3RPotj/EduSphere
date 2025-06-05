@@ -44,8 +44,8 @@
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import LoginForm from '@/components/LoginForm.vue';
-import RegisterForm from '@/components/RegisterForm.vue';
+import LoginForm from '@/components/forms/LoginUser.vue';
+import RegisterForm from '@/components/forms/RegisterUser.vue';
 
 const router = useRouter();
 const route = useRoute();

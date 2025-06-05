@@ -70,8 +70,8 @@
                   <button 
                     type="button" 
                     class="remove-topic-btn"
-                    @click="removeTopic(topicName)"
                     :title="`Remove ${topicName}`"
+                    @click="removeTopic(topicName)"
                   >
                     <font-awesome-icon icon="times" />
                   </button>

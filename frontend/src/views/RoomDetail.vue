@@ -118,12 +118,18 @@
           <!-- Message input -->
           <div v-if="canSendMessage" class="message-input-container">
             <form id="messageForm" @submit.prevent="sendMessage">
-              <input 
-                id="messageInput"
-                v-model="messageInput"
-                type="text"
-                placeholder="Type your message here..."
-              />
+              <div class="input-wrapper">
+                <input 
+                  id="messageInput"
+                  v-model="messageInput"
+                  type="text"
+                  maxlength="500"
+                  placeholder="Type your message here..."
+                />
+                <div class="char-count" :class="{ 'char-limit-warning': messageInput.length === 500 }">
+                  {{ messageInput.length }}/500
+                </div>
+              </div>
               <button type="submit" :disabled="!messageInput.trim()">
                 <font-awesome-icon icon="paper-plane" />
               </button>
@@ -804,11 +810,18 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 .message-input-container form {
   display: flex;
   gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.input-wrapper {
+  flex: 1;
+  position: relative;
 }
 
 .message-input-container input {
-  flex: 1;
+  width: 100%;
   padding: 0.75rem 1rem;
+  padding-right: 4rem; /* Make room for character counter */
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   font-family: inherit;
@@ -816,12 +829,32 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   color: var(--text-color);
   background-color: var(--bg-color);
   transition: var(--transition);
+  box-sizing: border-box;
 }
 
 .message-input-container input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.char-count {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--text-light);
+  background-color: var(--bg-color);
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  user-select: none;
+}
+
+.char-limit-warning {
+  color: var(--error-color);
+  font-weight: 500;
 }
 
 .message-input-container button {
@@ -836,6 +869,7 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   justify-content: center;
   transition: var(--transition);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .message-input-container button:hover {

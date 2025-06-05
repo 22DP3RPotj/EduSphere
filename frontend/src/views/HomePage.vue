@@ -13,36 +13,89 @@
         <div class="sidebar-section">
           <div class="filter-group">
             <label for="topic-search">Topics</label>
-            <div class="topic-search">
+            <div class="autocomplete-wrapper">
               <input
                 id="topic-search"
                 v-model="topicSearchQuery" 
                 type="text" 
                 placeholder="Search topics..." 
                 class="topic-search-input"
+                autocomplete="off"
+                @input="onTopicInput"
+                @keydown.down.prevent="onArrowDown"
+                @keydown.up.prevent="onArrowUp"
+                @keydown.enter="onEnter"
+                @blur="hideSuggestions"
+                @keydown.esc="showTopicSuggestions = false"
+                @focus="onTopicFocus"
               />
+              <div v-show="showTopicSuggestions" class="suggestions-list">
+                <div v-if="loadingHomepage && !topics.length" class="loading-suggestions">
+                  <div class="spinner"></div>
+                  <span>Loading topics...</span>
+                </div>
+                <template v-else>
+                  <div
+                    v-for="(topic, index) in filteredTopics"
+                    :key="topic.name"
+                    :class="['suggestion-item', { 
+                      active: index === selectedTopicIndex,
+                      selected: pendingTopics.includes(topic.name)
+                    }]"
+                    @mousedown="selectTopic(topic.name)"
+                    @mouseenter="selectedTopicIndex = index"
+                  >
+                    <span>{{ topic.name }}</span>
+                    <span v-if="pendingTopics.includes(topic.name)" class="selected-indicator">
+                      <font-awesome-icon icon="check" />
+                    </span>
+                  </div>
+                  <div v-if="filteredTopics.length === 0 && topicSearchQuery" class="no-suggestions">
+                    No matching topics found
+                  </div>
+                </template>
+              </div>
             </div>
-            <div class="topic-filters">
-              <div 
-                v-for="topic in filteredTopics" 
-                :key="topic.name"
-                :class="['topic-filter', { active: pendingTopics.includes(topic.name) }]"
-                @click="toggleTopic(topic.name)"
-              >
-                {{ topic.name }}
+            
+            <!-- Selected topics display -->
+            <div v-if="pendingTopics.length > 0" class="selected-topics">
+              <div class="selected-topics-label">Selected:</div>
+              <div class="selected-topics-list">
+                <span 
+                  v-for="topicName in pendingTopics" 
+                  :key="topicName"
+                  class="selected-topic-tag"
+                >
+                  {{ topicName }}
+                  <button 
+                    type="button" 
+                    class="remove-topic-btn"
+                    @click="removeTopic(topicName)"
+                    :title="`Remove ${topicName}`"
+                  >
+                    <font-awesome-icon icon="times" />
+                  </button>
+                </span>
               </div>
             </div>
           </div>
           
-          <button class="btn-apply-filters" @click="applyFilters">
-            <font-awesome-icon icon="filter" />
-            Apply Filters
-          </button>
-          
-          <button v-if="hasActiveFilters" class="btn-reset-filters" @click="resetFilters">
-            <font-awesome-icon icon="times-circle" />
-            Reset Filters
-          </button>
+          <div class="filter-buttons-container">
+            <button class="btn-apply-filters" @click="applyFilters">
+              <font-awesome-icon icon="filter" />
+              Apply Filters
+            </button>
+            
+            <button 
+              v-show="hasActiveFilters" 
+              class="btn-reset-filters" 
+              @click="resetFilters"
+            >
+              <font-awesome-icon icon="times-circle" />
+              Reset Filters
+            </button>
+            <div v-show="!hasActiveFilters" class="btn-reset-filters-placeholder"></div>
+          </div>
         </div>
       </div>
 
@@ -102,47 +155,54 @@
             </div>
           </div>
 
-          <!-- Loading state -->
-          <div v-if="loadingHomepage" class="rooms-loading">
-            <div class="spinner"></div>
-            <p>Loading rooms...</p>
-          </div>
-
-          <!-- No results state -->
-          <div v-else-if="rooms.length === 0" class="no-rooms">
-            <font-awesome-icon icon="comment-slash" size="3x" />
-            <p>No rooms found matching your criteria</p>
-            <button class="btn-reset-filters" @click="resetFilters">Reset filters</button>
-          </div>
-
-          <!-- Rooms grid/list -->
-          <div :class="['rooms-container', isGridView ? 'grid-view' : 'list-view']">
-            <div 
-              v-for="room in rooms" 
-              :key="room.slug"
-              class="room-card"
-              @click="navigateToRoom(room)"
-            >
-              <div class="room-card-header">
-                <h3 class="room-name">{{ room.name }}</h3>
-                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+          <!-- Reserve minimum height for content area to prevent CLS -->
+          <div class="rooms-content" :style="{ minHeight: getMinContentHeight('rooms') }">
+            <!-- Loading state -->
+            <div v-if="loadingHomepage" class="rooms-loading">
+              <div class="spinner"></div>
+              <p>Loading rooms...</p>
+              <!-- Skeleton placeholders to reserve space -->
+              <div :class="['rooms-container', 'skeleton-container', isGridView ? 'grid-view' : 'list-view']">
+                <div v-for="n in 6" :key="n" class="room-card-skeleton"></div>
               </div>
-              <p class="room-description">{{ room.description }}</p>
-              <div class="room-meta">
-                <span class="room-date">
-                  <font-awesome-icon icon="calendar-alt" />
-                  {{ formatDate(room.created) }}
-                </span>
-                <span class="room-host">
-                  <font-awesome-icon icon="user" />
-                  {{ room.host.username }}
-                </span>
-              </div>
+            </div>
+
+            <!-- No results state -->
+            <div v-else-if="rooms.length === 0" class="no-rooms">
+              <font-awesome-icon icon="comment-slash" size="3x" />
+              <p>No rooms found matching your criteria</p>
+              <button class="btn-reset-filters" @click="resetFilters">Reset filters</button>
+            </div>
+
+            <!-- Rooms grid/list -->
+            <div v-else :class="['rooms-container', isGridView ? 'grid-view' : 'list-view']">
+              <button 
+                v-for="room in rooms" 
+                :key="room.id"
+                class="room-card"
+                @click="navigateToRoom(room)"
+              >
+                <div class="room-card-header">
+                  <h3 class="room-name">{{ room.name }}</h3>
+                  <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+                </div>
+                <p class="room-description">{{ room.description }}</p>
+                <div class="room-meta">
+                  <span class="room-date">
+                    <font-awesome-icon icon="calendar-alt" />
+                    {{ formatDate(room.created) }}
+                  </span>
+                  <span class="room-host">
+                    <font-awesome-icon icon="user" />
+                    {{ room.host.username }}
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </section>
 
-        <!-- Your Rooms Section (if authenticated) -->
+        <!-- Your Rooms Section (if authenticated) - Always render container to prevent CLS -->
         <section v-if="isAuthenticated" class="rooms-section joined-rooms-section">
           <div class="section-header">
             <h2>
@@ -151,47 +211,52 @@
             </h2>
           </div>
 
-          <!-- Loading state -->
-          <div v-if="loadingUserRooms" class="rooms-loading">
-            <div class="spinner"></div>
-            <p>Loading your rooms...</p>
-          </div>
-
-          <!-- No rooms state -->
-          <div v-else-if="userRooms.length === 0" class="no-rooms">
-            <font-awesome-icon icon="door-closed" size="2x" />
-            <p>You haven't joined any rooms yet</p>
-            <router-link to="/create-room" class="btn-create-room-small">Create your first room</router-link>
-          </div>
-
-          <!-- User rooms grid -->
-          <div class="rooms-container grid-view">
-            <div 
-              v-for="room in userRooms" 
-              :key="room.slug"
-              class="room-card"
-              @click="navigateToRoom(room)"
-            >
-              <div class="room-card-header">
-                <h3 class="room-name">{{ room.name }}</h3>
-                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+          <div class="rooms-content" :style="{ minHeight: getMinContentHeight('userRooms') }">
+            <!-- Loading state -->
+            <div v-if="loadingUserRooms" class="rooms-loading">
+              <div class="spinner"></div>
+              <p>Loading your rooms...</p>
+              <div class="rooms-container grid-view skeleton-container">
+                <div v-for="n in 3" :key="n" class="room-card-skeleton"></div>
               </div>
-              <p class="room-description">{{ room.description }}</p>
-              <div class="room-meta">
-                <span class="room-date">
-                  <font-awesome-icon icon="calendar-alt" />
-                  {{ formatDate(room.created) }}
-                </span>
-                <span class="room-host">
-                  <font-awesome-icon icon="user" />
-                  {{ room.host.username }}
-                </span>
-              </div>
+            </div>
+
+            <!-- No rooms state -->
+            <div v-else-if="userRooms.length === 0" class="no-rooms">
+              <font-awesome-icon icon="door-closed" size="2x" />
+              <p>You haven't joined any rooms yet</p>
+              <router-link to="/create-room" class="btn-create-room-small">Create your first room</router-link>
+            </div>
+
+            <!-- User rooms grid -->
+            <div v-else class="rooms-container grid-view">
+              <button 
+                v-for="room in userRooms" 
+                :key="room.id"
+                class="room-card"
+                @click="navigateToRoom(room)"
+              >
+                <div class="room-card-header">
+                  <h3 class="room-name">{{ room.name }}</h3>
+                  <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+                </div>
+                <p class="room-description">{{ room.description }}</p>
+                <div class="room-meta">
+                  <span class="room-date">
+                    <font-awesome-icon icon="calendar-alt" />
+                    {{ formatDate(room.created) }}
+                  </span>
+                  <span class="room-host">
+                    <font-awesome-icon icon="user" />
+                    {{ room.host.username }}
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </section>
 
-        <!-- Recommendations Section -->
+        <!-- Recommendations Section - Always render container to prevent CLS -->
         <section v-if="isAuthenticated" class="rooms-section recommended-section">
           <div class="section-header">
             <h2>
@@ -200,41 +265,46 @@
             </h2>
           </div>
 
-          <!-- Loading state -->
-          <div v-if="loadingUserRooms" class="rooms-loading">
-            <div class="spinner"></div>
-            <p>Finding recommendations...</p>
-          </div>
-
-          <!-- No recommendation state -->
-          <div v-else-if="recommendedRooms.length === 0" class="no-rooms">
-            <font-awesome-icon icon="compass" size="2x" />
-            <p>No recommendations available right now</p>
-          </div>
-
-          <!-- Recommended rooms grid -->
-          <div class="rooms-container grid-view">
-            <div 
-              v-for="room in recommendedRooms" 
-              :key="room.slug"
-              class="room-card"
-              @click="navigateToRoom(room)"
-            >
-              <div class="room-card-header">
-                <h3 class="room-name">{{ room.name }}</h3>
-                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+          <div class="rooms-content" :style="{ minHeight: getMinContentHeight('recommendations') }">
+            <!-- Loading state -->
+            <div v-if="loadingUserRooms" class="rooms-loading">
+              <div class="spinner"></div>
+              <p>Finding recommendations...</p>
+              <div class="rooms-container grid-view skeleton-container">
+                <div v-for="n in 3" :key="n" class="room-card-skeleton"></div>
               </div>
-              <p class="room-description">{{ room.description }}</p>
-              <div class="room-meta">
-                <span class="room-date">
-                  <font-awesome-icon icon="calendar-alt" />
-                  {{ formatDate(room.created) }}
-                </span>
-                <span class="room-host">
-                  <font-awesome-icon icon="user" />
-                  {{ room.host.username }}
-                </span>
-              </div>
+            </div>
+
+            <!-- No recommendation state -->
+            <div v-else-if="recommendedRooms.length === 0" class="no-rooms">
+              <font-awesome-icon icon="compass" size="2x" />
+              <p>No recommendations available right now</p>
+            </div>
+
+            <!-- Recommended rooms grid -->
+            <div v-else class="rooms-container grid-view">
+              <button 
+                v-for="room in recommendedRooms" 
+                :key="room.id"
+                class="room-card"
+                @click="navigateToRoom(room)"
+              >
+                <div class="room-card-header">
+                  <h3 class="room-name">{{ room.name }}</h3>
+                  <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+                </div>
+                <p class="room-description">{{ room.description }}</p>
+                <div class="room-meta">
+                  <span class="room-date">
+                    <font-awesome-icon icon="calendar-alt" />
+                    {{ formatDate(room.created) }}
+                  </span>
+                  <span class="room-host">
+                    <font-awesome-icon icon="user" />
+                    {{ room.host.username }}
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </section>
@@ -268,6 +338,8 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
 const isGridView = ref<boolean>(true);
 const showSidebar = ref<boolean>(window.innerWidth > 768);
 const isMobileView = ref<boolean>(window.innerWidth <= 768);
+const showTopicSuggestions = ref<boolean>(false);
+const selectedTopicIndex = ref<number>(-1);
 
 // Filter state
 const searchInputQuery = ref<string>('');
@@ -330,6 +402,20 @@ const hasActiveFilters = computed(() => {
   return selectedTopics.value.length > 0 || appliedSearchQuery.value !== '';
 });
 
+// Function to calculate minimum height for content areas to prevent CLS
+function getMinContentHeight(section: string): string {
+  switch (section) {
+    case 'rooms':
+      return loadingHomepage.value ? '400px' : rooms.value.length === 0 ? '200px' : 'auto';
+    case 'userRooms':
+      return loadingUserRooms.value ? '300px' : userRooms.value.length === 0 ? '150px' : 'auto';
+    case 'recommendations':
+      return loadingUserRooms.value ? '300px' : recommendedRooms.value.length === 0 ? '150px' : 'auto';
+    default:
+      return 'auto';
+  }
+}
+
 // Helper function to format dates
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -356,13 +442,63 @@ function toggleSidebar() {
   showSidebar.value = !showSidebar.value;
 }
 
-// Functions for search and filters - Updated to apply search query
-function toggleTopic(topicName: string) {
+function selectTopic(topicName: string) {
   if (pendingTopics.value.includes(topicName)) {
     pendingTopics.value = pendingTopics.value.filter(t => t !== topicName);
   } else {
     pendingTopics.value.push(topicName);
   }
+  topicSearchQuery.value = '';
+  showTopicSuggestions.value = false;
+  selectedTopicIndex.value = -1;
+}
+
+function removeTopic(topicName: string) {
+  pendingTopics.value = pendingTopics.value.filter(t => t !== topicName);
+}
+
+function onTopicInput() {
+  showTopicSuggestions.value = true;
+  selectedTopicIndex.value = -1;
+}
+
+function onTopicFocus() {
+  if (topics.value.length > 0) {
+    showTopicSuggestions.value = true;
+  }
+}
+
+function onArrowDown() {
+  if (selectedTopicIndex.value < filteredTopics.value.length - 1) {
+    selectedTopicIndex.value++;
+  }
+}
+
+function onArrowUp() {
+  if (selectedTopicIndex.value > -1) {
+    selectedTopicIndex.value--;
+  }
+}
+
+function onEnter(event: KeyboardEvent) {
+  if (!showTopicSuggestions.value || filteredTopics.value.length === 0) {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (selectedTopicIndex.value >= 0) {
+    selectTopic(filteredTopics.value[selectedTopicIndex.value].name);
+  } else if (filteredTopics.value.length === 1) {
+    selectTopic(filteredTopics.value[0].name);
+  }
+}
+
+function hideSuggestions() {
+  setTimeout(() => {
+    showTopicSuggestions.value = false;
+    selectedTopicIndex.value = -1;
+  }, 150);
 }
 
 function applyFilters() {
@@ -540,19 +676,21 @@ onBeforeUnmount(() => {
   color: var(--text-light);
 }
 
-.topic-search {
+.autocomplete-wrapper {
+  position: relative;
   margin-bottom: 1rem;
 }
 
 .topic-search-input {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid var(--border-color);
   box-sizing: border-box;
   border-radius: var(--radius);
   font-size: 0.9rem;
   color: var(--text-color);
-  background-color: var(--bg-color);
+  background-color: var(--white);
+  transition: var(--transition);
 }
 
 .topic-search-input:focus {
@@ -561,33 +699,129 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
 }
 
-.topic-filters {
+.suggestions-list {
+  position: absolute;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 100;
+  margin-top: 0.25rem;
+}
+
+.loading-suggestions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+.loading-suggestions .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.suggestion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: var(--transition);
+  color: var(--text-color);
+  border-bottom: 1px solid var(--bg-color);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+  background-color: var(--bg-color);
+}
+
+.suggestion-item.selected {
+  background-color: rgba(79, 70, 229, 0.1);
+  color: var(--primary-color);
+}
+
+.suggestion-item.selected.active {
+  background-color: rgba(79, 70, 229, 0.2);
+}
+
+.selected-indicator {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+}
+
+.no-suggestions {
+  padding: 0.75rem 1rem;
+  color: var(--text-light);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.selected-topics {
+  margin-top: 1rem;
+}
+
+.selected-topics-label {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.selected-topics-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 0.5rem 0;
 }
 
-.topic-filter {
-  padding: 0.3rem 0.75rem;
-  border-radius: 20px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border-color);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.topic-filter:hover {
-  border-color: var(--primary-color);
-}
-
-.topic-filter.active {
+.selected-topic-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
   background-color: var(--primary-color);
   color: white;
-  border-color: var(--primary-color);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.remove-topic-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition);
+  font-size: 0.75rem;
+}
+
+.remove-topic-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Filter buttons container to prevent CLS */
+.filter-buttons-container {
+  min-height: 90px; /* Reserve space for both buttons */
 }
 
 .btn-apply-filters, .btn-reset-filters {
@@ -625,12 +859,18 @@ onBeforeUnmount(() => {
   border-color: var(--text-color);
 }
 
+/* Placeholder for reset button to prevent CLS */
+.btn-reset-filters-placeholder {
+  height: 42px; /* Same height as btn-reset-filters */
+  margin-bottom: 0.75rem;
+}
+
 /* Content area */
 .content-area {
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
-  margin-left: 260px; /* Add this line to create space for the sidebar */
+  margin-left: 260px;
 }
 
 /* Home search (in content area) */
@@ -818,6 +1058,11 @@ onBeforeUnmount(() => {
   color: var(--text-color);
 }
 
+/* Rooms content container with min-height to prevent CLS */
+.rooms-content {
+  transition: min-height 0.3s ease;
+}
+
 /* Room cards */
 .rooms-container {
   display: grid;
@@ -834,6 +1079,7 @@ onBeforeUnmount(() => {
 
 .room-card {
   background-color: var(--bg-color);
+  color: var(--text-color);
   border-radius: var(--radius);
   padding: 1.25rem;
   border: 1px solid var(--border-color);

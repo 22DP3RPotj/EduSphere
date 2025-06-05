@@ -109,6 +109,7 @@
               :key="message.id" 
               :message="message"
               :current-user-id="authStore.user?.id"
+              :is-host="message.user.id === room?.host?.id"
               @delete-message="handleMessageDelete"
               @update-message="handleMessageUpdate"
             />
@@ -150,7 +151,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomApi } from '@/api/room.api';
@@ -312,6 +313,10 @@ async function handleJoin() {
   
   if (authStore.isAuthenticated && isParticipant.value) {
     await initializeWebSocket();
+
+    nextTick(() => {
+      scrollToBottom();
+    });
   }
 }
 
@@ -330,6 +335,12 @@ function navigateToUserProfile(userSlug: string) {
   router.push(`/u/${userSlug}`);
 }
 
+function scrollToBottom() {
+  if (messagesContainerRef.value) {
+    messagesContainerRef.value.scrollTop = messagesContainerRef.value.scrollHeight;
+  }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   try {
@@ -345,17 +356,15 @@ onMounted(async () => {
       await initializeWebSocket();
     }
     
+    nextTick(() => {
+      scrollToBottom();
+    });
+    
     window.addEventListener('resize', handleResize);
     window.addEventListener('click', closeRoomActionsMenu);
   } catch (error) {
     notifications.error(error);
   }
-});
-
-onBeforeUnmount(() => {
-  closeWebSocket();
-  window.removeEventListener('resize', handleResize);
-  window.removeEventListener('click', closeRoomActionsMenu);
 });
 
 watch(() => authStore.isAuthenticated, async (newValue) => {
@@ -370,6 +379,17 @@ watch(() => route.params.room, async () => {
   closeWebSocket();
   if (authStore.isAuthenticated && isParticipant.value) {
     await initializeWebSocket();
+  }
+});
+
+watch(() => messages.value.length, (newLength, oldLength) => {
+  if (newLength > oldLength) {
+    const lastMessage = messages.value[messages.value.length - 1];
+    if (lastMessage?.user?.id === authStore.user?.id) {
+      nextTick(() => {
+        scrollToBottom();
+      });
+    }
   }
 });
 </script>

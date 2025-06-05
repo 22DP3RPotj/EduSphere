@@ -1,5 +1,11 @@
 <template>
-  <div class="message-item" :class="{ 'edited': props.message.edited, 'own-message': isMessageOwner }">
+  <div
+    class="message-item"
+    :class="{ 
+      'edited': props.message.edited, 
+      'own-message': isMessageOwner,
+      'host-message': props.isHost 
+  }">
     <div class="message-avatar">
       <img 
         :src="userAvatar" 
@@ -11,6 +17,7 @@
       <div class="message-header">
         <div class="message-author">
           <span class="username">{{ userDisplayName }}</span>
+          <span v-if="props.isHost" class="host-badge">Host</span>
           <span 
             class="message-time" 
             :title="new Date(props.message.created).toLocaleString()"
@@ -90,6 +97,10 @@ const props = defineProps({
   currentUserId: {
     type: String,
     default: null
+  },
+  isHost: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -213,6 +224,59 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
+/* Own message styling - move to right */
+.own-message {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.own-message .message-avatar {
+  margin-left: 0.75rem;
+  margin-right: 0;
+}
+
+.own-message .message-content {
+  text-align: right;
+  max-width: 70%;
+}
+
+.own-message .message-header {
+  flex-direction: row-reverse;
+}
+
+.own-message .message-author {
+  flex-direction: row-reverse;
+}
+
+.message-body {
+  background-color: var(--border-color);
+  color: var(--text-color);
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  border-bottom-left-radius: 0.25rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.own-message .message-body {
+  text-align: left;
+  border-bottom-right-radius: 0.25rem
+}
+
+.message-item:not(.own-message) .message-body {
+  text-align: right;
+  border-bottom-left-radius: 0.25rem
+}
+
+.own-message .edit-actions {
+  justify-content: flex-start;
+}
+
+/* Regular message styling */
+.message-item:not(.own-message) .message-content {
+  max-width: 70%;
+}
+
 .message-avatar {
   margin-right: 0.75rem;
   flex-shrink: 0;
@@ -227,14 +291,14 @@ onBeforeUnmount(() => {
 
 .message-content {
   flex: 1;
-  min-width: 0; /* Ensures text wrapping works properly */
+  min-width: 0;
 }
 
 .message-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .message-author {
@@ -249,9 +313,27 @@ onBeforeUnmount(() => {
   color: var(--text-color);
 }
 
+.host-badge {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  background-color: rgba(79, 70, 229, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.own-message .host-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
 .message-time {
   color: var(--text-light);
   font-size: 0.75rem;
+}
+
+.own-message .message-time {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .edited-indicator {
@@ -261,14 +343,8 @@ onBeforeUnmount(() => {
   color: var(--text-light);
 }
 
-.message-body {
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: var(--text-color);
-  line-height: 1.5;
-  max-width: 100%;
-  overflow-x: hidden;
-  padding: 0.25rem 0;
+.own-message .edited-indicator {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .message-actions {
@@ -290,12 +366,6 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.action-toggle-button:hover,
-.action-toggle-button.active {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
 .action-dropdown {
   position: absolute;
   right: 0;
@@ -306,6 +376,11 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow);
   overflow: hidden;
   z-index: 10;
+}
+
+.own-message .action-dropdown {
+  right: auto;
+  left: 0;
 }
 
 .dropdown-action {
@@ -341,6 +416,8 @@ onBeforeUnmount(() => {
 .message-edit-input {
   width: 100%;
   box-sizing: border-box;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 0.5rem;
@@ -363,6 +440,10 @@ onBeforeUnmount(() => {
   color: var(--text-light);
   margin: 0.25rem 0 0.5rem;
   text-align: right;
+}
+
+.own-message .edit-hint {
+  text-align: left;
 }
 
 .edit-actions {
@@ -405,15 +486,6 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-/* Styling for own messages */
-.own-message {
-  justify-content: flex-start;
-}
-
-.own-message .message-body {
-  color: var(--text-color);
-}
-
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all 0.15s ease;
@@ -423,5 +495,13 @@ onBeforeUnmount(() => {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-10px) scale(0.95);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .own-message .message-content,
+  .message-item:not(.own-message) .message-content {
+    max-width: 85%;
+  }
 }
 </style>

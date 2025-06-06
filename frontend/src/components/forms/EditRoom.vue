@@ -115,6 +115,26 @@ const filteredTopics = computed(() => {
   );
 });
 
+function scrollToSelectedTopic() {
+  if (selectedTopicIndex.value >= 0) {
+    const suggestionsList = document.querySelector('.suggestions-list');
+    const selectedItem = suggestionsList?.children[selectedTopicIndex.value];
+    
+    if (suggestionsList && selectedItem) {
+      const listRect = suggestionsList.getBoundingClientRect();
+      const itemRect = selectedItem.getBoundingClientRect();
+      
+      if (itemRect.bottom > listRect.bottom) {
+        suggestionsList.scrollTop += itemRect.bottom - listRect.bottom + 5;
+      }
+
+      else if (itemRect.top < listRect.top) {
+        suggestionsList.scrollTop -= listRect.top - itemRect.top + 5;
+      }
+    }
+  }
+}
+
 function onTopicInput() {
   showSuggestions.value = true;
   selectedTopicIndex.value = -1;
@@ -123,12 +143,14 @@ function onTopicInput() {
 function onArrowDown() {
   if (selectedTopicIndex.value < filteredTopics.value.length - 1) {
     selectedTopicIndex.value++;
+    scrollToSelectedTopic();
   }
 }
 
 function onArrowUp() {
   if (selectedTopicIndex.value > -1) {
     selectedTopicIndex.value--;
+    scrollToSelectedTopic();
   }
 }
 
@@ -244,6 +266,7 @@ textarea {
   box-shadow: var(--shadow);
   z-index: 100;
   margin-top: 0.5rem;
+  scroll-behavior: smooth;
 }
 
 .suggestion-item {

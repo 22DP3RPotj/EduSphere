@@ -1,8 +1,8 @@
-# Real-time messaging platform
+# Real-time Chat Platform
 
 [LICENSE](LICENSE)
 
-A full-stack real-time messaging platform. Built with Django (backend) and Vue.js (frontend).
+A full-stack real-time messaging platform built with Django (backend) and Vue.js (frontend). Create chat rooms, join conversations, and communicate in real-time with WebSocket technology.
 
 ## Table of Contents
 - [Features](#features)
@@ -15,12 +15,12 @@ A full-stack real-time messaging platform. Built with Django (backend) and Vue.j
 - [License](#license)
 
 ## Features
-- **Multi-role System**: Creators, Learners, and Admins
-- **Course Management**: Create, publish, and sell courses
-- **Real-Time Chat**: WebSocket-based messaging system
-- **Payment Processing**: Integrated Stripe/PayPal payments
-- **Advanced Search**: Filter courses by price, rating, and category
-- **Admin Dashboard**: Manage users, courses, and transactions
+- **Real-Time Chat**: WebSocket-based messaging system with instant message delivery
+- **Chat Rooms**: Create and join topic-based chat rooms
+- **Message Management**: Edit and delete your own messages
+- **User Authentication**: Secure JWT-based authentication
+- **Room Participation**: Host rooms or join as a participant
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## Architecture Overview
 
@@ -30,17 +30,21 @@ A full-stack real-time messaging platform. Built with Django (backend) and Vue.j
 - **APIs**: GraphQL endpoints
 - **Authentication**: JWT
 - **Key Features**:
-  - WebSocket implementation for chat
-  - AdmModeration tools for managing users and content.
+  - WebSocket implementation for real-time chat
+  - Message CRUD operations with ownership validation
+  - Room-based chat organization
+  - User authentication and authorization
 
 ### Frontend (Vue.js)
 - **Framework**: Vue 3 + Vue Router
 - **State Management**: Pinia
-- **Styling**: Tailwind CSS
+- **Styling**: CSS
 - **Key Features**:
-  - Responsive course marketplace UI
-  - Interactive dashboards
   - Real-time chat interface
+  - Responsive room management
+  - Message editing and deletion
+  - User authentication flows
+  - WebSocket connection management
 
 ## Installation Guide
 
@@ -159,11 +163,9 @@ Access the application at [http://localhost](http://localhost)
 5. Access the application:
    - Frontend: http://localhost
    - Django Admin: http://localhost/admin
-   - Graphiql: http://ocalhost/graphql
-
+   - GraphiQL: http://localhost/graphql
 
 ## PostgreSQL Backup & Restore
-
 
 ### Backup PostgreSQL Database
 
@@ -191,11 +193,18 @@ python manage.py test backend/core
 ├── backend/
 │   ├── config/          # Django settings and routing
 │   ├── core/            # Main application logic
+│   │   ├── chat/        # WebSocket consumers for real-time chat
+│   │   ├── graphql/     # GraphQL schema and resolvers
+│   │   └── models.py    # Room and Message models
 │   ├── requirements.txt
 │   └── README.md        # Technical backend documentation
 ├── frontend/
 │   ├── public/
 │   ├── src/             # Vue components and stores
+│   │   ├── api/         # WebSocket and API integration
+│   │   ├── components/  # Chat and UI components
+│   │   ├── views/       # Room and authentication views
+│   │   └── stores/      # Pinia state management
 │   ├── package.json
 │   └── README.md        # Frontend development guide
 ├── docker/              # Docker configuration files

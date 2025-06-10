@@ -5,13 +5,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=coredb
-      - POSTGRES_USER=rpote
-      - POSTGRES_PASSWORD=I62432
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rpote -d coredb"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -40,18 +40,11 @@ services:
       redis:
         condition: service_started
 
-  # Vue.js frontend service
-  frontend:
-    build:
-      context: .
-      dockerfile: ./docker/frontend/Dockerfile
-    depends_on:
-      - backend
-
-  # Nginx service for serving static files and proxying
+  # Nginx service with built-in frontend
   nginx:
     build:
-      context: ./docker/nginx
+      context: .  # Changed from ./docker/nginx to . for access to frontend/
+      dockerfile: ./docker/nginx/Dockerfile
     volumes:
       - static_volume:/app/staticfiles:ro
       - ./media:/app/media:ro
@@ -59,9 +52,7 @@ services:
       - "80:80"
     depends_on:
       - backend
-      - frontend
 
 volumes:
   postgres_data:
   static_volume:
-  

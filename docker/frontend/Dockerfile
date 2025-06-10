@@ -1,4 +1,4 @@
-# docker/nginx/Dockerfile
+# docker/frontend/Dockerfile
 # Build stage - Build the Vue.js frontend
 FROM node:slim AS builder
 
@@ -22,7 +22,7 @@ FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Create directories for static and media files (for Django)
 RUN mkdir -p /app/staticfiles /app/media

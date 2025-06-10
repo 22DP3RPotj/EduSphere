@@ -1,0 +1,26 @@
+# fly.toml app configuration file generated for edusphere-backend on 2025-06-10T19:05:06+03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'edusphere-backend'
+primary_region = 'arn'
+
+[build]
+  dockerfile = "docker/backend/Dockerfile"
+
+[env]
+  DJANGO_SETTINGS_MODULE = "backend.config.settings"
+
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    force_https = true
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443

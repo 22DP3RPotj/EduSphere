@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import environ
 from pathlib import Path
 from datetime import timedelta
+import dj_database_url
 
 # Initialize environment variables
 env = environ.Env(
@@ -34,9 +35,17 @@ SECRET_KEY = env("SECRET_KEY")
 
 DEBUG = env("DEBUG")
 
+# ALLOWED_HOSTS = env.list(
+#     "ALLOWED_HOSTS",
+#     default=[
+#         "localhost",
+#         "127.0.0.1",
+#     ]
+# )
+
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
+    "edusphere-backend.fly.dev",
+    "edusphere-frontend.fly.dev",
 ]
 
 # User Authentication
@@ -74,15 +83,14 @@ MIDDLEWARE = [
 ]
 
 # TODO: When moving to production with HTTPS
-# SECURE_SETTINGS = {
-    # "SECURE_SSL_REDIRECT": True,  # Redirect all HTTP to HTTPS
-    # "SECURE_HSTS_SECONDS": 31536000,  # 1 year
-    # "SECURE_HSTS_INCLUDE_SUBDOMAINS": True,
-    # "SECURE_HSTS_PRELOAD": True,
-    # "SECURE_CONTENT_TYPE_NOSNIFF": True,
-    # "SECURE_BROWSER_XSS_FILTER": True,
-    # "SECURE_PROXY_SSL_HEADER": ("HTTP_X_FORWARDED_PROTO", "https"),
-# }
+
+SECURE_SSL_REDIRECT = True,  # Redirect all HTTP to HTTPS
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True,
+SECURE_HSTS_PRELOAD = True
+SECURE_CONTENT_TYPE_NOSNIFF = True,
+SECURE_BROWSER_XSS_FILTER = True,
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 ROOT_URLCONF = "backend.config.urls"
 
@@ -154,30 +162,74 @@ GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
     "JWT_EXPIRATION_DELTA": timedelta(minutes=10),
     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=7),
-    "JWT_COOKIE_SECURE": False,  # TODO: HTTPS
+    "JWT_COOKIE_SECURE": True,
     "JWT_COOKIE_HTTPONLY": True,
-    "JWT_COOKIE_SAMESITE": "Lax",
+    "JWT_COOKIE_SAMESITE": "None",
     "JWT_BLACKLIST_ENABLED": True,
     "JWT_BLACKLIST_AFTER_ROTATION": True,
     "JWT_CSRF_ROTATION": True,
+    # Add these additional settings for cross-site compatibility
+    "JWT_COOKIE_DOMAIN": None,  # Allow cookies across subdomains
+    "JWT_AUTH_HEADER_PREFIX": "Bearer",  # Ensure header auth also works
 }
 
+# Session settings
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax" # TODO: "Strict"
+SESSION_COOKIE_SAMESITE = "None"  # Required for cross-site
+SESSION_COOKIE_SECURE = True      # Required when SameSite=None
+SESSION_COOKIE_DOMAIN = None      # Don't restrict to specific domain
 
-CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = "Lax" # TODO: "Strict"
+# CSRF settings
+CSRF_COOKIE_HTTPONLY = False      # Keep False so JS can read it
+CSRF_COOKIE_SAMESITE = "None"     # Required for cross-site
+CSRF_COOKIE_SECURE = True         # Required when SameSite=None
+CSRF_COOKIE_DOMAIN = None         # Don't restrict to specific domain
+
+# Additional CORS headers that might be needed
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# If you want to be extra safe, you can also add:
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+
+# CSRF_TRUSTED_ORIGINS = env.list(
+#     "CSRF_TRUSTED_ORIGINS",
+#     default=[
+#         "http://localhost",
+#         "http://127.0.0.1",
+#     ]
+# )
+
+# CORS_ALLOW_CREDENTIALS = True
+
+# CORS_ALLOWED_ORIGINS = env.list(
+#     "CORS_ALLOWED_ORIGINS",
+#     default=[
+#         "http://localhost",
+#         "http://127.0.0.1",
+#     ]
+# )
+
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
+    "https://edusphere-backend.fly.dev",
+    "https://edusphere-frontend.fly.dev",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
+    "https://edusphere-backend.fly.dev",
+    "https://edusphere-frontend.fly.dev",
 ]
 
 
@@ -190,24 +242,14 @@ AUTHENTICATION_BACKENDS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_NAME"),
-        "USER": env("DB_USER"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "HOST": env("DB_HOST", default="localhost"),
-        "PORT": env("DB_PORT", default="5432"),
-    }
+    "default": dj_database_url.config(conn_max_age=600)
 }
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(
-                env("REDIS_HOST", default="localhost"),
-                env("REDIS_PORT", default="6379")
-            )],
+            "hosts": [env("REDIS_URL")],
         },
     },
 }

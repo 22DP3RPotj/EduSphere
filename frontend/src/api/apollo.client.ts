@@ -14,7 +14,7 @@ import type { App } from 'vue';
 
 // Upload link
 const uploadLink = createUploadLink({
-  uri: "/graphql/",
+  uri: "https://edusphere-backend.fly.dev/graphql/",
   credentials: "include"
 });
 

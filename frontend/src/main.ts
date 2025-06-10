@@ -37,7 +37,7 @@ const initApp = async () => {
   const authStore = useAuthStore();
   authStore.initialize();
 
-  await fetch('/api/csrf/', {
+  await fetch('https://edusphere-backend.fly.dev/api/csrf/', {
     method: 'GET',
     credentials: 'include',
   });

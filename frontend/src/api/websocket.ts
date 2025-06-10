@@ -37,7 +37,7 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
     const fetchedMessages = await fetchRoomMessages(userSlug, roomSlug);
     messages.value = [...fetchedMessages];
 
-    const wsUrl = `${window.location.protocol === 'https' ? 'wss' : 'ws'}://localhost/ws/chat/${userSlug}/${roomSlug}`;
+    const wsUrl = `wss://edusphere-backend.fly.dev/ws/chat/${userSlug}/${roomSlug}`;
     connectionStatus.value = 'connecting';
 
     socket.value = new WebSocket(wsUrl);

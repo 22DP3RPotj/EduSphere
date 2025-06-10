@@ -44,7 +44,7 @@ services:
   nginx:
     build:
       context: .  # Changed from ./docker/nginx to . for access to frontend/
-      dockerfile: ./docker/nginx/Dockerfile
+      dockerfile: ./docker/frontend/Dockerfile
     volumes:
       - static_volume:/app/staticfiles:ro
       - ./media:/app/media:ro

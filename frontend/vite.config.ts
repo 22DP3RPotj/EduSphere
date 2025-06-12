@@ -4,39 +4,45 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
-export default defineConfig({
-  server: {
-    hmr: {
-      clientPort: 80,
-      protocol: 'ws',
-      host: 'localhost'
+export default () => {
+  return defineConfig({
+    define: {
+      __API_URL__: JSON.stringify('/graphql/'),
+      __WS_URL__: JSON.stringify('localhost/ws'),
     },
-    strictPort: true
-  },
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+    server: {
+      hmr: {
+        clientPort: 80,
+        protocol: 'ws',
+        host: 'localhost'
+      },
+      strictPort: true
     },
-  },
-  build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
+    plugins: [
+      vue(),
+      vueDevTools(),
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ["vue", "vue-router", "pinia"],
+    build: {
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
         },
       },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["vue", "vue-router", "pinia"],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1600,
     },
-    chunkSizeWarningLimit: 1600,
-  },
-})
+  })
+}

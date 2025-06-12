@@ -14,7 +14,7 @@ import type { App } from 'vue';
 
 // Upload link
 const uploadLink = createUploadLink({
-  uri: "/graphql/",
+  uri: __API_URL__,
   credentials: "include"
 });
 

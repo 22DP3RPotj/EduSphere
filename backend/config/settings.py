@@ -197,6 +197,7 @@ DATABASES = {
         "PASSWORD": env("DB_PASSWORD"),
         "HOST": env("DB_HOST", default="localhost"),
         "PORT": env("DB_PORT", default="5432"),
+        "CONN_MAX_AGE": 60,
     }
 }
 
@@ -210,6 +211,17 @@ CHANNEL_LAYERS = {
             )],
         },
     },
+}
+
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+
+REDIS_STREAMS = {
+    'MAX_STREAM_LENGTH': 10000,
+    'MESSAGE_TTL': 86400,
+    'CONSUMER_TIMEOUT': 300,
 }
 
 # Password validation

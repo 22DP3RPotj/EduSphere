@@ -6,7 +6,7 @@
       'own-message': isMessageOwner,
       'host-message': props.isHost 
   }">
-    <div class="message-avatar">
+    <div v-if="!isMessageOwner" class="message-avatar">
       <img 
         :src="userAvatar" 
         :alt="`${userDisplayName}'s avatar`" 
@@ -81,6 +81,13 @@
       
       <!-- Message content - display mode -->
       <div v-else class="message-body">{{ props.message.body }}</div>
+    </div>
+    <div v-if="isMessageOwner" class="message-avatar own-avatar">
+      <img 
+        :src="userAvatar" 
+        :alt="`${userDisplayName}'s avatar`" 
+        class="avatar-img" 
+      />
     </div>
   </div>
 </template>
@@ -222,63 +229,48 @@ onBeforeUnmount(() => {
   display: flex;
   margin-bottom: 1rem;
   position: relative;
+  width: 100%;
 }
 
-/* Own message styling - move to right */
-.own-message {
-  flex-direction: row-reverse;
+/* Other users' messages (on the left) */
+.message-item:not(.own-message) {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.message-item:not(.own-message) .message-content {
+  margin-left: 0.75rem;
+  max-width: 70%;
+}
+
+.message-item:not(.own-message) .message-header {
   justify-content: flex-start;
 }
 
-.own-message .message-avatar {
-  margin-left: 0.75rem;
-  margin-right: 0;
+.message-item:not(.own-message) .message-author {
+  flex-direction: row;
+}
+
+/* Current user's messages (on the right) */
+.own-message {
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .own-message .message-content {
-  text-align: right;
+  margin-right: 0.75rem;
   max-width: 70%;
 }
 
 .own-message .message-header {
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
 .own-message .message-author {
   flex-direction: row-reverse;
 }
 
-.message-body {
-  background-color: var(--border-color);
-  color: var(--text-color);
-  padding: 0.75rem 1rem;
-  border-radius: 1rem;
-  border-bottom-left-radius: 0.25rem;
-  max-width: 100%;
-  word-break: break-word;
-}
-
-.own-message .message-body {
-  text-align: left;
-  border-bottom-right-radius: 0.25rem
-}
-
-.message-item:not(.own-message) .message-body {
-  text-align: right;
-  border-bottom-left-radius: 0.25rem
-}
-
-.own-message .edit-actions {
-  justify-content: flex-start;
-}
-
-/* Regular message styling */
-.message-item:not(.own-message) .message-content {
-  max-width: 70%;
-}
-
 .message-avatar {
-  margin-right: 0.75rem;
   flex-shrink: 0;
 }
 
@@ -290,15 +282,14 @@ onBeforeUnmount(() => {
 }
 
 .message-content {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
 .message-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .message-author {
@@ -311,6 +302,7 @@ onBeforeUnmount(() => {
 .username {
   font-weight: 600;
   color: var(--text-color);
+  font-size: 0.9rem;
 }
 
 .host-badge {
@@ -322,18 +314,9 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
-.own-message .host-badge {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
 .message-time {
   color: var(--text-light);
   font-size: 0.75rem;
-}
-
-.own-message .message-time {
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .edited-indicator {
@@ -343,12 +326,36 @@ onBeforeUnmount(() => {
   color: var(--text-light);
 }
 
-.own-message .edited-indicator {
-  color: rgba(255, 255, 255, 0.7);
+.message-body {
+  background-color: var(--border-color);
+  color: var(--text-color);
+  padding: 0.6rem 0.9rem;
+  border-radius: 1.2rem;
+  word-break: break-word;
+  display: inline-block;
+  text-align: left;
+  line-height: 1.4;
+  max-width: 100%;
+}
+
+.own-message .message-body {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border-bottom-right-radius: 0.4rem;
+}
+
+.message-item:not(.own-message) .message-body {
+  border-bottom-left-radius: 0.4rem;
 }
 
 .message-actions {
   position: relative;
+  margin-left: 0.5rem;
+}
+
+.own-message .message-actions {
+  margin-left: 0;
+  margin-right: 0.5rem;
 }
 
 .action-toggle-button {
@@ -364,6 +371,21 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0.6;
+}
+
+.action-toggle-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.own-message .action-toggle-button {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.own-message .action-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .action-dropdown {
@@ -394,6 +416,7 @@ onBeforeUnmount(() => {
   align-items: center;
   transition: var(--transition);
   color: var(--text-color);
+  font-size: 0.85rem;
 }
 
 .dropdown-action:hover {
@@ -439,11 +462,6 @@ onBeforeUnmount(() => {
   font-size: 0.75rem;
   color: var(--text-light);
   margin: 0.25rem 0 0.5rem;
-  text-align: right;
-}
-
-.own-message .edit-hint {
-  text-align: left;
 }
 
 .edit-actions {
@@ -461,6 +479,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius);
   cursor: pointer;
   transition: var(--transition);
+  font-size: 0.85rem;
 }
 
 .cancel-edit-button:hover {
@@ -475,6 +494,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius);
   cursor: pointer;
   transition: var(--transition);
+  font-size: 0.85rem;
 }
 
 .save-edit-button:hover:not(:disabled) {
@@ -499,9 +519,18 @@ onBeforeUnmount(() => {
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
-  .own-message .message-content,
-  .message-item:not(.own-message) .message-content {
-    max-width: 85%;
+  .message-item:not(.own-message) .message-content,
+  .own-message .message-content {
+    max-width: 80%;
+  }
+  
+  .username {
+    font-size: 0.85rem;
+  }
+  
+  .message-body {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
   }
 }
 </style>

@@ -799,6 +799,9 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .message-input-container {

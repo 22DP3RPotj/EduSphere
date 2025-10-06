@@ -1,5 +1,5 @@
 :root {
-    --primary-color: #4f46e5;
+    --primary-color: #4b44d3;
     --primary-hover: #4338ca;
     --error-color: #ef4444;
     --text-color: #1f2937;
@@ -13,7 +13,7 @@
 }
 
 .dark {
-  --primary-color: #818cf8;
+  --primary-color: #6470dd;
   --primary-hover: #6366f1;
   --error-color: #f87171;
   --text-color: #f3f4f6;

@@ -340,7 +340,7 @@ onBeforeUnmount(() => {
 
 .own-message .message-body {
   background-color: var(--primary-color);
-  color: var(--text-color);
+  color: white;
   border-bottom-right-radius: 0.4rem;
 }
 

@@ -167,7 +167,7 @@ import { useNotifications } from '@/composables/useNotifications';
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { Room } from '@/types';
+import type { User, Room } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -224,7 +224,7 @@ const participants = computed<ParticipantWithHost[]>(() => {
     allParticipants[hostIndex] = {
       ...allParticipants[hostIndex],
       isHost: true
-    };
+    } as User;
   }
   
   return allParticipants;

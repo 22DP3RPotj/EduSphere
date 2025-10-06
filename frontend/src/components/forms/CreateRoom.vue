@@ -154,8 +154,11 @@ function onEnter(event: KeyboardEvent) {
   event.preventDefault();
 
   if (selectedTopicIndex.value >= 0) {
-    selectTopic(filteredTopics.value[selectedTopicIndex.value]);
-  } else if (filteredTopics.value.length === 1) {
+    const topic = filteredTopics.value[selectedTopicIndex.value];
+    if (topic !== undefined) {
+      selectTopic(topic);
+    }
+  } else if (filteredTopics.value.length === 1 && filteredTopics.value[0] !== undefined) {
     selectTopic(filteredTopics.value[0]);
   }
 

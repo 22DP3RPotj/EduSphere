@@ -162,9 +162,15 @@ function onEnter(event: KeyboardEvent) {
   event.preventDefault();
 
   if (selectedTopicIndex.value >= 0) {
-    selectTopic(filteredTopics.value[selectedTopicIndex.value]);
+    const topic = filteredTopics.value[selectedTopicIndex.value];
+    if (topic !== undefined) {
+      selectTopic(topic);
+    }
   } else if (filteredTopics.value.length === 1) {
-    selectTopic(filteredTopics.value[0]);
+    const topic = filteredTopics.value[0];
+    if (topic !== undefined) {
+      selectTopic(topic);
+    }
   }
 
   showSuggestions.value = false;

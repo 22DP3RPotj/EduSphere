@@ -112,7 +112,7 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
         body: data.body,
         edited: data.edited,
         updated: data.updated
-      };
+      } as Message;
     }
   }
 

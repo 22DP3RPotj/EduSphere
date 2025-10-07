@@ -3,6 +3,14 @@
     <form class="auth-form" @submit.prevent="submitRoom">
       <h2 class="form-title">Create Room</h2>
       
+      <!-- General errors display -->
+      <div v-if="generalErrors.length > 0" class="error-message">
+        <font-awesome-icon icon="exclamation-circle" />
+        <div class="error-list">
+          <p v-for="(errMsg, index) in generalErrors" :key="index">{{ errMsg }}</p>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="room-name">Room Name</label>
         <input
@@ -12,7 +20,12 @@
           placeholder="Enter room name"
           autocomplete="off"
           required
+          :disabled="loading"
+          :class="{ 'input-error': fieldErrors.name }"
         >
+        <div v-if="fieldErrors.name" class="field-error">
+          <p v-for="(errMsg, index) in fieldErrors.name" :key="index">{{ errMsg }}</p>
+        </div>
       </div>
 
       <div class="form-group">
@@ -25,6 +38,8 @@
             placeholder="Search or create topic"
             autocomplete="off"
             required
+            :disabled="loading"
+            :class="{ 'input-error': fieldErrors.topicName }"
             @input="onTopicInput"
             @keydown.down.prevent="onArrowDown"
             @keydown.up.prevent="onArrowUp"
@@ -46,6 +61,9 @@
             </div>
           </div>
         </div>
+        <div v-if="fieldErrors.topicName" class="field-error">
+          <p v-for="(errMsg, index) in fieldErrors.topicName" :key="index">{{ errMsg }}</p>
+        </div>
       </div>
 
       <div class="form-group">
@@ -56,56 +74,74 @@
           placeholder="Add a description"
           maxlength="500"
           rows="4"
+          :disabled="loading"
+          :class="{ 'input-error': fieldErrors.description }"
         ></textarea>
         <div class="char-count">
           {{ roomForm.description.length }}/500
         </div>
+        <div v-if="fieldErrors.description" class="field-error">
+          <p v-for="(errMsg, index) in fieldErrors.description" :key="index">{{ errMsg }}</p>
+        </div>
       </div>
 
-      <button type="submit" class="btn btn-primary" :disabled="isLoading">
-        <span v-if="isLoading" class="spinner"></span>
-        {{ isLoading ? 'Creating...' : 'Create Room' }}
+      <button type="submit" class="btn btn-primary" :disabled="loading">
+        <span v-if="loading" class="spinner"></span>
+        {{ loading ? 'Creating...' : 'Create Room' }}
       </button>
     </form>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useRoomApi } from "@/api/room.api";
+import { useCreateRoom, useTopicsQuery } from "@/composables/useRooms";
+import { parseGraphQLError } from '@/utils/errorParser';
 
-import type { Topic, CreateRoomInput } from '@/types';
+import type { CreateRoomInput, Topic } from '@/types';
 
 const router = useRouter();
-const { createRoom, fetchTopics } = useRoomApi();
+const { createRoom, loading, error } = useCreateRoom();
+const { topics } = useTopicsQuery();
 
 const roomForm = ref<CreateRoomInput>({
   name: '',
   topicName: '',
   description: ''
 });
-const isLoading = ref<boolean>(false);
-const topics = ref<Topic[]>([]);
+
 const showSuggestions = ref<boolean>(false);
 const selectedTopicIndex = ref<number>(-1);
 
 onMounted(async () => {
-  try {
-    const topicsResponse = await fetchTopics();
-    topics.value = [...topicsResponse];
-  } catch (error) {
-    console.error('Error fetching topics:', error);
-  }
+  // Topics are automatically fetched by useTopicsQuery
 });
+
+const parsedErrors = computed(() => {
+  if (!error.value) {
+    return { fieldErrors: {}, generalErrors: [] }
+  }
+  return parseGraphQLError(error.value)
+});
+
+const fieldErrors = computed(() => parsedErrors.value.fieldErrors);
+const generalErrors = computed(() => parsedErrors.value.generalErrors);
 
 const filteredTopics = computed(() => {
   if (!roomForm.value.topicName) return [];
   const searchTerm = roomForm.value.topicName.toString().toLowerCase();
-  return topics.value.map(({ name }) => name).filter(topic => 
-    topic.toLowerCase().includes(searchTerm)
+  return topics.value.map((topic: Topic)=> topic.name).filter((topicName: string) => 
+    topicName.toLowerCase().includes(searchTerm)
   );
 });
+
+watch(roomForm, () => {
+  // Clear errors when form changes
+  if (error.value) {
+    // The error will be cleared on next mutation attempt
+  }
+}, { deep: true });
 
 function scrollToSelectedTopic() {
   if (selectedTopicIndex.value >= 0) {
@@ -118,9 +154,7 @@ function scrollToSelectedTopic() {
       
       if (itemRect.bottom > listRect.bottom) {
         suggestionsList.scrollTop += itemRect.bottom - listRect.bottom + 5;
-      }
-
-      else if (itemRect.top < listRect.top) {
+      } else if (itemRect.top < listRect.top) {
         suggestionsList.scrollTop -= listRect.top - itemRect.top + 5;
       }
     }
@@ -173,21 +207,17 @@ function selectTopic(topic: string) {
 async function submitRoom() {
   if (!roomForm.value.name || !roomForm.value.topicName) return;
 
-  isLoading.value = true;
-  try {
-    const room = await createRoom({ ...roomForm.value });
+  const result = await createRoom({ ...roomForm.value });
 
-    if (room) {
-      router.push(`/u/${room.host.username}/${room.slug}`);
-    }
-  } finally {
-    isLoading.value = false;
+  if (result.success) {
+    router.push(`/u/${result.room.host.username}/${result.room.slug}`);
   }
 }
 </script>
 
 <style scoped>
 @import '@/assets/styles/form-styles.css';
+@import '@/assets/styles/form-errors.css';
 
 .autocomplete-wrapper {
   position: relative;
@@ -257,5 +287,44 @@ async function submitRoom() {
   color: var(--text-light);
   margin-top: 0.25rem;
   flex-shrink: 0;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border-left-color: var(--white);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

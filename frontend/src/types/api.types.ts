@@ -106,6 +106,11 @@ export interface LogoutPayload {
   deleted: boolean;
 }
 
+export interface TokenPayload {
+  exp: number;
+  origIat: number;
+}
+
 export interface RefreshTokenPayload {
   payload?: unknown;
   refreshExpiresIn?: number;

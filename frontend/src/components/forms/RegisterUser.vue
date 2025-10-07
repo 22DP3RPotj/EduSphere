@@ -1,126 +1,156 @@
 <template>
-  <div class="auth-form-container">
-    <form class="auth-form" @submit.prevent="handleRegister">
-      <h2 class="form-title">Register</h2>
-      
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input 
-          id="username"
-          v-model="registerForm.username" 
-          type="text" 
-          placeholder="Choose a username"
-          autocomplete="username" 
-          required
-        >
+  <form @submit.prevent="handleSubmit">
+    <div v-if="generalErrors.length > 0" class="error-message">
+      <font-awesome-icon icon="exclamation-circle" />
+      <div class="error-list">
+        <p v-for="(error, index) in generalErrors" :key="index">{{ error }}</p>
       </div>
-      
-      <div class="form-group">
-        <label for="name">Full Name</label>
-        <input 
-          id="name"
-          v-model="registerForm.name" 
-          type="text" 
-          placeholder="Enter your full name"
-          autocomplete="name" 
-          required
-        >
+    </div>
+
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input
+        id="username"
+        v-model="formData.username"
+        type="text"
+        required
+        placeholder="Choose a username"
+        autocomplete="username"
+        :disabled="registerLoading"
+        :class="{ 'input-error': fieldErrors.username }"
+      />
+      <div v-if="fieldErrors.username" class="field-error">
+        <p v-for="(error, index) in fieldErrors.username" :key="index">{{ error }}</p>
       </div>
-      
-      <div class="form-group">
-        <label for="reg-email">Email</label>
-        <input 
-          id="reg-email"
-          v-model="registerForm.email" 
-          type="email" 
-          placeholder="Enter your email"
-          autocomplete="email" 
-          required
-        >
+    </div>
+
+    <div class="form-group">
+      <label for="name">Full Name</label>
+      <input
+        id="name"
+        v-model="formData.name"
+        type="text"
+        placeholder="Enter your full name"
+        autocomplete="name"
+        required
+        :disabled="registerLoading"
+        :class="{ 'input-error': fieldErrors.name }"
+      />
+      <div v-if="fieldErrors.name" class="field-error">
+        <p v-for="(error, index) in fieldErrors.name" :key="index">{{ error }}</p>
       </div>
-      
-      <div class="form-group">
-        <label for="password1">Password</label>
-        <input 
-          id="password1"
-          v-model="registerForm.password1" 
-          type="password" 
-          placeholder="Create a password"
-          autocomplete="new-password" 
-          required
-        >
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        v-model="formData.email"
+        type="email"
+        placeholder="Enter your email"
+        autocomplete="email"
+        required
+        :disabled="registerLoading"
+        :class="{ 'input-error': fieldErrors.email }"
+      />
+      <div v-if="fieldErrors.email" class="field-error">
+        <p v-for="(error, index) in fieldErrors.email" :key="index">{{ error }}</p>
       </div>
-      
-      <div class="form-group">
-        <label for="password2">Confirm Password</label>
-        <input 
-          id="password2"
-          v-model="registerForm.password2" 
-          type="password" 
-          placeholder="Confirm your password"
-          autocomplete="new-password" 
-          required
-        >
+    </div>
+
+    <div class="form-group">
+      <label for="password1">Password</label>
+      <input
+        id="password1"
+        v-model="formData.password1"
+        type="password"
+        placeholder="Create a password"
+        autocomplete="new-password"
+        required
+        :disabled="registerLoading"
+        :class="{ 'input-error': fieldErrors.password1 }"
+      />
+      <div v-if="fieldErrors.password1" class="field-error">
+        <p v-for="(error, index) in fieldErrors.password1" :key="index">{{ error }}</p>
       </div>
-      
-      <p v-if="error" class="error-message">{{ error }}</p>
-      
-      <button type="submit" class="btn btn-primary" :disabled="isLoading">
-        <span v-if="isLoading" class="spinner"></span>
-        {{ isLoading ? 'Registering...' : 'Register' }}
-      </button>
-      
-      <div class="form-footer">
-        <p>Already have an account? 
-          <a href="#" @click.prevent="$emit('switchToLogin')">Login</a>
-        </p>
+    </div>
+
+    <div class="form-group">
+      <label for="password2">Confirm Password</label>
+      <input
+        id="password2"
+        v-model="formData.password2"
+        type="password"
+        placeholder="Confirm your password"
+        autocomplete="new-password"
+        required
+        :disabled="registerLoading"
+        :class="{ 'input-error': fieldErrors.password2 }"
+      />
+      <div v-if="fieldErrors.password2" class="field-error">
+        <p v-for="(error, index) in fieldErrors.password2" :key="index">{{ error }}</p>
       </div>
-    </form>
-  </div>
+    </div>
+
+    <button type="submit" class="submit-btn" :disabled="registerLoading">
+      <font-awesome-icon v-if="registerLoading" icon="spinner" spin />
+      <span v-else>Register</span>
+    </button>
+
+    <p class="switch-form">
+      Already have an account?
+      <button type="button" @click="$emit('switch-to-login')">Login</button>
+    </p>
+  </form>
 </template>
 
 <script lang="ts" setup>
-import { ref, defineEmits } from 'vue';
-import { useAuthApi } from "@/api/auth.api";
+import { ref, computed, watch } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { parseGraphQLError } from '@/utils/errorParser'
+import type { RegisterInput } from '@/types'
 
-const emit = defineEmits(['registerSuccess', 'switchToLogin']);
+const emit = defineEmits<{
+  'register-success': []
+  'switch-to-login': []
+}>()
 
-const { registerUser } = useAuthApi();
+const { register, registerLoading, registerError } = useAuth()
 
-const registerForm = ref({
+const formData = ref<RegisterInput>({
   username: '',
   name: '',
   email: '',
   password1: '',
-  password2: ''
-});
-const error = ref<string | null>(null);
-const isLoading = ref<boolean>(false);
+  password2: '',
+})
 
-function validateRegisterForm(form: typeof registerForm.value): string | null {
-  if (!form.username || !form.name || !form.email || !form.password1 || !form.password2) {
-    return "Please fill in all fields";
+const parsedErrors = computed(() => {
+  if (!registerError.value) {
+    return { fieldErrors: {}, generalErrors: [] }
   }
-  if (form.password1 !== form.password2) {
-    return "Passwords do not match";
+  return parseGraphQLError(registerError.value)
+})
+
+const fieldErrors = computed(() => parsedErrors.value.fieldErrors)
+const generalErrors = computed(() => parsedErrors.value.generalErrors)
+
+watch(formData, () => {
+  if (registerError.value) {
+    // Errors will be cleared on next mutation attempt
   }
-  return null;
-}
+}, { deep: true })
 
-async function handleRegister() {
-  error.value = validateRegisterForm(registerForm.value);
-  if (error.value) return;
+async function handleSubmit() {
+  const result = await register(formData.value)
 
-  isLoading.value = true;
-  const success = await registerUser({ ...registerForm.value });
-  isLoading.value = false;
-
-  if (success) {
-    emit('registerSuccess');
+  if (result.success) {
+    emit('register-success')
   }
 }
 </script>
 
 <style scoped>
 @import '@/assets/styles/form-styles.css';
+@import '@/assets/styles/form-errors.css';
 </style>

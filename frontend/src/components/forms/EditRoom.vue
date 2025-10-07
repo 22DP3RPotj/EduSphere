@@ -3,6 +3,14 @@
     <form class="auth-form" @submit.prevent="submitUpdate">
       <h2 class="form-title">Edit Room</h2>
       
+      <!-- General errors display -->
+      <div v-if="generalErrors.length > 0" class="error-message">
+        <font-awesome-icon icon="exclamation-circle" />
+        <div class="error-list">
+          <p v-for="(errMsg, index) in generalErrors" :key="index">{{ errMsg }}</p>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="topic-name">Topic</label>
         <div class="autocomplete-wrapper">
@@ -13,6 +21,8 @@
             placeholder="Search or create topic"
             autocomplete="off"
             required
+            :disabled="loading"
+            :class="{ 'input-error': fieldErrors.topicName }"
             @input="onTopicInput"
             @keydown.down.prevent="onArrowDown"
             @keydown.up.prevent="onArrowUp"
@@ -34,6 +44,9 @@
             </div>
           </div>
         </div>
+        <div v-if="fieldErrors.topicName" class="field-error">
+          <p v-for="(errMsg, index) in fieldErrors.topicName" :key="index">{{ errMsg }}</p>
+        </div>
       </div>
 
       <div class="form-group">
@@ -44,19 +57,24 @@
           placeholder="Add a description"
           maxlength="500"
           rows="4"
+          :disabled="loading"
+          :class="{ 'input-error': fieldErrors.description }"
         ></textarea>
         <div class="char-count">
           {{ roomForm.description!.length }}/500
         </div>
+        <div v-if="fieldErrors.description" class="field-error">
+          <p v-for="(errMsg, index) in fieldErrors.description" :key="index">{{ errMsg }}</p>
+        </div>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
+        <button type="button" class="btn btn-secondary" :disabled="loading" @click="$emit('cancel')">
           Cancel
         </button>
-        <button type="submit" class="btn btn-primary" :disabled="isLoading">
-          <span v-if="isLoading" class="spinner"></span>
-          {{ isLoading ? 'Updating...' : 'Update Room' }}
+        <button type="submit" class="btn btn-primary" :disabled="loading">
+          <span v-if="loading" class="spinner"></span>
+          {{ loading ? 'Updating...' : 'Update Room' }}
         </button>
       </div>
     </form>
@@ -65,9 +83,10 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { useRoomApi } from "@/api/room.api";
+import { useUpdateRoom, useTopicsQuery } from "@/composables/useRooms";
+import { parseGraphQLError } from '@/utils/errorParser';
 
-import type { Topic, UpdateRoomForm } from '@/types';
+import type { Topic, UpdateRoomInput } from '@/types';
 
 const props = defineProps({
   room: {
@@ -78,42 +97,54 @@ const props = defineProps({
 
 const emit = defineEmits(['cancel', 'updated']);
 
-const { updateRoom, fetchTopics } = useRoomApi();
+const { updateRoom, loading, error } = useUpdateRoom();
+const { topics } = useTopicsQuery();
 
-const roomForm = ref<UpdateRoomForm>({
+const roomForm = ref<UpdateRoomInput>({
+  roomId: '',
   topicName: '',
   description: ''
 });
 
-const isLoading = ref<boolean>(false);
-const topics = ref<Topic[]>([]);
 const showSuggestions = ref<boolean>(false);
 const selectedTopicIndex = ref<number>(-1);
 
-
 watch(() => props.room, (newRoom) => {
   if (newRoom) {
+    roomForm.value.roomId = newRoom.id;
     roomForm.value.topicName = newRoom.topic?.name || '';
     roomForm.value.description = newRoom.description || '';
   }
 }, { immediate: true });
 
 onMounted(async () => {
-  try {
-    const topicsResponse = await fetchTopics();
-    topics.value = [...topicsResponse];
-  } catch (error) {
-    console.error('Error fetching topics:', error);
-  }
+  // Topics are automatically fetched by useTopicsQuery
 });
+
+const parsedErrors = computed(() => {
+  if (!error.value) {
+    return { fieldErrors: {}, generalErrors: [] }
+  }
+  return parseGraphQLError(error.value)
+});
+
+const fieldErrors = computed(() => parsedErrors.value.fieldErrors);
+const generalErrors = computed(() => parsedErrors.value.generalErrors);
 
 const filteredTopics = computed(() => {
   if (!roomForm.value.topicName) return [];
   const searchTerm = roomForm.value.topicName.toString().toLowerCase();
-  return topics.value.map(({ name }) => name).filter(topic => 
-    topic.toLowerCase().includes(searchTerm)
+  return topics.value.map((topic: Topic) => topic.name).filter((topicName: string) => 
+    topicName.toLowerCase().includes(searchTerm)
   );
 });
+
+watch(roomForm, () => {
+  // Clear errors when form changes
+  if (error.value) {
+    // The error will be cleared on next mutation attempt
+  }
+}, { deep: true });
 
 function scrollToSelectedTopic() {
   if (selectedTopicIndex.value >= 0) {
@@ -126,9 +157,7 @@ function scrollToSelectedTopic() {
       
       if (itemRect.bottom > listRect.bottom) {
         suggestionsList.scrollTop += itemRect.bottom - listRect.bottom + 5;
-      }
-
-      else if (itemRect.top < listRect.top) {
+      } else if (itemRect.top < listRect.top) {
         suggestionsList.scrollTop -= listRect.top - itemRect.top + 5;
       }
     }
@@ -184,23 +213,17 @@ function selectTopic(topic: string) {
 async function submitUpdate() {
   if (!roomForm.value.topicName) return;
 
-  isLoading.value = true;
-  try {
-    const updatedRoom = await updateRoom({
-      roomId: props.room.id,
-      ...roomForm.value
-    });
-    
-    if (updatedRoom) {
-      emit('updated', updatedRoom);
-    }
-  } finally {
-    isLoading.value = false;
+  const result = await updateRoom({ ...roomForm.value });
+  
+  if (result.success) {
+    emit('updated', result.room);
   }
 }
 </script>
 
 <style scoped>
+@import '@/assets/styles/form-errors.css';
+
 .auth-form-container {
   padding: 2rem;
 }
@@ -342,8 +365,13 @@ textarea {
   border: 1px solid var(--border-color);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
   background-color: var(--border-color);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .spinner {

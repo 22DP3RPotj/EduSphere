@@ -36,11 +36,7 @@ jobs:
       DJANGO_SETTINGS_MODULE: backend.config.settings
       SECRET_KEY: test_secret_key
       DEBUG: 'False'
-      DB_NAME: test_db
-      DB_USER: test_user
-      DB_PASSWORD: test_pass
-      DB_HOST: localhost
-      DB_PORT: 5432
+      DATABASE_URL: postgresql://test_user:test_pass@postgres:5432/test_db
 
     steps:
       - name: Checkout code

@@ -128,16 +128,12 @@ Access the application at [http://localhost](http://localhost)
    cd EduSphere
    ```
 
-2. Create `.env.docker` file in the project root (or use the provided template):
+2. Create `.env.docker` file in the project root:
    ```env
    SECRET_KEY=secret_key
    DEBUG=True
 
-   DB_NAME=coredb
-   DB_USER=db_user
-   DB_PASSWORD=db_password
-   DB_HOST=postgres
-   DB_PORT=5432
+   DB_URL=postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
 
    REDIS_HOST=redis
    REDIS_PORT=6379

@@ -19,10 +19,14 @@
           type="text"
           placeholder="Enter room name"
           autocomplete="off"
+          maxlength="64"
           required
           :disabled="loading"
           :class="{ 'input-error': fieldErrors.name }"
         >
+        <div class="char-count">
+          {{ roomForm.name.length }}/64
+        </div>
         <div v-if="fieldErrors.name" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.name" :key="index">{{ errMsg }}</p>
         </div>
@@ -37,6 +41,7 @@
             type="text"
             placeholder="Search or create topic"
             autocomplete="off"
+            maxlength="32"
             required
             :disabled="loading"
             :class="{ 'input-error': fieldErrors.topicName }"
@@ -61,6 +66,9 @@
             </div>
           </div>
         </div>
+        <div class="char-count">
+          {{ roomForm.topicName.length }}/32
+        </div>
         <div v-if="fieldErrors.topicName" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.topicName" :key="index">{{ errMsg }}</p>
         </div>
@@ -72,13 +80,13 @@
           id="description"
           v-model="roomForm.description"
           placeholder="Add a description"
-          maxlength="500"
+          maxlength="512"
           rows="4"
           :disabled="loading"
           :class="{ 'input-error': fieldErrors.description }"
         ></textarea>
         <div class="char-count">
-          {{ roomForm.description.length }}/500
+          {{ roomForm.description.length }}/512
         </div>
         <div v-if="fieldErrors.description" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.description" :key="index">{{ errMsg }}</p>

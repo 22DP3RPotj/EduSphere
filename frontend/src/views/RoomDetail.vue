@@ -123,11 +123,11 @@
                   id="messageInput"
                   v-model="messageInput"
                   type="text"
-                  maxlength="500"
+                  maxlength="2048"
                   placeholder="Type your message here..."
                 />
                 <div class="char-count" :class="{ 'char-limit-warning': messageInput.length === 500 }">
-                  {{ messageInput.length }}/500
+                  {{ messageInput.length }}/2048
                 </div>
               </div>
               <button type="submit" :disabled="!messageInput.trim()">

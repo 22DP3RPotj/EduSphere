@@ -43,7 +43,40 @@ export function parseGraphQLError(error: unknown): ParsedError {
             if (Array.isArray(messages)) {
               result.generalErrors.push(...messages)
             } else if (typeof messages === "string") {
-              result.generalErrors.push(messages)
+              const str = messages.trim()
+
+              // If it looks like a serialized object/array, try to parse and extract strings
+              if (str.startsWith("{") || str.startsWith("[")) {
+                try {
+                  const parsed = JSON.parse(str.replace(/'/g, '"'))
+
+                  // If parsed has __all__, use it
+                  if (Array.isArray((parsed as any).__all__)) {
+                    result.generalErrors.push(...(parsed as any).__all__)
+                  } else if (typeof parsed === "object" && parsed !== null) {
+                    // Flatten any nested string/array values found in the parsed object
+                    const flatten = (v: unknown): string[] => {
+                      if (typeof v === "string") return [v]
+                      if (Array.isArray(v)) return v.flatMap(flatten)
+                      if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
+                      return []
+                    }
+                    const vals = flatten(parsed)
+                    if (vals.length > 0) result.generalErrors.push(...vals)
+                    else result.generalErrors.push(messages) // fallback to raw string
+                  } else {
+                    result.generalErrors.push(messages)
+                  }
+                } catch {
+                  // If parsing fails, keep the original string
+                  result.generalErrors.push(messages)
+                }
+              } else {
+                result.generalErrors.push(messages)
+              }
+            } else if (typeof messages === "object" && messages !== null) {
+              // message is an object/hashmap directly
+              result.generalErrors.push(...Object.values(messages).map(String))
             }
           } else {
             // Field-specific errors
@@ -56,7 +89,7 @@ export function parseGraphQLError(error: unknown): ParsedError {
         })
       }
 
-      // Try parsing message as JSON for __all__ errors
+      // Try parsing message as JSON for __all__ errors (and also handle objects keyed by field)
       if (
         result.generalErrors.length === 0 &&
         Object.keys(result.fieldErrors).length === 0 &&
@@ -65,8 +98,21 @@ export function parseGraphQLError(error: unknown): ParsedError {
       ) {
         try {
           const parsed = JSON.parse(gqlError.message.replace(/'/g, '"'))
-          if (Array.isArray(parsed.__all__)) {
-            result.generalErrors.push(...parsed.__all__)
+          if (Array.isArray((parsed as any).__all__)) {
+            result.generalErrors.push(...(parsed as any).__all__)
+          } else if (typeof parsed === "object" && parsed !== null) {
+            // Flatten any nested string/array values found in the parsed object
+            const flatten = (v: unknown): string[] => {
+              if (typeof v === "string") return [v]
+              if (Array.isArray(v)) return v.flatMap(flatten)
+              if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
+              return []
+            }
+            const vals = flatten(parsed)
+            if (vals.length > 0) result.generalErrors.push(...vals)
+            else result.generalErrors.push(gqlError.message)
+          } else {
+            result.generalErrors.push(gqlError.message)
           }
         } catch {
           result.generalErrors.push(gqlError.message)

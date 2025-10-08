@@ -1,6 +1,5 @@
 import { useAuthApi } from "@/api/auth.api";
 import { useAuthStore } from "@/stores/auth.store";
-import { useNotifications } from "@/composables/useNotifications";
 
 type RefreshResolveFn = (_value: boolean) => void;
 
@@ -16,6 +15,17 @@ class AuthTokenService {
   private RETRY_DELAY: number = 5 * 1000;
   private MAX_RETRY_COUNT: number = 3;
   private retryCount: number = 0;
+
+  // Add event emitter for auth state changes
+  private authStateListeners: ((isAuthenticated: boolean, error?: string) => void)[] = [];
+
+  onAuthStateChange(callback: (isAuthenticated: boolean, error?: string) => void): void {
+    this.authStateListeners.push(callback);
+  }
+
+  private notifyAuthStateChange(isAuthenticated: boolean, error?: string): void {
+    this.authStateListeners.forEach(callback => callback(isAuthenticated, error));
+  }
 
   init(): void {
     if (this.initialized) return;
@@ -71,6 +81,7 @@ class AuthTokenService {
     if (!authStore.hasValidAuthState) return;
     if (authStore.isRefreshTokenExpired) {
       console.log("Refresh token expired, cannot schedule refresh");
+      this.handleSessionExpired();
       return;
     }
 
@@ -104,9 +115,7 @@ class AuthTokenService {
     if (!authStore.isAuthenticated) return false;
 
     if (authStore.isRefreshTokenExpired) {
-      const notifications = useNotifications();
-      authStore.clearAuth();
-      notifications.error("Your refresh token has expired. Please login again.");
+      this.handleSessionExpired();
       return false;
     }
 
@@ -122,6 +131,13 @@ class AuthTokenService {
 
     this.startRefreshTimer();
     return true;
+  }
+
+  private handleSessionExpired(): void {
+    const authStore = useAuthStore();
+    console.log("Session expired, clearing auth state");
+    authStore.clearAuth();
+    this.notifyAuthStateChange(false, "Your session has expired. Please log in again.");
   }
 
   setRefreshPercentage(percentage: number): void {
@@ -159,9 +175,7 @@ class AuthTokenService {
     const authStore = useAuthStore();
 
     if (!authStore.isAuthenticated || authStore.tokenRevoked || authStore.isRefreshTokenExpired) {
-      const notifications = useNotifications();
-      authStore.clearAuth();
-      notifications.error("Your refresh token has expired. Please login again.");
+      this.handleSessionExpired();
       return false;
     }
 
@@ -180,6 +194,7 @@ class AuthTokenService {
         this.retryCount = 0;
         this.startRefreshTimer();
         this.processRefreshQueue(true);
+        this.notifyAuthStateChange(true);
         return true;
       } else {
         this.handleRefreshFailure();
@@ -212,9 +227,7 @@ class AuthTokenService {
       }, this.RETRY_DELAY);
     } else {
       console.log("Max token refresh attempts exceeded or refresh token expired");
-      const notifications = useNotifications();
-      authStore.clearAuth();
-      notifications.error("Your session has expired. Please login again.");
+      this.handleSessionExpired();
     }
   }
 
@@ -222,8 +235,10 @@ class AuthTokenService {
     if (isAuthenticated) {
       this.retryCount = 0;
       this.startRefreshTimer();
+      this.notifyAuthStateChange(true);
     } else {
       this.stopRefreshTimer();
+      this.notifyAuthStateChange(false);
     }
   }
 
@@ -232,6 +247,7 @@ class AuthTokenService {
     document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     window.removeEventListener("beforeunload", this.cleanup);
     this.initialized = false;
+    this.authStateListeners = [];
   }
 }
 

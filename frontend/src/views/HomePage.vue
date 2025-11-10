@@ -184,9 +184,17 @@
               >
                 <div class="room-card-header">
                   <h3 class="room-name">{{ room.name }}</h3>
-                  <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+                  <div class="room-topics">
+                    <span 
+                      v-for="topic in room.topics" 
+                      :key="topic.name" 
+                      class="room-topic"
+                    >
+                      {{ topic.name }}
+                    </span>
+                  </div>
                 </div>
-                <p class="room-description">{{ room.description }}</p>
+                <div class="room-description">{{ room.description }}</div>
                 <div class="room-meta">
                   <span class="room-date">
                     <font-awesome-icon icon="calendar-alt" />
@@ -1120,8 +1128,10 @@ onBeforeUnmount(() => {
 
 .room-card-header {
   display: flex;
-  justify-content: space-between;
+  /* Changed to column layout to accommodate multiple topics */
+  flex-direction: column;
   align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
@@ -1129,6 +1139,13 @@ onBeforeUnmount(() => {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+/* Updated styles for multiple topics */
+.room-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .room-topic {

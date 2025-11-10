@@ -12,13 +12,18 @@ class QueryTests(JSONWebTokenTestCase):
             username="testuser",
             email="test@email.com",
         )
-        self.topic = Topic.objects.create(name="Tech")
+        
+        self.topic_tech = Topic.objects.create(name="Tech")
+        self.topic_music = Topic.objects.create(name="Music")
+        
         self.room = Room.objects.create(
             host=self.user,
             name="Test Room",
-            topic=self.topic,
             description="Test Description"
         )
+        
+        self.room.topics.add(self.topic_tech)
+        
         self.message = Message.objects.create(
             user=self.user,
             room=self.room,

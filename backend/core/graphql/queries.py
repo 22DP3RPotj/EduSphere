@@ -10,7 +10,7 @@ class Query(graphene.ObjectType):
         RoomType,
         host_slug=graphene.String(),
         search=graphene.String(),
-        topic=graphene.List(graphene.String)
+        topics=graphene.List(graphene.String)
     )
     rooms_participated_by_user = graphene.List(
         RoomType,
@@ -62,10 +62,10 @@ class Query(graphene.ObjectType):
         return AuthStatusType(is_authenticated=False, user=None)
 
 
-    def resolve_rooms(self, info, host_slug=None, search=None, topic=None):
+    def resolve_rooms(self, info, host_slug=None, search=None, topics=None):
         queryset = Room.objects.annotate(
             participants_count=Count('participants')
-        ).select_related('host', 'topic')
+        ).select_related('host').prefetch_related('topics')
 
         if host_slug:
             queryset = queryset.filter(host__username=host_slug)
@@ -76,8 +76,8 @@ class Query(graphene.ObjectType):
                 Q(description__icontains=search)
             )
             
-        if topic:
-            queryset = queryset.filter(topic__name__in=topic).distinct()
+        if topics:
+            queryset = queryset.filter(topics__name__in=topics).distinct()
 
         return queryset.order_by('-participants_count' , '-created')
     
@@ -107,7 +107,7 @@ class Query(graphene.ObjectType):
 
     def resolve_topics(self, info, search=None, min_rooms=None):
         queryset = Topic.objects.annotate(
-            room_count=Count('room')
+            room_count=Count('rooms')
         )
         
         if search:

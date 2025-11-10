@@ -76,18 +76,20 @@ class UpdateUser(graphene.Mutation):
 class CreateRoom(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
-        topic_name = graphene.String(required=True)
+        topic_names = graphene.List(graphene.String, required=True)
         description = graphene.String(required=True)
 
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info, name, topic_name, description):
-        topic, created = Topic.objects.get_or_create(name=topic_name)
+    def mutate(self, info, name, topic_names, description):
+        topics = []
+        for topic_name in topic_names:
+            topic, created = Topic.objects.get_or_create(name=topic_name)
+            topics.append(topic)
         
         form = RoomForm({
             "name": name,
-            "topic": topic.id,
             "description": description
         })
         
@@ -95,6 +97,7 @@ class CreateRoom(graphene.Mutation):
             room = form.save(commit=False)
             room.host = info.context.user
             room.save()
+            room.topics.set(topics)
             room.participants.add(info.context.user)
             return CreateRoom(room=room)
         else:
@@ -103,7 +106,7 @@ class CreateRoom(graphene.Mutation):
 class UpdateRoom(graphene.Mutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
-        topic_name = graphene.String(required=False)
+        topic_names = graphene.List(graphene.String, required=False)
         description = graphene.String(required=False)
 
     room = graphene.Field(RoomType)
@@ -120,16 +123,22 @@ class UpdateRoom(graphene.Mutation):
         if room.host != info.context.user:
             raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
         
-        topic, created = Topic.objects.get_or_create(name=kwargs.get("topic_name"))
+        if 'topic_names' in kwargs:
+            topics = []
+            for topic_name in kwargs['topic_names']:
+                topic, created = Topic.objects.get_or_create(name=topic_name)
+                topics.append(topic)
+        else:
+            topics = room.topics.all()
         
         form = RoomForm({
             "name": room.name,
-            "topic": topic.id,
             "description": kwargs.get("description", room.description)
         }, instance=room)
 
         if form.is_valid():
-            form.save()
+            room = form.save()
+            room.topics.set(topics)
             return UpdateRoom(room=room)
         else:
             raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})

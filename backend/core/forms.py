@@ -3,7 +3,7 @@ from django.forms import ModelForm
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import User, Room
+from .models import User, Room, Topic
 
 
 class LoginForm(forms.Form):
@@ -72,6 +72,12 @@ class RoomForm(ModelForm):
                 code='invalid_room_name'
             )
         ]
+    )
+    
+    topics = forms.ModelMultipleChoiceField(
+        queryset=Topic.objects.all(),
+        widget=forms.SelectMultiple,
+        required=False
     )
         
     class Meta:

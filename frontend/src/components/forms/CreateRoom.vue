@@ -2,9 +2,8 @@
   <div class="auth-form-container">
     <form class="auth-form" @submit.prevent="submitRoom">
       <h2 class="form-title">Create Room</h2>
-      
       <!-- General errors display -->
-      <div v-if="generalErrors.length > 0" class="error-message">
+      <div v-show="generalErrors.length > 0" class="error-message">
         <font-awesome-icon icon="exclamation-circle" />
         <div class="error-list">
           <p v-for="(errMsg, index) in generalErrors" :key="index">{{ errMsg }}</p>
@@ -32,19 +31,39 @@
         </div>
       </div>
 
+      <!-- Updated to support multiple topics with tag/chip interface -->
       <div class="form-group">
-        <label for="topic-name">Topic</label>
+        <label for="topic-name">Topics (select one or more)</label>
+        
+        <!-- Selected topics display -->
+        <div v-if="roomForm.topicNames.length > 0" class="selected-topics">
+          <span 
+            v-for="topicName in roomForm.topicNames" 
+            :key="topicName"
+            class="topic-tag"
+          >
+            {{ topicName }}
+            <button 
+              type="button" 
+              class="remove-topic-btn"
+              :title="`Remove ${topicName}`"
+              @click="removeTopic(topicName)"
+            >
+              <font-awesome-icon icon="times" />
+            </button>
+          </span>
+        </div>
+        
         <div class="autocomplete-wrapper">
           <input
             id="topic-name"
-            v-model="roomForm.topicName"
+            v-model="topicSearchInput"
             type="text"
-            placeholder="Search or create topic"
+            placeholder="Search or create topics"
             autocomplete="off"
             maxlength="32"
-            required
             :disabled="loading"
-            :class="{ 'input-error': fieldErrors.topicName }"
+            :class="{ 'input-error': fieldErrors.topicNames }"
             @input="onTopicInput"
             @keydown.down.prevent="onArrowDown"
             @keydown.up.prevent="onArrowUp"
@@ -56,21 +75,27 @@
             <div
               v-for="(topic, index) in filteredTopics"
               :key="topic"
-              :class="['suggestion-item', { active: index === selectedTopicIndex }]"
+              :class="['suggestion-item', { 
+                active: index === selectedTopicIndex,
+                selected: roomForm.topicNames.includes(topic)
+              }]"
               @click="selectTopic(topic)"
             >
-              {{ topic }}
+              <span>{{ topic }}</span>
+              <span v-if="roomForm.topicNames.includes(topic)" class="selected-indicator">
+                <font-awesome-icon icon="check" />
+              </span>
             </div>
             <div v-if="filteredTopics.length === 0" class="no-suggestions">
-              No matching topics found. You might want to create a new one.
+              No matching topics found. Press Enter to create "{{ topicSearchInput }}"
             </div>
           </div>
         </div>
         <div class="char-count">
-          {{ roomForm.topicName.length }}/32
+          {{ topicSearchInput.length }}/32
         </div>
-        <div v-if="fieldErrors.topicName" class="field-error">
-          <p v-for="(errMsg, index) in fieldErrors.topicName" :key="index">{{ errMsg }}</p>
+        <div v-if="fieldErrors.topicNames" class="field-error">
+          <p v-for="(errMsg, index) in fieldErrors.topicNames" :key="index">{{ errMsg }}</p>
         </div>
       </div>
 
@@ -93,7 +118,7 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary" :disabled="loading">
+      <button type="submit" class="btn btn-primary" :disabled="loading || roomForm.topicNames.length === 0">
         <span v-if="loading" class="spinner"></span>
         {{ loading ? 'Creating...' : 'Create Room' }}
       </button>
@@ -115,16 +140,13 @@ const { topics } = useTopicsQuery();
 
 const roomForm = ref<CreateRoomInput>({
   name: '',
-  topicName: '',
+  topicNames: [],
   description: ''
 });
 
+const topicSearchInput = ref<string>('');
 const showSuggestions = ref<boolean>(false);
 const selectedTopicIndex = ref<number>(-1);
-
-onMounted(async () => {
-  // Topics are automatically fetched by useTopicsQuery
-});
 
 const parsedErrors = computed(() => {
   if (!error.value) {
@@ -137,11 +159,13 @@ const fieldErrors = computed(() => parsedErrors.value.fieldErrors);
 const generalErrors = computed(() => parsedErrors.value.generalErrors);
 
 const filteredTopics = computed(() => {
-  if (!roomForm.value.topicName) return [];
-  const searchTerm = roomForm.value.topicName.toString().toLowerCase();
-  return topics.value.map((topic: Topic)=> topic.name).filter((topicName: string) => 
-    topicName.toLowerCase().includes(searchTerm)
-  );
+  if (!topicSearchInput.value) return [];
+  const searchTerm = topicSearchInput.value.toLowerCase();
+  return topics.value
+    .map((topic: Topic) => topic.name)
+    .filter((topicName: string) => 
+      topicName.toLowerCase().includes(searchTerm)
+    );
 });
 
 watch(roomForm, () => {
@@ -189,31 +213,39 @@ function onArrowUp() {
 }
 
 function onEnter(event: KeyboardEvent) {
-  if (!showSuggestions.value) {
+  if (!showSuggestions.value && !topicSearchInput.value.trim()) {
     return;
   }
 
   event.preventDefault();
 
-  if (selectedTopicIndex.value >= 0) {
-    const topic = filteredTopics.value[selectedTopicIndex.value];
-    if (topic !== undefined) {
-      selectTopic(topic);
-    }
-  } else if (filteredTopics.value.length === 1 && filteredTopics.value[0] !== undefined) {
+  if (selectedTopicIndex.value >= 0 && filteredTopics.value[selectedTopicIndex.value]) {
+    selectTopic(filteredTopics.value[selectedTopicIndex.value]);
+  } else if (filteredTopics.value.length === 1 && filteredTopics.value[0]) {
     selectTopic(filteredTopics.value[0]);
+  } else if (topicSearchInput.value.trim()) {
+    // Create new topic if no match found
+    selectTopic(topicSearchInput.value.trim());
   }
 
   showSuggestions.value = false;
 }
 
 function selectTopic(topic: string) {
-  roomForm.value.topicName = topic;
+  if (!roomForm.value.topicNames.includes(topic)) {
+    roomForm.value.topicNames.push(topic);
+  }
+  topicSearchInput.value = '';
   showSuggestions.value = false;
+  selectedTopicIndex.value = -1;
+}
+
+function removeTopic(topicName: string) {
+  roomForm.value.topicNames = roomForm.value.topicNames.filter(t => t !== topicName);
 }
 
 async function submitRoom() {
-  if (!roomForm.value.name || !roomForm.value.topicName) return;
+  if (!roomForm.value.name || roomForm.value.topicNames.length === 0) return;
 
   const result = await createRoom({ ...roomForm.value });
 
@@ -221,11 +253,59 @@ async function submitRoom() {
     router.push(`/u/${result.room.host.username}/${result.room.slug}`);
   }
 }
+
+onMounted(async () => {
+  // Topics are automatically fetched by useTopicsQuery
+});
 </script>
 
 <style scoped>
 @import '@/assets/styles/form-styles.css';
 @import '@/assets/styles/form-errors.css';
+
+.selected-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background-color: var(--bg-color);
+  border-radius: var(--radius);
+  min-height: 40px;
+}
+
+.topic-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background-color: var(--primary-color);
+  color: white !important;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.remove-topic-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition);
+  font-size: 0.75rem;
+}
+
+.remove-topic-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
 
 .autocomplete-wrapper {
   position: relative;
@@ -246,6 +326,9 @@ async function submitRoom() {
 }
 
 .suggestion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.75rem 1rem;
   cursor: pointer;
   font-size: 0.875rem;
@@ -255,6 +338,17 @@ async function submitRoom() {
 .suggestion-item:hover,
 .suggestion-item.active {
   background-color: var(--bg-color);
+}
+
+/* Style for already selected topics in dropdown */
+.suggestion-item.selected {
+  background-color: rgba(79, 70, 229, 0.1);
+  color: var(--primary-color);
+}
+
+.selected-indicator {
+  color: var(--primary-color);
+  font-size: 0.8rem;
 }
 
 .no-suggestions {

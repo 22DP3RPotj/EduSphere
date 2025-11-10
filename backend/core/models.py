@@ -63,7 +63,7 @@ class Room(models.Model):
     name = models.CharField(max_length=64)
     slug = models.SlugField(max_length=64)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    topics = models.ManyToManyField(Topic, related_name='rooms')
     description = models.TextField(blank=True, default='', max_length=512, validators=[MaxLengthValidator(512)])
     participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
@@ -83,7 +83,6 @@ class Room(models.Model):
         ]
         indexes = [
             models.Index(fields=['host', 'name']),
-            models.Index(fields=['topic']),
             models.Index(fields=['updated']),
         ]
         

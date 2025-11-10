@@ -37,7 +37,15 @@
             <font-awesome-icon icon="arrow-left" />
           </button>
           <h2>{{ room.name }}</h2>
-          <span class="room-topic">{{ room.topic.name }}</span>
+          <div class="room-topics">
+            <span 
+              v-for="topic in room.topics" 
+              :key="topic.name" 
+              class="room-topic"
+            >
+              {{ topic.name }}
+            </span>
+          </div>
           <span class="participants-count">
             <font-awesome-icon icon="users" /> {{ participants.length }}
           </span>
@@ -670,8 +678,14 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   color: var(--text-color);
 }
 
-.room-topic {
+.room-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-left: 1rem;
+}
+
+.room-topic {
   background-color: var(--bg-color);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius);

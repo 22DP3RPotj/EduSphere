@@ -234,7 +234,15 @@
             <div v-for="room in tabsData.hostedRooms.data" :key="room.id" class="room-card" @click="navigateToRoom(room)">
               <div class="room-card-header">
                 <h3 class="room-name">{{ room.name }}</h3>
-                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+                <div class="room-topics">
+                  <span 
+                    v-for="topic in room.topics" 
+                    :key="topic.name" 
+                    class="room-topic"
+                  >
+                    {{ topic.name }}
+                  </span>
+                </div>
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
@@ -267,7 +275,15 @@
             <div v-for="room in tabsData.joinedRooms.data" :key="room.id" class="room-card" @click="navigateToRoom(room)">
               <div class="room-card-header">
                 <h3 class="room-name">{{ room.name }}</h3>
-                <span v-if="room.topic" class="room-topic">{{ room.topic.name }}</span>
+                <div class="room-topics">
+                  <span 
+                    v-for="topic in room.topics" 
+                    :key="topic.name" 
+                    class="room-topic"
+                  >
+                    {{ topic.name }}
+                  </span>
+                </div>
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
@@ -1092,25 +1108,32 @@ watch(() => route.params.userSlug, (newUsername) => {
 
 .room-card-header {
   display: flex;
+  /* Changed to column layout to accommodate multiple topics */
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .room-name {
   margin: 0;
-  color: var(--text-color);
   font-size: 1.1rem;
   font-weight: 600;
 }
 
+.room-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .room-topic {
-  background-color: var(--bg-color);
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
-  color: var(--primary-color);
-  border: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
 }
 
 .room-description {

@@ -21,13 +21,13 @@ export interface UpdateUserInput {
 
 export interface CreateRoomInput {
   name: string;
-  topicName: string;
+  topicNames: string[];
   description: string;
 }
 
 export interface UpdateRoomInput {
   roomId: string;
-  topicName?: string;
+  topicNames?: string[];
   description?: string;
 }
 

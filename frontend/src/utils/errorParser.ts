@@ -51,8 +51,8 @@ export function parseGraphQLError(error: unknown): ParsedError {
                   const parsed = JSON.parse(str.replace(/'/g, '"'))
 
                   // If parsed has __all__, use it
-                  if (Array.isArray((parsed as any).__all__)) {
-                    result.generalErrors.push(...(parsed as any).__all__)
+                  if (Array.isArray((parsed).__all__)) {
+                    result.generalErrors.push(...(parsed).__all__)
                   } else if (typeof parsed === "object" && parsed !== null) {
                     // Flatten any nested string/array values found in the parsed object
                     const flatten = (v: unknown): string[] => {
@@ -98,8 +98,8 @@ export function parseGraphQLError(error: unknown): ParsedError {
       ) {
         try {
           const parsed = JSON.parse(gqlError.message.replace(/'/g, '"'))
-          if (Array.isArray((parsed as any).__all__)) {
-            result.generalErrors.push(...(parsed as any).__all__)
+          if (Array.isArray((parsed).__all__)) {
+            result.generalErrors.push(...(parsed).__all__)
           } else if (typeof parsed === "object" && parsed !== null) {
             // Flatten any nested string/array values found in the parsed object
             const flatten = (v: unknown): string[] => {

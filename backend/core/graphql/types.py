@@ -8,15 +8,20 @@ class UserType(DjangoObjectType):
         model = User
         fields = ("id", "username", "name", "bio", "avatar")
 
-class RoomType(DjangoObjectType):
-    class Meta:
-        model = Room
-        fields = ("id", "name", "slug", "host", "topic", "description", "participants", "updated", "created")
-
 class TopicType(DjangoObjectType):
     class Meta:
         model = Topic
         fields = ("id", "name")
+        
+class RoomType(DjangoObjectType):
+    topics = graphene.List(TopicType)
+    
+    class Meta:
+        model = Room
+        fields = ("id", "name", "slug", "host", "topics", "description", "participants", "updated", "created")
+        
+    def resolve_topics(self, info):
+        return self.topics.all()
 
 class MessageType(DjangoObjectType):
     class Meta:

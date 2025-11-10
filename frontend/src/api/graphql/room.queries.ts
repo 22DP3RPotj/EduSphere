@@ -19,7 +19,7 @@ export const ROOM_QUERY = gql`
                 username
                 avatar
             }
-            topic {
+            topics {
                 name
             }
         }
@@ -27,14 +27,14 @@ export const ROOM_QUERY = gql`
 `;
 
 export const ROOMS_QUERY = gql`
-    query Rooms($hostSlug: String, $search: String, $topic: [String]) {
-        rooms(hostSlug: $hostSlug, search: $search, topic: $topic) {
+    query Rooms($hostSlug: String, $search: String, $topics: [String]) {
+        rooms(hostSlug: $hostSlug, search: $search, topics: $topics) {
             id
             name
             slug
             description
             created
-            topic {
+            topics {
                 name
             }
             host { username }
@@ -58,7 +58,7 @@ export const USER_WITH_ROOMS_QUERY = gql`
             slug
             description
             created
-            topic { name }
+            topics { name }
             host { username }
         }
         roomsNotParticipatedByUser(userSlug: $userSlug) {
@@ -67,7 +67,7 @@ export const USER_WITH_ROOMS_QUERY = gql`
             slug
             description
             created
-            topic { name }
+            topics { name }
             host { username }
         }
     }
@@ -75,14 +75,14 @@ export const USER_WITH_ROOMS_QUERY = gql`
 
 // Combined query for initial page load - gets rooms and topics together
 export const HOMEPAGE_INITIAL_QUERY = gql`
-    query HomepageInitial($search: String, $topic: [String]) {
-        rooms(search: $search, topic: $topic) {
+    query HomepageInitial($search: String, $topics: [String]) {
+        rooms(search: $search, topics: $topics) {
             id
             name
             slug
             description
             created
-            topic {
+            topics {
                 name
             }
             host { username }
@@ -101,7 +101,7 @@ export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
             slug
             description
             created
-            topic { name }
+            topics { name }
             host { username }
         }
     }
@@ -115,7 +115,7 @@ export const ROOMS_NOT_PARTICIPATED_BY_USER_QUERY = gql`
             slug
             description
             created
-            topic { name }
+            topics { name }
             host { username }
         }
     }

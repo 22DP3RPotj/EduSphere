@@ -3,7 +3,7 @@
     <div class="form-container">
       <div class="form-box">
         <div class="form-header">
-          <h2>Create New Room</h2>
+          <h2>Create Room</h2>
         </div>
         
         <div class="form-content">

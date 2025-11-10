@@ -15,7 +15,7 @@ export interface Room {
   name: string;
   slug: string;
   host: User;
-  topic: Topic;
+  topics: Topic[];
   description: string;
   participants: User[];
   updated: string;

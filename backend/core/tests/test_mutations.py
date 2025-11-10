@@ -15,11 +15,11 @@ class UserMutationsTests(JSONWebTokenTestCase):
         self.temp_media = tempfile.TemporaryDirectory()
         self.media_override = override_settings(MEDIA_ROOT=self.temp_media.name)
         self.media_override.enable()
-    
+
     def tearDown(self):
         self.media_override.disable()
         self.temp_media.cleanup()
-    
+
     def test_register_user_success(self):
         mutation = """
             mutation RegisterUser(
@@ -84,7 +84,7 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "password2": "4asdfgh56"
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        
+
         self.assertIsNotNone(result.errors)
         self.assertIn("password2", result.errors[0].extensions["errors"])
 
@@ -131,6 +131,7 @@ class UserMutationsTests(JSONWebTokenTestCase):
         user.refresh_from_db()
         self.assertTrue(user.avatar.name.endswith(".jpg"))
 
+
 class RoomMutationsTests(JSONWebTokenTestCase):
 
     def setUp(self):
@@ -144,24 +145,28 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_create_room_success(self):
         self.client.authenticate(self.user)
         mutation = """
-            mutation CreateRoom($name: String!, $topicName: String!, $description: String!) {
-                createRoom(name: $name, topicName: $topicName, description: $description) {
+            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!) {
+                createRoom(name: $name, topicNames: $topicNames, description: $description) {
                     room {
                         name
-                        topic { name }
+                        topics { name }
                         host { username }
                     }
                 }
             }
         """
-        variables = {"name": "New Room", "topicName": "NewTopic", "description": ""}
+        variables = {"name": "New Room", "topicNames": ["NewTopic"], "description": ""}
         result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
         room = Room.objects.get(name="New Room")
-        self.assertEqual(room.topic.name, "NewTopic")
+        topic_names = list(room.topics.values_list("name", flat=True))
+        self.assertIn("NewTopic", topic_names)
         self.assertEqual(room.host, self.user)
 
     def test_delete_room_success(self):
-        room = Room.objects.create(host=self.user, name="Test Room", topic=self.topic)
+        room = Room.objects.create(host=self.user, name="Test Room", description="")
+        room.topics.add(self.topic)
+
         self.client.authenticate(self.user)
         mutation = """
             mutation DeleteRoom($roomId: UUID!) {
@@ -172,8 +177,10 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(room.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
         self.assertTrue(result.data["deleteRoom"]["success"])
         self.assertFalse(Room.objects.filter(id=room.id).exists())
+
 
 class MessageMutationsTests(JSONWebTokenTestCase):
 
@@ -190,8 +197,10 @@ class MessageMutationsTests(JSONWebTokenTestCase):
                 email="host@email.com",
             ),
             name="Test Room",
-            topic=Topic.objects.create(name="TestTopic")
+            description=""
         )
+        self.topic = Topic.objects.create(name="TestTopic")
+        self.room.topics.add(self.topic)
 
     def test_delete_message_success(self):
         message = Message.objects.create(user=self.user, room=self.room, body="Test")
@@ -203,6 +212,7 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"messageId": str(message.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
         self.assertTrue(result.data["deleteMessage"]["success"])
         self.assertFalse(Message.objects.filter(id=message.id).exists())
 
@@ -218,5 +228,6 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"messageId": str(message.id), "body": "Updated"}
         result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
         message.refresh_from_db()
         self.assertEqual(message.body, "Updated")

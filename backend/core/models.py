@@ -14,7 +14,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     username = models.SlugField(max_length=32, unique=True)
     name = models.CharField(max_length=32)
-    bio = models.TextField(blank=True, default='', max_length=256, validators=[MaxLengthValidator(256)])
+    bio = models.TextField(blank=True, default='', max_length=4096, validators=[MaxLengthValidator(4096)])
     avatar = models.ImageField(
         upload_to='avatars',
         blank=True, null=True,
@@ -39,6 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     
 
 class Topic(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=32, unique=True)
 
     def __str__(self):
@@ -99,7 +100,7 @@ class Room(models.Model):
         })
 
 class Message(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid1, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     body = models.TextField(max_length=2048, validators=[MaxLengthValidator(2048)])
@@ -122,9 +123,6 @@ class Message(models.Model):
         return super().save(*args, **kwargs)
 
     def serialize(self):
-        """
-        Serialize the message object for WebSocket or API responses.
-        """
         return {
             'id': str(self.id),
             'user': self.user.username,
@@ -137,10 +135,8 @@ class Message(models.Model):
         }
         
     def update(self, body):
-        """
-        Update the message body and save it to the database.
-        """
+        if not self.edited:
+            self.edited = True
         self.body = body
-        self.edited = True
         self.save()
         

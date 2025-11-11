@@ -37,10 +37,12 @@ const initApp = async () => {
   const authStore = useAuthStore();
   authStore.initialize();
 
-  await fetch('/api/csrf/', {
-    method: 'GET',
-    credentials: 'include',
-  });
+  // TODO: Come up with a better way to handle CSRF tokens
+  // This is a temporary solution to fetch the CSRF token from the backend
+  // await fetch('/api/csrf/', {
+  //   method: 'GET',
+  //   credentials: 'include',
+  // });
   
   app.mount("#app");
 };

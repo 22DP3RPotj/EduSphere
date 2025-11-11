@@ -33,34 +33,12 @@ class LoginForm(forms.Form):
                 raise forms.ValidationError("Invalid email or password")
         return cleaned_data
 
+
 class RegisterForm(UserCreationForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields['username'].widget.attrs.update({
-            'placeholder': 'johndoe',
-            'autocomplete': 'username'
-        })
-        self.fields['name'].widget.attrs.update({
-            'placeholder': 'John Doe',
-            'autocomplete': 'name'
-        })
-        self.fields['email'].widget.attrs.update({
-            'placeholder': 'johndoe@gmail.com',
-            'autocomplete': 'email'
-        })
-        self.fields['password1'].widget.attrs.update({
-            'placeholder': '••••••••',
-            'autocomplete': 'new-password'
-        })
-        self.fields['password2'].widget.attrs.update({
-            'placeholder': '••••••••',
-            'autocomplete': 'new-password'
-        })
-
     class Meta:
         model = User
         fields = ['username', 'name', 'email', 'password1', 'password2']
+
 
 class RoomForm(ModelForm):
     name = forms.CharField(

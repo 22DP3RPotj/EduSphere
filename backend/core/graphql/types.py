@@ -1,6 +1,6 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from ..models import User, Room, Topic, Message
+from ..models import User, Room, Topic, Message, Report
 
 
 class UserType(DjangoObjectType):
@@ -27,6 +27,25 @@ class MessageType(DjangoObjectType):
     class Meta:
         model = Message
         fields = ("id", "user", "room", "body", "edited", "created", "updated")
+
+class ReportType(DjangoObjectType):
+    class Meta:
+        model = Report
+        fields = ("id", "user", "room", "body", "reason", "status", "moderator_note", "moderator", "created", "updated")
+
+class ReportReasonEnum(graphene.Enum):
+    SPAM = 'SPAM'
+    HARASSMENT = 'HARASSMENT'
+    INAPPROPRIATE_CONTENT = 'INAPPROPRIATE_CONTENT'
+    HATE_SPEECH = 'HATE_SPEECH'
+    OTHER = 'OTHER'
+
+
+class ReportStatusEnum(graphene.Enum):
+    PENDING = 'PENDING'
+    UNDER_REVIEW = 'UNDER_REVIEW'
+    RESOLVED = 'RESOLVED'
+    DISMISSED = 'DISMISSED'
 
 
 class AuthStatusType(graphene.ObjectType):

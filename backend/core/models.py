@@ -140,3 +140,56 @@ class Message(models.Model):
         self.body = body
         self.save()
         
+
+class Report(models.Model):
+    class ReportStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        UNDER_REVIEW = 'UNDER_REVIEW', 'Under Review'
+        RESOLVED = 'RESOLVED', 'Resolved'
+        DISMISSED = 'DISMISSED', 'Dismissed'
+
+    class ReportReason(models.TextChoices):
+        SPAM = 'SPAM', 'Spam'
+        HARASSMENT = 'HARASSMENT', 'Harassment'
+        INAPPROPRIATE_CONTENT = 'INAPPROPRIATE_CONTENT', 'Inappropriate Content'
+        HATE_SPEECH = 'HATE_SPEECH', 'Hate Speech'
+        OTHER = 'OTHER', 'Other'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reports')
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='reports')
+    body = models.TextField(max_length=2048, validators=[MaxLengthValidator(2048)])
+    reason = models.CharField(max_length=32, choices=ReportReason.choices)
+    status = models.CharField(max_length=32, choices=ReportStatus.choices, default=ReportStatus.PENDING)
+    moderator_note = models.TextField(max_length=512, blank=True, default='', validators=[MaxLengthValidator(512)])
+    moderator = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='moderated_reports'
+    )
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=['user', 'room'],
+        #         name='unique_report_per_user_room',
+        #         violation_error_message='You have already reported this room.'
+        #     )
+        # ]
+        indexes = [
+            models.Index(fields=['status', 'created']),
+            models.Index(fields=['user', 'created']),
+            models.Index(fields=['room', 'created']),
+        ]
+        ordering = ['-created']
+
+    def __str__(self):
+        return f"Report by {self.user.username} on {self.room.name}"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

@@ -4,6 +4,7 @@ from .topic import TopicQuery
 from .user import UserQuery
 from .room import RoomQuery
 from .message import MessageQuery
+from .report import ReportQuery
 
 
 class Query(
@@ -12,6 +13,7 @@ class Query(
     UserQuery,
     RoomQuery,
     MessageQuery,
+    ReportQuery,
     graphene.ObjectType
 ):
     pass

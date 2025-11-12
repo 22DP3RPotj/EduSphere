@@ -117,6 +117,12 @@ class JoinRoom(graphene.Mutation):
             )
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+        
+        if room.participants.filter(id=info.context.user.id).exists():
+            raise GraphQLError(
+                "Already a participant of this room",
+                extensions={"code": "ALREADY_JOINED"}
+            )
 
         room.participants.add(info.context.user)
         return JoinRoom(room=room)

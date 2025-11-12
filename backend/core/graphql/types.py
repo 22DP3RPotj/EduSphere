@@ -33,19 +33,8 @@ class ReportType(DjangoObjectType):
         model = Report
         fields = ("id", "user", "room", "body", "reason", "status", "moderator_note", "moderator", "created", "updated")
 
-class ReportReasonEnum(graphene.Enum):
-    SPAM = 'SPAM'
-    HARASSMENT = 'HARASSMENT'
-    INAPPROPRIATE_CONTENT = 'INAPPROPRIATE_CONTENT'
-    HATE_SPEECH = 'HATE_SPEECH'
-    OTHER = 'OTHER'
-
-
-class ReportStatusEnum(graphene.Enum):
-    PENDING = 'PENDING'
-    UNDER_REVIEW = 'UNDER_REVIEW'
-    RESOLVED = 'RESOLVED'
-    DISMISSED = 'DISMISSED'
+ReportReasonEnum = graphene.Enum.from_enum(Report.ReportReason)
+ReportStatusEnum = graphene.Enum.from_enum(Report.ReportStatus)
 
 
 class AuthStatusType(graphene.ObjectType):

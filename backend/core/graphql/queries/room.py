@@ -40,7 +40,7 @@ class RoomQuery(graphene.ObjectType):
     def resolve_rooms(self, info, host_slug=None, search=None, topics=None):
         queryset = Room.objects.annotate(
             participants_count=Count('participants')
-        ).select_related('host').prefetch_related('topics')
+        ).select_related('host').prefetch_related('topics', 'participants')
 
         if host_slug:
             queryset = queryset.filter(host__username=host_slug)

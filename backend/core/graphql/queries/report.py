@@ -24,7 +24,7 @@ class ReportQuery(graphene.ObjectType):
 
     @login_required
     def resolve_my_reports(self, info):
-        return Report.objects.filter(user=info.context.user).select_related('room', 'moderator')
+        return Report.objects.filter(user=info.context.user).select_related('room', 'moderator', 'user')
 
     @login_required
     def resolve_report(self, info, report_id):

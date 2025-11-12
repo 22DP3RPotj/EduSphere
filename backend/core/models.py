@@ -154,6 +154,11 @@ class Report(models.Model):
         INAPPROPRIATE_CONTENT = 'INAPPROPRIATE_CONTENT', 'Inappropriate Content'
         HATE_SPEECH = 'HATE_SPEECH', 'Hate Speech'
         OTHER = 'OTHER', 'Other'
+        
+    ACTIVE_STATUSES = (
+        ReportStatus.PENDING,
+        ReportStatus.UNDER_REVIEW,
+    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reports')
@@ -173,13 +178,14 @@ class Report(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        # constraints = [
-        #     models.UniqueConstraint(
-        #         fields=['user', 'room'],
-        #         name='unique_report_per_user_room',
-        #         violation_error_message='You have already reported this room.'
-        #     )
-        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'room'],
+                condition=Q(status__in=['PENDING', 'UNDER_REVIEW']),
+                name='unique_active_report_per_user_room',
+                violation_error_message='You already have an active report targeting this room.'
+            )
+        ]
         indexes = [
             models.Index(fields=['status', 'created']),
             models.Index(fields=['user', 'created']),
@@ -193,3 +199,11 @@ class Report(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    @classmethod
+    def active_reports(cls, **filters):
+        return cls.objects.filter(status__in=cls.ACTIVE_STATUSES, **filters)
+
+    @property
+    def is_active_report(self):
+        return self.status in self.ACTIVE_STATUSES

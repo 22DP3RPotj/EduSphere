@@ -23,6 +23,9 @@ class MessageQuery(graphene.ObjectType):
             )
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+        
+        if not room.participants.filter(id=info.context.user.id).exists():
+            raise GraphQLError("Not a participant", extensions={"code": "PERMISSION_DENIED"})
 
         return room.message_set.all().order_by('created')
     

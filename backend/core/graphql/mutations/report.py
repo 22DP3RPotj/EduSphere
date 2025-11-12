@@ -2,6 +2,7 @@ import graphene
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
+from django.db import transaction, IntegrityError
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.core.models import Report, Room
 
@@ -13,7 +14,7 @@ class CreateReport(graphene.Mutation):
         body = graphene.String(required=True)
 
     report = graphene.Field(ReportType)
-
+    
     @login_required
     def mutate(self, info, room_id, reason, body):
         try:
@@ -27,21 +28,28 @@ class CreateReport(graphene.Mutation):
                 extensions={"code": "NOT_PARTICIPANT"}
             )
 
-        if Report.objects.filter(user=info.context.user, room=room).exists():
+        if Report.active_reports(user=info.context.user, room=room).exists():
             raise GraphQLError(
-                "You have already reported this room",
-                extensions={"code": "ALREADY_REPORTED"}
+                "You already have an active report targeting this room.",
+                extensions={"code": "ALREADY_REPORTED"},
             )
 
-        report = Report(
-            user=info.context.user,
-            room=room,
-            reason=reason,
-            body=body
-        )
-        report.save()
-
-        return CreateReport(report=report)
+        try:
+            with transaction.atomic():
+                report = Report(
+                    user=info.context.user,
+                    room=room,
+                    reason=reason,
+                    body=body
+                )
+                report.save()
+                return CreateReport(report=report)
+                
+        except IntegrityError:
+            raise GraphQLError(
+                "Could not create report due to a conflict.",
+                extensions={"code": "CONFLICT"},
+            )
 
 
 class UpdateReport(graphene.Mutation):

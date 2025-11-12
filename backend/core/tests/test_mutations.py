@@ -133,7 +133,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
 
 
 class RoomMutationsTests(JSONWebTokenTestCase):
-
     def setUp(self):
         self.user = User.objects.create_user(
             name="TestHost",
@@ -231,3 +230,69 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         self.assertIsNone(result.errors)
         message.refresh_from_db()
         self.assertEqual(message.body, "Updated")
+
+class UserAdminMutationsTests(JSONWebTokenTestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            name="AdminUser",
+            username="adminuser",
+            email="admin@email.com",
+            is_staff=True,
+            is_superuser=True
+        )
+        self.user1 = User.objects.create_user(
+            name="User1",
+            username="user1", 
+            email="user1@email.com",
+        )
+        self.user2 = User.objects.create_user(
+            name="User2",
+            username="user2",
+            email="user2@email.com", 
+        )
+
+    def test_update_user_active_status(self):
+        self.client.authenticate(self.admin)
+        mutation = """
+            mutation UpdateUserActiveStatus($userIds: [UUID!]!, $isActive: Boolean!) {
+                updateUserActiveStatus(userIds: $userIds, isActive: $isActive) {
+                    success
+                    updatedCount
+                }
+            }
+        """
+        variables = {
+            "userIds": [str(self.user1.id), str(self.user2.id)],
+            "isActive": False
+        }
+        result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
+        self.assertTrue(result.data["updateUserActiveStatus"]["success"])
+        self.assertEqual(result.data["updateUserActiveStatus"]["updatedCount"], 2)
+        
+        self.user1.refresh_from_db()
+        self.user2.refresh_from_db()
+        self.assertFalse(self.user1.is_active)
+        self.assertFalse(self.user2.is_active)
+
+    def test_update_user_staff_status(self):
+        self.client.authenticate(self.admin)
+        mutation = """
+            mutation UpdateUserStaffStatus($userIds: [UUID!]!, $isStaff: Boolean!) {
+                updateUserStaffStatus(userIds: $userIds, isStaff: $isStaff) {
+                    success
+                    updatedCount
+                }
+            }
+        """
+        variables = {
+            "userIds": [str(self.user1.id)],
+            "isStaff": True
+        }
+        result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
+        self.assertTrue(result.data["updateUserStaffStatus"]["success"])
+        self.assertEqual(result.data["updateUserStaffStatus"]["updatedCount"], 1)
+        
+        self.user1.refresh_from_db()
+        self.assertTrue(self.user1.is_staff)

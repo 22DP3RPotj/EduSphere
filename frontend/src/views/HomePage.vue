@@ -359,7 +359,7 @@ const pendingTopics = ref<string[]>([]);
 // Computed variables for GraphQL queries
 const homepageVariables = computed(() => ({
   search: appliedSearchQuery.value || null,
-  topic: selectedTopics.value.length > 0 ? selectedTopics.value : null
+  topics: selectedTopics.value.length > 0 ? selectedTopics.value : null
 }));
 
 const userVariables = computed(() => ({

@@ -1,6 +1,7 @@
 import { ref, type Ref } from "vue"
 import { useAuthStore } from "@/stores/auth.store"
-import { useRoomApi } from '../api/room.api';
+import { ROOM_MESSAGES_QUERY } from "@/api/graphql";
+import { apolloClient } from "@/api/apollo.client";
 import type { Room, Message } from "@/types"
 import type {
   ConnectionStatus,
@@ -14,15 +15,27 @@ import type {
 } from "@/types"
 
 export function useWebSocket(userSlug: string, roomSlug: string) {
-  const { fetchRoomMessages } = useRoomApi();
   const socket: Ref<WebSocket | null> = ref(null)
   const messages: Ref<Message[]> = ref([])
   const connectionStatus: Ref<ConnectionStatus> = ref("disconnected")
   const connectionError: Ref<string | null> = ref(null)
+  const reconnectAttempts = ref<number>(0)
+  const isConnected = ref<boolean>(false)
+  
   const authStore = useAuthStore()
-  const reconnectAttempts = ref(0)
+  
   const MAX_RECONNECT_ATTEMPTS = 5
   const RECONNECT_DELAY = 3000
+
+  async function fetchRoomMessages(hostSlug: string, roomSlug: string): Promise<Message[]> {
+    const response = await apolloClient.query({
+      query: ROOM_MESSAGES_QUERY,
+      variables: { hostSlug, roomSlug },
+      fetchPolicy: 'network-only'
+    });
+
+    return response.data?.messages || [];
+  }
 
   async function fetchInitialMessages(): Promise<{ success: boolean; error?: string }> {
     try {
@@ -62,6 +75,7 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
         connectionStatus.value = "connected"
         connectionError.value = null
         reconnectAttempts.value = 0
+        isConnected.value = true
       }
 
       socket.value.onmessage = (event: MessageEvent) => {
@@ -91,11 +105,13 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
         console.error("[v0] WebSocket error:", err)
         connectionStatus.value = "error"
         connectionError.value = "Connection error occurred"
+        isConnected.value = false
         attemptReconnect()
       }
 
       socket.value.onclose = (event) => {
         connectionStatus.value = "disconnected"
+        isConnected.value = false
         if (!event.wasClean) {
           connectionError.value = "Connection lost"
           attemptReconnect()
@@ -234,6 +250,7 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
     messages,
     connectionStatus,
     connectionError,
+    isConnected,
     initializeWebSocket,
     sendMessage,
     deleteMessage,

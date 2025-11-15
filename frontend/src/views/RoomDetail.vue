@@ -4,7 +4,7 @@
     <div v-if="showEditForm" class="edit-modal-overlay" @click="handleEditCancel">
       <div class="edit-modal-content" @click.stop>
         <EditRoomForm 
-          :room="room!"
+          :room="room"
           @cancel="handleEditCancel"
           @updated="handleEditComplete"
         />
@@ -49,6 +49,15 @@
           <span class="participants-count">
             <font-awesome-icon icon="users" /> {{ participants.length }}
           </span>
+          
+          <!-- Connection status -->
+          <div
+            v-if="canSendMessage" 
+            class="connection-dot" 
+            :class="connectionStatus"
+            :title="connectionStatusTitle"
+            @click="(connectionStatus === 'error' || connectionStatus === 'disconnected') && retryWebSocketConnection()"
+          ></div>
         </div>
         
         <div class="room-header-right">
@@ -77,6 +86,24 @@
             Join Room
           </button>
         </div>
+      </div>
+      
+      <!-- Error display for room operations -->
+      <div v-if="roomErrors.generalErrors.length > 0" class="error-message room-error-banner">
+        <font-awesome-icon icon="exclamation-circle" />
+        <div class="error-list">
+          <p v-for="(errMsg, index) in roomErrors.generalErrors" :key="index">{{ errMsg }}</p>
+        </div>
+        <button class="btn-retry" @click="retryRoomOperations">Retry</button>
+      </div>
+
+      <!-- Error display for WebSocket -->
+      <div v-if="websocketErrors.generalErrors.length > 0" class="error-message websocket-error-banner">
+        <font-awesome-icon icon="exclamation-triangle" />
+        <div class="error-list">
+          <p v-for="(errMsg, index) in websocketErrors.generalErrors" :key="index">{{ errMsg }}</p>
+        </div>
+        <button class="btn-retry" @click="retryWebSocketConnection">Reconnect</button>
       </div>
       
       <!-- Main content area with sidebar and conversation -->
@@ -112,6 +139,14 @@
         <!-- Room conversation -->
         <div class="room-conversation">
           <div ref="messagesContainerRef" class="messages-container">
+            <!-- Error state for messages -->
+            <div v-if="messageErrors.generalErrors.length > 0" class="error-state">
+              <font-awesome-icon icon="exclamation-triangle" size="2x" />
+              <p>Failed to load messages</p>
+              <button class="btn-retry" @click="retryMessages">Retry</button>
+            </div>
+
+            <!-- Messages content -->
             <MessageView
               v-for="message in messages" 
               :key="message.id" 
@@ -125,6 +160,14 @@
           
           <!-- Message input -->
           <div v-if="canSendMessage" class="message-input-container">
+            <!-- Error display for message operations -->
+            <div v-if="messageOperationErrors.generalErrors.length > 0" class="error-message message-error">
+              <font-awesome-icon icon="exclamation-circle" />
+              <div class="error-list">
+                <p v-for="(errMsg, index) in messageOperationErrors.generalErrors" :key="index">{{ errMsg }}</p>
+              </div>
+            </div>
+
             <form id="messageForm" @submit.prevent="sendMessage">
               <div class="input-wrapper">
                 <input 
@@ -158,8 +201,9 @@
     
     <!-- Error state -->
     <div v-else class="room-error">
+      <font-awesome-icon icon="door-closed" size="3x" />
       <p>Room not found or you don't have access.</p>
-      <router-link to="/">Go back to home</router-link>
+      <router-link to="/" class="btn-home">Go back to home</router-link>
     </div>
   </div>
 </template>
@@ -168,9 +212,9 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { useRoomApi } from '@/api/room.api';
-import { useWebSocket } from '@/api/websocket';
-import { useNotifications } from '@/composables/useNotifications';
+import { useRoomQuery, useRoomMessagesQuery, useDeleteRoom, useJoinRoom } from '@/composables/useRooms';
+import { useWebSocket } from '@/composables/useWebSocket';
+import { parseGraphQLError } from '@/utils/errorParser';
 
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
@@ -180,11 +224,10 @@ import type { User, Room } from '@/types';
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
-const notifications = useNotifications();
-const { deleteRoom, joinRoom, fetchRoom } = useRoomApi();
 
-const room = ref<Room | null>(null);
-const loading = ref<boolean>(false);
+const hostSlug = route.params.hostSlug as string;
+const roomSlug = route.params.roomSlug as string;
+
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
 const showSidebar = ref<boolean>(window.innerWidth > 768);
@@ -192,27 +235,59 @@ const isMobileView = ref<boolean>(window.innerWidth <= 768);
 const showEditForm = ref<boolean>(false);
 const showRoomActionsMenu = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
+const isWebSocketInitialized = ref<boolean>(false);
 
-const {
-  messages,
-  initializeWebSocket,
-  sendMessage: sendWebSocketMessage,
-  deleteMessage: deleteWebSocketMessage,
-  updateMessage: updateWebSocketMessage,
-  closeWebSocket,
-} = useWebSocket(
-  route.params.hostSlug as string,
-  route.params.roomSlug as string
-);
+// Use WebSocket messages when available, otherwise use initial GraphQL messages
+const messages = computed(() => {
+  return websocketMessages.value.length > 0 ? websocketMessages.value : initialMessages.value;
+});
+
+const shouldShowMessages = computed(() => {
+  return isParticipant.value;
+});
+
+// Error handling
+const roomErrors = computed(() => {
+  const errors = [];
+  if (roomError.value) errors.push(roomError.value);
+  if (deleteError.value) errors.push(deleteError.value);
+  if (joinError.value) errors.push(joinError.value);
+  
+  if (errors.length === 0) return { fieldErrors: {}, generalErrors: [] };
+  
+  const combinedError = new Error(errors.map(err => err.message).join('; '));
+  return parseGraphQLError(combinedError);
+});
+
+const messageErrors = computed(() => {
+  if (!messagesError.value || !shouldShowMessages.value) return { fieldErrors: {}, generalErrors: [] };
+  return parseGraphQLError(messagesError.value);
+});
+
+const websocketErrors = computed(() => {
+  if (!websocketError.value) return { fieldErrors: {}, generalErrors: [] };
+  return { fieldErrors: {}, generalErrors: [websocketError.value] };
+});
+
+const messageOperationErrors = ref<{ fieldErrors: Record<string, string[]>; generalErrors: string[] }>({ 
+  fieldErrors: {}, 
+  generalErrors: [] 
+});
+
+const connectionStatusTitle = computed(() => {
+  switch (connectionStatus.value) {
+    case 'connected': return 'Connected to chat';
+    case 'connecting': return 'Connecting to chat...';
+    case 'error': return 'Connection error - click to reconnect';
+    case 'disconnected': return 'Disconnected - click to reconnect';
+    default: return 'Connection status unknown';
+  }
+});
+
+const loading = computed(() => roomLoading.value || messagesLoading.value || deleteLoading.value || joinLoading.value);
 
 const isHost = computed(() => {
   return room.value?.host?.id === authStore.user?.id;
-});
-
-const isParticipant = computed(() => {
-  const user = authStore.user;
-  if (!room.value || !user) return false;
-  return room.value.participants.some(p => p.id === user.id);
 });
 
 const canSendMessage = computed(() => {
@@ -238,27 +313,115 @@ const participants = computed<ParticipantWithHost[]>(() => {
   return allParticipants;
 });
 
+const isParticipant = computed(() => {
+  const user = authStore.user;
+  if (!room.value || !user || !room.value.participants) return false;
+  
+  return room.value.participants.some((p: User) => p.id === user.id);
+});
+
+const { 
+  room, 
+  loading: roomLoading, 
+  error: roomError, 
+  refetch: refetchRoom 
+} = useRoomQuery(hostSlug, roomSlug);
+
+const { 
+  messages: initialMessages, 
+  loading: messagesLoading, 
+  error: messagesError,
+  refetch: refetchMessages 
+} = useRoomMessagesQuery(hostSlug, roomSlug, { enabled: isParticipant });
+
+const { 
+  deleteRoom: deleteRoomMutation, 
+  loading: deleteLoading, 
+  error: deleteError 
+} = useDeleteRoom();
+
+const { 
+  joinRoom: joinRoomMutation, 
+  loading: joinLoading, 
+  error: joinError 
+} = useJoinRoom();
+
+const {
+  messages: websocketMessages,
+  initializeWebSocket,
+  sendMessage: sendWebSocketMessage,
+  deleteMessage: deleteWebSocketMessage,
+  updateMessage: updateWebSocketMessage,
+  closeWebSocket,
+  connectionError: websocketError,
+  connectionStatus,
+  isConnected
+} = useWebSocket(hostSlug, roomSlug);
+
+// Error recovery functions
+function retryRoomOperations() {
+  refetchRoom();
+}
+
+async function retryWebSocketConnection() {
+  if (authStore.isAuthenticated && isParticipant.value && room.value) {
+    clearMessageOperationErrors();
+    
+    closeWebSocket();
+    isWebSocketInitialized.value = false;
+    
+    // Reconnection delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    try {
+      await initializeWebSocket();
+      isWebSocketInitialized.value = true;
+      
+      console.log('WebSocket reconnected successfully');
+    } catch (error) {
+      console.error('Failed to reconnect WebSocket:', error);
+      isWebSocketInitialized.value = false;
+    }
+  }
+}
+
+function retryMessages() {
+  refetchMessages();
+}
+
+function clearMessageOperationErrors() {
+  messageOperationErrors.value = { fieldErrors: {}, generalErrors: [] };
+}
+
 async function handleMessageDelete(messageId: string) {
+  clearMessageOperationErrors();
   try {
     const success = deleteWebSocketMessage(messageId);
     
     if (!success) {
-      notifications.warning('Failed to delete message. WebSocket connection may be lost.');
+      messageOperationErrors.value = {
+        fieldErrors: {},
+        generalErrors: ['Failed to delete message. Please try again.']
+      };
     }
   } catch (error) {
-    notifications.error('Error deleting message: ' + (error instanceof Error ? error.message : String(error)));
+    messageOperationErrors.value = parseGraphQLError(error);
   }
 }
 
 async function handleMessageUpdate(messageId: string, newBody: string) {
+  clearMessageOperationErrors();
   try {
     const success = updateWebSocketMessage(messageId, newBody);
     
     if (!success) {
-      notifications.warning('Failed to update message. WebSocket connection may be lost.');
+      messageOperationErrors.value = {
+        fieldErrors: {},
+        generalErrors: ['Failed to update message. Please try again.']
+      };
     }
   } catch (error) {
-    notifications.error('Error updating message: ' + (error instanceof Error ? error.message : String(error)));
+    messageOperationErrors.value = parseGraphQLError(error);
   }
 }
 
@@ -269,10 +432,18 @@ async function handleRoomDelete() {
 
 async function confirmRoomDeletion() {
   showDeleteConfirmation.value = false;
+  clearMessageOperationErrors();
 
-  const success = await deleteRoom(room.value!.id);
-  if (success) {
+  if (!room.value) return;
+
+  const result = await deleteRoomMutation(room.value.id);
+  if (result.success) {
     router.push('/');
+  } else {
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: [result.error || 'Failed to delete room']
+    };
   }
 }
 
@@ -289,9 +460,8 @@ function handleEditCancel() {
   showEditForm.value = false;
 }
 
-async function handleEditComplete(updatedRoom: Room) {
+async function handleEditComplete() {
   showEditForm.value = false;
-  room.value = updatedRoom;
 }
 
 function toggleRoomActionsMenu() {
@@ -318,30 +488,54 @@ function toggleSidebar() {
   }
 }
 
-//  TODO: Why fetch twice?
 async function handleJoin() {
-  await joinRoom(room.value!.id);
-  loading.value = true;
-  room.value = await fetchRoom(room.value!.host.username, room.value!.slug);
-  loading.value = false;
+  if (!room.value) return;
   
-  if (authStore.isAuthenticated && isParticipant.value) {
-    await initializeWebSocket();
+  clearMessageOperationErrors();
 
+  const result = await joinRoomMutation(room.value.id);
+  if (result.success) {
+    await refetchRoom();
+    
     nextTick(() => {
       scrollToBottom();
     });
+  } else {
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: [result.error || 'Failed to join room']
+    };
   }
 }
 
 function sendMessage() {
   if (!messageInput.value.trim()) return;
   
+  clearMessageOperationErrors();
+
+  if (!isConnected.value) {
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: ['Connection not ready. Please wait a moment.']
+    };
+    return;
+  }
+  
   try {
-    sendWebSocketMessage(messageInput.value);
-    messageInput.value = '';
+    const success = sendWebSocketMessage(messageInput.value);
+    if (success) {
+      messageInput.value = '';
+    } else {
+      messageOperationErrors.value = {
+        fieldErrors: {},
+        generalErrors: ['Failed to send message. Please try again.']
+      };
+    }
   } catch (err) {
-    notifications.error(err);
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: ['Failed to send message: ' + (err instanceof Error ? err.message : String(err))]
+    };
   }
 }
 
@@ -359,42 +553,28 @@ function scrollToBottom() {
 onMounted(async () => {
   try {
     authStore.initialize();
-    loading.value = true;
-    room.value = await fetchRoom(
-      route.params.hostSlug as string,
-      route.params.roomSlug as string
-    );
-    loading.value = false;
     
-    if (authStore.isAuthenticated && isParticipant.value) {
-      await initializeWebSocket();
-    }
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('click', closeRoomActionsMenu);
     
     nextTick(() => {
       scrollToBottom();
     });
-    
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('click', closeRoomActionsMenu);
   } catch (error) {
-    notifications.error(error);
+    console.error('Error initializing room:', error);
   }
 });
 
-watch(() => authStore.isAuthenticated, async (newValue) => {
-  if (newValue && isParticipant.value && room.value) {
-    await initializeWebSocket();
-  } else if (!newValue) {
-    closeWebSocket();
-  }
-});
-
-watch(() => route.params.room, async () => {
-  closeWebSocket();
-  if (authStore.isAuthenticated && isParticipant.value) {
-    await initializeWebSocket();
-  }
-});
+watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.value], 
+  ([newRoom, isAuthenticated, isParticipant]) => {
+    if (newRoom && isAuthenticated && isParticipant) {
+      initializeWebSocket();
+    } else {
+      closeWebSocket();
+    }
+  }, 
+  { immediate: true }
+);
 
 watch(() => messages.value.length, (newLength, oldLength) => {
   if (newLength > oldLength) {
@@ -465,6 +645,13 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   align-items: center;
   justify-content: center;
   height: 100%;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.room-error {
+  color: #f44336;
 }
 
 .spinner {
@@ -601,6 +788,118 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 
 .room-action-item.delete-action:hover {
   background-color: rgba(244, 67, 54, 0.1);
+}
+
+/* Error states */
+.error-message {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #f44336;
+  padding: 0.75rem;
+  margin: 0.5rem 1rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.room-error-banner {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.websocket-error-banner {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  color: #ea580c;
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.error-message svg {
+  flex-shrink: 0;
+}
+
+.error-list {
+  flex: 1;
+}
+
+.error-list p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.btn-retry {
+  padding: 0.4rem 0.75rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.btn-retry:hover {
+  background-color: #b91c1c;
+}
+
+.websocket-error-banner .btn-retry {
+  background-color: #ea580c;
+}
+
+.websocket-error-banner .btn-retry:hover {
+  background-color: #c2410c;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #f44336;
+  gap: 1rem;
+}
+
+.error-state svg {
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.error-state p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.message-error {
+  margin: 0 0 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+}
+
+.btn-home {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-home:hover {
+  background-color: var(--primary-hover);
 }
 
 .sidebar-header {
@@ -767,7 +1066,7 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 .participant-item {
   display: flex;
   align-items: center;
-  padding: 0, 0.5rem;
+  padding: 0 0.5rem;
   margin: 0.5rem 0;
   border-radius: var(--radius);
   cursor: pointer;
@@ -913,5 +1212,37 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 
 .auth-prompt a:hover {
   text-decoration: underline;
+}
+
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.connection-dot.connected {
+  background-color: #10b981; /* green */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.connection-dot.connecting {
+  background-color: #f59e0b; /* amber */
+  animation: pulse 1.5s infinite;
+}
+
+.connection-dot.error, .connection-dot.disconnected {
+  background-color: #ef4444; /* red */
+  cursor: pointer;
+}
+
+.connection-dot.error:hover, .connection-dot.disconnected:hover {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 </style>

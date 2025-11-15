@@ -34,6 +34,7 @@ const routes = [
   {
     path: "/u/:hostSlug/:roomSlug",
     component: () => import("@/views/RoomDetail.vue"),
+    meta: { requiresAuth: true }
   },
 ];
 

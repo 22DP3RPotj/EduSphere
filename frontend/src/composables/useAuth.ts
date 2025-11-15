@@ -12,6 +12,7 @@ import {
 } from "@/api/graphql"
 
 import type { LoginInput, RegisterInput, UpdateUserInput, TokenPayload } from "@/types"
+import { parseGraphQLError } from "@/utils/errorParser"
 
 export function useAuth() {
   const authStore = useAuthStore()
@@ -72,28 +73,47 @@ export function useAuth() {
   }
 
   async function login(email: string, password: string) {
-    authStore.resetTokenRevoked()
+    authStore.resetTokenRevoked();
 
-    const result = await loginMutate({ email, password } satisfies LoginInput)
+    try {
+      const result = await loginMutate({ email, password } satisfies LoginInput);
 
-    if (result?.data?.tokenAuth?.success) {
-      const { payload, refreshExpiresIn, user } = result.data.tokenAuth
+      if (result?.data?.tokenAuth?.success) {
+        const { payload, refreshExpiresIn, user } = result.data.tokenAuth;
 
-      if (!validateTokenPayload(payload as TokenPayload) || !user?.id) {
-        return { success: false, error: "Invalid authentication token" }
+        if (!validateTokenPayload(payload as TokenPayload) || !user?.id) {
+          return { 
+            success: false, 
+            error: "Invalid authentication token",
+            fieldErrors: {},
+            generalErrors: ["Invalid authentication token"]
+          };
+        }
+
+        authStore.setTokenExpiration((payload as TokenPayload).exp);
+        if (refreshExpiresIn) {
+          authStore.setRefreshTokenExpiration(refreshExpiresIn);
+        }
+        authStore.setAuthenticated(true);
+        authStore.setUser(user);
+
+        return { success: true };
       }
 
-      authStore.setTokenExpiration((payload as TokenPayload).exp)
-      if (refreshExpiresIn) {
-        authStore.setRefreshTokenExpiration(refreshExpiresIn)
-      }
-      authStore.setAuthenticated(true)
-      authStore.setUser(user)
-
-      return { success: true }
+      return { 
+        success: false, 
+        error: "Login failed",
+        fieldErrors: {},
+        generalErrors: ["Login failed"]
+      };
+    } catch (error) {
+      const parsedError = parseGraphQLError(error);
+      return {
+        success: false,
+        error: "Login failed",
+        ...parsedError
+      };
     }
-
-    return { success: false, error: "Login failed" }
   }
 
   async function register(data: RegisterInput) {

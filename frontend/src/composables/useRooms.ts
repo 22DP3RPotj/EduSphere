@@ -1,4 +1,4 @@
-import { computed } from "vue"
+import { computed, type Ref } from "vue"
 import { useMutation, useQuery } from "@vue/apollo-composable"
 import {
   CREATE_ROOM_MUTATION,
@@ -29,11 +29,12 @@ export function useRoomQuery(hostSlug: string, roomSlug: string) {
   }
 }
 
-export function useRoomMessagesQuery(hostSlug: string, roomSlug: string) {
+export function useRoomMessagesQuery(hostSlug: string, roomSlug: string, options?: { enabled?: Ref<boolean> }) {
   const { result, loading, error, refetch } = useQuery(
     ROOM_MESSAGES_QUERY,
     { hostSlug, roomSlug },
     {
+      enabled: options?.enabled?.value ?? true,
       fetchPolicy: "network-only",
     },
   )

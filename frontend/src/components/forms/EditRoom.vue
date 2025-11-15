@@ -48,7 +48,7 @@
             @keydown.down.prevent="onArrowDown"
             @keydown.up.prevent="onArrowUp"
             @keydown.enter="onEnter"
-            @blur="showSuggestions = false"
+            @blur="hideSuggestions"
             @keydown.esc="showSuggestions = false"
           />
           <div v-show="showSuggestions" class="suggestions-list">
@@ -59,7 +59,8 @@
                 active: index === selectedTopicIndex,
                 selected: roomForm.topicNames?.includes(topic)
               }]"
-              @click="selectTopic(topic)"
+              @mousedown="selectTopic(topic)"
+              @mouseenter="selectedTopicIndex = index"
             >
               <span>{{ topic }}</span>
               <span v-if="roomForm.topicNames?.includes(topic)" class="selected-indicator">
@@ -172,12 +173,11 @@ const filteredTopics = computed(() => {
     );
 });
 
-watch(roomForm, () => {
-  // Clear errors when form changes
-  if (error.value) {
-    // The error will be cleared on next mutation attempt
-  }
-}, { deep: true });
+// watch(roomForm, () => {
+//   if (error.value) {
+//     error.value = null;
+//   }
+// }, { deep: true });
 
 function scrollToSelectedTopic() {
   if (selectedTopicIndex.value >= 0) {
@@ -251,6 +251,13 @@ function removeTopic(topicName: string) {
   if (roomForm.value.topicNames) {
     roomForm.value.topicNames = roomForm.value.topicNames.filter(t => t !== topicName);
   }
+}
+
+function hideSuggestions() {
+  setTimeout(() => {
+    showSuggestions.value = false;
+    selectedTopicIndex.value = -1;
+  }, 150);
 }
 
 async function submitUpdate() {

@@ -23,9 +23,9 @@
     </div>
     
     <!-- Error state -->
-    <div v-else-if="error" class="profile-error">
+    <div v-else-if="userError" class="profile-error">
       <p>Sorry, we couldn't load this profile.</p>
-      <button class="retry-button" @click="fetchUser">
+      <button class="retry-button" @click="() => refetchUser()">
         <font-awesome-icon icon="sync" />
         Retry
       </button>
@@ -122,6 +122,14 @@
                 {{ editLoading ? 'Saving...' : 'Save Changes' }}
               </button>
             </div>
+
+            <!-- Edit form errors -->
+            <div v-if="editFormErrors.generalErrors.length > 0" class="error-message edit-form-error">
+              <font-awesome-icon icon="exclamation-circle" />
+              <div class="error-list">
+                <p v-for="(errMsg, index) in editFormErrors.generalErrors" :key="index">{{ errMsg }}</p>
+              </div>
+            </div>
           </form>
         </div>
         
@@ -182,7 +190,7 @@
           
           <div v-else-if="tabsData.messages.error" class="tab-error">
             <p>Failed to load messages</p>
-            <button class="retry-button-small" @click="loadTabData('messages')">
+            <button class="retry-button-small" @click="tabsData.messages.refetch?.()">
               <font-awesome-icon icon="sync" /> Retry
             </button>
           </div>
@@ -220,7 +228,7 @@
           
           <div v-else-if="tabsData.hostedRooms.error" class="tab-error">
             <p>Failed to load hosted rooms</p>
-            <button class="retry-button-small" @click="loadTabData('hostedRooms')">
+            <button class="retry-button-small" @click="tabsData.hostedRooms.refetch?.()">
               <font-awesome-icon icon="sync" /> Retry
             </button>
           </div>
@@ -261,7 +269,7 @@
           
           <div v-else-if="tabsData.joinedRooms.error" class="tab-error">
             <p>Failed to load joined rooms</p>
-            <button class="retry-button-small" @click="loadTabData('joinedRooms')">
+            <button class="retry-button-small" @click="tabsData.joinedRooms.refetch?.()">
               <font-awesome-icon icon="sync" /> Retry
             </button>
           </div>
@@ -308,37 +316,65 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { apolloClient } from '@/api/apollo.client';
-import { useNotifications } from '@/composables/useNotifications';
 import { useAuthStore } from '@/stores/auth.store';
-import { useAuthApi } from '@/api/auth.api';
+import { useAuth } from '@/composables/useAuth';
+import { parseGraphQLError } from '@/utils/errorParser';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
-import type { User, Room, Message } from '@/types';
+import type { Room } from '@/types';
 
 import {
-    USER_QUERY,
-    MESSAGES_BY_USER_QUERY,
-    ROOMS_QUERY,
-    ROOMS_PARTICIPATED_BY_USER_QUERY
-} from '@/api/graphql';
+  useUserQuery,
+  useUserMessagesQuery,
+  useUserHostedRoomsQuery,
+  useUserJoinedRoomsQuery
+} from '@/composables/useProfile';
 
 const route = useRoute();
 const router = useRouter();
-const notifications = useNotifications();
 const authStore = useAuthStore();
-const authApi = useAuthApi();
+const { updateUser, updateUserLoading, updateUserError } = useAuth();
 
-const user = ref<User | null>(null);
-const loading = ref<boolean>(true);
-const error = ref<Error | null>(null);
+const username = computed(() => route.params.userSlug as string);
 
-// Edit mode state
+// User query
+const { 
+  user, 
+  loading: userLoading, 
+  error: userError, 
+  refetch: refetchUser 
+} = useUserQuery(username.value);
+
+// Tab queries
+const { 
+  messages: userMessages, 
+  loading: messagesLoading, 
+  error: messagesError, 
+  refetch: refetchMessages 
+} = useUserMessagesQuery(username.value);
+
+const { 
+  rooms: hostedRooms, 
+  loading: hostedRoomsLoading, 
+  error: hostedRoomsError, 
+  refetch: refetchHostedRooms 
+} = useUserHostedRoomsQuery(username.value);
+
+const { 
+  rooms: joinedRooms, 
+  loading: joinedRoomsLoading, 
+  error: joinedRoomsError, 
+  refetch: refetchJoinedRooms 
+} = useUserJoinedRoomsQuery(username.value);
+
+// Combined loading state
+const loading = computed(() => userLoading.value);
+
 type EditForm = { name: string; bio: string; avatar: File | null };
 const isEditing = ref<boolean>(false);
-const editLoading = ref<boolean>(false);
+const editLoading = computed(() => updateUserLoading.value);
 const editForm = ref<EditForm>({
   name: '',
   bio: '',
@@ -346,136 +382,59 @@ const editForm = ref<EditForm>({
 });
 const avatarPreview = ref<string | null>(null);
 
-// Tab data
-type TabKey = 'messages' | 'hostedRooms' | 'joinedRooms';
-type TabData<T> = {
-  loaded: boolean;
-  loading: boolean;
-  data: T[];
-  error: Error | null;
-};
-interface TabTypes {
-  messages: Message;
-  hostedRooms: Room;
-  joinedRooms: Room;
-}
-
-const activeTab = ref<TabKey>('messages');
-const tabsData = ref<{ [K in TabKey]: TabData<TabTypes[K]> }>({
-  messages: { loaded: false, loading: false, data: [], error: null },
-  hostedRooms: { loaded: false, loading: false, data: [], error: null },
-  joinedRooms: { loaded: false, loading: false, data: [], error: null }
+// Edit form errors
+const editFormErrors = ref<{ fieldErrors: Record<string, string[]>; generalErrors: string[] }>({ 
+  fieldErrors: {}, 
+  generalErrors: [] 
 });
 
-// Check if current user is viewing their own profile
+type TabKey = 'messages' | 'hostedRooms' | 'joinedRooms';
+// type TabData<T> = {
+//   loaded: boolean;
+//   loading: boolean;
+//   data: T[];
+//   error: Error | null;
+//   refetch?: () => void;
+// };
+
+const activeTab = ref<TabKey>('messages');
+
+const tabsData = computed(() => ({
+  messages: {
+    loaded: !!userMessages.value.length || !messagesLoading.value,
+    loading: messagesLoading.value,
+    data: userMessages.value,
+    error: messagesError.value,
+    refetch: refetchMessages
+  },
+  hostedRooms: {
+    loaded: !!hostedRooms.value.length || !hostedRoomsLoading.value,
+    loading: hostedRoomsLoading.value,
+    data: hostedRooms.value,
+    error: hostedRoomsError.value,
+    refetch: refetchHostedRooms
+  },
+  joinedRooms: {
+    loaded: !!joinedRooms.value.length || !joinedRoomsLoading.value,
+    loading: joinedRoomsLoading.value,
+    data: joinedRooms.value,
+    error: joinedRoomsError.value,
+    refetch: refetchJoinedRooms
+  }
+}));
+
 const isOwnProfile = computed(() => {
   return authStore.user && user.value && authStore.user.username === user.value.username;
 });
 
-
-
-async function fetchUser() {
-  loading.value = true;
-  error.value = null;
-  
-  try {
-    const { data } = await apolloClient.query({
-      query: USER_QUERY,
-      variables: { username: route.params.userSlug },
-      fetchPolicy: 'network-only'
-    });
-    
-    user.value = data.user;
-    
-    // Initialize edit form with current user data
-    if (user.value) {
-      editForm.value = {
-        name: user.value.name || '',
-        bio: user.value.bio || '',
-        avatar: null
-      };
-    }
-    
-    loadTabData(activeTab.value);
-  } catch (err) {
-    error.value = err instanceof Error ? err : new Error(String(err));
-    notifications.error('Error loading user profile');
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function loadTabData(tab: TabKey) {
-  if (tabsData.value[tab].loaded || tabsData.value[tab].loading) {
-    return;
-  }
-  
-  tabsData.value[tab].loading = true;
-  tabsData.value[tab].error = null;
-  
-  try {
-    switch (tab) {
-      case 'messages':
-        await fetchUserMessages();
-        break;
-      case 'hostedRooms':
-        await fetchHostedRooms();
-        break;
-      case 'joinedRooms':
-        await fetchJoinedRooms();
-        break;
-    }
-    
-    tabsData.value[tab].loaded = true;
-  } catch (err) {
-    tabsData.value[tab].error = err instanceof Error ? err : new Error(String(err));
-    notifications.error(`Error loading ${tab}`);
-  } finally {
-    tabsData.value[tab].loading = false;
-  }
-}
-
-async function fetchUserMessages() {
-  const { data } = await apolloClient.query({
-    query: MESSAGES_BY_USER_QUERY,
-    variables: { userSlug: user.value!.username },
-    fetchPolicy: 'network-only'
-  });
-  
-  tabsData.value.messages.data = data.messagesByUser || [];
-}
-
-async function fetchHostedRooms() {
-  const { data } = await apolloClient.query({
-    query: ROOMS_QUERY,
-    variables: { hostSlug: user.value!.username },
-    fetchPolicy: 'network-only'
-  });
-  
-  tabsData.value.hostedRooms.data = data.rooms || [];
-}
-
-async function fetchJoinedRooms() {
-  const { data } = await apolloClient.query({
-    query: ROOMS_PARTICIPATED_BY_USER_QUERY,
-    variables: { userSlug: user.value!.username },
-    fetchPolicy: 'network-only'
-  });
-  
-  tabsData.value.joinedRooms.data = data.roomsParticipatedByUser || [];
-}
-
 function setActiveTab(tab: TabKey) {
   activeTab.value = tab;
-  loadTabData(tab);
 }
 
-// Navigation to room
 function navigateToRoom(room: Room) {
   router.push(`/u/${room.host.username}/${room.slug}`);
 }
 
-// Format date for display
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
@@ -485,7 +444,6 @@ function formatDate(dateString: string) {
   });
 }
 
-// Edit profile functions
 function startEditing() {
   isEditing.value = true;
   editForm.value = {
@@ -494,6 +452,7 @@ function startEditing() {
     avatar: null
   };
   avatarPreview.value = null;
+  clearEditFormErrors();
 }
 
 function cancelEditing() {
@@ -504,6 +463,7 @@ function cancelEditing() {
     avatar: null
   };
   avatarPreview.value = null;
+  clearEditFormErrors();
 }
 
 function handleAvatarChange(event: Event) {
@@ -521,22 +481,12 @@ function handleAvatarChange(event: Event) {
   }
 }
 
-function mergeUserData(
-  original: User,
-  incoming: Partial<User>
-): User {
-  return {
-    id: incoming.id ?? original.id,
-    username: incoming.username ?? original.username,
-    name: incoming.name ?? original.name,
-    bio: incoming.bio ?? original.bio,
-    avatar: incoming.avatar ?? original.avatar
-  };
+function clearEditFormErrors() {
+  editFormErrors.value = { fieldErrors: {}, generalErrors: [] };
 }
 
-
 async function saveProfile() {
-  editLoading.value = true;
+  clearEditFormErrors();
   
   try {
     const updateData: { name?: string; bio?: string; avatar?: File | null } = {};
@@ -551,53 +501,76 @@ async function saveProfile() {
       updateData.avatar = editForm.value.avatar;
     }
     
-    const result = await authApi.updateUser(updateData);
+    const result = await updateUser(updateData);
     
     if (result.success) {
-      // Update local user data
-      // TODO: refactor this to use a store or state management
-      user.value = mergeUserData(user.value!, result.user!);
-      
       // Check if username changed, if so redirect
       if (result.user!.username !== route.params.userSlug) {
         router.replace(`/u/${result.user!.username}`);
+      } else {
+        // Refetch user data to update the computed property
+        refetchUser();
       }
       
       isEditing.value = false;
       avatarPreview.value = null;
     } else {
-      notifications.error('Failed to update profile');
+      // Handle error from composable
+      const parsedError = parseGraphQLError(updateUserError.value);
+      editFormErrors.value = {
+        fieldErrors: parsedError.fieldErrors,
+        generalErrors: parsedError.generalErrors.length > 0 
+          ? parsedError.generalErrors 
+          : [String(result.error) || 'Failed to update profile']
+      };
     }
   } catch (error) {
     console.error('Error updating profile:', error);
-    notifications.error('An error occurred while updating your profile');
-  } finally {
-    editLoading.value = false;
+    editFormErrors.value = parseGraphQLError(error);
   }
 }
 
-onMounted(() => {
-  fetchUser();
-});
-
-// Watch for route changes to reload when username changes
+// Watch for route changes to reload when username changes (unchanged)
 watch(() => route.params.userSlug, (newUsername) => {
   if (newUsername) {
-    // Reset all tabs data when user changes
-    (Object.keys(tabsData.value) as TabKey[]).forEach(tab => {
-      tabsData.value[tab].loaded = false;
-      tabsData.value[tab].data = [];
-    });
-    
     // Cancel editing if switching users
     isEditing.value = false;
-    
-    fetchUser();
   }
 });
 </script>
-
 <style scoped>
+/* Add error message styles */
+.error-message {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #f44336;
+  padding: 0.75rem;
+  margin: 0.5rem 1rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.edit-form-error {
+  margin: 1rem 2rem;
+}
+
+.error-message svg {
+  flex-shrink: 0;
+}
+
+.error-list {
+  flex: 1;
+}
+
+.error-list p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* ... rest of the existing styles remain the same ... */
 .profile-container {
   display: flex;
   flex-direction: column;

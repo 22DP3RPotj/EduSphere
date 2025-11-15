@@ -189,7 +189,7 @@ watch(() => props.isVisible, (newValue) => {
 }
 
 .btn-danger {
-  background-color: #dc2626;
+  background-color: #f44336;
   color: var(--white);
 }
 

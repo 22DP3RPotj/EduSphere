@@ -1,13 +1,14 @@
 <template>
   <div>
     <!-- Collapsed Side Panel Button (Tab) -->
-  <button 
-    class="panel-tab" 
-    :class="{ 'open': isPanelOpen }" 
-    @click="togglePanel"
-  >
-    <font-awesome-icon :icon="isPanelOpen ? 'chevron-right' : 'chevron-left'" />
-  </button>
+    <button 
+      class="panel-tab" 
+      :class="{ 'open': isPanelOpen }" 
+      :disabled="logoutLoading"
+      @click="togglePanel"
+    >
+      <font-awesome-icon :icon="isPanelOpen ? 'chevron-right' : 'chevron-left'" />
+    </button>
     
     <!-- Backdrop (only visible when panel is open) -->
     <div 
@@ -58,9 +59,10 @@
                 <span class="user-username">@{{ currentUser?.username }}</span>
               </div>
             </router-link>
-            <button class="logout-btn" @click="handleLogout">
-              <font-awesome-icon icon="sign-out-alt" />
-              <span>Logout</span>
+            <button class="logout-btn" :disabled="logoutLoading" @click="handleLogout">
+              <font-awesome-icon v-if="logoutLoading" icon="spinner" spin />
+              <font-awesome-icon v-else icon="sign-out-alt" />
+              <span>{{ logoutLoading ? 'Logging out...' : 'Logout' }}</span>
             </button>
           </template>
           <template v-else>
@@ -80,14 +82,16 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
-import { useAuthApi } from '@/api/auth.api';
-
-import type { User } from '@/types';
+import { useAuth } from '@/composables/useAuth';
 
 const authStore = useAuthStore();
-const { logout, fetchAuthStatus } = useAuthApi();
+const { 
+  logout, 
+  logoutLoading, 
+  refetchAuthStatus 
+} = useAuth();
 
-const currentUser = ref<User | null>(null);
+const currentUser = computed(() => authStore.user);
 const isAuthenticated = computed<boolean>(() => authStore.isAuthenticated);
 const isPanelOpen = ref<boolean>(false);
 const isDarkMode = ref(false);
@@ -111,38 +115,23 @@ async function handleLogout() {
   closePanel();
 }
 
-async function fetchCurrentUser() {
-  const { isAuthenticated, user } = await fetchAuthStatus();
-    
-  if (isAuthenticated) {
-    currentUser.value = user;
-    authStore.setUser(user);
-  }
-}
-
 watch(
   isAuthenticated,
-  async (newVal) => {
-    if (newVal) await fetchCurrentUser();
-    else currentUser.value = null;
-  },
-  { immediate: true }
-);
-
-watch(
-  () => authStore.user,
-  (newUser) => {
-    if (newUser && isAuthenticated.value) {
-      currentUser.value = newUser;
+  (newVal) => {
+    if (!newVal) {
+      closePanel();
     }
-  },
-  { deep: true }
+  }
 );
 
 onMounted(() => {
   isDarkMode.value = localStorage.getItem('theme') === 'dark'
   if (isDarkMode.value) {
     document.documentElement.classList.add('dark')
+  }
+  
+  if (isAuthenticated.value) {
+    refetchAuthStatus();
   }
 })
 </script>
@@ -350,6 +339,11 @@ onMounted(() => {
 .logout-btn:hover, .login-btn:hover {
   background-color: var(--bg-color);
   border-color: var(--text-color);
+}
+
+.logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Responsive adjustments */

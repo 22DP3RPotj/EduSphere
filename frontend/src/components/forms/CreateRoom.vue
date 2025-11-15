@@ -68,7 +68,7 @@
             @keydown.down.prevent="onArrowDown"
             @keydown.up.prevent="onArrowUp"
             @keydown.enter="onEnter"
-            @blur="showSuggestions = false"
+            @blur="hideSuggestions"
             @keydown.esc="showSuggestions = false"
           />
           <div v-show="showSuggestions" class="suggestions-list">
@@ -79,7 +79,8 @@
                 active: index === selectedTopicIndex,
                 selected: roomForm.topicNames.includes(topic)
               }]"
-              @click="selectTopic(topic)"
+              @mousedown="selectTopic(topic)"
+              @mouseenter="selectedTopicIndex = index"
             >
               <span>{{ topic }}</span>
               <span v-if="roomForm.topicNames.includes(topic)" class="selected-indicator">
@@ -242,6 +243,13 @@ function selectTopic(topic: string) {
 
 function removeTopic(topicName: string) {
   roomForm.value.topicNames = roomForm.value.topicNames.filter(t => t !== topicName);
+}
+
+function hideSuggestions() {
+  setTimeout(() => {
+    showSuggestions.value = false;
+    selectedTopicIndex.value = -1;
+  }, 150);
 }
 
 async function submitRoom() {

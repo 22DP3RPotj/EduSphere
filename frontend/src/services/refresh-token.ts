@@ -1,4 +1,4 @@
-import { useAuthApi } from "@/api/auth.api";
+import { useAuth } from "@/composables/useAuth";
 import { useAuthStore } from "@/stores/auth.store";
 
 type RefreshResolveFn = (_value: boolean) => void;
@@ -185,12 +185,14 @@ class AuthTokenService {
 
     try {
       this.refreshInProgress = true;
-      const { refreshToken } = useAuthApi();
+      
+      // Use the composable instead of the deprecated API
+      const { refreshToken } = useAuth();
 
       console.log("Refreshing token...");
-      const success = await refreshToken();
+      const result = await refreshToken();
 
-      if (success) {
+      if (result.success) {
         this.retryCount = 0;
         this.startRefreshTimer();
         this.processRefreshQueue(true);

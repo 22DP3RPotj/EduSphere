@@ -13,7 +13,6 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 import App from "@/App.vue";
 import router from "@/router";
-import toast from "@/plugins/toast";
 import { provideApollo } from "./api/apollo.client";
 
 library.add(fas);
@@ -27,7 +26,6 @@ const app = createApp(App);
 
 app.use(pinia);
 app.use(router);
-app.use(toast);
 
 provideApollo(app);
 

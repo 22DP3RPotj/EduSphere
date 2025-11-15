@@ -11,6 +11,14 @@
         </div>
 
         <div class="sidebar-section">
+          <!-- Error display for topics -->
+          <div v-if="homepageErrors.generalErrors.length > 0" class="error-message sidebar-error">
+            <font-awesome-icon icon="exclamation-circle" />
+            <div class="error-list">
+              <p v-for="(errMsg, index) in homepageErrors.generalErrors" :key="index">{{ errMsg }}</p>
+            </div>
+          </div>
+
           <div class="filter-group">
             <label for="topic-search">Topics</label>
             <div class="autocomplete-wrapper">
@@ -157,8 +165,18 @@
 
           <!-- Reserve minimum height for content area to prevent CLS -->
           <div class="rooms-content" :style="{ minHeight: getMinContentHeight('rooms') }">
+            <!-- Error state for rooms -->
+            <div v-if="homepageErrors.generalErrors.length > 0" class="error-state">
+              <font-awesome-icon icon="exclamation-triangle" size="2x" />
+              <p>Failed to load rooms</p>
+              <div class="error-details">
+                <p v-for="(errMsg, index) in homepageErrors.generalErrors" :key="index">{{ errMsg }}</p>
+              </div>
+              <button class="btn-retry" @click="() => refetch()">Try Again</button>
+            </div>
+
             <!-- Loading state -->
-            <div v-if="loadingHomepage" class="rooms-loading">
+            <div v-else-if="loadingHomepage" class="rooms-loading">
               <div class="spinner"></div>
               <p>Loading rooms...</p>
               <!-- Skeleton placeholders to reserve space -->
@@ -220,8 +238,15 @@
           </div>
 
           <div class="rooms-content" :style="{ minHeight: getMinContentHeight('userRooms') }">
+            <!-- Error state for user rooms -->
+            <div v-if="userRoomsErrors.generalErrors.length > 0" class="error-state">
+              <font-awesome-icon icon="exclamation-triangle" size="2x" />
+              <p>Failed to load your rooms</p>
+              <button class="btn-retry" @click="() => refetchUserRooms()">Try Again</button>
+            </div>
+
             <!-- Loading state -->
-            <div v-if="loadingUserRooms" class="rooms-loading">
+            <div v-else-if="loadingUserRooms" class="rooms-loading">
               <div class="spinner"></div>
               <p>Loading your rooms...</p>
               <div class="rooms-container grid-view skeleton-container">
@@ -274,8 +299,15 @@
           </div>
 
           <div class="rooms-content" :style="{ minHeight: getMinContentHeight('recommendations') }">
+            <!-- Error state for recommendations -->
+            <div v-if="userRoomsErrors.generalErrors.length > 0" class="error-state">
+              <font-awesome-icon icon="exclamation-triangle" size="2x" />
+              <p>Failed to load recommendations</p>
+              <button class="btn-retry" @click="() => refetchUserRooms()">Try Again</button>
+            </div>
+
             <!-- Loading state -->
-            <div v-if="loadingUserRooms" class="rooms-loading">
+            <div v-else-if="loadingUserRooms" class="rooms-loading">
               <div class="spinner"></div>
               <p>Finding recommendations...</p>
               <div class="rooms-container grid-view skeleton-container">
@@ -324,20 +356,14 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useQuery } from '@vue/apollo-composable';
 import { useAuthStore } from '@/stores/auth.store';
-import { useNotifications } from '@/composables/useNotifications';
-
-import { 
-  HOMEPAGE_INITIAL_QUERY,
-  USER_WITH_ROOMS_QUERY
-} from '@/api/graphql';
+import { useHomepageInitialQuery, useUserRoomsQuery } from '@/composables/useHomePage';
+import { parseGraphQLError } from '@/utils/errorParser';
 
 import type { Room, Topic } from '@/types';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const notifications = useNotifications();
 
 // User state
 const isAuthenticated = computed(() => authStore.isAuthenticated);
@@ -356,42 +382,41 @@ const topicSearchQuery = ref<string>('');
 const selectedTopics = ref<string[]>([]);
 const pendingTopics = ref<string[]>([]);
 
-// Computed variables for GraphQL queries
-const homepageVariables = computed(() => ({
-  search: appliedSearchQuery.value || null,
-  topics: selectedTopics.value.length > 0 ? selectedTopics.value : null
-}));
-
-const userVariables = computed(() => ({
-  userSlug: authStore.user?.username || ''
-}));
-
-// Main homepage query (rooms + topics)
+// Use composables for queries
 const { 
-  result: homepageResult, 
-  loading: loadingHomepage
-} = useQuery(HOMEPAGE_INITIAL_QUERY, homepageVariables, {
-  errorPolicy: 'all'
-});
+  rooms, 
+  topics, 
+  loading: loadingHomepage, 
+  error: homepageError,
+  refetch 
+} = useHomepageInitialQuery(
+  computed(() => appliedSearchQuery.value),
+  computed(() => selectedTopics.value)
+);
 
-// User-specific query (user data + participated rooms + recommendations)
 const { 
-  result: userResult, 
+  userRooms, 
+  recommendedRooms: allRecommendedRooms, 
   loading: loadingUserRooms, 
+  error: userRoomsError,
   refetch: refetchUserRooms 
-} = useQuery(USER_WITH_ROOMS_QUERY, userVariables, {
-  enabled: computed(() => isAuthenticated.value && !!authStore.user?.username),
-  errorPolicy: 'all'
-});
-
-// Computed data from queries
-const rooms = computed(() => homepageResult.value?.rooms || []);
-const topics = computed(() => homepageResult.value?.topics || []);
-const userRooms = computed(() => userResult.value?.roomsParticipatedByUser || []);
-const allRecommendedRooms = computed(() => userResult.value?.roomsNotParticipatedByUser || []);
+} = useUserRoomsQuery(
+  computed(() => authStore.user?.username || '')
+);
 
 // Show only first 3 recommendations
 const recommendedRooms = computed(() => allRecommendedRooms.value.slice(0, 3));
+
+// Error handling
+const homepageErrors = computed(() => {
+  if (!homepageError.value) return { fieldErrors: {}, generalErrors: [] };
+  return parseGraphQLError(homepageError.value);
+});
+
+const userRoomsErrors = computed(() => {
+  if (!userRoomsError.value) return { fieldErrors: {}, generalErrors: [] };
+  return parseGraphQLError(userRoomsError.value);
+});
 
 // Get filtered topics based on search query
 const filteredTopics = computed(() => {
@@ -405,7 +430,7 @@ const filteredTopics = computed(() => {
   );
 });
 
-// Check if filters are active - Updated to use applied search
+// Check if filters are active
 const hasActiveFilters = computed(() => {
   return selectedTopics.value.length > 0 || appliedSearchQuery.value !== '';
 });
@@ -553,6 +578,12 @@ function navigateToRoom(room: Room) {
   router.push(`/u/${room.host?.username}/${room.slug}`);
 }
 
+watch(() => authStore.isAuthenticated, () => {
+  if (isAuthenticated.value && authStore.user?.username) {
+    refetchUserRooms();
+  }
+});
+
 // Lifecycle hooks
 onMounted(async () => {
   try {
@@ -564,30 +595,7 @@ onMounted(async () => {
     // Set initial pending topics to match selected topics
     pendingTopics.value = [...selectedTopics.value];
   } catch (error) {
-    notifications.error('Error initializing home page');
-    console.error(error);
-  }
-});
-
-// Watch for authentication changes to refetch user data
-watch(() => authStore.isAuthenticated, () => {
-  if (isAuthenticated.value && authStore.user?.username) {
-    refetchUserRooms();
-  }
-});
-
-// Watch for GraphQL errors
-watch(homepageResult, (result) => {
-  if (result?.error) {
-    notifications.error('Error loading rooms and topics');
-    console.error(result.error);
-  }
-});
-
-watch(userResult, (result) => {
-  if (result?.error) {
-    notifications.error('Error loading user data');
-    console.error(result.error);
+    console.error('Error initializing home page:', error);
   }
 });
 
@@ -1205,6 +1213,78 @@ onBeforeUnmount(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Error states */
+.error-message {
+  background-color: rgba(244, 67, 54, 0.1);
+  border: 1px solid #f44336;
+  color: #f44336;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.sidebar-error {
+  margin: 0 0 1rem 0;
+}
+
+.error-message svg {
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}
+
+.error-list p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #f44336;
+}
+
+.error-state svg {
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.error-state p {
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.error-details {
+  margin-bottom: 1.5rem;
+}
+
+.error-details p {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #7f1d1d;
+}
+
+.btn-retry {
+  padding: 0.5rem 1rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-retry:hover {
+  background-color: #b91c1c;
 }
 
 @media (max-width: 768px) {

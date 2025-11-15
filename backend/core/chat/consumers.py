@@ -22,6 +22,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.consumer_group = None
         self.consumer_name = None
         self.stream_key = None
+        self.initialized = False
+        self.consume_task = None
+
 
     @property
     def max_body_length(self):
@@ -83,10 +86,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        self.initialized = True
         await self.accept()
 
-        # Start consuming from Redis Streams
-        asyncio.create_task(self.consume_stream_messages())
+        self.consume_task = asyncio.create_task(self.consume_stream_messages())
 
     async def setup_redis_streams(self):
         """Setup Redis Streams consumer group"""
@@ -106,10 +109,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 logger.error(f"Error creating consumer group: {e}")
 
     async def consume_stream_messages(self):
-        """Consume messages from Redis Streams"""
-        while True:
-            try:
-                # Read from stream
+        try:
+            while True:
                 messages = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: self.redis_client.xreadgroup(
@@ -117,35 +118,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         self.consumer_name,
                         {self.stream_key: '>'},
                         count=1,
-                        block=1000  # Block for 1 second
+                        block=1000
                     )
                 )
-                
+
                 for stream, msgs in messages:
                     for msg_id, fields in msgs:
                         await self.process_stream_message(msg_id, fields)
-                        
-            except Exception as e:
-                logger.error(f"Error consuming stream messages: {e}")
-                await asyncio.sleep(1)
+
+        except asyncio.CancelledError:
+            logger.debug(f"Redis consumer task cancelled for {self.channel_name}")
 
     async def process_stream_message(self, msg_id, fields):
         """Process a message from Redis Streams"""
         try:
-            # Skip messages from this consumer to avoid duplicates
             if fields.get('consumer_name') == self.consumer_name:
-                # Acknowledge the message
                 await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: self.redis_client.xack(self.stream_key, self.consumer_group, msg_id)
                 )
                 return
 
-            # Process the message
             message_data = json.loads(fields.get('data', '{}'))
             await self.send(text_data=json.dumps(message_data))
             
-            # Acknowledge the message
             await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.redis_client.xack(self.stream_key, self.consumer_group, msg_id)
@@ -158,7 +154,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         Leave the room group on disconnect and cleanup Redis Streams.
         """
-        # Remove from consumer group
+        if not self.initialized:
+            return
+        
+        if self.consume_task:
+            self.consume_task.cancel()
+            try:
+                await self.consume_task
+            except asyncio.CancelledError:
+                pass
+        
         try:
             await asyncio.get_event_loop().run_in_executor(
                 None,

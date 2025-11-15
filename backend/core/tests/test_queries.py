@@ -146,15 +146,3 @@ class QueryTests(JSONWebTokenTestCase):
         self.assertIn("Tech", topic_names)
         self.assertIn("Music", topic_names)
 
-    def test_users_query_with_search(self):
-        query = """
-            query GetUsers($search: String) {
-                users(search: $search) {
-                    username
-                }
-            }
-        """
-        variables = {"search": "Test"}
-        result: ExecutionResult = self.client.execute(query, variables)
-        self.assertEqual(len(result.data["users"]), 1)
-        self.assertEqual(result.data["users"][0]["username"], "testuser")

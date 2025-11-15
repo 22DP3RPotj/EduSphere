@@ -1,6 +1,7 @@
 import graphene
 from django.db.models import Q
 from graphql import GraphQLError
+from graphql_jwt.decorators import superuser_required
 from backend.core.graphql.types import UserType
 from backend.core.models import User
 
@@ -15,6 +16,7 @@ class UserQuery(graphene.ObjectType):
         user_slug=graphene.String(required=True),
     )
     
+    @superuser_required
     def resolve_users(self, info, search=None):
         queryset = User.objects.all().prefetch_related('hosted_rooms')
         if search:

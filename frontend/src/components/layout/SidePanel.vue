@@ -38,6 +38,11 @@
             <font-awesome-icon icon="plus-circle" class="nav-icon" />
             <span class="nav-label">Create Room</span>
           </router-link>
+
+          <router-link v-if="isAuthenticated && currentUser?.isSuperuser" to="/admin" class="nav-item" active-class="active" @click="closePanel">
+            <font-awesome-icon icon="shield" class="nav-icon" />
+            <span class="nav-label">Admin Panel</span>
+          </router-link>
         </div>
         
         <!-- User Section (bottom) -->

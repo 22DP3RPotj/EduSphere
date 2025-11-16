@@ -4,6 +4,10 @@ export interface User {
   name: string;
   bio: string | null;
   avatar: string | null;
+  isStaff: boolean;
+  isActive: boolean;
+  isSuperuser: boolean;
+  dateJoined: string;
 }
 
 export interface Topic {
@@ -30,6 +34,19 @@ export interface Message {
   edited: boolean;
   created: string;
   updated: string;
+}
+
+export interface Report {
+  id: string;
+  body: string;
+  reason: string;
+  status: string;
+  moderatorNote: string | null;
+  created: string;
+  updated: string;
+  user: User;
+  room: Room;
+  moderator: User | null;
 }
 
 // Pagination types

@@ -42,7 +42,6 @@ export const ROOMS_QUERY = gql`
     }
 `;
 
-// Combined query for authenticated users - gets user data and their rooms in one request
 export const USER_WITH_ROOMS_QUERY = gql`
     query UserWithRooms($userSlug: String!) {
         user(userSlug: $userSlug) {

@@ -259,7 +259,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
     def test_report_count_with_filter(self):
         self.client.authenticate(self.moderator)
         query = """
-            query ReportCount($status: String) {
+            query ReportCount($status: ReportStatus) {
                 reportCount(status: $status)
             }
         """

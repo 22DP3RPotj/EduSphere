@@ -10,6 +10,7 @@ export const LOGIN_MUTATION = gql`
                 id
                 username
                 name
+                isSuperuser
             }
         }
     }
@@ -44,6 +45,8 @@ export const REGISTER_MUTATION = gql`
                 id
                 username
                 name
+                isStaff
+                isSuperuser
             }
         }
     }
@@ -74,6 +77,8 @@ export const UPDATE_USER_MUTATION = gql`
                 name
                 bio
                 avatar
+                isStaff
+                isSuperuser
             }
         }
     }

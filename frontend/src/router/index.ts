@@ -24,7 +24,7 @@ const routes = [
   { 
     path: "/create-room", 
     component: () => import("@/views/CreateRoom.vue"), 
-    meta: { requiresAuth: true } 
+    meta: { requireAuth: true } 
   },
   {
     path: '/u/:userSlug',
@@ -34,7 +34,12 @@ const routes = [
   {
     path: "/u/:hostSlug/:roomSlug",
     component: () => import("@/views/RoomDetail.vue"),
-    meta: { requiresAuth: true }
+    meta: { requireAuth: true }
+  },
+  {
+    path: "/admin",
+    component: () => import("@/views/AdminPanel.vue"),
+    meta: { requireAuth: true, requireAdmin: true }
   },
 ];
 
@@ -45,21 +50,22 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+  const isAuthenticated = authStore.isAuthenticated;
+  const user = authStore.user;
 
-  try {
-    const isAuthenticated = authStore.isAuthenticated;
-
-    if (to.meta.requireGuest && isAuthenticated) {
-      next({ path: from.fullPath });
-    } else if (to.meta.requiresAuth && !isAuthenticated) {
-      next({ path: "/auth" });
-    } else {
-      next();
-    }
-  } catch (error) {
-    console.error("Authentication check failed:", error);
-    next({ path: "/auth" });
+  if (to.meta.requireGuest && isAuthenticated) {
+    return next({ path: from.fullPath });
   }
+  
+  if (to.meta.requireAuth && !isAuthenticated) {
+    return next({ path: "/auth" });
+  }
+  
+  if (to.meta.requireAdmin && !user?.isSuperuser) {
+    return next({ path: from.fullPath });
+  }
+  
+  return next();
 });
 
 export default router;

@@ -38,7 +38,7 @@ const username = computed(() => {
 
 const avatarSrc = computed(() => {
   const avatar = props.user.avatar
-    return avatar ? `/media/${avatar}` : '/default.svg';
+  return avatar ? `/media/${avatar}` : '/default.svg';
 });
 
 const initials = computed(() => {

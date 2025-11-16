@@ -2,8 +2,8 @@ import graphene
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
-from backend.core.graphql.types import ReportType
-from backend.core.models import Report, Room
+from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.core.models import Report
 
 
 class ReportQuery(graphene.ObjectType):
@@ -14,12 +14,14 @@ class ReportQuery(graphene.ObjectType):
     )
     all_reports = graphene.List(
         ReportType,
-        status=graphene.String(),
-        reason=graphene.String()
+        status=ReportStatusEnum(required=False),
+        reason=ReportReasonEnum(required=False),
+        user=graphene.String(required=False),
     )
     report_count = graphene.Int(
-        status=graphene.String(),
-        reason=graphene.String()
+        status=ReportStatusEnum(required=False),
+        reason=ReportReasonEnum(required=False),
+        user=graphene.String(required=False),
     )
 
     @login_required

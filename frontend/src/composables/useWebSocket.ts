@@ -138,6 +138,10 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
         avatar: data.userAvatar,
         name: data.user,
         bio: null,
+        isStaff: false,
+        isActive: false,
+        isSuperuser: false,
+        dateJoined: "",
       },
       room: {} as Room,
     }

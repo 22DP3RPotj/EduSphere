@@ -18,7 +18,7 @@ class UserQuery(graphene.ObjectType):
     
     @superuser_required
     def resolve_users(self, info, search=None):
-        queryset = User.objects.all().prefetch_related('hosted_rooms')
+        queryset = User.objects.all().select_related().prefetch_related('hosted_rooms')
         if search:
             queryset = queryset.filter(
                 Q(username__icontains=search) |

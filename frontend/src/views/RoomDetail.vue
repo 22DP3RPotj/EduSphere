@@ -125,7 +125,7 @@
             >
               <img 
                 :src="participant.avatar ? `/media/${participant.avatar}` : '/default.svg'" 
-                :alt="`${participant.username}'s avatar`" 
+                :alt="`${participant.username}`"
                 class="participant-avatar"
               />
               <div class="participant-info">

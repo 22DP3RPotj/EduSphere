@@ -1,5 +1,8 @@
-import { useAuth } from "@/composables/useAuth";
 import { useAuthStore } from "@/stores/auth.store";
+import { apolloClient } from "@/api/apollo.client";
+import { REFRESH_TOKEN_MUTATION } from "@/api/graphql";
+
+import type { TokenPayload } from "@/types";
 
 type RefreshResolveFn = (_value: boolean) => void;
 
@@ -16,17 +19,39 @@ class AuthTokenService {
   private MAX_RETRY_COUNT: number = 3;
   private retryCount: number = 0;
 
-  // Add event emitter for auth state changes
+  // Auth state change listeners
   private authStateListeners: ((isAuthenticated: boolean, error?: string) => void)[] = [];
 
-  onAuthStateChange(callback: (isAuthenticated: boolean, error?: string) => void): void {
-    this.authStateListeners.push(callback);
+  /**
+   * Validates the token payload
+   */
+  private validateTokenPayload(payload: TokenPayload): boolean {
+    if (!payload || !payload.exp) {
+      return false;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp <= now + 30) {
+      return false;
+    }
+
+    if (payload.origIat && payload.exp - payload.origIat < 30) {
+      return false;
+    }
+
+    return true;
   }
 
+  /**
+   * Notifies all listeners of auth state changes
+   */
   private notifyAuthStateChange(isAuthenticated: boolean, error?: string): void {
     this.authStateListeners.forEach(callback => callback(isAuthenticated, error));
   }
 
+  /**
+   * Initializes the auth token service
+   */
   init(): void {
     if (this.initialized) return;
 
@@ -42,6 +67,9 @@ class AuthTokenService {
     console.log("Auth token service initialized");
   }
 
+  /**
+   * Handles visibility change events
+   */
   private handleVisibilityChange(): void {
     if (document.visibilityState === "visible") {
       const authStore = useAuthStore();
@@ -51,6 +79,9 @@ class AuthTokenService {
     }
   }
 
+  /**
+   * Calculates when the next token refresh should occur
+   */
   private calculateRefreshTime(): number | null {
     const authStore = useAuthStore();
     if (!authStore.hasValidAuthState) return null;
@@ -71,6 +102,9 @@ class AuthTokenService {
     return Math.max(this.MIN_REFRESH_TIME, Math.min(msUntilRefresh, this.MAX_REFRESH_TIME));
   }
 
+  /**
+   * Starts the token refresh timer
+   */
   private startRefreshTimer(): void {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
@@ -86,22 +120,25 @@ class AuthTokenService {
     }
 
     if (authStore.isTokenExpired) {
-      this.refreshToken();
+      void this.refreshToken();
       return;
     }
 
     const refreshTime = this.calculateRefreshTime();
 
     if (!refreshTime || refreshTime <= 1000) {
-      this.refreshToken();
+      void this.refreshToken();
       return;
     }
 
     this.refreshTimer = setTimeout(() => {
-      this.refreshToken();
+      void this.refreshToken();
     }, refreshTime);
   }
 
+  /**
+   * Stops the token refresh timer
+   */
   private stopRefreshTimer(): void {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
@@ -110,6 +147,9 @@ class AuthTokenService {
     }
   }
 
+  /**
+   * Checks token status and refreshes if needed
+   */
   async checkAndRefreshToken(): Promise<boolean> {
     const authStore = useAuthStore();
     if (!authStore.isAuthenticated) return false;
@@ -133,6 +173,9 @@ class AuthTokenService {
     return true;
   }
 
+  /**
+   * Handles session expiration
+   */
   private handleSessionExpired(): void {
     const authStore = useAuthStore();
     console.log("Session expired, clearing auth state");
@@ -140,6 +183,9 @@ class AuthTokenService {
     this.notifyAuthStateChange(false, "Your session has expired. Please log in again.");
   }
 
+  /**
+   * Sets the token refresh percentage
+   */
   setRefreshPercentage(percentage: number): void {
     if (percentage < 10 || percentage > 90) {
       console.warn("Refresh percentage must be between 10 and 90, defaulting to 75");
@@ -155,6 +201,9 @@ class AuthTokenService {
     }
   }
 
+  /**
+   * Waits for an in-progress refresh to complete
+   */
   waitForRefresh(): Promise<boolean> {
     if (!this.refreshInProgress) {
       return Promise.resolve(true);
@@ -165,12 +214,18 @@ class AuthTokenService {
     });
   }
 
+  /**
+   * Processes the refresh queue after a refresh attempt
+   */
   private processRefreshQueue(success: boolean): void {
     const queue = this.refreshQueue;
     this.refreshQueue = [];
     queue.forEach((resolve) => resolve(success));
   }
 
+  /**
+   * Refreshes the authentication token
+   */
   async refreshToken(): Promise<boolean> {
     const authStore = useAuthStore();
 
@@ -185,26 +240,50 @@ class AuthTokenService {
 
     try {
       this.refreshInProgress = true;
-      
-      // Use the composable instead of the deprecated API
-      const { refreshToken } = useAuth();
 
       console.log("Refreshing token...");
-      const result = await refreshToken();
+      
+      const result = await apolloClient.mutate({
+        mutation: REFRESH_TOKEN_MUTATION,
+        fetchPolicy: 'no-cache',
+      });
 
-      if (result.success) {
-        this.retryCount = 0;
-        this.startRefreshTimer();
-        this.processRefreshQueue(true);
-        this.notifyAuthStateChange(true);
-        return true;
-      } else {
+      if (!result?.data?.refreshToken?.payload) {
+        console.error("Token refresh failed: missing payload");
         this.handleRefreshFailure();
         this.processRefreshQueue(false);
         return false;
       }
+
+      const { payload, refreshExpiresIn } = result.data.refreshToken;
+
+      if (!this.validateTokenPayload(payload as TokenPayload)) {
+        console.error("Token refresh failed: invalid payload");
+        this.handleRefreshFailure();
+        this.processRefreshQueue(false);
+        return false;
+      }
+
+      authStore.setTokenExpiration((payload as TokenPayload).exp);
+      if (refreshExpiresIn) {
+        authStore.setRefreshTokenExpiration(refreshExpiresIn);
+      }
+
+      this.retryCount = 0;
+      this.startRefreshTimer();
+      this.processRefreshQueue(true);
+      this.notifyAuthStateChange(true);
+
+      return true;
     } catch (error) {
-      console.error("Error refreshing token:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error refreshing token:", errorMessage);
+
+      if (errorMessage?.includes('Signature has expired')) {
+        console.error("Token refresh failed: Signature has expired");
+        authStore.clearAuth();
+      }
+
       this.handleRefreshFailure();
       this.processRefreshQueue(false);
       return false;
@@ -213,6 +292,9 @@ class AuthTokenService {
     }
   }
 
+  /**
+   * Handles refresh token failure with retry logic
+   */
   private handleRefreshFailure(): void {
     const authStore = useAuthStore();
     this.retryCount++;
@@ -224,7 +306,7 @@ class AuthTokenService {
 
       setTimeout(() => {
         if (authStore.isAuthenticated && !authStore.tokenRevoked) {
-          this.refreshToken();
+          void this.refreshToken();
         }
       }, this.RETRY_DELAY);
     } else {
@@ -233,6 +315,9 @@ class AuthTokenService {
     }
   }
 
+  /**
+   * Handles auth state changes
+   */
   handleAuthChange(isAuthenticated: boolean): void {
     if (isAuthenticated) {
       this.retryCount = 0;
@@ -244,10 +329,13 @@ class AuthTokenService {
     }
   }
 
+  /**
+   * Cleans up resources
+   */
   cleanup(): void {
     this.stopRefreshTimer();
-    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
-    window.removeEventListener("beforeunload", this.cleanup);
+    document.removeEventListener("visibilitychange", this.handleVisibilityChange.bind(this));
+    window.removeEventListener("beforeunload", this.cleanup.bind(this));
     this.initialized = false;
     this.authStateListeners = [];
   }

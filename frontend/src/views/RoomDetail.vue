@@ -209,7 +209,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomQuery, useRoomMessagesQuery, useDeleteRoom, useJoinRoom } from '@/composables/useRooms';
@@ -563,6 +563,11 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error initializing room:', error);
   }
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+  window.removeEventListener('click', closeRoomActionsMenu);
 });
 
 watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.value], 

@@ -33,7 +33,7 @@
         <div class="search-container">
           <font-awesome-icon icon="search" class="search-icon" />
           <input
-            v-model="userSearchQuery"
+            v-model="userSearch.query"
             type="text"
             placeholder="Search users by name or username..."
             class="search-input"
@@ -90,40 +90,40 @@
               <th class="col-user" @click="sortBy('username')">
                 Username
                 <font-awesome-icon
-                  v-if="sortColumn === 'username'"
-                  :icon="sortDirection === 'asc' ? 'sort-up' : 'sort-down'"
+                  v-if="userSort.column === 'username'"
+                  :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
                   class="sort-icon"
                 />
               </th>
               <th class="col-name" @click="sortBy('name')">
                 Name
                 <font-awesome-icon
-                  v-if="sortColumn === 'name'"
-                  :icon="sortDirection === 'asc' ? 'sort-up' : 'sort-down'"
+                  v-if="userSort.column === 'name'"
+                  :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
                   class="sort-icon"
                 />
               </th>
               <th class="col-date" @click="sortBy('dateJoined')">
                 Joined
                 <font-awesome-icon
-                  v-if="sortColumn === 'dateJoined'"
-                  :icon="sortDirection === 'asc' ? 'sort-up' : 'sort-down'"
+                  v-if="userSort.column === 'dateJoined'"
+                  :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
                   class="sort-icon"
                 />
               </th>
               <th class="col-role" @click="sortBy('isStaff')">
                 Role
                 <font-awesome-icon
-                  v-if="sortColumn === 'isStaff'"
-                  :icon="sortDirection === 'asc' ? 'sort-up' : 'sort-down'"
+                  v-if="userSort.column === 'isStaff'"
+                  :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
                   class="sort-icon"
                 />
               </th>
               <th class="col-status" @click="sortBy('isActive')">
                 Status
                 <font-awesome-icon
-                  v-if="sortColumn === 'isActive'"
-                  :icon="sortDirection === 'asc' ? 'sort-up' : 'sort-down'"
+                  v-if="userSort.column === 'isActive'"
+                  :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
                   class="sort-icon"
                 />
               </th>
@@ -226,7 +226,7 @@
         <div class="filters-row">
           <div class="filter-group">
             <label for="status-filter">Status</label>
-            <select id="status-filter" v-model="reportStatusFilter" class="filter-select">
+            <select id="status-filter" v-model="reportFiltersUI.status" class="filter-select">
               <option value="">All Statuses</option>
               <option value="PENDING">Pending</option>
               <option value="UNDER_REVIEW">Under Review</option>
@@ -236,7 +236,7 @@
           </div>
           <div class="filter-group">
             <label for="reason-filter">Reason</label>
-            <select id="reason-filter" v-model="reportReasonFilter" class="filter-select">
+            <select id="reason-filter" v-model="reportFiltersUI.reason" class="filter-select">
               <option value="">All Reasons</option>
               <option value="SPAM">Spam</option>
               <option value="HARASSMENT">Harassment</option>
@@ -249,7 +249,7 @@
             <label for="user-filter">Reporter</label>
             <input
               id="user-filter"
-              v-model="reportUserFilter"
+              v-model="reportFiltersUI.user"
               type="text"
               placeholder="Filter by reporter..."
               class="filter-input"
@@ -370,7 +370,7 @@
     </div>
 
     <!-- Moderator Note Modal -->
-    <div v-if="showModeratorNoteModalFlag" class="modal-overlay" @click="closeModeratorNoteModal">
+    <div v-if="moderatorNoteModal.isOpen" class="modal-overlay" @click="closeModeratorNoteModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>Add Moderator Note</h3>
@@ -382,7 +382,7 @@
           <label for="moderator-note">Moderator Note</label>
           <textarea
             id="moderator-note"
-            v-model="moderatorNoteInput"
+            v-model="moderatorNoteModal.input"
             placeholder="Add a moderator note..."
             rows="4"
           ></textarea>
@@ -396,10 +396,10 @@
 
     <!-- Confirmation Modal -->
     <ConfirmationModal
-      v-if="showConfirmationModal"
-      :is-visible="showConfirmationModal"
-      :title="confirmationTitle"
-      :message="confirmationMessage"
+      v-if="confirmationModal.isOpen"
+      :is-visible="confirmationModal.isOpen"
+      :title="confirmationModal.title"
+      :message="confirmationModal.message"
       confirm-text="Confirm"
       cancel-text="Cancel"
       @confirm="executeConfirmedAction"
@@ -439,32 +439,50 @@ function getUserRoleImportance(user: User): number {
 const activeTab = ref<'users' | 'reports'>('users');
 
 // User Management State
-const userSearchQuery = ref('');
-const userSearchFilter = ref('');
+const userSearch = ref({
+  query: '',
+  filter: '',
+});
+const userSort = ref<{
+  column: 'username' | 'name' | 'dateJoined' | 'isStaff' | 'isActive';
+  direction: 'asc' | 'desc';
+}>({
+  column: 'dateJoined',
+  direction: 'desc',
+});
 const selectedUsers = ref<string[]>([]);
-const sortColumn = ref<'username' | 'name' | 'dateJoined' | 'isStaff' | 'isActive'>('dateJoined');
-const sortDirection = ref<'asc' | 'desc'>('desc');
 const activeUserActions = ref<string | null>(null);
 const selectedBulkAction = ref<'promote' | 'demote' | 'terminate' | 'activate' | null>(null);
 
 // Report Management State
-const reportStatusFilter = ref('');
-const reportReasonFilter = ref('');
-const reportUserFilter = ref('');
-const showModeratorNoteModalFlag = ref(false);
-const selectedReportForNote = ref<Report | null>(null);
-const moderatorNoteInput = ref('');
+const reportFiltersUI = ref({
+  status: '',
+  reason: '',
+  user: '',
+});
+const reportFiltersApplied = ref({
+  status: '',
+  reason: '',
+  user: '',
+});
+const moderatorNoteModal = ref({
+  isOpen: false,
+  report: null as Report | null,
+  input: '',
+});
 const activeReportActions = ref<string | null>(null);
 
 // Confirmation Modal State
-const showConfirmationModal = ref(false);
-const confirmationTitle = ref('');
-const confirmationMessage = ref('');
-const pendingAction = ref<(() => Promise<void>) | null>(null);
+const confirmationModal = ref({
+  isOpen: false,
+  title: '',
+  message: '',
+  action: null as (() => Promise<void>) | null,
+});
 
 // Composables
-const { users, loading: loadingUsers, error: usersError, refetch: refetchUsersComposable } = useAdminUsers(userSearchFilter);
-const { reports, loading: loadingReports, error: reportsError, refetch: refetchReportsComposable } = useAdminReports(reportStatusFilter, reportReasonFilter);
+const { users, loading: loadingUsers, error: usersError, refetch: refetchUsersComposable } = useAdminUsers(computed(() => userSearch.value.filter));
+const { reports, loading: loadingReports, error: reportsError, refetch: refetchReportsComposable } = useAdminReports(computed(() => reportFiltersApplied.value.status), computed(() => reportFiltersApplied.value.reason));
 
 const { updateStaffStatus } = useUpdateUserStaffStatus();
 const { updateActiveStatus } = useUpdateUserActiveStatus();
@@ -483,20 +501,20 @@ const allUsersSelected = computed(() => {
 
 const sortedUsers = computed(() => {
   const sorted = [...users.value].sort((a, b) => {
-    const aValue = a[sortColumn.value as keyof typeof a];
-    const bValue = b[sortColumn.value as keyof typeof b];
+    const aValue = a[userSort.value.column as keyof typeof a];
+    const bValue = b[userSort.value.column as keyof typeof b];
 
     let aVal: number | string | boolean;
     let bVal: number | string | boolean;
 
-    if (sortColumn.value === 'dateJoined') {
+    if (userSort.value.column === 'dateJoined') {
       aVal = new Date(String(aValue)).getTime();
       bVal = new Date(String(bValue)).getTime();
-    } else if (sortColumn.value === 'isStaff') {
+    } else if (userSort.value.column === 'isStaff') {
       // Sort by role importance using the mapping
       aVal = getUserRoleImportance(a);
       bVal = getUserRoleImportance(b);
-    } else if (sortColumn.value === 'isActive') {
+    } else if (userSort.value.column === 'isActive') {
       aVal = Boolean(aValue);
       bVal = Boolean(bValue);
     } else {
@@ -504,7 +522,7 @@ const sortedUsers = computed(() => {
       bVal = String(bValue).toLowerCase();
     }
 
-    if (sortDirection.value === 'asc') {
+    if (userSort.value.direction === 'asc') {
       return aVal > bVal ? 1 : -1;
     } else {
       return aVal < bVal ? 1 : -1;
@@ -522,11 +540,12 @@ const sortedReports = computed(() => {
 
 // Methods
 function onUserSearch() {
-  userSearchFilter.value = userSearchQuery.value;
+  userSearch.value.filter = userSearch.value.query;
   refetchUsersComposable();
 }
 
 function applyReportFilters() {
+  reportFiltersApplied.value = { ...reportFiltersUI.value };
   refetchReportsComposable();
 }
 
@@ -550,11 +569,11 @@ function toggleAllUsers() {
 }
 
 function sortBy(column: 'username' | 'name' | 'dateJoined' | 'isStaff' | 'isActive') {
-  if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  if (userSort.value.column === column) {
+    userSort.value.direction = userSort.value.direction === 'asc' ? 'desc' : 'asc';
   } else {
-    sortColumn.value = column;
-    sortDirection.value = 'asc';
+    userSort.value.column = column;
+    userSort.value.direction = 'asc';
   }
 }
 
@@ -567,21 +586,21 @@ function toggleReportActions(reportId: string) {
 }
 
 function showConfirmation(title: string, message: string, action: () => Promise<void>) {
-  confirmationTitle.value = title;
-  confirmationMessage.value = message;
-  pendingAction.value = action;
-  showConfirmationModal.value = true;
+  confirmationModal.value.title = title;
+  confirmationModal.value.message = message;
+  confirmationModal.value.action = action;
+  confirmationModal.value.isOpen = true;
 }
 
 function closeConfirmationModal() {
-  showConfirmationModal.value = false;
-  pendingAction.value = null;
+  confirmationModal.value.isOpen = false;
+  confirmationModal.value.action = null;
 }
 
 async function executeConfirmedAction() {
-  if (pendingAction.value) {
+  if (confirmationModal.value.action) {
     try {
-      await pendingAction.value();
+      await confirmationModal.value.action();
     } catch (error) {
       console.error('Action failed:', error);
     }
@@ -748,22 +767,22 @@ async function updateReportStatus(reportId: string, status: string) {
 
 function showModeratorNoteModal(report: Report) {
   activeReportActions.value = null;
-  selectedReportForNote.value = report;
-  moderatorNoteInput.value = report.moderatorNote || '';
-  showModeratorNoteModalFlag.value = true;
+  moderatorNoteModal.value.report = report;
+  moderatorNoteModal.value.input = report.moderatorNote || '';
+  moderatorNoteModal.value.isOpen = true;
 }
 
 function closeModeratorNoteModal() {
-  showModeratorNoteModalFlag.value = false;
-  selectedReportForNote.value = null;
-  moderatorNoteInput.value = '';
+  moderatorNoteModal.value.isOpen = false;
+  moderatorNoteModal.value.report = null;
+  moderatorNoteModal.value.input = '';
 }
 
 async function confirmAddModeratorNote() {
-  if (!selectedReportForNote.value) return;
+  if (!moderatorNoteModal.value.report) return;
 
   try {
-    await updateReport(selectedReportForNote.value.id, undefined, moderatorNoteInput.value);
+    await updateReport(moderatorNoteModal.value.report.id, undefined, moderatorNoteModal.value.input);
     await refetchReportsComposable();
     closeModeratorNoteModal();
   } catch (error) {
@@ -1213,9 +1232,7 @@ onUnmounted(() => {
 
 /* Table */
 .table-container {
-  overflow-x: auto;
   position: relative;
-  min-height: 200px;
 }
 
 .admin-table {

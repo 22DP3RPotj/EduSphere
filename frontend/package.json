@@ -22,7 +22,7 @@
     "js-cookie": "^3.0.5",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate-2": "^2.0.32",
-    "react": "^19.2.0",
+    "react": "^19.2.1",
     "terser": "^5.44.1",
     "timeago.js": "^4.0.2",
     "vue": "^3.5.25",
@@ -48,8 +48,8 @@
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",
-    "vite": "^7.2.6",
+    "vite": "^7.2.7",
     "vite-plugin-vue-devtools": "^8.0.5",
-    "vue-tsc": "^3.1.5"
+    "vue-tsc": "^3.1.7"
   }
 }

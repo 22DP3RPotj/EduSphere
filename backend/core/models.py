@@ -49,7 +49,7 @@ class Topic(models.Model):
         ordering = [Lower('name')]
         constraints = [
             CheckConstraint(
-                check=Q(name__regex=r'^[A-Za-z]+$'),
+                condition=Q(name__regex=r'^[A-Za-z]+$'),
                 name='no_spaces_in_topic',
                 violation_error_message="Topic name must consist of letters only."),
         ]

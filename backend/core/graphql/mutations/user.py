@@ -1,4 +1,6 @@
 import graphene
+import uuid
+from typing import Optional
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
@@ -21,15 +23,14 @@ class RegisterUser(graphene.Mutation):
     user = graphene.Field(UserType)
     success = graphene.Boolean()
 
-    def mutate(self, info, **kwargs):
+    def mutate(self, info: graphene.ResolveInfo, **kwargs):
         form = RegisterForm(kwargs)
 
-        if form.is_valid():
-            user = form.save()
-            return RegisterUser(user=user, success=True)
-        else:
+        if not form.is_valid():
             raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
-     
+        
+        user = form.save()
+        return RegisterUser(user=user, success=True)
 
 class UpdateUser(graphene.Mutation):
     class Arguments:
@@ -40,16 +41,21 @@ class UpdateUser(graphene.Mutation):
     user = graphene.Field(UserType)
 
     @login_required
-    def mutate(self, info, **kwargs):
+    def mutate(
+        self,
+        info: graphene.ResolveInfo,
+        name: Optional[str] = None,
+        username: Optional[str] = None,
+        bio: Optional[str] = None,
+        avatar: Optional[Upload] = None,
+    ):
         user = info.context.user
         
         data = {
-            "username": user.username,
-            "name": kwargs.get("name", user.name),
-            "bio": kwargs.get("bio", user.bio),
+            "username": username or user.username,
+            "name": name or user.name,
+            "bio": bio or user.bio,
         }
-        
-        avatar = kwargs.pop("avatar", None)
         
         form = UserForm(
             data=data,
@@ -57,11 +63,11 @@ class UpdateUser(graphene.Mutation):
             instance=user
         )
 
-        if form.is_valid():
-            form.save()
-            return UpdateUser(user=user)
-        else:
+        if not form.is_valid():
             raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
+        
+        form.save()
+        return UpdateUser(user=user)
         
         
 class UpdateUserActiveStatus(graphene.Mutation):
@@ -73,7 +79,7 @@ class UpdateUserActiveStatus(graphene.Mutation):
     updated_count = graphene.Int()
 
     @superuser_required
-    def mutate(self, info, user_ids, is_active):
+    def mutate(self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_active: bool):
         with transaction.atomic():
             updated_count = User.objects.filter(
                 id__in=user_ids
@@ -94,7 +100,7 @@ class UpdateUserStaffStatus(graphene.Mutation):
     updated_count = graphene.Int()
 
     @superuser_required
-    def mutate(self, info, user_ids, is_staff):
+    def mutate(self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_staff: bool):
         with transaction.atomic():
             updated_count = User.objects.filter(
                 id__in=user_ids

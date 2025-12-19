@@ -1,6 +1,10 @@
 import graphene
+import uuid
+from typing import Optional
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
+
+from django.db.models import QuerySet
 
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.core.models import Report
@@ -25,11 +29,11 @@ class ReportQuery(graphene.ObjectType):
     )
 
     @login_required
-    def resolve_my_reports(self, info):
+    def resolve_my_reports(self, info: graphene.ResolveInfo) -> QuerySet[Report]:
         return Report.objects.filter(user=info.context.user).select_related('room', 'moderator', 'user')
 
     @login_required
-    def resolve_report(self, info, report_id):
+    def resolve_report(self, info: graphene.ResolveInfo, report_id: uuid.UUID) -> Report:
         try:
             report = Report.objects.select_related('room', 'moderator').get(id=report_id)
         except Report.DoesNotExist:
@@ -42,27 +46,30 @@ class ReportQuery(graphene.ObjectType):
 
     # TODO: Add pagination
     @superuser_required
-    def resolve_all_reports(self, info, status=None, reason=None, user=None):
+    def resolve_all_reports(
+        self,
+        info: graphene.ResolveInfo,
+        status: Optional[Report.ReportStatus] = None,
+        reason: Optional[Report.ReportReason] = None,
+        user_id: Optional[uuid.UUID] = None
+    ) -> QuerySet[Report]:
         queryset = Report.objects.select_related('user', 'room', 'moderator')
         
         if status:
             queryset = queryset.filter(status=status)
         if reason:
             queryset = queryset.filter(reason=reason)
-        if user:
-            queryset = queryset.filter(user__username=user)
+        if user_id:
+            queryset = queryset.filter(user__id=user_id)
             
         return queryset
     
     @superuser_required
-    def resolve_report_count(self, info, status=None, reason=None, user=None):
-        queryset = Report.objects.all()
-        
-        if status:
-            queryset = queryset.filter(status=status)
-        if reason:
-            queryset = queryset.filter(reason=reason)
-        if user:
-            queryset = queryset.filter(user__username=user)
-        
-        return queryset.count()
+    def resolve_report_count(
+        self,
+        info: graphene.ResolveInfo,
+        status: Optional[Report.ReportStatus] = None,
+        reason: Optional[Report.ReportReason] = None,
+        user_id: Optional[uuid.UUID] = None
+    ) -> int:
+        return self.resolve_all_reports(info, status=status, reason=reason, user_id=user_id).count()

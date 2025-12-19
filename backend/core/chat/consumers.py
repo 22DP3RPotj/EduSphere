@@ -62,7 +62,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.consumer_group = f"chat_group:{self.username}:{self.room_slug}"
         self.consumer_name = f"consumer:{self.user.id}:{self.channel_name}"
 
-        from ..models import Room
+        from ..models import Room, Participant
         try:
             room = await database_sync_to_async(Room.objects.get)(
                 host__username=self.username,
@@ -73,7 +73,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         is_participant = await database_sync_to_async(
-            room.participants.filter(id=self.user.id).exists
+            Participant.objects.filter(user=self.user, room=room).exists
         )()
         if not is_participant:
             await self.close()

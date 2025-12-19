@@ -1,5 +1,6 @@
 import graphene
-from django.db.models import Q, Count
+from typing import Optional
+from django.db.models import Q, Count, QuerySet
 from graphql import GraphQLError
 from backend.core.graphql.types import RoomType
 from backend.core.models import Room, User
@@ -26,7 +27,7 @@ class RoomQuery(graphene.ObjectType):
         user_slug=graphene.String(required=True)
     )
     
-    def resolve_room(self, info, host_slug, room_slug):
+    def resolve_room(self, info: graphene.ResolveInfo, host_slug: str, room_slug: str) -> Room:
         try:
             room = Room.objects.get(
                 host__username=host_slug,
@@ -37,10 +38,16 @@ class RoomQuery(graphene.ObjectType):
         
         return room
 
-    def resolve_rooms(self, info, host_slug=None, search=None, topics=None):
+    def resolve_rooms(
+        self,
+        info: graphene.ResolveInfo,
+        host_slug: Optional[str] = None,
+        search: Optional[str] = None,
+        topics: Optional[list[str]] = None
+    ) -> QuerySet[Room]:
         queryset = Room.objects.annotate(
             participants_count=Count('participants')
-        ).select_related('host').prefetch_related('topics', 'participants')
+        ).select_related('host').prefetch_related('topics', 'participants__user', 'participants__role')
 
         if host_slug:
             queryset = queryset.filter(host__username=host_slug)
@@ -56,7 +63,7 @@ class RoomQuery(graphene.ObjectType):
 
         return queryset.order_by('-participants_count' , '-created')
     
-    def resolve_rooms_participated_by_user(self, info, user_slug):
+    def resolve_rooms_participated_by_user(self, info: graphene.ResolveInfo, user_slug: str) -> QuerySet[Room]:
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
@@ -64,11 +71,13 @@ class RoomQuery(graphene.ObjectType):
 
         queryset = Room.objects.filter(participants=user).annotate(
             participants_count=Count('participants')
-        ).order_by('-participants_count', '-created')
+        ).order_by(
+            '-participants_count', '-created'
+        ).select_related('host').prefetch_related('topics', 'participants__user', 'participants__role')
 
         return queryset
     
-    def resolve_rooms_not_participated_by_user(self, info, user_slug):
+    def resolve_rooms_not_participated_by_user(self, info: graphene.ResolveInfo, user_slug: str) -> QuerySet[Room]:
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
@@ -76,7 +85,7 @@ class RoomQuery(graphene.ObjectType):
 
         queryset = Room.objects.exclude(participants=user).annotate(
             participants_count=Count('participants')
-        ).order_by('-participants_count', '-created')
+        ).order_by('-participants_count', '-created').select_related('host').prefetch_related('topics', 'participants__user', 'participants__role')
 
         return queryset
     

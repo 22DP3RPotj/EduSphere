@@ -1,38 +1,8 @@
 from django import forms
 from django.forms import ModelForm
-from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import User, Room, Topic
-
-
-class LoginForm(forms.Form):
-    email = forms.EmailField(
-        label="Email",
-        widget=forms.EmailInput(attrs={
-            'placeholder': 'johndoe@gmail.com',
-            'autocomplete': 'email'
-        })
-    )
-    password = forms.CharField(
-        label="Password",
-        widget=forms.PasswordInput(attrs={
-            'placeholder': '••••••••',
-            'autocomplete': 'current-password'
-        })
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        email = cleaned_data.get('email')
-        password = cleaned_data.get('password')
-
-        if email and password:
-            user = authenticate(email=email, password=password)
-            if user is None:
-                raise forms.ValidationError("Invalid email or password")
-        return cleaned_data
-
+from .models import User, Room, Message, Report, Invite, Role
 
 class RegisterForm(UserCreationForm):
     class Meta:
@@ -42,7 +12,7 @@ class RegisterForm(UserCreationForm):
 
 class RoomForm(ModelForm):
     name = forms.CharField(
-        max_length=200, 
+        max_length=64, 
         validators=[
             RegexValidator(
                 regex='^[a-zA-Z0-9 ]+$',
@@ -52,18 +22,13 @@ class RoomForm(ModelForm):
         ]
     )
     
-    topics = forms.ModelMultipleChoiceField(
-        queryset=Topic.objects.all(),
-        widget=forms.SelectMultiple,
-        required=False
-    )
+    description = forms.CharField(widget=forms.Textarea, required=False)
         
     class Meta:
         model = Room
-        fields = '__all__'
-        exclude = ['host', 'participants', 'slug']
+        fields = ('name', 'description', 'default_role', 'visibility')
         
-    def clean_name(self):
+    def clean_name(self) -> str:
         name = self.cleaned_data['name']
         return ' '.join(name.strip().split())
 
@@ -73,4 +38,28 @@ class UserForm(ModelForm):
     
     class Meta:
         model = User
-        fields = ['username', 'name', 'avatar', 'bio']
+        fields = ('username', 'name', 'avatar', 'bio')
+
+
+class MessageForm(ModelForm):
+    class Meta:
+        model = Message
+        fields = ('body',)
+
+
+class ReportForm(ModelForm):
+    class Meta:
+        model = Report
+        fields = ('reason', 'body')
+
+
+class InviteForm(ModelForm):
+    class Meta:
+        model = Invite
+        fields = ('expires_at')
+
+
+class RoleForm(ModelForm):
+    class Meta:
+        model = Role
+        fields = ('name', 'description', 'priority')

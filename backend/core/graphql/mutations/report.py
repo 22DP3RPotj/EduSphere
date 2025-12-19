@@ -1,10 +1,14 @@
 import graphene
+import uuid
+from typing import Optional
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
 from django.db import transaction, IntegrityError
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
-from backend.core.models import Report, Room
+from backend.core.graphql.utils import format_form_errors
+from backend.core.models import Participant, Report, Room
+from backend.core.forms import ReportForm
 
 
 class CreateReport(graphene.Mutation):
@@ -16,13 +20,13 @@ class CreateReport(graphene.Mutation):
     report = graphene.Field(ReportType)
     
     @login_required
-    def mutate(self, info, room_id, reason, body):
+    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID, reason: Report.ReportReason, body: str):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
 
-        if not room.participants.filter(id=info.context.user.id).exists():
+        if not Participant.objects.filter(user=info.context.user, room=room).exists():
             raise GraphQLError(
                 "You must be a participant of the room to report it", 
                 extensions={"code": "NOT_PARTICIPANT"}
@@ -33,23 +37,30 @@ class CreateReport(graphene.Mutation):
                 "You already have an active report targeting this room.",
                 extensions={"code": "ALREADY_REPORTED"},
             )
+        data = {
+            "reason": reason,
+            "body": body,
+        }
+        
+        form = ReportForm(data=data)
+        
+        if not form.is_valid():
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
 
-        try:
-            with transaction.atomic():
-                report = Report(
-                    user=info.context.user,
-                    room=room,
-                    reason=reason,
-                    body=body
-                )
+        with transaction.atomic():
+            report = form.save(commit=False)
+            report.user = info.context.user
+            report.room = room
+            
+            try:
                 report.save()
-                return CreateReport(report=report)
-                
-        except IntegrityError:
-            raise GraphQLError(
-                "Could not create report due to a conflict.",
-                extensions={"code": "CONFLICT"},
-            )
+            except IntegrityError:
+                raise GraphQLError(
+                    "Could not create report due to a conflict.",
+                    extensions={"code": "CONFLICT"},
+                )
+        
+        return CreateReport(report=report)
 
 
 class UpdateReport(graphene.Mutation):
@@ -61,17 +72,24 @@ class UpdateReport(graphene.Mutation):
     report = graphene.Field(ReportType)
 
     @superuser_required
-    def mutate(self, info, report_id, **kwargs):
+    def mutate(
+        self,
+        info: graphene.ResolveInfo,
+        report_id: uuid.UUID,
+        status: Optional[Report.ReportStatus] = None,
+        moderator_note: Optional[str] = None
+    ):
+        # TODO: (maybe) FORM
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:
             raise GraphQLError("Report not found", extensions={"code": "NOT_FOUND"})
 
-        if 'status' in kwargs:
-            report.status = kwargs['status']
-        if 'moderator_note' in kwargs:
-            report.moderator_note = kwargs['moderator_note']
-        
+        if status is not None:
+            report.status = status
+        if moderator_note is not None:
+            report.moderator_note = moderator_note
+
         report.moderator = info.context.user
         report.save()
 
@@ -85,7 +103,7 @@ class DeleteReport(graphene.Mutation):
     success = graphene.Boolean()
 
     @superuser_required
-    def mutate(self, info, report_id):
+    def mutate(self, info: graphene.ResolveInfo, report_id: uuid.UUID):
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:

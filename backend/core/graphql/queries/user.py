@@ -1,5 +1,6 @@
 import graphene
-from django.db.models import Q
+from typing import Optional
+from django.db.models import Q, QuerySet
 from graphql import GraphQLError
 from graphql_jwt.decorators import superuser_required
 from backend.core.graphql.types import UserType
@@ -17,8 +18,8 @@ class UserQuery(graphene.ObjectType):
     )
     
     @superuser_required
-    def resolve_users(self, info, search=None):
-        queryset = User.objects.all().select_related().prefetch_related('hosted_rooms')
+    def resolve_users(self, info: graphene.ResolveInfo, search: Optional[str] = None) -> QuerySet[User]:
+        queryset = User.objects.all().prefetch_related('hosted_rooms')
         if search:
             queryset = queryset.filter(
                 Q(username__icontains=search) |
@@ -26,7 +27,7 @@ class UserQuery(graphene.ObjectType):
             )
         return queryset
     
-    def resolve_user(self, info, user_slug):
+    def resolve_user(self, info: graphene.ResolveInfo, user_slug: str) -> User:
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:

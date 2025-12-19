@@ -1,5 +1,6 @@
 import graphene
-from django.db.models import Count
+from typing import Optional
+from django.db.models import Count, QuerySet
 from backend.core.graphql.types import TopicType
 from backend.core.models import Topic
 
@@ -11,7 +12,12 @@ class TopicQuery(graphene.ObjectType):
         min_rooms=graphene.Int()
     )
      
-    def resolve_topics(self, info, search=None, min_rooms=None):
+    def resolve_topics(
+        self,
+        info: graphene.ResolveInfo,
+        search: Optional[str] = None,
+        min_rooms: Optional[int] = None
+    ) -> QuerySet[Topic]:
         queryset = Topic.objects.annotate(
             room_count=Count('rooms')
         )

@@ -72,4 +72,4 @@ class ReportQuery(graphene.ObjectType):
         reason: Optional[Report.ReportReason] = None,
         user_id: Optional[uuid.UUID] = None
     ) -> int:
-        return self.resolve_all_reports(info, status=status, reason=reason, user_id=user_id).count()
+        return self.filter(status=status, reason=reason, user_id=user_id).count()

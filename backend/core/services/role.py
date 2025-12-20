@@ -6,6 +6,8 @@ from django.db.models import QuerySet
 from backend.core.models import Role, Room, Permission, User, Participant
 from backend.core.permissions import has_permission, PermissionCode
 from backend.core.forms import RoleForm
+from backend.core.exceptions import FormValidationException, PermissionException, NotFoundException, ConflictException, ValidationException
+from backend.core.templates import DEFAULT_ROLE_TEMPLATES
 
 
 class RoleService:
@@ -21,7 +23,7 @@ class RoleService:
             room: The room
             
         Returns:
-            The priority value (lower is higher priority)
+            The priority value
             
         Raises:
             ValueError: If user is not a participant
@@ -33,7 +35,7 @@ class RoleService:
             )
             return participant.role.priority
         except Participant.DoesNotExist:
-            raise ValueError("User is not a participant of this room")
+            raise NotFoundException("User is not a participant of this room")
 
     @staticmethod
     def _check_priority_can_affect(user: User, target_role: Role) -> None:
@@ -50,11 +52,31 @@ class RoleService:
         """
         user_priority = RoleService._get_user_role_priority(user, target_role.room)
         
-        if user_priority >= target_role.priority:
-            raise PermissionError(
-                f"Cannot affect roles with equal or higher priority. "
+        if user_priority <= target_role.priority:
+            raise PermissionException(
+                f"Cannot affect roles with higher priority. "
                 f"Your priority: {user_priority}, Target priority: {target_role.priority}"
             )
+            
+    @staticmethod
+    def create_default_roles(room: Room):
+        """
+        Create default roles for a room. Should be called once when the room is created.
+
+        Args:
+            room: The room
+        """
+        with transaction.atomic():
+            for role_code, data in DEFAULT_ROLE_TEMPLATES.items():
+                role = Role.objects.create(
+                    room=room,
+                    name=role_code.label,
+                    description=data["description"],
+                )
+                perms = Permission.objects.filter(
+                    code__in=[p.value for p in data["permissions"]]
+                )
+                role.permissions.set(perms)
 
     @staticmethod
     def create_role(
@@ -63,7 +85,7 @@ class RoleService:
         name: str,
         description: str,
         priority: int,
-        permission_ids: Optional[list[uuid.UUID]] = None,
+        permission_ids: list[uuid.UUID],
     ) -> Role:
         """
         Create a new role in a room.
@@ -73,8 +95,8 @@ class RoleService:
             room: The room to create the role in
             name: Role name
             description: Role description
-            priority: Role priority (0-100, lower = higher priority)
-            permission_ids: List of permission IDs to assign (optional)
+            priority: Role priority (0-100, higher = higher priority)
+            permission_ids: List of permission IDs to assign
             
         Returns:
             The created Role instance
@@ -85,7 +107,7 @@ class RoleService:
             IntegrityError: If role creation conflicts
         """
         if not has_permission(user, room, PermissionCode.ROOM_ROLE_MANAGE):
-            raise PermissionError("You don't have permission to manage roles in this room")
+            raise PermissionException("You don't have permission to manage roles in this room")
         
         data = {
             "name": name,
@@ -96,7 +118,7 @@ class RoleService:
         form = RoleForm(data=data)
         
         if not form.is_valid():
-            raise ValueError(form.errors)
+            raise FormValidationException("Invalid role data", errors=form.errors)
         
         try:
             with transaction.atomic():
@@ -110,7 +132,7 @@ class RoleService:
                 
                 return role
         except IntegrityError as e:
-            raise IntegrityError("Could not create role due to a conflict.") from e
+            raise ConflictException("Could not create role due to a conflict.") from e
 
     @staticmethod
     def update_role(
@@ -141,7 +163,7 @@ class RoleService:
             IntegrityError: If update conflicts
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
-            raise PermissionError("You don't have permission to manage roles in this room")
+            raise PermissionException("You don't have permission to manage roles in this room")
         
         # Check priority hierarchy - user must have higher priority (lower value) than target role
         RoleService._check_priority_can_affect(user, role)
@@ -161,7 +183,7 @@ class RoleService:
                     form = RoleForm(data=data, instance=role)
                     
                     if not form.is_valid():
-                        raise ValueError(form.errors)
+                        raise FormValidationException("Invalid role data", errors=form.errors)
                     
                     form.save()
                 
@@ -171,39 +193,53 @@ class RoleService:
                 
                 return role
         except IntegrityError as e:
-            raise IntegrityError("Could not update role due to a conflict.") from e
+            raise ConflictException("Could not update role due to a conflict.") from e
 
     @staticmethod
-    def delete_role(user: User, role: Role) -> bool:
+    def delete_role(user: User, role: Role, substitution_role: Optional[Role] = None) -> bool:
         """
         Delete a role.
         
         Args:
             user: User performing the deletion (must have ROOM_ROLE_MANAGE permission)
             role: The role to delete
+            substitution_role: Role to reassign participants and invites to (required if role has participants/invites)
             
         Returns:
             True if deletion was successful
             
         Raises:
             PermissionError: If user doesn't have permission or priority hierarchy violation
-            ValueError: If role is a default role or still has participants
+            ValueError: If role has participants/invites but no substitution role provided
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
-            raise PermissionError("You don't have permission to manage roles in this room")
+            raise PermissionException("You don't have permission to manage roles in this room")
         
         # Check priority hierarchy - user must have higher priority (lower value) than target role
         RoleService._check_priority_can_affect(user, role)
         
-        # Check if this is a default role
-        if role.room.default_role_id == role.id:
-            raise ValueError("Cannot delete the default role of the room")
+        # Check if any participants or invites have this role
+        participant_count = Participant.objects.filter(role=role).count()
+        from backend.core.models import Invite
+        invite_count = Invite.objects.filter(role=role).count()
         
-        # Check if any participants have this role
-        if Participant.objects.filter(role=role).exists():
-            raise ValueError("Cannot delete a role with active participants")
+        if (participant_count > 0 or invite_count > 0) and substitution_role is None:
+            raise ValidationException(
+                "Cannot delete a role with active participants or invites. "
+                "Provide a substitution_role to reassign them."
+            )
         
-        role.delete()
+        with transaction.atomic():
+            # Reassign participants to substitution role
+            if substitution_role and participant_count > 0:
+                Participant.objects.filter(role=role).update(role=substitution_role)
+            
+            # Reassign invites to substitution role
+            if substitution_role and invite_count > 0:
+                Invite.objects.filter(role=role).update(role=substitution_role)
+            
+            role.delete()
+        
         return True
 
     @staticmethod
@@ -258,7 +294,7 @@ class RoleService:
             PermissionError: If user doesn't have permission or priority hierarchy violation
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
-            raise PermissionError("You don't have permission to manage roles in this room")
+            raise PermissionException("You don't have permission to manage roles in this room")
         
         # Check priority hierarchy
         RoleService._check_priority_can_affect(user, role)
@@ -288,7 +324,7 @@ class RoleService:
             PermissionError: If user doesn't have permission or priority hierarchy violation
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
-            raise PermissionError("You don't have permission to manage roles in this room")
+            raise PermissionException("You don't have permission to manage roles in this room")
         
         # Check priority hierarchy
         RoleService._check_priority_can_affect(user, role)

@@ -3,10 +3,9 @@ import uuid
 from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
-from django.db import IntegrityError
 
 from backend.core.graphql.types import RoleType
-from backend.core.graphql.utils import format_form_errors
+from backend.core.exceptions import ConflictException, PermissionException, FormValidationException, ErrorCode
 from backend.core.models import Role, Room
 from backend.core.services.role import RoleService
 
@@ -46,15 +45,10 @@ class CreateRole(graphene.Mutation):
                 permission_ids=permission_ids,
             )
             return CreateRole(role=role)
-        except PermissionError as e:
-            raise GraphQLError(str(e), extensions={"code": "PERMISSION_DENIED"})
-        except ValueError as e:
-            raise GraphQLError(str(e), extensions={"code": "VALIDATION_ERROR"})
-        except IntegrityError as e:
-            raise GraphQLError(
-                "Could not create role due to a conflict.",
-                extensions={"code": "CONFLICT"},
-            )
+        except (PermissionException, ConflictException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
 
 class UpdateRole(graphene.Mutation):
@@ -92,37 +86,49 @@ class UpdateRole(graphene.Mutation):
                 permission_ids=permission_ids,
             )
             return UpdateRole(role=role)
-        except PermissionError as e:
-            raise GraphQLError(str(e), extensions={"code": "PERMISSION_DENIED"})
-        except ValueError as e:
-            raise GraphQLError(str(e), extensions={"code": "VALIDATION_ERROR"})
-        except IntegrityError as e:
-            raise GraphQLError(
-                "Could not update role due to a conflict.",
-                extensions={"code": "CONFLICT"},
-            )
+        except (PermissionException, ConflictException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
 
 class DeleteRole(graphene.Mutation):
     class Arguments:
         role_id = graphene.UUID(required=True)
+        substitution_role_id = graphene.UUID(required=False)
 
     success = graphene.Boolean()
 
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, role_id: uuid.UUID):
+    def mutate(
+        self,
+        info: graphene.ResolveInfo,
+        role_id: uuid.UUID,
+        substitution_role_id: Optional[uuid.UUID] = None,
+    ):
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
             raise GraphQLError("Role not found", extensions={"code": "NOT_FOUND"})
         
+        substitution_role = None
+        if substitution_role_id:
+            try:
+                substitution_role = Role.objects.get(id=substitution_role_id)
+            except Role.DoesNotExist:
+                raise GraphQLError("Substitution role not found", extensions={"code": "NOT_FOUND"})
+        
         try:
-            RoleService.delete_role(user=info.context.user, role=role)
+            RoleService.delete_role(
+                user=info.context.user,
+                role=role,
+                substitution_role=substitution_role,
+            )
             return DeleteRole(success=True)
-        except PermissionError as e:
-            raise GraphQLError(str(e), extensions={"code": "PERMISSION_DENIED"})
-        except ValueError as e:
-            raise GraphQLError(str(e), extensions={"code": "VALIDATION_ERROR"})
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
 
 class AssignPermissionsToRole(graphene.Mutation):
@@ -142,7 +148,7 @@ class AssignPermissionsToRole(graphene.Mutation):
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
-            raise GraphQLError("Role not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:
             role = RoleService.assign_permissions_to_role(
@@ -151,8 +157,8 @@ class AssignPermissionsToRole(graphene.Mutation):
                 permission_ids=permission_ids,
             )
             return AssignPermissionsToRole(role=role)
-        except PermissionError as e:
-            raise GraphQLError(str(e), extensions={"code": "PERMISSION_DENIED"})
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
 
 
 class RemovePermissionsFromRole(graphene.Mutation):
@@ -172,7 +178,7 @@ class RemovePermissionsFromRole(graphene.Mutation):
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
-            raise GraphQLError("Role not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:
             role = RoleService.remove_permissions_from_role(
@@ -181,8 +187,8 @@ class RemovePermissionsFromRole(graphene.Mutation):
                 permission_ids=permission_ids,
             )
             return RemovePermissionsFromRole(role=role)
-        except PermissionError as e:
-            raise GraphQLError(str(e), extensions={"code": "PERMISSION_DENIED"})
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
 
 
 class RoleMutation(graphene.ObjectType):

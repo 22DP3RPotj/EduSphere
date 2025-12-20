@@ -123,10 +123,17 @@ class Room(models.Model):
 
 class Permission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=64, choices=PermissionCode.choices)
+    code = models.CharField(max_length=64, choices=PermissionCode.choices, unique=True)
+    description = models.CharField(max_length=255)
 
     def __str__(self):
         return self.code
+    
+    class Meta:
+        ordering = ['code']
+        indexes = [
+            models.Index(fields=['code']),
+        ]
 
 
 class Role(models.Model):

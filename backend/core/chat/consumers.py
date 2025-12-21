@@ -25,7 +25,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.initialized = False
         self.consume_task = None
 
-
+    # TODO: Move validation to forms
     @property
     def max_body_length(self):
         """

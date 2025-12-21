@@ -133,8 +133,7 @@ GRAPHENE = {
     "SCHEMA": "backend.core.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        # Optional: Uncomment for detailed logging of GraphQL operations
-        # "backend.core.graphql.middleware.DebugLoggingMiddleware",
+        # "backend.core.graphql.middleware.ValidationMiddleware",
     ],
 }
 

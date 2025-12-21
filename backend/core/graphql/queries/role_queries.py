@@ -4,7 +4,7 @@ from graphql import GraphQLError
 
 from backend.core.graphql.types import RoleType
 from backend.core.models import Role, Room
-from backend.core.services.role import RoleService
+from backend.core.services.role_service import RoleService
 
 
 class RoleQuery(graphene.ObjectType):

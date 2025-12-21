@@ -6,9 +6,8 @@ from graphql import GraphQLError
 
 from django.db.models import QuerySet
 
-from backend.core.graphql.queries import user
 from backend.core.graphql.types import InviteStatusEnum, InviteType
-from backend.core.models import Invite, Report, User
+from backend.core.models import Invite
 
 
 class InviteQuery(graphene.ObjectType):

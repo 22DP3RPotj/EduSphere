@@ -7,7 +7,7 @@ from graphql import GraphQLError
 from backend.core.graphql.types import RoleType
 from backend.core.exceptions import ConflictException, PermissionException, FormValidationException, ErrorCode
 from backend.core.models import Role, Room
-from backend.core.services.role import RoleService
+from backend.core.services.role_service import RoleService
 
 
 class CreateRole(graphene.Mutation):

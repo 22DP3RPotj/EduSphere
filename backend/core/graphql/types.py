@@ -104,7 +104,7 @@ class MessageType(DjangoObjectType):
             "user",
             "room",
             "body",
-            "edited",
+            "is_edited",
             "created",
             "updated",
         )
@@ -133,11 +133,6 @@ class ReportType(DjangoObjectType):
         )
 
 
-class AuthStatusType(graphene.ObjectType):
-    is_authenticated = graphene.Boolean(required=True)
-    user = graphene.Field(UserType)
-
-
 class InviteType(DjangoObjectType):
     inviter = graphene.Field(UserType, required=True)
     invitee = graphene.Field(UserType, required=True)
@@ -155,3 +150,18 @@ class InviteType(DjangoObjectType):
             "created",
             "expired_at",
         )
+
+
+class PermissionType(DjangoObjectType):
+    class Meta:
+        model = Permission
+        fields = (
+            "id",
+            "code",
+            "description",
+        )
+        
+        
+class AuthStatusType(graphene.ObjectType):
+    is_authenticated = graphene.Boolean(required=True)
+    user = graphene.Field(UserType)

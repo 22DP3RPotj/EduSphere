@@ -9,9 +9,8 @@ from backend.core.graphql.utils import format_form_errors
 
 from backend.core.models import Room, Topic, Participant, Role
 from backend.core.forms import RoomForm
-from backend.core.permissions import has_permission, PermissionCode
 from backend.core.services import RoleService
-from backend.core.enums import RoleCode
+from backend.core.enums import RoleCode, PermissionCode
 
 
 class CreateRoom(graphene.Mutation):
@@ -95,7 +94,7 @@ class UpdateRoom(graphene.Mutation):
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
         
-        if not has_permission(
+        if not RoleService.has_permission(
             info.context.user,
             room,
             PermissionCode.ROOM_UPDATE

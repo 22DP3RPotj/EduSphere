@@ -8,8 +8,8 @@ from django.db import transaction, IntegrityError
 from backend.core.graphql.types import InviteType
 from backend.core.graphql.utils import format_form_errors
 from backend.core.models import Invite, Room, User, Role, Participant, PermissionCode
-from backend.core.permissions import has_permission
 from backend.core.forms import InviteForm
+from backend.core.services import RoleService
 
 # TODO: Lazy invite expiration handling + Service layer refactor
 
@@ -42,7 +42,7 @@ class SendInvite(graphene.Mutation):
             raise GraphQLError("Invitee not found", extensions={"code": "NOT_FOUND"})
         
         try:
-            role = Role.objects.get(id=role_id, room=room)
+            role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
             raise GraphQLError("Role not found in the specified room", extensions={"code": "NOT_FOUND"})
 
@@ -58,7 +58,7 @@ class SendInvite(graphene.Mutation):
                 extensions={"code": "ALREADY_PARTICIPANT"},
             )
             
-        if not has_permission(info.context.user, room, PermissionCode.ROOM_INVITE):
+        if not RoleService.has_permission(info.context.user, room, PermissionCode.ROOM_INVITE):
             raise GraphQLError(
                 "You do not have permission to invite users to this room.",
                 extensions={"code": "FORBIDDEN"},

@@ -6,8 +6,8 @@ from graphql import GraphQLError
 from backend.core.graphql.types import MessageType
 from backend.core.graphql.utils import format_form_errors
 from backend.core.models import Message, PermissionCode
-from backend.core.permissions import has_permission
 from backend.core.forms import MessageForm
+from backend.core.services import RoleService
 
 
 class DeleteMessage(graphene.Mutation):
@@ -23,7 +23,7 @@ class DeleteMessage(graphene.Mutation):
         except Message.DoesNotExist:
             raise GraphQLError("Message not found", extensions={"code": "NOT_FOUND"})
         
-        if message.user != info.context.user and not has_permission(info.context.user, message.room, PermissionCode.ROOM_DELETE_MESSAGE):
+        if message.user != info.context.user and not RoleService.has_permission(info.context.user, message.room, PermissionCode.ROOM_DELETE_MESSAGE):
             raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
         
         message.delete()

@@ -330,7 +330,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'action': 'update',
             'id': message_id,
             'body': new_body,
-            'edited': True,
+            'is_edited': True,
             'updated': updated_ts.isoformat() if updated_ts else None,
         }
 

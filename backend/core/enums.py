@@ -14,3 +14,4 @@ class PermissionCode(TextChoices):
     ROOM_KICK = "room.kick", "Remove users"
     ROOM_ROLE_MANAGE = "room.role_manage", "Manage roles"
     ROOM_DELETE_MESSAGE = "room.delete_message", "Delete message"
+    ROOM_UPLOAD_FILE = "room.upload_file", "Allow file uploads"

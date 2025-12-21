@@ -198,7 +198,7 @@ class Message(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     body = models.TextField(max_length=2048)
-    edited = models.BooleanField(default=False)
+    is_edited = models.BooleanField(default=False)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -225,15 +225,15 @@ class Message(models.Model):
             'user': self.user.username,
             'user_id': str(self.user.id),
             'body': self.body,
+            'is_edited': self.is_edited,
             'created': self.created.isoformat(),
-            'edited': self.edited,
             'updated': self.updated.isoformat(),
-            'userAvatar': self.user.avatar.name if self.user.avatar else None,
+            'user_avatar': self.user.avatar.name if self.user.avatar else None,
         }
         
     def update(self, body):
-        if not self.edited:
-            self.edited = True
+        if not self.is_edited:
+            self.is_edited = True
         self.body = body
         self.save()
         

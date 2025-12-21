@@ -98,6 +98,8 @@ class DeleteRole(graphene.Mutation):
         substitution_role_id = graphene.UUID(required=False)
 
     success = graphene.Boolean()
+    participants_reassigned = graphene.Int()
+    invites_reassigned = graphene.Int()
 
     @login_required
     def mutate(
@@ -119,12 +121,16 @@ class DeleteRole(graphene.Mutation):
                 raise GraphQLError("Substitution role not found", extensions={"code": "NOT_FOUND"})
         
         try:
-            RoleService.delete_role(
+            result = RoleService.delete_role(
                 user=info.context.user,
                 role=role,
                 substitution_role=substitution_role,
             )
-            return DeleteRole(success=True)
+            return DeleteRole(
+                success=result['success'],
+                participants_reassigned=result['participants_reassigned'],
+                invites_reassigned=result['invites_reassigned'],
+            )
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
         except FormValidationException as e:

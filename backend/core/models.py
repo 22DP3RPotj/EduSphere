@@ -24,13 +24,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         validators=[FileExtensionValidator(['svg','png','jpg','jpeg'])]
     )
     is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
+    EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'name']
 
     def __str__(self):

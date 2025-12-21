@@ -15,6 +15,7 @@ def _get_user(token: str):
     except Exception:
         return None
 
+
 class JwtAuthMiddleware(BaseMiddleware):
     """
     ASGI middleware that takes the JWT from the HttpOnly 'JWT' cookie,

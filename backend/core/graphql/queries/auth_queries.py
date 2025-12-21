@@ -1,5 +1,6 @@
 import graphene
 from graphql_jwt.decorators import login_required
+
 from backend.core.graphql.types import UserType, AuthStatusType
 from backend.core.models import User
 

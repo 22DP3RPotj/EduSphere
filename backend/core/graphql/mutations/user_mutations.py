@@ -4,6 +4,7 @@ from typing import Optional
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
+
 from django.db import transaction
 
 from backend.core.graphql.types import UserType

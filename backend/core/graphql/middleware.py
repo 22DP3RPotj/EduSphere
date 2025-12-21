@@ -3,6 +3,7 @@ from graphql import parse, validate, GraphQLError
 from graphene.validation import DisableIntrospection, depth_limit_validator
 from graphql import GraphQLResolveInfo
 
+
 class ValidationMiddleware:
     def resolve(self, next_, root, info: GraphQLResolveInfo, **kwargs):
         try:

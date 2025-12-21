@@ -1,6 +1,8 @@
 import graphene
 from graphql import GraphQLError
+
 from django.db.models import QuerySet
+
 from backend.core.graphql.types import MessageType
 from backend.core.models import Participant, Room, User, Message
 

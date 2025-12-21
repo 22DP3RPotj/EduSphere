@@ -7,6 +7,7 @@ from .report_mutations import ReportMutation
 from .invite_mutations import InviteMutation
 from .role_mutations import RoleMutation
 
+
 class Mutation(
     AuthMutation,
     UserMutation,

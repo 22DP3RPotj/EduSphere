@@ -1,7 +1,9 @@
 import graphene
 from typing import Optional
-from django.db.models import Q, Count, QuerySet
 from graphql import GraphQLError
+
+from django.db.models import Q, Count, QuerySet
+
 from backend.core.graphql.types import RoomType
 from backend.core.models import Room, User
 

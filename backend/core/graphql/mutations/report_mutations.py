@@ -5,6 +5,7 @@ from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
 from django.db import transaction, IntegrityError
+
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.core.graphql.utils import format_form_errors
 from backend.core.models import Participant, Report, Room

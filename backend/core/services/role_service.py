@@ -1,5 +1,6 @@
 import uuid
 from typing import Optional
+
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 
@@ -26,7 +27,7 @@ class RoleService:
             The priority value
             
         Raises:
-            ValueError: If user is not a participant
+            ValidationException: If user is not a participant
         """
         try:
             participant = Participant.objects.select_related('role').get(
@@ -48,7 +49,7 @@ class RoleService:
             target_role: The target role
             
         Raises:
-            PermissionError: If user's priority is lower than target role's priority
+            PermissionException: If user's priority is lower than target role's priority
         """
         user_priority = RoleService._get_user_role_priority(user, target_role.room)
         
@@ -102,9 +103,9 @@ class RoleService:
             The created Role instance
             
         Raises:
-            PermissionError: If user doesn't have ROOM_ROLE_MANAGE permission
-            ValueError: If form validation fails
-            IntegrityError: If role creation conflicts
+            PermissionException: If user doesn't have ROOM_ROLE_MANAGE permission
+            ValidationException: If form validation fails
+            ConflictException: If role creation conflicts
         """
         if not has_permission(user, room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
@@ -158,9 +159,9 @@ class RoleService:
             The updated Role instance
             
         Raises:
-            PermissionError: If user doesn't have permission or priority hierarchy violation
-            ValueError: If form validation fails
-            IntegrityError: If update conflicts
+            PermissionException: If user doesn't have permission or priority hierarchy violation
+            ValidationException: If form validation fails
+            ConflictException: If update conflicts
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
@@ -209,8 +210,8 @@ class RoleService:
             True if deletion was successful
             
         Raises:
-            PermissionError: If user doesn't have permission or priority hierarchy violation
-            ValueError: If role has participants/invites but no substitution role provided
+            PermissionException: If user doesn't have permission or priority hierarchy violation
+            ValidationException: If role has participants/invites but no substitution role provided
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
@@ -243,7 +244,7 @@ class RoleService:
         return True
 
     @staticmethod
-    def get_role_with_prefetch(role_id: uuid.UUID) -> Optional[Role]:
+    def get_role_by_id(role_id: uuid.UUID) -> Optional[Role]:
         """
         Get a role with optimized prefetch_related queries.
         
@@ -291,7 +292,7 @@ class RoleService:
             The updated Role instance
             
         Raises:
-            PermissionError: If user doesn't have permission or priority hierarchy violation
+            PermissionException: If user doesn't have permission or priority hierarchy violation
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
@@ -321,7 +322,7 @@ class RoleService:
             The updated Role instance
             
         Raises:
-            PermissionError: If user doesn't have permission or priority hierarchy violation
+            PermissionException: If user doesn't have permission or priority hierarchy violation
         """
         if not has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")

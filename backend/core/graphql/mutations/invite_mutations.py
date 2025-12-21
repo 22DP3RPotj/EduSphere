@@ -4,6 +4,7 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from django.db import transaction, IntegrityError
+
 from backend.core.graphql.types import InviteType
 from backend.core.graphql.utils import format_form_errors
 from backend.core.models import Invite, Room, User, Role, Participant, PermissionCode

@@ -3,6 +3,7 @@ import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 
+
 # Initialize environment variables
 env = environ.Env(
     DEBUG=(bool, False)

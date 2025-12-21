@@ -8,6 +8,7 @@ from django.conf import settings
 from datetime import datetime
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):

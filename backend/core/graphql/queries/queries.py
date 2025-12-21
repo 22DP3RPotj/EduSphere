@@ -8,6 +8,7 @@ from .report_queries import ReportQuery
 from .inivte_queries import InviteQuery
 from .role_queries import RoleQuery
 
+
 class Query(
     AuthQuery,
     TopicQuery,

@@ -1,5 +1,6 @@
 import graphene
 import graphql_jwt
+
 from backend.core.graphql.types import UserType
 
 

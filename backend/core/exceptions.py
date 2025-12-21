@@ -1,6 +1,7 @@
 from enum import StrEnum
 from django.forms.utils import ErrorDict
 
+
 class ErrorCode(StrEnum):
     VALIDATION_ERROR = "VALIDATION_ERROR"
     PERMISSION_DENIED = "PERMISSION_DENIED"
@@ -16,11 +17,6 @@ class DomainException(Exception):
         super().__init__(message)
 
 
-def _format_form_errors(errors: ErrorDict) -> dict[str, list[str]]:
-    return {
-        field: [e["message"] for e in errs]
-        for field, errs in errors.get_json_data().items()
-    }
 
 class ValidationException(DomainException):
     """Exception raised for validation errors."""
@@ -31,10 +27,18 @@ class ValidationException(DomainException):
 
 
 class FormValidationException(ValidationException):
-    """Exception raised for form validation errors."""
+    """Exception raised for form validation errors."""    
     def __init__(self, message: str, errors: ErrorDict):
-        self.errors = _format_form_errors(errors)
+        self.errors = self._format_form_errors(errors)
         super().__init__(message)
+    
+    @staticmethod
+    def _format_form_errors(errors: ErrorDict) -> dict[str, list[str]]:
+        return {
+            field: [e["message"] for e in errs]
+            for field, errs in errors.get_json_data().items()
+        }
+        
 
 class PermissionException(DomainException):
     """Exception raised for permission errors."""
@@ -43,12 +47,14 @@ class PermissionException(DomainException):
     def __init__(self, message: str):
         super().__init__(message)
         
+        
 class NotFoundException(DomainException):
     """Exception raised when an entity is not found."""
     code = ErrorCode.NOT_FOUND
     
     def __init__(self, message: str):
         super().__init__(message)
+        
         
 class ConflictException(DomainException):
     """Exception raised for conflict errors."""

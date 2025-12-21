@@ -9,8 +9,10 @@ from backend.core.graphql.utils import format_form_errors
 
 from backend.core.models import Room, Topic, Participant, Role
 from backend.core.forms import RoomForm
-from backend.core.roles import create_default_roles, RoleCode
 from backend.core.permissions import has_permission, PermissionCode
+from backend.core.services import RoleService
+from backend.core.enums import RoleCode
+
 
 class CreateRoom(graphene.Mutation):
     class Arguments:
@@ -43,7 +45,7 @@ class CreateRoom(graphene.Mutation):
                 topics = [Topic.objects.get_or_create(name=topic_name)[0] for topic_name in topics]
                 room.topics.set(topics)
                 
-                create_default_roles(room)
+                RoleService.create_default_roles(room)
                 
                 owner_role = room.roles.get(code=RoleCode.OWNER, room=room)
                 

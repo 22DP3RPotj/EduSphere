@@ -1,5 +1,6 @@
 from .enums import PermissionCode, RoleCode
 
+
 PERMISSION_TEMPLATES = {
     PermissionCode.ROOM_DELETE: {
         "description": "Delete room",

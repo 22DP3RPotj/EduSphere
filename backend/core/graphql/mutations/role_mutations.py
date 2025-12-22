@@ -33,7 +33,7 @@ class CreateRole(graphene.Mutation):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:
             role = RoleService.create_role(
@@ -71,10 +71,10 @@ class UpdateRole(graphene.Mutation):
         priority: Optional[int] = None,
         permission_ids: Optional[list[uuid.UUID]] = None,
     ):
-        try:
-            role = Role.objects.get(id=role_id)
-        except Role.DoesNotExist:
-            raise GraphQLError("Role not found", extensions={"code": "NOT_FOUND"})
+        role = RoleService.get_role_by_id(role_id=role_id)
+        
+        if role is None:
+            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:
             role = RoleService.update_role(
@@ -85,12 +85,12 @@ class UpdateRole(graphene.Mutation):
                 priority=priority,
                 permission_ids=permission_ids,
             )
-            return UpdateRole(role=role)
         except (PermissionException, ConflictException) as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
+        return UpdateRole(role=role)
 
 class DeleteRole(graphene.Mutation):
     class Arguments:
@@ -108,17 +108,18 @@ class DeleteRole(graphene.Mutation):
         role_id: uuid.UUID,
         substitution_role_id: Optional[uuid.UUID] = None,
     ):
-        try:
-            role = Role.objects.get(id=role_id)
-        except Role.DoesNotExist:
-            raise GraphQLError("Role not found", extensions={"code": "NOT_FOUND"})
+        role = RoleService.get_role_by_id(role_id=role_id)
         
+        if role is None:
+            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
+        
+        # TODO: ??
         substitution_role = None
         if substitution_role_id:
             try:
                 substitution_role = Role.objects.get(id=substitution_role_id)
             except Role.DoesNotExist:
-                raise GraphQLError("Substitution role not found", extensions={"code": "NOT_FOUND"})
+                raise GraphQLError("Substitution role not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:
             result = RoleService.delete_role(
@@ -151,9 +152,9 @@ class AssignPermissionsToRole(graphene.Mutation):
         role_id: uuid.UUID,
         permission_ids: list[uuid.UUID],
     ):
-        try:
-            role = Role.objects.get(id=role_id)
-        except Role.DoesNotExist:
+        role = RoleService.get_role_by_id(role_id=role_id)
+        
+        if role is None:
             raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:

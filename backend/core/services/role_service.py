@@ -4,7 +4,7 @@ from typing import Optional
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 
-from backend.core.models import Role, Room, Permission, User, Participant
+from backend.core.models import Role, Room, Permission, User, Participant, Invite
 from backend.core.enums import PermissionCode
 from backend.core.forms import RoleForm
 from backend.core.exceptions import FormValidationException, PermissionException, NotFoundException, ConflictException, ValidationException
@@ -13,68 +13,43 @@ from backend.core.templates import DEFAULT_ROLE_TEMPLATES
 
 class RoleService:
     """Service for role-related operations."""
-
-    @staticmethod
-    def _get_user_role_priority(user: User, room: Room) -> int:
-        """
-        Get the priority of a user's role in a room.
-        
-        Args:
-            user: The user
-            room: The room
-            
-        Returns:
-            The priority value
-            
-        Raises:
-            NotFoundException: If user is not a participant
-        """
-        try:
-            participant = Participant.objects.select_related('role').get(
-                user=user,
-                room=room
-            )
-            return participant.role.priority
-        except Participant.DoesNotExist:
-            raise NotFoundException("User is not a participant of this room")
-        
+    
     @staticmethod
     def _is_valid_permission_set(
-        user: User,
-        room: Room,
-        permission_ids: set[uuid.UUID],
+        participant: Participant,
+        permission_ids: list[uuid.UUID],
     ) -> bool:
-        try:
-            participant = Participant.objects.select_related(
-                'role'
-            ).prefetch_related('role__permissions').get(user=user, room=room)
-        except Participant.DoesNotExist:
-            return False
-
+        """
+        Check if a permission set is valid for a certain participant
+        User can't modify permissions they don't have
+        
+        Args:
+            participant: The user attempting the action
+            permission_ids: The permission set as list of ids
+            
+        Returns:
+            True if permission set is valid, False otherwise
+        """
         user_perms = {p.id for p in participant.role.permissions.all()}
         requested_perms = set(permission_ids)
     
         return requested_perms.issubset(user_perms)
 
     @staticmethod
-    def can_affect_role(user: User, target_role: Role) -> bool:
+    def can_affect_role(participant: Participant, target_role: Role) -> bool:
         """
         Check if a user can affect a target role based on priority hierarchy.
-        Lower priority values = higher priority users (can affect higher priority values).
+        Higher priority values = higher privilege users (can affect lower priority values).
         
         Args:
-            user: The user attempting the action
+            participant: The user attempting the action
             target_role: The target role
             
         Returns:
             True if user can affect the target role, False otherwise
         """
-        try:
-            user_priority = RoleService._get_user_role_priority(user, target_role.room)
-        except NotFoundException:
-            return False
         
-        return user_priority > target_role.priority
+        return participant.role.priority > target_role.priority
             
     @staticmethod
     def has_permission(user: User, room: Room, perm_code: PermissionCode) -> bool:
@@ -100,6 +75,66 @@ class RoleService:
             room=room,
             role__permissions__code=perm_code
         ).exists()
+            
+    @staticmethod
+    def get_room_roles(room: Room) -> QuerySet[Role]:
+        """
+        Get all roles in a room.
+        
+        Args:
+            room: The room to get roles from
+            
+        Returns:
+            QuerySet of roles
+        """
+        return Role.objects.filter(room=room).prefetch_related('permissions')
+
+    @staticmethod
+    def get_role_by_id(role_id: uuid.UUID) -> Optional[Role]:
+        """
+        Get a role with optimized prefetch_related queries.
+        
+        Args:
+            role_id: The ID of the role to fetch
+            
+        Returns:
+            The Role instance or None if not found
+        """
+        try:
+            role = (
+                Role.objects
+                .select_related('room')
+                .prefetch_related('permissions')
+                .get(id=role_id)
+            )
+        except Role.DoesNotExist:
+            return None
+        
+        return role
+    
+    @staticmethod
+    def get_participant(user: User, room: Room) -> Optional[Participant]:
+        """
+        Get a participant by user and room
+        
+        Args:
+            user: The user
+            room: The room
+            
+        Returns:
+            The Participant instance or None if not found
+        """
+        try:
+            participant = (
+                Participant.objects
+                .select_related('role')
+                .prefetch_related('role__permissions')
+                .get(user=user, room=room)
+            )
+        except Participant.DoesNotExist:
+            return None
+        
+        return participant
             
     @staticmethod
     def create_default_roles(room: Room) -> None:
@@ -149,10 +184,15 @@ class RoleService:
             ValidationException: If form validation fails
             ConflictException: If role creation conflicts
         """
+        participant = RoleService.get_participant(user, room)
+        
+        if participant is None:
+            raise PermissionException("You are not a participant of this room and cannot create roles.")
+        
         if not RoleService.has_permission(user, room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
         
-        user_priority = RoleService._get_user_role_priority(user, room)
+        user_priority = participant.role.priority
         
         if priority >= user_priority:
             raise PermissionException(
@@ -161,8 +201,8 @@ class RoleService:
                 f"Attempted priority: {priority}"
             )
         
-        if permission_ids:            
-            if not RoleService._is_valid_permission_set(user, room, permission_ids):
+        if permission_ids:
+            if not RoleService._is_valid_permission_set(participant, permission_ids):
                 raise PermissionException(
                     "Cannot assign permissions you don't have. "
                     "You can only grant permissions your role already possesses."
@@ -221,10 +261,15 @@ class RoleService:
             ValidationException: If form validation fails
             ConflictException: If update conflicts
         """
+        participant = RoleService.get_participant(user, role.room)
+        
+        if participant is None:
+            raise PermissionException("You are not a participant of this room and cannot update roles.")
+
         if not RoleService.has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
         
-        if not RoleService.can_affect_role(user, role):
+        if not RoleService.can_affect_role(participant, role):
             raise PermissionException("Cannot affect roles with higher or equal priority.")
         
         data = {}
@@ -247,7 +292,7 @@ class RoleService:
                     form.save()
                 
                 if permission_ids is not None:                    
-                    if not RoleService._is_valid_permission_set(user, role.room, permission_ids):
+                    if not RoleService._is_valid_permission_set(participant, permission_ids):
                         raise PermissionException(
                             "Cannot assign permissions you don't have. "
                             "You can only grant permissions your role already possesses."
@@ -282,15 +327,20 @@ class RoleService:
             PermissionException: If user doesn't have permission or priority hierarchy violation
             ValidationException: If role has participants/invites but no substitution role provided
         """
+
+        participant = RoleService.get_participant(user, role.room)
+
+        if participant is None:
+            raise PermissionException("You are not a participant of this room and cannot delete roles.")
+        
         if not RoleService.has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
         
-        if not RoleService.can_affect_role(user, role):
+        if not RoleService.can_affect_role(participant, role):
             raise PermissionException("Cannot affect roles with equal or higher priority.")
         
         # Check if any participants or invites have this role
         participant_count = Participant.objects.filter(role=role).count()
-        from backend.core.models import Invite
         invite_count = Invite.objects.filter(role=role).count()
         
         if (participant_count > 0 or invite_count > 0) and substitution_role is None:
@@ -319,36 +369,6 @@ class RoleService:
             'invites_reassigned': invites_reassigned
         }
 
-    @staticmethod
-    def get_role_by_id(role_id: uuid.UUID) -> Optional[Role]:
-        """
-        Get a role with optimized prefetch_related queries.
-        
-        Args:
-            role_id: The ID of the role to fetch
-            
-        Returns:
-            The Role instance or None if not found
-        """
-        try:
-            return Role.objects.select_related('room').prefetch_related(
-                'permissions'
-            ).get(id=role_id)
-        except Role.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_room_roles(room: Room) -> QuerySet[Role]:
-        """
-        Get all roles in a room.
-        
-        Args:
-            room: The room to get roles from
-            
-        Returns:
-            QuerySet of roles
-        """
-        return Role.objects.filter(room=room).prefetch_related('permissions')
 
     @staticmethod
     def assign_permissions_to_role(
@@ -370,13 +390,18 @@ class RoleService:
         Raises:
             PermissionException: If user doesn't have permission, priority violation, or permission escalation attempt
         """
+        participant = RoleService.get_participant(user, role.room)
+        
+        if participant is None:
+            raise PermissionException("You are not a participant of this room and cannot manage permissions.")
+        
         if not RoleService.has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
         
-        if not RoleService.can_affect_role(user, role):
+        if not RoleService.can_affect_role(participant, role):
             raise PermissionException("Cannot affect roles with equal or higher priority.")
         
-        if not RoleService._is_valid_permission_set(user, role.room, permission_ids):
+        if not RoleService._is_valid_permission_set(participant, permission_ids):
             raise PermissionException(
                 "Cannot assign permissions you don't have. "
                 "You can only grant permissions your role already possesses."
@@ -406,10 +431,15 @@ class RoleService:
         Raises:
             PermissionException: If user doesn't have permission or priority hierarchy violation
         """
+        participant = RoleService.get_participant(user, role.room)
+        
+        if participant is None:
+            raise PermissionException("You are not a participant of this room and cannot update roles.")
+        
         if not RoleService.has_permission(user, role.room, PermissionCode.ROOM_ROLE_MANAGE):
             raise PermissionException("You don't have permission to manage roles in this room")
         
-        if not RoleService.can_affect_role(user, role):
+        if not RoleService.can_affect_role(participant, role):
             raise PermissionException("Cannot affect roles with higher or equal priority.")
 
         role.permissions.remove(*permission_ids)

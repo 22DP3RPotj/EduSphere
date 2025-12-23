@@ -7,7 +7,8 @@ from django.db import transaction, IntegrityError
 
 from backend.core.graphql.types import InviteType
 from backend.core.graphql.utils import format_form_errors
-from backend.core.models import Invite, Room, User, Role, Participant, PermissionCode
+from backend.core.models import Invite, Room, User, Role, Participant
+from backend.core.enums import PermissionCode
 from backend.core.forms import InviteForm
 from backend.core.services import RoleService
 

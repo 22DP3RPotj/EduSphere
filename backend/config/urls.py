@@ -1,21 +1,17 @@
-# from django.conf import settings
-# from django.views.decorators.csrf import csrf_protect
 # from django.urls import include
 
 from django.urls import path
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from graphql_jwt.decorators import jwt_cookie
 from graphene_file_upload.django import FileUploadGraphQLView
 
 
 urlpatterns = [
     path("graphql/", jwt_cookie(
-        csrf_exempt(ensure_csrf_cookie(
-            FileUploadGraphQLView.as_view(graphiql=True)
-        ))
+        csrf_exempt(
+            FileUploadGraphQLView.as_view(graphiql=settings.DEBUG)
+        )
     )),
-    # Csrf token endpoint
-    # TODO: Come up with a better way to handle this
-    # path("api/", include("backend.api.urls")),
 ]
 

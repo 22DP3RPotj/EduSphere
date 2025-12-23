@@ -5,7 +5,8 @@ from graphql import GraphQLError
 
 from backend.core.graphql.types import MessageType
 from backend.core.graphql.utils import format_form_errors
-from backend.core.models import Message, PermissionCode
+from backend.core.models import Message
+from backend.core.enums import PermissionCode
 from backend.core.forms import MessageForm
 from backend.core.services import RoleService
 

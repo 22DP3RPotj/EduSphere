@@ -56,7 +56,7 @@ class ReportForm(ModelForm):
 class InviteForm(ModelForm):
     class Meta:
         model = Invite
-        fields = ('expires_at')
+        fields = ('expires_at',)
 
 
 class RoleForm(ModelForm):

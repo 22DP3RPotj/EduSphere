@@ -34,12 +34,14 @@ class TopicType(DjangoObjectType):
             "name",
         )
 
+
 class PermissionType(DjangoObjectType):
     class Meta:
         model = Permission
         fields = (
+            "id",
             "code",
-            "name"
+            "description"
         )
         
 
@@ -148,20 +150,10 @@ class InviteType(DjangoObjectType):
             "token",
             "status",
             "created",
-            "expired_at",
+            "expires_at",
         )
 
 
-class PermissionType(DjangoObjectType):
-    class Meta:
-        model = Permission
-        fields = (
-            "id",
-            "code",
-            "description",
-        )
-        
-        
 class AuthStatusType(graphene.ObjectType):
     is_authenticated = graphene.Boolean(required=True)
     user = graphene.Field(UserType)

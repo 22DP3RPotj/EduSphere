@@ -4,11 +4,14 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.core.graphql.types import MessageType
-from backend.core.graphql.utils import format_form_errors
 from backend.core.models import Message
-from backend.core.enums import PermissionCode
-from backend.core.forms import MessageForm
-from backend.core.services import RoleService
+from backend.core.services import MessageService
+from backend.core.exceptions import (
+    PermissionException,
+    FormValidationException,
+    ConflictException,
+    ErrorCode
+)
 
 
 class DeleteMessage(graphene.Mutation):
@@ -22,14 +25,17 @@ class DeleteMessage(graphene.Mutation):
         try:
             message = Message.objects.get(id=message_id)
         except Message.DoesNotExist:
-            raise GraphQLError("Message not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Message not found", extensions={"code": ErrorCode.NOT_FOUND})
         
-        if message.user != info.context.user and not RoleService.has_permission(info.context.user, message.room, PermissionCode.ROOM_DELETE_MESSAGE):
-            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
-        
-        message.delete()
-        return DeleteMessage(success=True)
+        try:
+            success = MessageService.delete_message(
+                user=info.context.user,
+                message=message
+            )
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
     
+        return DeleteMessage(success=success)
     
 class UpdateMessage(graphene.Mutation):
     class Arguments:
@@ -43,27 +49,22 @@ class UpdateMessage(graphene.Mutation):
         try:
             message = Message.objects.get(id=message_id)
         except Message.DoesNotExist:
-            raise GraphQLError("Message not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Message not found", extensions={"code": ErrorCode.NOT_FOUND})
         
-        if message.user != info.context.user:
-            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
-        
-        data = {
-            "body": body,
-        }
-        form = MessageForm(data=data, instance=message)
-        
-        
-        if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
-        
-        message = form.save(commit=False)
-        if not message.edited:
-            message.edited = True
-        message.save()
+        try:
+            message = MessageService.update_message(
+                user=info.context.user,
+                message=message,
+                body=body
+            )
+        except (PermissionException, ConflictException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+    
         return UpdateMessage(message=message)
-    
-    
+
+
 class MessageMutation(graphene.ObjectType):
     delete_message = DeleteMessage.Field()
     update_message = UpdateMessage.Field()

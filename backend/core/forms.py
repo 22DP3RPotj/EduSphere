@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
 from .models import User, Room, Message, Report, Invite, Role
 
+
 class RegisterForm(UserCreationForm):
     class Meta:
         model = User
@@ -12,7 +13,7 @@ class RegisterForm(UserCreationForm):
 
 class RoomForm(ModelForm):
     name = forms.CharField(
-        max_length=64, 
+        max_length=64,
         validators=[
             RegexValidator(
                 regex='^[a-zA-Z0-9 ]+$',
@@ -22,11 +23,11 @@ class RoomForm(ModelForm):
         ]
     )
     
-    description = forms.CharField(widget=forms.Textarea, required=False)
+    description = forms.CharField(required=False)
         
     class Meta:
         model = Room
-        fields = ('name', 'description', 'default_role', 'visibility')
+        fields = ('name', 'description')
         
     def clean_name(self) -> str:
         name = self.cleaned_data['name']

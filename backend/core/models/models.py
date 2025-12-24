@@ -4,11 +4,12 @@ from django.db.models.constraints import Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.forms import ValidationError
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import FileExtensionValidator, MaxValueValidator
 
-from backend.core.enums import PermissionCode, RoleCode
+from backend.core.enums import PermissionCode
 
 from .managers import CustomUserManager
 
@@ -75,6 +76,7 @@ class Topic(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+# TODO: possible roles rework
 
 class Room(models.Model):
     class Visibility(models.TextChoices):
@@ -83,21 +85,21 @@ class Room(models.Model):
         
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
-    default_role = models.ForeignKey("Role", on_delete=models.PROTECT, related_name='default_for_rooms')
+    default_role = models.ForeignKey("Role", on_delete=models.PROTECT, related_name='default_for_rooms', null=True, blank=True)
     topics = models.ManyToManyField(Topic, related_name='rooms')
-    visibility = models.CharField(max_length=16, choices=Visibility.choices, default=Visibility.PUBLIC, blank=True)
+    visibility = models.CharField(max_length=16, choices=Visibility.choices, default=Visibility.PUBLIC)
     name = models.CharField(max_length=64)
     slug = models.SlugField(max_length=64)
     description = models.TextField(blank=True, default='', max_length=512)
     participants = models.ManyToManyField(User, related_name='participants', through="Participant", blank=True)
-    updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
     
     class Meta:
-        ordering = ['-updated', '-created']
+        ordering = ['-updated_at', '-created_at']
         constraints = [
             models.UniqueConstraint(
                 fields=['host', 'slug'],
@@ -106,7 +108,7 @@ class Room(models.Model):
             )
         ]
         indexes = [
-            models.Index(fields=['updated']),
+            models.Index(fields=['updated_at']),
         ]
         
     def save(self, *args, **kwargs):
@@ -124,7 +126,7 @@ class Room(models.Model):
 
 class Permission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=64, choices=PermissionCode.choices, unique=True)
+    code = models.CharField(max_length=64, choices=PermissionCode.choices, unique=True, editable=False)
     description = models.CharField(max_length=255)
 
     def __str__(self):
@@ -139,22 +141,17 @@ class Permission(models.Model):
 
 class Role(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=32, choices=RoleCode.choices)
     name = models.CharField(max_length=32)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='roles')
     description = models.TextField(max_length=512, blank=True, default='')
-    permissions = models.ManyToManyField(Permission, related_name='roles', blank=True)
     priority = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(100)])
+    permissions = models.ManyToManyField(Permission, related_name='roles', blank=True)
 
     def __str__(self):
         return self.name
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=['room', 'code'],
-                name='unique_role_code_per_room'
-            ),
             models.UniqueConstraint(
                 fields=['room', 'name'],
                 name='unique_role_name_per_room'
@@ -195,26 +192,31 @@ class Participant(models.Model):
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     body = models.TextField(max_length=2048)
     is_edited = models.BooleanField(default=False)
-    updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.body[0:50] + ('...' if len(self.body) > 50 else '')
 
     class Meta:
         indexes = [
-            models.Index(fields=['room', 'user', 'created']),
-            models.Index(fields=['room', 'created']),
-            models.Index(fields=['room', '-created']),
-            models.Index(fields=['user', 'created']),
+            models.Index(fields=['room', 'user', 'created_at']),
+            models.Index(fields=['room', 'created_at']),
+            models.Index(fields=['room', '-created_at']),
+            models.Index(fields=['user', 'created_at']),
             models.Index(fields=['user']),
         ]
-        ordering = ['-created']
-        
+        ordering = ['-created_at']
+    
+    def clean(self):
+        if self.parent and self.parent.room_id != self.room_id:
+            raise ValidationError("Parent message must be in the same room as the message.")
+    
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
@@ -226,8 +228,8 @@ class Message(models.Model):
             'user_id': str(self.user.id),
             'body': self.body,
             'is_edited': self.is_edited,
-            'created': self.created.isoformat(),
-            'updated': self.updated.isoformat(),
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
             'user_avatar': self.user.avatar.name if self.user.avatar else None,
         }
         
@@ -271,8 +273,8 @@ class Report(models.Model):
         blank=True,
         related_name='moderated_reports'
     )
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
@@ -284,11 +286,11 @@ class Report(models.Model):
             )
         ]
         indexes = [
-            models.Index(fields=['status', 'created']),
-            models.Index(fields=['user', 'created']),
-            models.Index(fields=['room', 'created']),
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['room', 'created_at']),
         ]
-        ordering = ['-created']
+        ordering = ['-created_at']
 
     def __str__(self):
         username = self.user.username if self.user else "<Deleted user>"
@@ -321,7 +323,7 @@ class Invite(models.Model):
     role = models.ForeignKey(Role, on_delete=models.PROTECT)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     status = models.CharField(max_length=16, choices=InviteStatus.choices, default=InviteStatus.PENDING)
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 
     class Meta:
@@ -336,7 +338,7 @@ class Invite(models.Model):
             models.Index(fields=['room', 'invitee']),
             models.Index(fields=['expires_at']),
         ]
-        ordering = ['-created']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Invite of {self.invitee.username} to {self.room.name} by {self.inviter.username}"
@@ -348,3 +350,8 @@ class Invite(models.Model):
     @classmethod
     def active_invites(cls, **filters):
         return cls.objects.filter(status=cls.InviteStatus.PENDING, **filters)
+    
+    @property
+    def is_expired(self) -> bool:
+        """Check if invite has expired based on expires_at timestamp."""
+        return timezone.now() > self.expires_at

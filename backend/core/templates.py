@@ -28,12 +28,12 @@ PERMISSION_TEMPLATES = {
 DEFAULT_ROLE_TEMPLATES = {
     RoleCode.OWNER: {
         "description": "Room owner",
-        "permissions": PermissionCode.values,
+        "permission_codes": PermissionCode.values,
         "priority": 100,
     },
     RoleCode.MEMBER: {
         "description": "Room member",
-        "permissions": [],
+        "permission_codes": [],
         "priority": 0,
     },
 }

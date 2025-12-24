@@ -7,7 +7,12 @@ from django.db.models import QuerySet
 from backend.core.models import Role, Room, Permission, User, Participant, Invite
 from backend.core.enums import PermissionCode
 from backend.core.forms import RoleForm
-from backend.core.exceptions import FormValidationException, PermissionException, NotFoundException, ConflictException, ValidationException
+from backend.core.exceptions import (
+    FormValidationException,
+    PermissionException,
+    ConflictException,
+    ValidationException
+)
 from backend.core.templates import DEFAULT_ROLE_TEMPLATES
 
 
@@ -144,17 +149,17 @@ class RoleService:
         Args:
             room: The room
         """
-        with transaction.atomic():
-            for role_code, data in DEFAULT_ROLE_TEMPLATES.items():
-                role = Role.objects.create(
-                    room=room,
-                    name=role_code.label,
-                    description=data["description"],
-                )
-                perms = Permission.objects.filter(
-                    code__in=[p.value for p in data["permissions"]]
-                )
-                role.permissions.set(perms)
+        for [role_code, data] in DEFAULT_ROLE_TEMPLATES.items():
+            role = Role.objects.create(
+                room=room,
+                name=role_code.label,
+                priority=data["priority"],
+                description=data["description"],
+            )
+            perms = Permission.objects.filter(
+                code__in=[c for c in data["permission_codes"]]
+            )
+            role.permissions.set(perms)
 
     @staticmethod
     def create_role(

@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 from django.db import transaction, IntegrityError
 
+from backend.core.exceptions import ErrorCode
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.core.graphql.utils import format_form_errors
 from backend.core.models import Participant, Report, Room
@@ -25,18 +26,18 @@ class CreateReport(graphene.Mutation):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
 
         if not Participant.objects.filter(user=info.context.user, room=room).exists():
             raise GraphQLError(
                 "You must be a participant of the room to report it", 
-                extensions={"code": "NOT_PARTICIPANT"}
+                extensions={"code": ErrorCode.PERMISSION_DENIED}
             )
 
         if Report.active_reports(user=info.context.user, room=room).exists():
             raise GraphQLError(
                 "You already have an active report targeting this room.",
-                extensions={"code": "ALREADY_REPORTED"},
+                extensions={"code": ErrorCode.CONFLICT},
             )
         data = {
             "reason": reason,
@@ -58,7 +59,7 @@ class CreateReport(graphene.Mutation):
             except IntegrityError:
                 raise GraphQLError(
                     "Could not create report due to a conflict.",
-                    extensions={"code": "CONFLICT"},
+                    extensions={"code": ErrorCode.CONFLICT},
                 )
         
         return CreateReport(report=report)
@@ -84,7 +85,7 @@ class UpdateReport(graphene.Mutation):
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:
-            raise GraphQLError("Report not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Report not found", extensions={"code": ErrorCode.NOT_FOUND})
 
         if status is not None:
             report.status = status
@@ -108,7 +109,7 @@ class DeleteReport(graphene.Mutation):
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:
-            raise GraphQLError("Report not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Report not found", extensions={"code": ErrorCode.NOT_FOUND})
 
         report.delete()
         return DeleteReport(success=True)

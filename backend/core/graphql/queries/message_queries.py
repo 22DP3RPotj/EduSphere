@@ -30,7 +30,7 @@ class MessageQuery(graphene.ObjectType):
         if not Participant.objects.filter(user=info.context.user, room=room).exists():
             raise GraphQLError("Not a participant", extensions={"code": "PERMISSION_DENIED"})
 
-        return room.message_set.select_related('user').order_by('created')
+        return room.message_set.select_related('user').order_by('created_at')
     
     def resolve_messages_by_user(self, info: graphene.ResolveInfo, user_slug: str) -> QuerySet[Message]:
         try:
@@ -38,4 +38,4 @@ class MessageQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
 
-        return user.message_set.select_related('room', 'room__host').order_by('-created')
+        return user.message_set.select_related('room', 'room__host').order_by('-created_at')

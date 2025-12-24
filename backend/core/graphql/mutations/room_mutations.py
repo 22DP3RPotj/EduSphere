@@ -3,14 +3,16 @@ import uuid
 from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
-from django.db import IntegrityError, transaction
-from backend.core.graphql.types import RoomType, RoomVisibilityEnum
-from backend.core.graphql.utils import format_form_errors
 
-from backend.core.models import Room, Topic, Participant, Role
-from backend.core.forms import RoomForm
-from backend.core.services import RoleService
-from backend.core.enums import RoleCode, PermissionCode
+from backend.core.graphql.types import RoomType, RoomVisibilityEnum
+from backend.core.models import Room, Participant
+from backend.core.services import RoomService
+from backend.core.exceptions import (
+    PermissionException,
+    FormValidationException,
+    ConflictException,
+    ErrorCode
+)
 
 
 class CreateRoom(graphene.Mutation):
@@ -23,56 +25,29 @@ class CreateRoom(graphene.Mutation):
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, name: str, topics: list[str], description: str, visibility: Room.Visibility):
-        data = {
-            "name": name,
-            "description": description,
-            "visibility": visibility,
-        }
-        
-        form = RoomForm(data=data)
-        
-        if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
-        
+    def mutate(self, info: graphene.ResolveInfo, name: str, topic_names: list[str], description: str, visibility: Room.Visibility):
         try:
-            with transaction.atomic():
-                room = form.save(commit=False)
-                room.host = info.context.user
-                room.save()
-                
-                topics = [Topic.objects.get_or_create(name=topic_name)[0] for topic_name in topics]
-                room.topics.set(topics)
-                
-                RoleService.create_default_roles(room)
-                
-                owner_role = room.roles.get(code=RoleCode.OWNER, room=room)
-                
-                room.default_role = room.roles.get(code=RoleCode.MEMBER, room=room)
-                room.save()
-                
-                Participant.objects.create(
-                    user=info.context.user,
-                    room=room,
-                    role=owner_role
-                )
-        except IntegrityError:
-            raise GraphQLError(
-                "Could not create room due to a conflict.",
-                extensions={"code": "CONFLICT"},
+            room = RoomService.create_room(
+                user=info.context.user,
+                name=name,
+                description=description,
+                visibility=visibility,
+                topic_names=topic_names,
             )
-        
-        return CreateRoom(room=room)
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+        except ConflictException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
 
+        return CreateRoom(room=room)
 
 class UpdateRoom(graphene.Mutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
         name = graphene.String(required=False)
         description = graphene.String(required=False)
-        topics = graphene.List(graphene.String, required=False)
+        topic_names = graphene.List(graphene.String, required=False)
         visibility = RoomVisibilityEnum(required=False)
-        default_role_id = graphene.UUID(required=False)
 
     room = graphene.Field(RoomType)
 
@@ -83,65 +58,29 @@ class UpdateRoom(graphene.Mutation):
         room_id: uuid.UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        topics: Optional[list[str]] = None,
+        topic_names: Optional[list[str]] = None,
         visibility: Optional[Room.Visibility] = None,
-        default_role_id: Optional[uuid.UUID] = None,
     ):
         try:
-            room = Room.objects.get(
-                id=room_id,
-            )
+            room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
         
-        if not RoleService.has_permission(
-            info.context.user,
-            room,
-            PermissionCode.ROOM_UPDATE
-        ):
-            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
-        
-        data = {}
-        
-        if name is not None:
-            data["name"] = name
-
-        if description is not None:
-            data["description"] = description
-
-        if visibility is not None:
-            data["visibility"] = visibility
-            
-        if default_role_id:
-            try:
-                data["default_role"] = room.roles.get(id=default_role_id, room=room)
-            except Role.DoesNotExist:
-                raise GraphQLError("Role not found", extensions={"code": "NOT_FOUND"})
-        
-        with transaction.atomic():
-            if topics:
-                topics = [
-                    Topic.objects.get_or_create(name=topic_name)[0] for topic_name in topics
-                ]
-                room.topics.set(topics)
-                
-            form = RoomForm(
-                data=data,
-                instance=room
+        try:
+            room = RoomService.update_room(
+                user=info.context.user,
+                room=room,
+                name=name,
+                description=description,
+                visibility=visibility,
+                topic_names=topic_names,
             )
-            
-            if not form.is_valid():
-                raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
+        except (PermissionException, ConflictException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
-            try:
-                form.save()
-            except IntegrityError:
-                raise GraphQLError(
-                    "Could not update room due to a conflict.",
-                    extensions={"code": "CONFLICT"},
-                )
         return UpdateRoom(room=room)
-
     
 
 class DeleteRoom(graphene.Mutation):
@@ -153,18 +92,19 @@ class DeleteRoom(graphene.Mutation):
     @login_required
     def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID):
         try:
-            room = Room.objects.get(
-                id=room_id,
-            )
+            room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
         
-        if room.host != info.context.user:
-            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
-            
-        room.delete()
-        return DeleteRoom(success=True)
+        try:
+            success = RoomService.delete_room(
+                user=info.context.user,
+                room=room
+            )
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
 
+        return DeleteRoom(success=success)
 
 class JoinRoom(graphene.Mutation):
     class Arguments:
@@ -173,18 +113,18 @@ class JoinRoom(graphene.Mutation):
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> "JoinRoom":
+    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID):
         try:
             room = Room.objects.get(
                 id=room_id,
             )
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         if Participant.objects.filter(user=info.context.user, room=room).exists():
             raise GraphQLError(
                 "Already a participant of this room",
-                extensions={"code": "ALREADY_JOINED"}
+                extensions={"code": ErrorCode.PERMISSION_DENIED}
             )
 
         Participant.objects.create(

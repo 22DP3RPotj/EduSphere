@@ -305,7 +305,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         @database_sync_to_async
         def do_update(message):
             message.update(new_body)
-            return message.updated
+            return message.updated_at
 
         try:
             message = await get_message()
@@ -331,7 +331,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'id': message_id,
             'body': new_body,
             'is_edited': True,
-            'updated': updated_ts.isoformat() if updated_ts else None,
+            'updated_at': updated_ts.isoformat() if updated_ts else None,
         }
 
         # Publish to both channels and Redis Streams

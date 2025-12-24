@@ -63,7 +63,7 @@ class RoomQuery(graphene.ObjectType):
         if topics:
             queryset = queryset.filter(topics__name__in=topics).distinct()
 
-        return queryset.order_by('-participants_count' , '-created')
+        return queryset.order_by('-participants_count' , '-created_at')
     
     def resolve_rooms_participated_by_user(self, info: graphene.ResolveInfo, user_slug: str) -> QuerySet[Room]:
         try:
@@ -74,7 +74,7 @@ class RoomQuery(graphene.ObjectType):
         queryset = Room.objects.filter(participants=user).annotate(
             participants_count=Count('participants')
         ).order_by(
-            '-participants_count', '-created'
+            '-participants_count', '-created_at'
         ).select_related('host').prefetch_related('topics', 'participants__user', 'participants__role')
 
         return queryset
@@ -87,7 +87,7 @@ class RoomQuery(graphene.ObjectType):
 
         queryset = Room.objects.exclude(participants=user).annotate(
             participants_count=Count('participants')
-        ).order_by('-participants_count', '-created').select_related('host').prefetch_related('topics', 'participants__user', 'participants__role')
+        ).order_by('-participants_count', '-created_at').select_related('host').prefetch_related('topics', 'participants__user', 'participants__role')
 
         return queryset
     

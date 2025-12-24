@@ -54,6 +54,7 @@ class RoleType(DjangoObjectType):
             "id",
             "name",
             "description",
+            "priority",
             "permissions",
         )
 
@@ -75,6 +76,7 @@ class RoomType(DjangoObjectType):
     participants = graphene.List(ParticipantType)
     topics = graphene.List(TopicType)
     host = graphene.Field(UserType, required=True)
+    visibility = graphene.Field(RoomVisibilityEnum, required=True)
 
     class Meta:
         model = Room
@@ -87,8 +89,8 @@ class RoomType(DjangoObjectType):
             "visibility",
             "description",
             "participants",
-            "updated",
-            "created",
+            "updated_at",
+            "created_at",
         )
     
     def resolve_participants(self, info):
@@ -107,8 +109,8 @@ class MessageType(DjangoObjectType):
             "room",
             "body",
             "is_edited",
-            "created",
-            "updated",
+            "created_at",
+            "updated_at",
         )
 
 
@@ -130,8 +132,8 @@ class ReportType(DjangoObjectType):
             "status",
             "moderator_note",
             "moderator",
-            "created",
-            "updated",
+            "created_at",
+            "updated_at",
         )
 
 
@@ -149,7 +151,7 @@ class InviteType(DjangoObjectType):
             "role",
             "token",
             "status",
-            "created",
+            "created_at",
             "expires_at",
         )
 

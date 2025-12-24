@@ -44,11 +44,12 @@ class CreateRole(graphene.Mutation):
                 priority=priority,
                 permission_ids=permission_ids,
             )
-            return CreateRole(role=role)
         except (PermissionException, ConflictException) as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+
+        return CreateRole(role=role)
 
 
 class UpdateRole(graphene.Mutation):
@@ -92,6 +93,7 @@ class UpdateRole(graphene.Mutation):
 
         return UpdateRole(role=role)
 
+
 class DeleteRole(graphene.Mutation):
     class Arguments:
         role_id = graphene.UUID(required=True)
@@ -127,16 +129,16 @@ class DeleteRole(graphene.Mutation):
                 role=role,
                 substitution_role=substitution_role,
             )
-            return DeleteRole(
-                success=result['success'],
-                participants_reassigned=result['participants_reassigned'],
-                invites_reassigned=result['invites_reassigned'],
-            )
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
+        return DeleteRole(
+            success=result.get('success', False),
+            participants_reassigned=result.get('participants_reassigned', 0),
+            invites_reassigned=result.get('invites_reassigned', 0),
+        )
 
 class AssignPermissionsToRole(graphene.Mutation):
     class Arguments:
@@ -163,9 +165,10 @@ class AssignPermissionsToRole(graphene.Mutation):
                 role=role,
                 permission_ids=permission_ids,
             )
-            return AssignPermissionsToRole(role=role)
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
+
+        return AssignPermissionsToRole(role=role)
 
 
 class RemovePermissionsFromRole(graphene.Mutation):
@@ -193,9 +196,10 @@ class RemovePermissionsFromRole(graphene.Mutation):
                 role=role,
                 permission_ids=permission_ids,
             )
-            return RemovePermissionsFromRole(role=role)
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
+
+        return RemovePermissionsFromRole(role=role)
 
 
 class RoleMutation(graphene.ObjectType):

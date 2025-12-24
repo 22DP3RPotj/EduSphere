@@ -221,23 +221,7 @@ class Message(models.Model):
         self.full_clean()
         return super().save(*args, **kwargs)
 
-    def serialize(self):
-        return {
-            'id': str(self.id),
-            'user': self.user.username,
-            'user_id': str(self.user.id),
-            'body': self.body,
-            'is_edited': self.is_edited,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'user_avatar': self.user.avatar.name if self.user.avatar else None,
-        }
-        
-    def update(self, body):
-        if not self.is_edited:
-            self.is_edited = True
-        self.body = body
-        self.save()
+
         
 
 class Report(models.Model):

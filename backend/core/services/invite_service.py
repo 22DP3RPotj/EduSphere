@@ -117,7 +117,7 @@ class InviteService:
             raise PermissionException("You can only accept invites sent to you.")
         
         if invite.status != Invite.InviteStatus.PENDING:
-            raise ValidationException(f"Invite is {invite.status.lower()} and cannot be accepted.")
+            raise ValidationException(f"Invite is '{invite.status.lower()}' and cannot be accepted.")
         
         try:
             with transaction.atomic():

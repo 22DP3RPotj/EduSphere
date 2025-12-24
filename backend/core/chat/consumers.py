@@ -226,6 +226,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def handle_new_message(self, room, message_body):
         """Handle creation of a new message"""
         from ..models import Message
+        from ..services import MessageService
 
         @database_sync_to_async
         def create_message(user, room, body):
@@ -233,6 +234,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message.full_clean()
             message.save()
             return message
+        
+        @database_sync_to_async
+        def serialize(message):
+            return MessageService.serialize(message)
 
         try:
             new_message = await create_message(
@@ -246,7 +251,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             return
 
-        serialized = new_message.serialize()
+        serialized = await serialize(new_message)
         message_data = {
             'type': 'chat_message',
             'action': 'new',
@@ -260,16 +265,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def handle_delete_message(self, message_id):
         """Handle deletion of a message"""
         from ..models import Message
+        from ..services import MessageService
+        from ..exceptions import PermissionException
 
         @database_sync_to_async
         def get_message():
             return Message.objects.get(id=message_id)
         @database_sync_to_async
-        def check_owner(message):
-            return message.user_id == self.user.id
-        @database_sync_to_async
-        def delete_message(message):
-            message.delete()
+        def delete_with_service(message):
+            return MessageService.delete_message(self.user, message)
 
         try:
             message = await get_message()
@@ -277,11 +281,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send_error("Message not found.")
             return
 
-        if not await check_owner(message):
-            await self.send_error("You can only delete your own messages.")
+        try:
+            await delete_with_service(message)
+        except PermissionException as e:
+            await self.send_error(str(e))
             return
 
-        await delete_message(message)
         message_data = {
             'type': 'chat_message',
             'action': 'delete',
@@ -295,6 +300,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def handle_update_message(self, message_id, new_body):
         """Handle updating a message"""
         from ..models import Message
+        from ..services import MessageService
 
         @database_sync_to_async
         def get_message():
@@ -304,7 +310,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return message.user_id == self.user.id
         @database_sync_to_async
         def do_update(message):
-            message.update(new_body)
+            message = MessageService.update_message(
+                user=self.user,
+                message=message,
+                body=new_body
+            )
             return message.updated_at
 
         try:

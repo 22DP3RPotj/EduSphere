@@ -64,7 +64,7 @@ class UpdateRoom(graphene.Mutation):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         try:
             room = RoomService.update_room(

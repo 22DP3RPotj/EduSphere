@@ -12,13 +12,13 @@ class RoomService:
     """Service for room mutation operations."""
     @staticmethod
     def can_view(user: User, room: Room) -> bool:
-        is_paticipnat = Participant.objects.filter(
+        is_participant = Participant.objects.filter(
             user=user, room=room
         ).exists()
         
-        is_public = room.visibility = Room.Visibility.PUBLIC
+        is_public = room.visibility == Room.Visibility.PUBLIC
         
-        return is_paticipnat or is_public
+        return is_participant or is_public
     
     @staticmethod
     def create_room(

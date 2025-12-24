@@ -135,9 +135,9 @@ class DeleteRole(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
         return DeleteRole(
-            success=result.get('success', False),
-            participants_reassigned=result.get('participants_reassigned', 0),
-            invites_reassigned=result.get('invites_reassigned', 0),
+            success=result['success'],
+            participants_reassigned=result['participants_reassigned'],
+            invites_reassigned=result['invites_reassigned'],
         )
 
 class AssignPermissionsToRole(graphene.Mutation):

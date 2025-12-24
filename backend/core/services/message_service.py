@@ -99,15 +99,14 @@ class MessageService:
             raise FormValidationException("Invalid message data", errors=form.errors)
         
         try:
-            with transaction.atomic():
-                message = form.save(commit=False)
-                if not message.is_edited:
-                    message.is_edited = True
-                message.save()
-                
-                return message
+            message = form.save(commit=False)
+            if not message.is_edited:
+                message.is_edited = True
+            message.save()
         except IntegrityError as e:
             raise ConflictException("Could not update message due to a conflict.") from e
+
+        return message
     
     @staticmethod
     def delete_message(
@@ -134,3 +133,25 @@ class MessageService:
         
         message.delete()
         return True
+    
+    @staticmethod
+    def serialize(message: Message) -> dict:
+        """
+        Serialize a message to a dictionary.
+        
+        Args:
+            message: The message to serialize
+            
+        Returns:
+            Dictionary representation of the message
+        """
+        return {
+            'id': str(message.id),
+            'user': message.user.username,
+            'user_id': str(message.user.id),
+            'body': message.body,
+            'is_edited': message.is_edited,
+            'created_at': message.created_at.isoformat(),
+            'updated_at': message.updated_at.isoformat(),
+            'user_avatar': message.user.avatar.name if message.user.avatar else None,
+        }

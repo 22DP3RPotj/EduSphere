@@ -60,6 +60,7 @@ class Topic(models.Model):
         return self.name
     
     class Meta:
+        app_label = 'core'
         ordering = [Lower('name')]
         indexes = [
             models.Index(fields=['name']),
@@ -85,7 +86,7 @@ class Room(models.Model):
         
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
-    default_role = models.ForeignKey("Role", on_delete=models.PROTECT, related_name='default_for_rooms', null=True, blank=True)
+    default_role = models.ForeignKey("Role", on_delete=models.SET_NULL, related_name='default_for_rooms', null=True, blank=True)
     topics = models.ManyToManyField(Topic, related_name='rooms')
     visibility = models.CharField(max_length=16, choices=Visibility.choices, default=Visibility.PUBLIC)
     name = models.CharField(max_length=64)
@@ -99,6 +100,7 @@ class Room(models.Model):
         return self.name
     
     class Meta:
+        app_label = 'core'
         ordering = ['-updated_at', '-created_at']
         constraints = [
             models.UniqueConstraint(
@@ -133,6 +135,7 @@ class Permission(models.Model):
         return self.code
     
     class Meta:
+        app_label = 'core'
         ordering = ['code']
         indexes = [
             models.Index(fields=['code']),
@@ -151,6 +154,7 @@ class Role(models.Model):
         return self.name
     
     class Meta:
+        app_label = 'core'
         constraints = [
             models.UniqueConstraint(
                 fields=['room', 'name'],
@@ -162,11 +166,12 @@ class Role(models.Model):
 class Participant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    role = models.ForeignKey(Role, on_delete=models.PROTECT)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='memberships')
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        app_label = 'core'
         indexes = [
             models.Index(fields=['room', 'joined_at']),
             models.Index(fields=['room', 'user']),
@@ -204,6 +209,7 @@ class Message(models.Model):
         return self.body[0:50] + ('...' if len(self.body) > 50 else '')
 
     class Meta:
+        app_label = 'core'
         indexes = [
             models.Index(fields=['room', 'user', 'created_at']),
             models.Index(fields=['room', 'created_at']),
@@ -261,6 +267,7 @@ class Report(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = 'core'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'room'],
@@ -311,6 +318,7 @@ class Invite(models.Model):
     expires_at = models.DateTimeField()
 
     class Meta:
+        app_label = 'core'
         constraints = [
             models.UniqueConstraint(
                 fields=['room', 'invitee'],

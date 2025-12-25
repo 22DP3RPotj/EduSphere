@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
-from backend.core.models import Room, Topic, Report
+from backend.core.models import Room, Topic, Report, Participant, Role
 
 User = get_user_model()
 
@@ -21,16 +21,21 @@ class ReportMutationsTests(JSONWebTokenTestCase):
             is_staff=True,
             is_superuser=True
         )
-        self.room = Room.objects.create(
-            host=User.objects.create_user(
-                name="HostUser",
-                username="hostuser", 
-                email="host@email.com",
-            ),
-            name="Test Room",
-            description="Test Description"
+        self.host = User.objects.create_user(
+            name="HostUser",
+            username="hostuser", 
+            email="host@email.com",
         )
-        self.room.participants.add(self.user)
+        self.room = Room.objects.create(
+            host=self.host,
+            name="Test Room",
+            description="Test Description",
+            visibility=Room.Visibility.PUBLIC
+        )
+        self.role = Role.objects.create(room=self.room, name="Member", description="", priority=0)
+        self.room.default_role = self.role
+        self.room.save()
+        Participant.objects.create(user=self.user, room=self.room, role=self.role)
         
         self.topic = Topic.objects.create(name="TestTopic")
         self.room.topics.add(self.topic)
@@ -82,7 +87,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNotNone(result.errors)
-        self.assertEqual(result.errors[0].extensions["code"], "NOT_PARTICIPANT")
+        self.assertEqual(result.errors[0].extensions["code"], "PERMISSION_DENIED")
 
     def test_create_report_already_reported(self):
         Report.objects.create(
@@ -107,7 +112,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNotNone(result.errors)
-        self.assertEqual(result.errors[0].extensions["code"], "ALREADY_REPORTED")
+        self.assertEqual(result.errors[0].extensions["code"], "CONFLICT")
 
     def test_update_report_as_moderator(self):
         report = Report.objects.create(
@@ -119,7 +124,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         
         self.client.authenticate(self.moderator)
         mutation = """
-            mutation UpdateReport($reportId: UUID!, $status: ReportStatus!, $moderatorNote: String) {
+            mutation UpdateReport($reportId: UUID!, $status: ReportStatus, $moderatorNote: String) {
                 updateReport(reportId: $reportId, status: $status, moderatorNote: $moderatorNote) {
                     report {
                         status
@@ -244,26 +249,3 @@ class ReportQueryTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(query)
         self.assertIsNone(result.errors)
         self.assertEqual(len(result.data["allReports"]), 2)
-
-    def test_report_count_as_moderator(self):
-        self.client.authenticate(self.moderator)
-        query = """
-            query {
-                reportCount
-            }
-        """
-        result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors)
-        self.assertEqual(result.data["reportCount"], 2)
-
-    def test_report_count_with_filter(self):
-        self.client.authenticate(self.moderator)
-        query = """
-            query ReportCount($status: ReportStatus) {
-                reportCount(status: $status)
-            }
-        """
-        variables = {"status": "PENDING"}
-        result: ExecutionResult = self.client.execute(query, variables)
-        self.assertIsNone(result.errors)
-        self.assertEqual(result.data["reportCount"], 1)

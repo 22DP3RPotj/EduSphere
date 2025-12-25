@@ -117,24 +117,19 @@ class RoomService:
         if not RoleService.has_permission(user, room, PermissionCode.ROOM_UPDATE):
             raise PermissionException("You don't have the permission to update this room.")
         
-        data = {}
-        
-        if name is not None:
-            data["name"] = name
-        if description is not None:
-            data["description"] = description
-        if visibility is not None:
-            data["visibility"] = visibility
+        data = {
+            "name": name if name is not None else room.name,
+            "description": description if description is not None else room.description,
+        }
         
         try:
             with transaction.atomic():
-                if data:
-                    form = RoomForm(data=data, instance=room)
-                    
-                    if not form.is_valid():
-                        raise FormValidationException("Invalid room data", errors=form.errors)
-                    
-                    form.save()
+                form = RoomForm(data=data, instance=room)
+                
+                if not form.is_valid():
+                    raise FormValidationException("Invalid room data", errors=form.errors)
+                
+                form.save()
                 
                 if topic_names is not None:
                     topics = [
@@ -142,6 +137,10 @@ class RoomService:
                         for topic_name in topic_names
                     ]
                     room.topics.set(topics)
+                
+                if visibility is not None:
+                    room.visibility = visibility
+                    room.save(update_fields=["visibility"])
                 
         except IntegrityError as e:
             raise ConflictException("Could not update room due to a conflict.") from e
@@ -161,7 +160,7 @@ class RoomService:
             True if deletion was successful
             
         Raises:
-            PermissionException: If user is not the host
+            PermissionException: If user doesn't have permission
         """
         if not RoleService.has_permission(user, room, PermissionCode.ROOM_DELETE):
             raise PermissionException("You don't have the permission to delete this room.")

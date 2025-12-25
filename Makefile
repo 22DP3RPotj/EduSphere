@@ -1,4 +1,4 @@
-.PHONY: help setup run test report clean clean-logs
+.PHONY: help setup run unit-test report clean clean-logs
 
 help:
 	@echo "EduSphere Development Commands"
@@ -11,24 +11,21 @@ help:
 	@echo "make clean-logs - Clear log files"
 
 setup:
-	@if [ -z "$$DJANGO_SETTINGS_MODULE" ]; then \
-		export DJANGO_SETTINGS_MODULE=backend.config.settings; \
-		sudo service postgresql start; \
-		sudo service nginx start; \
-		mkdir -p logs; \
-		mkdir -p media/avatars; \
-		python manage.py collectstatic --noinput; \
-	fi
+	sudo service postgresql start; \
+	sudo service nginx start; \
+	mkdir -p logs; \
+	mkdir -p media/avatars; \
+	python manage.py collectstatic --noinput; \
 
 run: setup
 	pnpm --prefix frontend run build
-	uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
+	DJANGO_SETTINGS_MODULE=backend.config.settings uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
 
-test: setup
-	python manage.py test backend/core core.tests.unit
+unit-test: setup
+	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.unit
 
 report: setup
-	coverage run --source='backend.core' -m django test backend/core/tests/unit
+	DJANGO_SETTINGS_MODULE=backend.config.settings coverage run --source='backend.core' -m django test backend/core/tests/unit
 	coverage report --skip-empty
 
 clean:

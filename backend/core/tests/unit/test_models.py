@@ -1,15 +1,17 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from backend.core.models import Room, Topic, Message, Role, Participant, Permission, Report, Invite
 from backend.core.enums import PermissionCode
-from datetime import timedelta
-from django.utils import timezone
 
 User = get_user_model()
 
 
+@tag("unit")
 class UserModelTest(TestCase):
     def test_user_creation(self):
         user = User.objects.create_user(
@@ -40,6 +42,7 @@ class UserModelTest(TestCase):
         self.assertEqual(str(user), "testuser")
 
 
+@tag("unit")
 class TopicModelTest(TestCase):
     def test_topic_creation(self):
         topic = Topic.objects.create(name="Programming")
@@ -55,6 +58,7 @@ class TopicModelTest(TestCase):
             topic.full_clean()
 
 
+@tag("unit")
 class RoomModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -108,6 +112,7 @@ class RoomModelTest(TestCase):
         self.assertEqual(str(room), "Test Room")
 
 
+@tag("unit")
 class PermissionModelTest(TestCase):
     def test_permission_creation(self):
         permission, created = Permission.objects.get_or_create(
@@ -124,6 +129,7 @@ class PermissionModelTest(TestCase):
         self.assertEqual(str(permission), PermissionCode.ROOM_UPDATE)
 
 
+@tag("unit")
 class RoleModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -173,6 +179,7 @@ class RoleModelTest(TestCase):
         self.assertEqual(str(role), "Moderator")
 
 
+@tag("unit")
 class ParticipantModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -250,6 +257,7 @@ class ParticipantModelTest(TestCase):
             participant.full_clean()
 
 
+@tag("unit")
 class MessageModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -311,6 +319,7 @@ class MessageModelTest(TestCase):
             child_message.full_clean()
 
 
+@tag("unit")
 class ReportModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -372,6 +381,7 @@ class ReportModelTest(TestCase):
         self.assertEqual(str(report), f"Report by user on Test Room")
 
 
+@tag("unit")
 class InviteModelTest(TestCase):
     def setUp(self):
         self.inviter = User.objects.create_user(

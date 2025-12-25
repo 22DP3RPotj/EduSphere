@@ -1,12 +1,15 @@
-from django.contrib.auth import get_user_model
 from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
+
+from django.test import tag
+from django.contrib.auth import get_user_model
 
 from backend.core.models import Room, Topic, Report, Participant, Role
 
 User = get_user_model()
 
 
+@tag("unit")
 class ReportMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -168,6 +171,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         self.assertFalse(Report.objects.filter(id=report.id).exists())
 
 
+@tag("unit")
 class ReportQueryTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(

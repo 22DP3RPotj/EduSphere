@@ -1,11 +1,15 @@
 from graphql import ExecutionResult
-from django.contrib.auth import get_user_model
 from graphql_jwt.testcases import JSONWebTokenTestCase
+
+from django.test import tag
+from django.contrib.auth import get_user_model
 
 from backend.core.models import Room, Topic, Message
 
 User = get_user_model()
 
+
+@tag("unit")
 class AdminQueryTests(JSONWebTokenTestCase):
     def setUp(self):
         

@@ -15,13 +15,18 @@ from backend.core.files.validators import FileSizeValidator, ImageValidator
 
 class User(AbstractBaseUser, PermissionsMixin):
     Language = LanguageChoices
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     username = models.SlugField(max_length=32, unique=True)
     name = models.CharField(max_length=32)
     bio = models.TextField(blank=True, default="", max_length=4096)
-    language = models.CharField(choices=LanguageChoices.choices, blank=True, max_length=2, default=LanguageChoices.ENGLISH)
+    language = models.CharField(
+        choices=LanguageChoices.choices,
+        blank=True,
+        max_length=2,
+        default=LanguageChoices.ENGLISH,
+    )
     avatar = models.ImageField(
         upload_to=avatar_upload_path,
         blank=True,

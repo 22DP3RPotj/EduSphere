@@ -44,6 +44,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
         
     class Meta:
+        app_label = 'core'
         ordering = [Lower('username')]
         indexes = [
             models.Index(fields=['email']),

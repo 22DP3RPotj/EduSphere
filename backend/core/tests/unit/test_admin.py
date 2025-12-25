@@ -12,7 +12,6 @@ User = get_user_model()
 @tag("unit")
 class AdminQueryTests(JSONWebTokenTestCase):
     def setUp(self):
-        
         self.user = User.objects.create_user(
             name="Test User",
             username="testuser",

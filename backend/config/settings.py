@@ -32,8 +32,6 @@ ALLOWED_HOSTS = [
 
 # User Authentication
 
-LOGIN_URL = "/login"
-
 AUTH_USER_MODEL = "core.User"
 
 # Application definition
@@ -43,12 +41,12 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
-    "django_cleanup.apps.CleanupConfig",
     "backend.core.apps.CoreConfig",
     "backend.api.apps.ApiConfig",
     "channels",
     "corsheaders",
     "graphene_django",
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 MIDDLEWARE = [

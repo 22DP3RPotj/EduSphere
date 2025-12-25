@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 
 from backend.core.models import Room, Topic, Message, Participant, Role, Permission
 from backend.core.enums import PermissionCode
+
 from .utils import create_test_image
 
 User = get_user_model()

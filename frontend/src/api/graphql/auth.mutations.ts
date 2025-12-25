@@ -10,6 +10,7 @@ export const LOGIN_MUTATION = gql`
                 id
                 username
                 name
+                language
                 isSuperuser
             }
         }
@@ -45,6 +46,7 @@ export const REGISTER_MUTATION = gql`
                 id
                 username
                 name
+                language
                 isStaff
                 isSuperuser
             }
@@ -65,11 +67,13 @@ export const UPDATE_USER_MUTATION = gql`
         $name: String
         $bio: String
         $avatar: Upload
+        $language: String
     ) {
         updateUser(
             name: $name
             bio: $bio
             avatar: $avatar
+            language: $language
         ) {
             user {
                 id
@@ -77,6 +81,7 @@ export const UPDATE_USER_MUTATION = gql`
                 name
                 bio
                 avatar
+                language
                 isStaff
                 isSuperuser
             }

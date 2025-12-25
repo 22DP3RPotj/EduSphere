@@ -36,6 +36,7 @@ class UpdateUser(graphene.Mutation):
         name = graphene.String(required=False)
         bio = graphene.String(required=False)
         avatar = Upload(required=False)
+        language = graphene.String(required=False)
 
     user = graphene.Field(UserType)
 
@@ -47,6 +48,7 @@ class UpdateUser(graphene.Mutation):
             "username": user.username,
             "name": kwargs.get("name", user.name),
             "bio": kwargs.get("bio", user.bio),
+            "language": kwargs.get("language", user.language),
         }
         
         avatar = kwargs.pop("avatar", None)

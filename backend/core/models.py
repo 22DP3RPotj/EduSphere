@@ -20,6 +20,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True, null=True,
         validators=[FileExtensionValidator(['svg','png','jpg','jpeg'])]
     )
+    language = models.CharField(max_length=2, default='en', blank=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)

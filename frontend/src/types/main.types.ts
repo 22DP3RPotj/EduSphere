@@ -4,6 +4,7 @@ export interface User {
   name: string;
   bio: string | null;
   avatar: string | null;
+  language: string;
   isStaff: boolean;
   isActive: boolean;
   isSuperuser: boolean;

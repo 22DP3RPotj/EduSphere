@@ -6,7 +6,7 @@ from ..models import User, Room, Topic, Message, Report
 class UserType(DjangoObjectType):
     class Meta:
         model = User
-        fields = ("id", "username", "name", "bio", "avatar", "is_staff", "is_active", "is_superuser", "date_joined")
+        fields = ("id", "username", "name", "bio", "avatar", "language", "is_staff", "is_active", "is_superuser", "date_joined")
 
 class TopicType(DjangoObjectType):
     class Meta:

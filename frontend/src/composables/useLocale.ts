@@ -16,14 +16,18 @@ export function useLocale() {
     }
   };
 
-  // Watch for user changes and update locale
+  // Watch for user changes and update locale immediately
   watch(
     () => authStore.user?.language,
     (newLanguage) => {
       if (newLanguage && availableLocales.includes(newLanguage)) {
         locale.value = newLanguage;
+      } else if (newLanguage === undefined || newLanguage === null) {
+        // User logged out or no language set, default to English
+        locale.value = 'en';
       }
-    }
+    },
+    { immediate: true }
   );
 
   const currentLocale = computed(() => locale.value);

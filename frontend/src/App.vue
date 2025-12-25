@@ -24,14 +24,13 @@ export default {
   },
   setup() {
     const authStore = useAuthStore();
-    const { initializeLocale } = useLocale();
     const isReady = ref(false);
 
     onMounted(() => {
       authStore.initialize();
       
-      // Initialize locale from user preference
-      initializeLocale();
+      // Initialize locale composable (watcher will handle setting the locale)
+      useLocale();
       
       authTokenService.init();
       

@@ -10,6 +10,11 @@ from django.core.validators import FileExtensionValidator, MaxLengthValidator
 from .managers import CustomUserManager
 
 class User(AbstractBaseUser, PermissionsMixin):
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('lv', 'Latvian'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     username = models.SlugField(max_length=32, unique=True)
@@ -20,7 +25,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True, null=True,
         validators=[FileExtensionValidator(['svg','png','jpg','jpeg'])]
     )
-    language = models.CharField(max_length=2, default='en', blank=True)
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='en', blank=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)

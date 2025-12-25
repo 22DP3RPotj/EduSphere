@@ -109,8 +109,13 @@
                   v-model="editForm.language"
                   class="form-select"
                 >
-                  <option value="en">English</option>
-                  <option value="lv">Latviešu (Latvian)</option>
+                  <option
+                    v-for="locale in availableLocales"
+                    :key="locale"
+                    :value="locale"
+                  >
+                    {{ getLanguageName(locale) }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -333,6 +338,7 @@ import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
+import { useLocale } from '@/composables/useLocale';
 import { parseGraphQLError } from '@/utils/errorParser';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
@@ -349,6 +355,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const { updateUser, updateUserLoading, updateUserError } = useAuth();
+const { availableLocales } = useLocale();
 
 const username = computed(() => route.params.userSlug as string);
 
@@ -458,6 +465,14 @@ function formatDate(dateString: string) {
   });
 }
 
+function getLanguageName(locale: string): string {
+  const languageNames: Record<string, string> = {
+    'en': 'English',
+    'lv': 'Latviešu (Latvian)'
+  };
+  return languageNames[locale] || locale;
+}
+
 function startEditing() {
   isEditing.value = true;
   editForm.value = {
@@ -512,10 +527,8 @@ async function saveProfile() {
 
     updateData.bio = editForm.value.bio.trim();
 
-    // Add language if changed
-    if (editForm.value.language) {
-      updateData.language = editForm.value.language;
-    }
+    // Always include language field
+    updateData.language = editForm.value.language;
 
     // Add avatar if selected
     if (editForm.value.avatar) {

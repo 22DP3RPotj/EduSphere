@@ -14,6 +14,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import authTokenService from '@/services/refresh-token';
+import { useLocale } from '@/composables/useLocale';
 import SidePanel from '@/components/layout/SidePanel.vue';
 
 export default {
@@ -23,10 +24,14 @@ export default {
   },
   setup() {
     const authStore = useAuthStore();
+    const { initializeLocale } = useLocale();
     const isReady = ref(false);
 
     onMounted(() => {
       authStore.initialize();
+      
+      // Initialize locale from user preference
+      initializeLocale();
       
       authTokenService.init();
       

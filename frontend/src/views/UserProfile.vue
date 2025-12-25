@@ -100,6 +100,19 @@
                   {{ editForm.bio.length }}/500
                 </div>
               </div>
+
+              <!-- Language selector -->
+              <div class="form-group">
+                <label for="language-select" class="form-label">Language</label>
+                <select
+                  id="language-select"
+                  v-model="editForm.language"
+                  class="form-select"
+                >
+                  <option value="en">English</option>
+                  <option value="lv">Latviešu (Latvian)</option>
+                </select>
+              </div>
             </div>
             
             <!-- Action buttons -->
@@ -372,13 +385,14 @@ const {
 // Combined loading state
 const loading = computed(() => userLoading.value);
 
-type EditForm = { name: string; bio: string; avatar: File | null };
+type EditForm = { name: string; bio: string; avatar: File | null; language: string };
 const isEditing = ref<boolean>(false);
 const editLoading = computed(() => updateUserLoading.value);
 const editForm = ref<EditForm>({
   name: '',
   bio: '',
-  avatar: null
+  avatar: null,
+  language: 'en'
 });
 const avatarPreview = ref<string | null>(null);
 
@@ -449,7 +463,8 @@ function startEditing() {
   editForm.value = {
     name: user.value!.name || '',
     bio: user.value!.bio || '',
-    avatar: null
+    avatar: null,
+    language: user.value!.language || 'en'
   };
   avatarPreview.value = null;
   clearEditFormErrors();
@@ -460,7 +475,8 @@ function cancelEditing() {
   editForm.value = {
     name: user.value!.name || '',
     bio: user.value!.bio || '',
-    avatar: null
+    avatar: null,
+    language: user.value!.language || 'en'
   };
   avatarPreview.value = null;
   clearEditFormErrors();
@@ -489,12 +505,17 @@ async function saveProfile() {
   clearEditFormErrors();
   
   try {
-    const updateData: { name?: string; bio?: string; avatar?: File | null } = {};
+    const updateData: { name?: string; bio?: string; avatar?: File | null; language?: string } = {};
     if (editForm.value.name.trim()) {
       updateData.name = editForm.value.name.trim();
     }
 
     updateData.bio = editForm.value.bio.trim();
+
+    // Add language if changed
+    if (editForm.value.language) {
+      updateData.language = editForm.value.language;
+    }
 
     // Add avatar if selected
     if (editForm.value.avatar) {
@@ -802,7 +823,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   flex-shrink: 0;
 }
 
-.form-input, .form-textarea {
+.form-input, .form-textarea, .form-select {
   box-sizing: border-box;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
@@ -813,7 +834,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   background-color: var(--white);
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus, .form-textarea:focus, .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);

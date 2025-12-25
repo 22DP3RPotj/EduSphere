@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 from backend.core.models import Room, Topic, Message, Role, Participant, Permission, Report, Invite
-from backend.core.enums import RoleCode, PermissionCode
+from backend.core.enums import PermissionCode
 from datetime import timedelta
 from django.utils import timezone
 

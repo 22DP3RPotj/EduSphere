@@ -6,7 +6,6 @@ from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
 from backend.core.models import Room, Topic, Message, Participant, Role, Permission
-from backend.core.services import RoleService
 from backend.core.enums import PermissionCode
 from .utils import create_test_image
 

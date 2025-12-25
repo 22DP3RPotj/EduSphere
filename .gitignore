@@ -23,7 +23,8 @@ backup.sql
 *-bac
 
 # Local
-local*
+local
+local.*
 logs*
 *.pem
 TODO

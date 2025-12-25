@@ -1,0 +1,65 @@
+{
+  "common": {
+    "welcome": "Laipni lūdzam",
+    "login": "Pieteikties",
+    "logout": "Izrakstīties",
+    "register": "Reģistrēties",
+    "submit": "Iesniegt",
+    "cancel": "Atcelt",
+    "save": "Saglabāt",
+    "delete": "Dzēst",
+    "edit": "Rediģēt",
+    "close": "Aizvērt",
+    "search": "Meklēt",
+    "loading": "Ielādē...",
+    "error": "Kļūda",
+    "success": "Veiksmīgi"
+  },
+  "auth": {
+    "email": "E-pasts",
+    "password": "Parole",
+    "confirmPassword": "Apstipriniet paroli",
+    "username": "Lietotājvārds",
+    "fullName": "Pilns vārds",
+    "enterEmail": "Ievadiet savu e-pastu",
+    "enterPassword": "Ievadiet savu paroli",
+    "createPassword": "Izveidojiet paroli",
+    "confirmYourPassword": "Apstipriniet savu paroli",
+    "chooseUsername": "Izvēlieties lietotājvārdu",
+    "enterFullName": "Ievadiet savu pilnu vārdu",
+    "dontHaveAccount": "Nav konta?",
+    "alreadyHaveAccount": "Jau ir konts?",
+    "loginSuccess": "Pieteikšanās veiksmīga",
+    "registerSuccess": "Reģistrācija veiksmīga"
+  },
+  "room": {
+    "rooms": "Istabas",
+    "createRoom": "Izveidot istabu",
+    "joinRoom": "Pievienoties istabai",
+    "leaveRoom": "Pamest istabu",
+    "roomName": "Istabas nosaukums",
+    "description": "Apraksts",
+    "topics": "Tēmas",
+    "participants": "Dalībnieki",
+    "host": "Saimnieks"
+  },
+  "message": {
+    "messages": "Ziņojumi",
+    "sendMessage": "Nosūtīt ziņojumu",
+    "editMessage": "Rediģēt ziņojumu",
+    "deleteMessage": "Dzēst ziņojumu",
+    "typeMessage": "Ierakstiet ziņojumu..."
+  },
+  "profile": {
+    "profile": "Profils",
+    "editProfile": "Rediģēt profilu",
+    "bio": "Biogrāfija",
+    "avatar": "Avatārs",
+    "language": "Valoda",
+    "preferences": "Iestatījumi"
+  },
+  "languages": {
+    "en": "Angļu",
+    "lv": "Latviešu"
+  }
+}

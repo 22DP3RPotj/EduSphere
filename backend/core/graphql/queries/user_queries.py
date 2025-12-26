@@ -6,6 +6,7 @@ from graphql_jwt.decorators import superuser_required
 from django.db.models import Q, QuerySet
 
 from backend.core.graphql.types import UserType
+from backend.core.exceptions import ErrorCode
 from backend.core.models import User
 
 
@@ -33,6 +34,6 @@ class UserQuery(graphene.ObjectType):
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
-            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("User not found", extensions={"code": ErrorCode.NOT_FOUND})
 
         return user

@@ -3,6 +3,7 @@ from graphql import GraphQLError
 
 from django.db.models import QuerySet
 
+from backend.core.exceptions import ErrorCode
 from backend.core.graphql.types import MessageType
 from backend.core.models import Participant, Room, User, Message
 
@@ -28,7 +29,7 @@ class MessageQuery(graphene.ObjectType):
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
         
         if not Participant.objects.filter(user=info.context.user, room=room).exists():
-            raise GraphQLError("Not a participant", extensions={"code": "PERMISSION_DENIED"})
+            raise GraphQLError("Not a participant", extensions={"code": ErrorCode.PERMISSION_DENIED})
 
         return room.message_set.select_related('user').order_by('created_at')
     

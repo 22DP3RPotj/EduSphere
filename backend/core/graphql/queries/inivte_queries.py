@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 from django.db.models import QuerySet
 
+from backend.core.exceptions import ErrorCode
 from backend.core.graphql.types import InviteStatusEnum, InviteType
 from backend.core.models import Invite
 
@@ -37,10 +38,10 @@ class InviteQuery(graphene.ObjectType):
         try:
             invite = Invite.objects.select_related('inviter', 'invitee', 'role').get(token=token)
         except Invite.DoesNotExist:
-            raise GraphQLError("Invite not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Invite not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         if invite.invitee != info.context.user and invite.inviter != info.context.user:
-            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
+            raise GraphQLError("Permission denied", extensions={"code": ErrorCode.PERMISSION_DENIED})
         
         return invite
 

@@ -4,6 +4,7 @@ from graphql import GraphQLError
 
 from django.db.models import Q, Count, QuerySet, Prefetch
 
+from backend.core.exceptions import ErrorCode
 from backend.core.graphql.types import RoomType
 from backend.core.models import Room, User, Participant
 
@@ -36,7 +37,7 @@ class RoomQuery(graphene.ObjectType):
                 slug=room_slug
             )
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         return room
 
@@ -78,7 +79,7 @@ class RoomQuery(graphene.ObjectType):
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
-            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("User not found", extensions={"code": ErrorCode.NOT_FOUND})
 
         queryset = (
             Room.objects
@@ -101,7 +102,7 @@ class RoomQuery(graphene.ObjectType):
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
-            raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("User not found", extensions={"code": ErrorCode.NOT_FOUND})
 
         queryset = (
             Room.objects

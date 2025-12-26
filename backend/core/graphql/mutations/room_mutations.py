@@ -126,6 +126,12 @@ class JoinRoom(graphene.Mutation):
                 "Already a participant of this room",
                 extensions={"code": ErrorCode.PERMISSION_DENIED}
             )
+            
+        if room.visibility == Room.Visibility.PRIVATE:
+            raise GraphQLError(
+                "Cannot join a private room",
+                extensions={"code": ErrorCode.PERMISSION_DENIED}
+            )
 
         Participant.objects.create(
             user=info.context.user,

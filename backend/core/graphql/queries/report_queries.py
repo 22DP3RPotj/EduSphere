@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 from django.db.models import QuerySet
 
+from backend.core.exceptions import ErrorCode
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.core.models import Report
 
@@ -37,10 +38,10 @@ class ReportQuery(graphene.ObjectType):
         try:
             report = Report.objects.select_related('room', 'moderator').get(id=report_id)
         except Report.DoesNotExist:
-            raise GraphQLError("Report not found", extensions={"code": "NOT_FOUND"})
+            raise GraphQLError("Report not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         if report.user != info.context.user:
-            raise GraphQLError("Permission denied", extensions={"code": "PERMISSION_DENIED"})
+            raise GraphQLError("Permission denied", extensions={"code": ErrorCode.PERMISSION_DENIED})
         
         return report
 

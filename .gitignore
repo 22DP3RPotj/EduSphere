@@ -5,6 +5,7 @@ media/
 #Environment
 env/
 .env*
+*.env
 
 # IDE
 .vscode/

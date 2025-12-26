@@ -1,31 +1,46 @@
 # Frontend (Vue)
 
-The frontend is built using **Vue.js** and interacts with the **Django** backend via API.
+The frontend is built using **Vue.js** and interacts with the **Django** backend via GraphQL API.
 
 ## Features
-- Course listing and search with filters
+- Real-time chat interface with WebSocket support
 - Secure authentication via JWT
-- Real-time chat with WebSocket support
+- Chat room management
+- Message editing and deletion
+- Responsive design for desktop and mobile
 
 ## Architecture Overview
 - **Framework**: Vue 3 + Vue Router
 - **State Management**: Pinia
 - **Styling**: CSS
-- **API Communication**: Fetches data from Django backend
+- **API Communication**: GraphQL queries and mutations to Django backend
+- **WebSocket**: Real-time message updates via Channels
 
 ## Running the Frontend
-Refer to the main [README](../README.md) for installation and setup instructions.
+
+### Docker Setup
+Refer to the main [README](../README.md#docker-setup) for Docker installation and setup instructions.
+
+The frontend is automatically built and served via Nginx in Docker.
+
+### Local Development
 
 To start the frontend development server:
 ```bash
 npm run dev
 ```
 
-## Linting and Building
+## Building for Production
+
 ```bash
-npm run lint  # Lint the code
-npm run build  # Minify and prepare for production
+npm run build  # Build optimized production bundle
+```
+
+## Code Quality
+
+```bash
+npm run lint  # Lint the code for issues
 ```
 
 ## Installation
-For installation instructions, refer to the main [README](../README.md#installation-guide).
+For installation and setup instructions, refer to the main [README](../README.md#installation-guide).

@@ -30,9 +30,9 @@ services:
     volumes:
       - ./media:/app/media
       - static_volume:/app/staticfiles
-    env_file:
-      - .env.docker
     environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
       - DJANGO_SETTINGS_MODULE=backend.config.settings
     depends_on:
       postgres:

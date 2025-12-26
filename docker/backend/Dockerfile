@@ -20,7 +20,7 @@ RUN pip install uvicorn gunicorn psycopg2
 COPY . .
 
 # Create directories if they don't exist
-RUN mkdir -p staticfiles media logs
+RUN mkdir -p staticfiles media/avatars logs
 
 # Command to run the server
 ENTRYPOINT ["uvicorn", "backend.config.asgi:application"]

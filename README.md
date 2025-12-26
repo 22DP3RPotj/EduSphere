@@ -128,12 +128,18 @@ Access the application at [http://localhost](http://localhost)
    cd EduSphere
    ```
 
-2. Create `.env.docker` file in the project root:
+2. Configure environment variables (create `docker.env` file in project root):
    ```env
-   SECRET_KEY=secret_key
+   SECRET_KEY=your-secret-key-here
    DEBUG=True
 
-   DB_URL=postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
+   DB_NAME=coredb
+   DB_USER=coreuser
+   DB_PASSWORD=your-db-password
+   DB_HOST=postgres
+   DB_PORT=5432
+
+   DATABASE_URL=postgresql://coreuser:your-db-password@postgres:5432/coredb
 
    REDIS_HOST=redis
    REDIS_PORT=6379
@@ -141,25 +147,42 @@ Access the application at [http://localhost](http://localhost)
 
 3. Build and start the Docker containers:
    ```bash
-   docker compose up -d --build
+   docker-compose --env-file ./docker.env up --build
    ```
+   
+   **Note**: The `--env-file` flag is important to load environment variables from `docker.env`.
 
-4. Run initial setup commands:
-   ```bash
-   # Run migrations
-   docker compose exec backend python manage.py migrate
-
-   # Create a superuser
-   docker compose exec backend python manage.py createsuperuser
-
-   # Collect static files
-   docker compose exec backend python manage.py collectstatic --noinput
-   ```
-
-5. Access the application:
+4. Access the application (migrations run automatically on container startup):
    - Frontend: http://localhost
-   - Django Admin: http://localhost/admin
-   - GraphiQL: http://localhost/graphql
+   - Backend API: http://localhost/api
+   - GraphQL: http://localhost/graphql
+
+#### Manual Migration and Setup
+
+If you need to manually run migrations or create a superuser:
+
+```bash
+# Run migrations
+docker-compose exec backend python manage.py migrate
+
+# Create a superuser
+docker-compose exec backend python manage.py createsuperuser
+
+# Collect static files (if needed)
+docker-compose exec backend python manage.py collectstatic --noinput
+```
+
+#### Stopping and Cleaning Up
+
+To stop the containers:
+```bash
+docker-compose --env-file ./docker.env down
+```
+
+To completely reset the database and volumes:
+```bash
+docker-compose --env-file ./docker.env down -v
+```
 
 ## PostgreSQL Backup & Restore
 

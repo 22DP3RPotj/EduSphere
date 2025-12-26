@@ -1,5 +1,7 @@
 .PHONY: help setup run unit-test report clean clean-logs
 
+all: help
+
 help:
 	@echo "EduSphere Development Commands"
 	@echo "================================"
@@ -24,6 +26,9 @@ run: setup
 unit-test: setup
 	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.unit
 
+integration-test: setup
+	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.integration
+
 report: setup
 	DJANGO_SETTINGS_MODULE=backend.config.settings coverage run --source='backend.core' -m django test backend/core/tests/unit
 	coverage report --skip-empty
@@ -34,3 +39,11 @@ clean:
 
 clean-logs:
 	rm -rf logs/*
+
+docker-compose-up:
+	docker-compose --env-file ./docker.env up -d --build
+	docker-compose --env-file ./docker.env exec backend python manage.py migrate
+	docker-compose --env-file ./docker.env exec backend python manage.py collectstatic --noinput
+
+docker-compose-down:
+	docker-compose --env-file ./docker.env down -v

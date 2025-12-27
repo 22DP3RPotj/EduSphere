@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+until pg_isready -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME"; do sleep 1; done
+python manage.py migrate --noinput
+exec "$@"

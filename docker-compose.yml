@@ -4,6 +4,8 @@ services:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./docker.env
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
@@ -30,6 +32,8 @@ services:
     volumes:
       - ./media:/app/media
       - static_volume:/app/staticfiles
+    env_file:
+      - ./docker.env
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=${DATABASE_URL}

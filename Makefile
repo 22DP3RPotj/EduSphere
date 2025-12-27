@@ -16,21 +16,27 @@ setup:
 	sudo service postgresql start; \
 	sudo service nginx start; \
 	mkdir -p logs; \
-	mkdir -p media/avatars; \
+	mkdir -p media media/avatars; \
 	python manage.py collectstatic --noinput; \
 
 run: setup
 	pnpm --prefix frontend run build
 	DJANGO_SETTINGS_MODULE=backend.config.settings uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
 
-unit-test: setup
+unit-test:
 	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.unit
 
 integration-test: setup
 	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.integration
 
-report: setup
+coverage:
 	DJANGO_SETTINGS_MODULE=backend.config.settings coverage run --source='backend.core' -m django test backend/core/tests/unit
+
+report:
+	if [ ! -f .coverage ]; then
+		make coverage
+	fi
+
 	coverage report --skip-empty
 
 clean:
@@ -42,8 +48,6 @@ clean-logs:
 
 docker-compose-up:
 	docker-compose --env-file ./docker.env up -d --build
-	docker-compose --env-file ./docker.env exec backend python manage.py migrate
-	docker-compose --env-file ./docker.env exec backend python manage.py collectstatic --noinput
 
 docker-compose-down:
 	docker-compose --env-file ./docker.env down -v

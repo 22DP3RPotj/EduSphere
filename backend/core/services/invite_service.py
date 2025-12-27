@@ -219,4 +219,6 @@ class InviteService:
             return None
         
         InviteService._update_if_expired(invite)
+        invite.refresh_from_db(fields=["status"])
+        
         return invite

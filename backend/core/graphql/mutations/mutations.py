@@ -6,6 +6,7 @@ from .message_mutations import MessageMutation
 from .report_mutations import ReportMutation
 from .invite_mutations import InviteMutation
 from .role_mutations import RoleMutation
+from .participant_mutations import ParticipantMutation
 
 
 class Mutation(
@@ -16,6 +17,7 @@ class Mutation(
     ReportMutation,
     InviteMutation,
     RoleMutation,
+    ParticipantMutation,
     graphene.ObjectType
 ):
     pass

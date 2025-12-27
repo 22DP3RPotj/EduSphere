@@ -4,7 +4,7 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.core.graphql.types import MessageType
-from backend.core.models import Message
+from backend.core.models import Message, Room
 from backend.core.services import MessageService
 from backend.core.exceptions import (
     PermissionException,
@@ -12,6 +12,34 @@ from backend.core.exceptions import (
     ConflictException,
     ErrorCode
 )
+
+
+class CreateMessage(graphene.Mutation):
+    class Arguments:
+        room_id = graphene.UUID(required=True)
+        body = graphene.String(required=True)
+
+    message = graphene.Field(MessageType)
+
+    @login_required
+    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID, body: str):
+        try:
+            room = Room.objects.get(id=room_id)
+        except Room.DoesNotExist:
+            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
+        
+        try:
+            message = MessageService.create_message(
+                user=info.context.user,
+                room=room,
+                body=body
+            )
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except (FormValidationException, ConflictException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": getattr(e, "errors", None)})
+    
+        return CreateMessage(message=message)
 
 
 class DeleteMessage(graphene.Mutation):
@@ -66,5 +94,6 @@ class UpdateMessage(graphene.Mutation):
 
 
 class MessageMutation(graphene.ObjectType):
+    create_message = CreateMessage.Field()
     delete_message = DeleteMessage.Field()
     update_message = UpdateMessage.Field()

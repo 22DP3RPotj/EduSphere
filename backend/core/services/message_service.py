@@ -1,13 +1,10 @@
-import uuid
-from typing import Optional
-
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 
 from backend.core.models import Message, Room, User, Participant
 from backend.core.forms import MessageForm
 from backend.core.enums import PermissionCode
 from backend.core.exceptions import (
-    FormValidationException, 
+    FormValidationException,
     PermissionException,
     ConflictException
 )
@@ -38,7 +35,7 @@ class MessageService:
             PermissionException: If user is not a participant of the room
             FormValidationException: If form validation fails
             ConflictException: If message creation conflicts
-        """        
+        """
         participant = Participant.objects.filter(user=user, room=room).first()
         
         if participant is None:
@@ -54,15 +51,14 @@ class MessageService:
             raise FormValidationException("Invalid message data", errors=form.errors)
         
         try:
-            with transaction.atomic():
-                message = form.save(commit=False)
-                message.user = user
-                message.room = room
-                message.save()
-                
-                return message
+            message = form.save(commit=False)
+            message.user = user
+            message.room = room
+            message.save()
         except IntegrityError as e:
             raise ConflictException("Could not create message due to a conflict.") from e
+    
+        return message
     
     @staticmethod
     def update_message(

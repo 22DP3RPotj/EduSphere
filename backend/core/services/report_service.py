@@ -1,12 +1,13 @@
 import uuid
 from typing import Optional
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 
-from backend.core.models import Report, Room, User
+from backend.core.models import Report, Room, User, Participant
 from backend.core.forms import ReportForm
 from backend.core.exceptions import (
     FormValidationException,
+    ValidationException,
     PermissionException,
     ConflictException,
 )
@@ -39,13 +40,9 @@ class ReportService:
             ConflictException: If an active report already exists
             FormValidationException: If form validation fails
         """
-        from backend.core.models import Participant
-        
-        # Check if user is a participant
         if not Participant.objects.filter(user=reporter, room=room).exists():
             raise PermissionException("You must be a participant of the room to report it.")
         
-        # Check if an active report already exists
         if Report.active_reports(user=reporter, room=room).exists():
             raise ConflictException("You already have an active report targeting this room.")
         
@@ -60,16 +57,15 @@ class ReportService:
             raise FormValidationException("Invalid report data", errors=form.errors)
         
         try:
-            with transaction.atomic():
-                report = form.save(commit=False)
-                report.user = reporter
-                report.room = room
-                report.save()
-                
-                return report
+            report = form.save(commit=False)
+            report.user = reporter
+            report.room = room
+            report.save()
         except IntegrityError as e:
             raise ConflictException("Could not create report due to a conflict.") from e
     
+        return report
+
     @staticmethod
     def update_report_status(
         moderator: User,
@@ -91,9 +87,10 @@ class ReportService:
             
         Raises:
             PermissionException: If user is not a moderator
-            ValidationException: If status transition is invalid
         """
-        if not moderator.is_staff:
+        # Defense-in-depth: Even though API layer checks staff/superuser status,
+        # we enforce it here as well to prevent accidental service layer misuse.
+        if not (moderator.is_staff or moderator.is_superuser):
             raise PermissionException("Only moderators can update report status.")
         
         report.status = new_status

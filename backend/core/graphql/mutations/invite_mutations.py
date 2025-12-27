@@ -118,7 +118,33 @@ class DeclineInvite(graphene.Mutation):
 
         return DeclineInvite(success=success)
 
+
+class CancelInvite(graphene.Mutation):
+    class Arguments:
+        token = graphene.UUID(required=True)
+        
+    success = graphene.Boolean()
+    
+    @login_required
+    def mutate(self, info: graphene.ResolveInfo, token: uuid.UUID):
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite is None:
+            raise GraphQLError(f"Invite with token '{token}' not found.", extensions={"code": ErrorCode.NOT_FOUND})
+        
+        try:
+            success = InviteService.cancel_invite(
+                user=info.context.user,
+                invite=invite
+            )
+        except (PermissionException, ValidationException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+
+        return CancelInvite(success=success)
+
+
 class InviteMutation(graphene.ObjectType):
     send_invite = SendInvite.Field()
     accept_invite = AcceptInvite.Field()
     decline_invite = DeclineInvite.Field()
+    cancel_invite = CancelInvite.Field()

@@ -4,7 +4,12 @@ from django.db import IntegrityError, transaction
 
 from backend.core.models import User, Room, Topic, Participant
 from backend.core.forms import RoomForm
-from backend.core.exceptions import FormValidationException, PermissionException, ConflictException
+from backend.core.exceptions import (
+    FormValidationException,
+    ValidationException,
+    PermissionException,
+    ConflictException
+)
 from backend.core.services import RoleService
 from backend.core.enums import RoleCode, PermissionCode
 
@@ -55,34 +60,34 @@ class RoomService:
         if not form.is_valid():
             raise FormValidationException("Invalid room data", errors=form.errors)
         
-        try:
-            with transaction.atomic():
-                room: Room = form.save(commit=False)
-                room.host = user
-                room.visibility = visibility
-                room.save()
-                
-                topics = [
-                    Topic.objects.get_or_create(name=topic_name)[0]
-                    for topic_name in topic_names
-                ]
-                room.topics.set(topics)
-                
-                RoleService.create_default_roles(room)
-                
-                member_role = room.roles.get(name=RoleCode.MEMBER.label)
-                room.default_role = member_role
-                room.save(update_fields=["default_role"])
-                
-                owner_role = room.roles.get(name=RoleCode.OWNER.label)
+        with transaction.atomic():
+            room: Room = form.save(commit=False)
+            room.host = user
+            room.visibility = visibility
+            room.save()
+            
+            topics = [
+                Topic.objects.get_or_create(name=topic_name)[0]
+                for topic_name in topic_names
+            ]
+            room.topics.set(topics)
+            
+            RoleService.create_default_roles(room)
+            
+            member_role = room.roles.get(name=RoleCode.MEMBER.label)
+            room.default_role = member_role
+            room.save(update_fields=["default_role"])
+            
+            owner_role = room.roles.get(name=RoleCode.OWNER.label)
+            
+            try:
                 Participant.objects.create(
                     user=user,
                     room=room,
                     role=owner_role
                 )
-                
-        except IntegrityError as e:
-            raise ConflictException("Could not create room due to a conflict.") from e
+            except IntegrityError as e:
+                raise ConflictException("Could not create room due to a conflict.") from e
     
         return room
     
@@ -99,7 +104,7 @@ class RoomService:
         Update a room.
         
         Args:
-            user: User performing the update (must be the host)
+            user: User performing the update (must have ROOM_UPDATE permission)
             room: The room to update
             name: New room name (optional)
             description: New room description (optional)
@@ -110,7 +115,7 @@ class RoomService:
             The updated Room instance
             
         Raises:
-            PermissionException: If user is not the host
+            PermissionException: If user doesn't have permission
             FormValidationException: If form validation fails
             ConflictException: If update conflicts
         """
@@ -141,7 +146,6 @@ class RoomService:
                 if visibility is not None:
                     room.visibility = visibility
                     room.save(update_fields=["visibility"])
-                
         except IntegrityError as e:
             raise ConflictException("Could not update room due to a conflict.") from e
     
@@ -153,7 +157,7 @@ class RoomService:
         Delete a room.
         
         Args:
-            user: User performing the deletion (must have the permission)
+            user: User performing the deletion (must have ROOM_DELETE permission)
             room: The room to delete
             
         Returns:
@@ -161,6 +165,7 @@ class RoomService:
             
         Raises:
             PermissionException: If user doesn't have permission
+            ConflictException: If deletion conflicts
         """
         if not RoleService.has_permission(user, room, PermissionCode.ROOM_DELETE):
             raise PermissionException("You don't have the permission to delete this room.")

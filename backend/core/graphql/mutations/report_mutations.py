@@ -4,13 +4,15 @@ from typing import Optional
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
-from django.db import transaction, IntegrityError
-
-from backend.core.exceptions import ErrorCode
+from backend.core.exceptions import (
+    ErrorCode,
+    PermissionException,
+    ConflictException,
+    FormValidationException,
+)
 from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
-from backend.core.graphql.utils import format_form_errors
-from backend.core.models import Participant, Report, Room
-from backend.core.forms import ReportForm
+from backend.core.models import Report, Room
+from backend.core.services import ReportService
 
 
 class CreateReport(graphene.Mutation):
@@ -28,39 +30,19 @@ class CreateReport(graphene.Mutation):
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
 
-        if not Participant.objects.filter(user=info.context.user, room=room).exists():
-            raise GraphQLError(
-                "You must be a participant of the room to report it", 
-                extensions={"code": ErrorCode.PERMISSION_DENIED}
+        try:
+            report = ReportService.create_report(
+                reporter=info.context.user,
+                room=room,
+                reason=reason,
+                body=body
             )
-
-        if Report.active_reports(user=info.context.user, room=room).exists():
-            raise GraphQLError(
-                "You already have an active report targeting this room.",
-                extensions={"code": ErrorCode.CONFLICT},
-            )
-        data = {
-            "reason": reason,
-            "body": body,
-        }
-        
-        form = ReportForm(data=data)
-        
-        if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
-
-        with transaction.atomic():
-            report = form.save(commit=False)
-            report.user = info.context.user
-            report.room = room
-            
-            try:
-                report.save()
-            except IntegrityError:
-                raise GraphQLError(
-                    "Could not create report due to a conflict.",
-                    extensions={"code": ErrorCode.CONFLICT},
-                )
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except ConflictException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+        except FormValidationException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
         
         return CreateReport(report=report)
 
@@ -81,19 +63,20 @@ class UpdateReport(graphene.Mutation):
         status: Optional[Report.ReportStatus] = None,
         moderator_note: Optional[str] = None
     ):
-        # TODO: (maybe) FORM
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:
             raise GraphQLError("Report not found", extensions={"code": ErrorCode.NOT_FOUND})
 
-        if status is not None:
-            report.status = status
-        if moderator_note is not None:
-            report.moderator_note = moderator_note
-
-        report.moderator = info.context.user
-        report.save()
+        try:
+            report = ReportService.update_report_status(
+                moderator=info.context.user,
+                report=report,
+                new_status=status if status is not None else report.status,
+                moderator_note=moderator_note
+            )
+        except PermissionException as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
 
         return UpdateReport(report=report)
 

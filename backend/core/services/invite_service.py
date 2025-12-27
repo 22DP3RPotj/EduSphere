@@ -83,13 +83,12 @@ class InviteService:
             raise FormValidationException("Invalid invite data", errors=form.errors)
         
         try:
-            with transaction.atomic():
-                invite = form.save(commit=False)
-                invite.inviter = inviter
-                invite.invitee = invitee
-                invite.role = role
-                invite.room = room
-                invite.save()
+            invite = form.save(commit=False)
+            invite.inviter = inviter
+            invite.invitee = invitee
+            invite.role = role
+            invite.room = room
+            invite.save()
 
         except IntegrityError as e:
             raise ConflictException("Could not send invite due to a conflict.") from e
@@ -217,7 +216,7 @@ class InviteService:
         try:
             invite = Invite.objects.get(token=token)
         except Invite.DoesNotExist:
-            None
-
+            return None
+        
         InviteService._update_if_expired(invite)
         return invite

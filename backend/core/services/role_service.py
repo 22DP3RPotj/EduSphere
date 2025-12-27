@@ -225,18 +225,18 @@ class RoleService:
             raise FormValidationException("Invalid role data", errors=form.errors)
         
         try:
-            with transaction.atomic():
-                role = form.save(commit=False)
-                role.room = room
-                role.save()
-                
-                if permission_ids:
-                    permissions = Permission.objects.filter(id__in=permission_ids)
-                    role.permissions.set(permissions)
-                
-                return role
+            role = form.save(commit=False)
+            role.room = room
+            role.save()
+            
+            if permission_ids:
+                permissions = Permission.objects.filter(id__in=permission_ids)
+                role.permissions.set(permissions)
+            
         except IntegrityError as e:
             raise ConflictException("Could not create role due to a conflict.") from e
+
+        return role
 
     @staticmethod
     def update_role(

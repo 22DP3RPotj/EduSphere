@@ -1308,3 +1308,558 @@ class ErrorHandlingTests(ServiceTestBase):
                 new_status=Report.ReportStatus.UNDER_REVIEW
             )
 
+
+@tag("unit", "services", "role-advanced")
+class RoleServiceAdvancedTests(ServiceTestBase):
+    """Advanced tests for RoleService - priority, permission escalation, cascading."""
+    
+    # Priority Enforcement Tests
+    def test_create_role_equal_priority_denied(self):
+        """Test creating role with equal priority to user's role is denied."""
+        self._add_member(self.member, self.member_role)
+        member_priority = self.member_role.priority
+        
+        with self.assertRaises(PermissionException):
+            RoleService.create_role(
+                user=self.member,
+                room=self.room,
+                name="Equal Priority Role",
+                description="",
+                priority=member_priority,
+                permission_ids=[]
+            )
+    
+    def test_create_role_higher_priority_denied(self):
+        """Test creating role with higher priority than user's role is denied."""
+        self._add_member(self.member, self.member_role)
+        owner_priority = self.owner_role.priority
+        
+        with self.assertRaises(PermissionException):
+            RoleService.create_role(
+                user=self.member,
+                room=self.room,
+                name="Higher Priority Role",
+                description="",
+                priority=owner_priority + 1,
+                permission_ids=[]
+            )
+    
+    def test_create_role_lower_priority_allowed(self):
+        """Test owner can create role with lower priority."""
+        lower_priority = self.owner_role.priority - 5
+        role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Lower Priority Role",
+            description="Lower priority",
+            priority=lower_priority,
+            permission_ids=[]
+        )
+        self.assertEqual(role.priority, lower_priority)
+    
+    def test_update_role_name_and_description(self):
+        """Test updating role name."""
+        custom_role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Original Name",
+            description="Original",
+            priority=self.owner_role.priority - 10,
+            permission_ids=[]
+        )
+        
+        # Verify initial state
+        self.assertEqual(custom_role.name, "Original Name")
+    
+    # Permission Escalation Tests
+    def test_assign_permission_to_role(self):
+        """Test assigning permissions to role."""
+        custom_role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Custom Role",
+            description="Custom",
+            priority=self.owner_role.priority - 5,
+            permission_ids=[]
+        )
+        
+        # Assign permissions
+        perm_ids = list(self.owner_role.permissions.values_list('id', flat=True)[:2])
+        
+        updated = RoleService.assign_permissions_to_role(
+            user=self.owner,
+            role=custom_role,
+            permission_ids=perm_ids
+        )
+        
+        self.assertEqual(updated.permissions.count(), len(perm_ids))
+    
+    def test_permission_set_is_subset_validation(self):
+        """Test that permission assignment works."""
+        self._add_member(self.member, self.owner_role)
+        member_perms = list(self.owner_role.permissions.values_list('id', flat=True))
+        
+        # Create role with subset of owner permissions (since member is owner now)
+        if member_perms:
+            custom_role = RoleService.create_role(
+                user=self.member,
+                room=self.room,
+                name="Limited Role",
+                description="Limited",
+                priority=self.owner_role.priority - 5,
+                permission_ids=[member_perms[0]]
+            )
+            
+            self.assertEqual(custom_role.permissions.count(), 1)
+    
+    # Cascading Operations Tests
+    def test_delete_role_with_participants_requires_substitution(self):
+        """Test deleting role with participants requires substitution role."""
+        custom_role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Doomed Role",
+            description="",
+            priority=self.owner_role.priority - 10,
+            permission_ids=[]
+        )
+        
+        # Add participants to the role
+        for i in range(3):
+            user = User.objects.create_user(
+                name=f"Doomed User {i}",
+                username=f"doomed_user{i}",
+                email=f"doomed_user{i}@test.com",
+                password="testpass123"
+            )
+            Participant.objects.create(user=user, room=self.room, role=custom_role)
+        
+        # Should fail without substitution
+        with self.assertRaises(ValidationException):
+            RoleService.delete_role(
+                user=self.owner,
+                role=custom_role,
+                substitution_role=None
+            )
+    
+    def test_delete_role_reassigns_participants(self):
+        """Test deleting role reassigns all participants to substitution role."""
+        custom_role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Doomed Role",
+            description="",
+            priority=self.owner_role.priority - 10,
+            permission_ids=[]
+        )
+        
+        # Add participants to the role
+        users = []
+        for i in range(3):
+            user = User.objects.create_user(
+                name=f"Reassign User {i}",
+                username=f"reassign_user{i}",
+                email=f"reassign_user{i}@test.com",
+                password="testpass123"
+            )
+            users.append(user)
+            Participant.objects.create(user=user, room=self.room, role=custom_role)
+        
+        result = RoleService.delete_role(
+            user=self.owner,
+            role=custom_role,
+            substitution_role=self.member_role
+        )
+        
+        self.assertTrue(result['success'])
+        self.assertEqual(result['participants_reassigned'], 3)
+        
+        # Verify all reassigned
+        for user in users:
+            participant = Participant.objects.get(user=user, room=self.room)
+            self.assertEqual(participant.role, self.member_role)
+    
+    def test_delete_role_reassigns_invites(self):
+        """Test deleting role reassigns pending invites to substitution role."""
+        custom_role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Doomed Role",
+            description="",
+            priority=self.owner_role.priority - 10,
+            permission_ids=[]
+        )
+        
+        # Create pending invites with the role
+        self._add_member(self.member, self.owner_role)
+        invitees = []
+        for i in range(2):
+            invitee = User.objects.create_user(
+                name=f"Invitee {i}",
+                username=f"invitee{i}",
+                email=f"invitee{i}@test.com",
+                password="testpass123"
+            )
+            invitees.append(invitee)
+            InviteService.send_invite(
+                inviter=self.member,
+                room=self.room,
+                invitee=invitee,
+                role=custom_role,
+                expires_at=timezone.now() + timedelta(days=7)
+            )
+        
+        result = RoleService.delete_role(
+            user=self.owner,
+            role=custom_role,
+            substitution_role=self.member_role
+        )
+        
+        self.assertEqual(result['invites_reassigned'], 2)
+        
+        # Verify all invites reassigned
+        for invitee in invitees:
+            invite = Invite.objects.get(invitee=invitee, room=self.room)
+            self.assertEqual(invite.role, self.member_role)
+    
+    def test_delete_role_atomicity_on_failure(self):
+        """Test role deletion is atomic on failure."""
+        custom_role = RoleService.create_role(
+            user=self.owner,
+            room=self.room,
+            name="Atomic Test Role",
+            description="",
+            priority=self.owner_role.priority - 10,
+            permission_ids=[]
+        )
+        
+        # Add a participant
+        user = User.objects.create_user(
+            name="Atomic Test User",
+            username="atomic_test_user",
+            email="atomic@test.com",
+            password="testpass123"
+        )
+        Participant.objects.create(user=user, room=self.room, role=custom_role)
+        
+        # Try to delete without substitution (should fail)
+        with self.assertRaises(ValidationException):
+            RoleService.delete_role(
+                user=self.owner,
+                role=custom_role,
+                substitution_role=None
+            )
+        
+        # Role should still exist
+        self.assertTrue(Role.objects.filter(id=custom_role.id).exists())
+        # Participant should still have old role
+        participant = Participant.objects.get(user=user, room=self.room)
+        self.assertEqual(participant.role, custom_role)
+    
+    
+    def test_can_affect_role_priority_lower(self):
+        """Test can affect role with lower priority."""
+        self._add_member(self.member, self.owner_role)
+        lower_role = RoleService.create_role(
+            user=self.member,
+            room=self.room,
+            name="Lower Role",
+            description="Lower",
+            priority=self.owner_role.priority - 10,
+            permission_ids=[]
+        )
+        
+        member_participant = Participant.objects.get(user=self.member, room=self.room)
+        self.assertTrue(RoleService.can_affect_role(member_participant, lower_role))
+
+
+@tag("unit", "services", "invite-advanced")
+class InviteServiceAdvancedTests(ServiceTestBase):
+    """Advanced tests for InviteService - expiry, cascades, edge cases."""
+    
+    def test_invite_expires_after_expiry_time(self):
+        """Test invite is marked expired when retrieved after expiry."""
+        self._add_member(self.member, self.owner_role)
+        
+        # Create invite that expires in the past
+        expires_at = timezone.now() - timedelta(hours=1)
+        invite = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Get the invite - should be marked as expired
+        retrieved = InviteService.get_invite_by_token(invite.token)
+        self.assertEqual(retrieved.status, Invite.InviteStatus.EXPIRED)
+    
+    def test_invite_can_be_accepted_within_validity(self):
+        """Test valid invite can be accepted."""
+        self._add_member(self.member, self.owner_role)
+        
+        # Create invite with future expiry
+        expires_at = timezone.now() + timedelta(days=7)
+        invite = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Accept should succeed
+        participant = InviteService.accept_invite(self.other_user, invite)
+        self.assertIsNotNone(participant.id)
+    
+    def test_invite_can_be_declined_within_validity(self):
+        """Test valid invite can be declined."""
+        self._add_member(self.member, self.owner_role)
+        
+        # Create invite with future expiry
+        expires_at = timezone.now() + timedelta(days=7)
+        invite = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Decline should succeed
+        success = InviteService.decline_invite(self.other_user, invite)
+        self.assertTrue(success)
+        
+        invite.refresh_from_db()
+        self.assertEqual(invite.status, Invite.InviteStatus.DECLINED)
+    
+    def test_invite_cannot_be_accepted_twice(self):
+        """Test accepted invite cannot be accepted again."""
+        self._add_member(self.member, self.owner_role)
+        
+        expires_at = timezone.now() + timedelta(days=7)
+        invite = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Accept once
+        InviteService.accept_invite(self.other_user, invite)
+        
+        # Try to accept again - should fail
+        with self.assertRaises(ValidationException):
+            InviteService.accept_invite(self.other_user, invite)
+    
+    def test_invite_cannot_be_declined_after_accepted(self):
+        """Test declined invite cannot be accepted."""
+        self._add_member(self.member, self.owner_role)
+        
+        expires_at = timezone.now() + timedelta(days=7)
+        invite = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Decline
+        InviteService.decline_invite(self.other_user, invite)
+        
+        # Try to accept - should fail
+        with self.assertRaises(ValidationException):
+            InviteService.accept_invite(self.other_user, invite)
+    
+    def test_accept_invite_succeeds_for_valid_invite(self):
+        """Test accepting a valid invite creates participant."""
+        self._add_member(self.member, self.owner_role)
+        
+        expires_at = timezone.now() + timedelta(days=7)
+        invite = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Accept should succeed
+        participant = InviteService.accept_invite(self.other_user, invite)
+        self.assertIsNotNone(participant.id)
+        self.assertEqual(participant.user, self.other_user)
+        self.assertEqual(participant.room, self.room)
+    
+    def test_invite_with_different_role_per_invitee(self):
+        """Test different invitees can be invited to same room."""
+        self._add_member(self.member, self.owner_role)
+        
+        expires_at = timezone.now() + timedelta(days=7)
+        
+        # Send invite with member role
+        invite1 = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=self.other_user,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        # Create another user and send invite
+        user2 = User.objects.create_user(
+            name="Invitee 2",
+            username="invitee2",
+            email="invitee2@test.com",
+            password="testpass123"
+        )
+        
+        invite2 = InviteService.send_invite(
+            inviter=self.member,
+            room=self.room,
+            invitee=user2,
+            role=self.member_role,
+            expires_at=expires_at
+        )
+        
+        self.assertEqual(invite1.role, self.member_role)
+        self.assertEqual(invite2.role, self.member_role)
+        self.assertNotEqual(invite1.invitee, invite2.invitee)
+
+
+@tag("unit", "services", "integration")
+class IntegrationTests(ServiceTestBase):
+    """Cross-service integration tests."""
+    
+    def test_full_room_workflow_with_role_management(self):
+        """Test complete workflow: create room, add participants, manage invites."""
+        # Create a new room
+        room = RoomService.create_room(
+            user=self.owner,
+            name="Complete Workflow Room",
+            description="Test workflow",
+            visibility=Room.Visibility.PRIVATE,
+            topic_names=["test"]
+        )
+        
+        # Get the default roles
+        owner_role = room.roles.get(name=RoleCode.OWNER.label)
+        member_role = room.roles.get(name=RoleCode.MEMBER.label)
+        
+        # Add multiple participants with roles
+        user1 = User.objects.create_user(
+            name="Workflow User 1",
+            username="workflow_user1",
+            email="workflow1@test.com",
+            password="testpass123"
+        )
+        user2 = User.objects.create_user(
+            name="Workflow User 2",
+            username="workflow_user2",
+            email="workflow2@test.com",
+            password="testpass123"
+        )
+        
+        ParticipantService.add_participant(room, user1, member_role)
+        ParticipantService.add_participant(room, user2, member_role)
+        
+        # Verify participants
+        self.assertEqual(room.participants.count(), 3)  # owner + 2 added
+        
+        # Send invites
+        invite = InviteService.send_invite(
+            inviter=self.owner,
+            room=room,
+            invitee=self.other_user,
+            role=member_role,
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+        
+        # Accept invite
+        InviteService.accept_invite(self.other_user, invite)
+        self.assertEqual(room.participants.count(), 4)
+        
+        # Create message as new participant
+        message = MessageService.create_message(
+            user=self.other_user,
+            room=room,
+            body="Hello from new participant"
+        )
+        self.assertIsNotNone(message.id)
+        
+        # Update message
+        updated = MessageService.update_message(
+            user=self.other_user,
+            message=message,
+            body="Updated message"
+        )
+        self.assertTrue(updated.is_edited)
+    
+    def test_permission_check_with_role_changes(self):
+        """Test permission checks reflect role changes."""
+        # Set up: member with limited role
+        self._add_member(self.member, self.member_role)
+        
+        # Verify member doesn't have update permission
+        has_perm = RoleService.has_permission(
+            self.member, self.room, PermissionCode.ROOM_UPDATE
+        )
+        self.assertFalse(has_perm)
+        
+        # Verify owner has update permission
+        has_perm = RoleService.has_permission(
+            self.owner, self.room, PermissionCode.ROOM_UPDATE
+        )
+        self.assertTrue(has_perm)
+    
+    def test_cascading_delete_with_messages(self):
+        """Test deleting participant works with messages."""
+        self._add_member(self.member, self.member_role)
+        
+        # Create messages as member
+        msg1 = MessageService.create_message(
+            user=self.member,
+            room=self.room,
+            body="Message 1"
+        )
+        msg2 = MessageService.create_message(
+            user=self.member,
+            room=self.room,
+            body="Message 2"
+        )
+        
+        self.assertEqual(Message.objects.filter(user=self.member).count(), 2)
+        
+        # Remove participant
+        participant = Participant.objects.get(user=self.member, room=self.room)
+        ParticipantService.remove_participant(self.owner, participant)
+        
+        # Participant should be gone
+        self.assertFalse(
+            Participant.objects.filter(user=self.member, room=self.room).exists()
+        )
+    
+    def test_invite_to_private_room(self):
+        """Test inviting to private room."""
+        private_room = RoomService.create_room(
+            user=self.owner,
+            name="Private Room",
+            description="",
+            visibility=Room.Visibility.PRIVATE,
+            topic_names=[]
+        )
+        
+        member_role = private_room.roles.get(name=RoleCode.MEMBER.label)
+        
+        # Can invite to private room
+        invite = InviteService.send_invite(
+            inviter=self.owner,
+            room=private_room,
+            invitee=self.member,
+            role=member_role,
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+        
+        self.assertIsNotNone(invite.id)

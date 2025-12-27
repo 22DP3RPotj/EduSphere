@@ -54,22 +54,25 @@ class ParticipantService:
             The created Participant instance
             
         Raises:
-            ConflictException: If user is already a participant
             ValidationException: If role doesn't belong to the room
+            ConflictException: If user is already a participant
         """
         if role.room != room:
             raise ValidationException("Role must belong to the same room.")
         
+        if Participant.objects.filter(user=user, room=room).exists():
+            raise ConflictException("User is already a participant of this room.")
+        
         try:
-            with transaction.atomic():
-                participant = Participant.objects.create(
-                    user=user,
-                    room=room,
-                    role=role
-                )
-                return participant
+            participant = Participant.objects.create(
+                user=user,
+                room=room,
+                role=role
+            )
         except IntegrityError as e:
             raise ConflictException("User is already a participant of this room.") from e
+    
+        return participant
     
     @staticmethod
     def change_participant_role(

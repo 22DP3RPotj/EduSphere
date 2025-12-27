@@ -63,4 +63,5 @@ jobs:
           until pg_isready -h localhost -p 5432; do sleep 1; done
 
       - name: Run Django tests
-        run: python manage.py test backend/core
+        run: make unit-test
+    

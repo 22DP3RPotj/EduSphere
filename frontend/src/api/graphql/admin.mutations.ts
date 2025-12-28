@@ -25,7 +25,7 @@ export const UPDATE_REPORT = gql`
         id
         status
         moderatorNote
-        updated
+        updatedAt
         moderator {
           id
           username

@@ -289,7 +289,7 @@
                 <span class="report-reason-badge">{{ formatReason(report.reason) }}</span>
               </div>
               <div class="report-actions-header">
-                <div class="report-date">{{ formatDate(report.created) }}</div>
+                <div class="report-date">{{ formatDate(report.created_at) }}</div>
                 <div class="dropdown">
                   <button class="btn-icon-action" @click.stop="toggleReportActions(report.id)">
                     <font-awesome-icon icon="ellipsis-vertical" />
@@ -355,7 +355,7 @@
                 <strong>Moderator Note:</strong>
                 <p>{{ report.moderatorNote }}</p>
                 <span class="moderator-info">
-                  - {{ report.moderator?.username }} on {{ formatDate(report.updated) }}
+                  - {{ report.moderator?.username }} on {{ formatDate(report.updated_at) }}
                 </span>
               </div>
             </div>
@@ -534,7 +534,7 @@ const sortedUsers = computed(() => {
 
 const sortedReports = computed(() => {
   return [...reports.value].sort((a, b) => {
-    return new Date(b.created).getTime() - new Date(a.created).getTime();
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 });
 

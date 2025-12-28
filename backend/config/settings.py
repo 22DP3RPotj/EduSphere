@@ -3,6 +3,7 @@ import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 
+
 # Initialize environment variables
 env = environ.Env(
     DEBUG=(bool, False)
@@ -31,8 +32,6 @@ ALLOWED_HOSTS = [
 
 # User Authentication
 
-LOGIN_URL = "/login"
-
 AUTH_USER_MODEL = "core.User"
 
 # Application definition
@@ -42,12 +41,12 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
-    "django_cleanup.apps.CleanupConfig",
     "backend.core.apps.CoreConfig",
     "backend.api.apps.ApiConfig",
     "channels",
     "corsheaders",
     "graphene_django",
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 MIDDLEWARE = [
@@ -133,8 +132,7 @@ GRAPHENE = {
     "SCHEMA": "backend.core.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        # Optional: Uncomment for detailed logging of GraphQL operations
-        # "backend.core.graphql.middleware.DebugLoggingMiddleware",
+        # "backend.core.graphql.middleware.ValidationMiddleware",
     ],
 }
 
@@ -198,9 +196,9 @@ CHANNEL_LAYERS = {
 }
 
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+REDIS_HOST = env("REDIS_HOST", default="localhost")
+REDIS_PORT = env.int("REDIS_PORT", default=6379)
+REDIS_DB = env.int("REDIS_DB", default=0)
 
 REDIS_STREAMS = {
     'MAX_STREAM_LENGTH': 10000,

@@ -216,7 +216,7 @@
                 <div class="room-meta">
                   <span class="room-date">
                     <font-awesome-icon icon="calendar-alt" />
-                    {{ formatDate(room.created) }}
+                    {{ formatDate(room.created_at) }}
                   </span>
                   <span class="room-host">
                     <font-awesome-icon icon="user" />
@@ -277,7 +277,7 @@
                 <div class="room-meta">
                   <span class="room-date">
                     <font-awesome-icon icon="calendar-alt" />
-                    {{ formatDate(room.created) }}
+                    {{ formatDate(room.created_at) }}
                   </span>
                   <span class="room-host">
                     <font-awesome-icon icon="user" />
@@ -337,7 +337,7 @@
                 <div class="room-meta">
                   <span class="room-date">
                     <font-awesome-icon icon="calendar-alt" />
-                    {{ formatDate(room.created) }}
+                    {{ formatDate(room.created_at) }}
                   </span>
                   <span class="room-host">
                     <font-awesome-icon icon="user" />

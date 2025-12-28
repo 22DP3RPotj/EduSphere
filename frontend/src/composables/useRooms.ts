@@ -102,8 +102,8 @@ export function useUpdateRoom() {
 export function useDeleteRoom() {
   const { mutate, loading, error } = useMutation(DELETE_ROOM_MUTATION)
 
-  async function deleteRoom(id: string) {
-    const result = await mutate({ id })
+  async function deleteRoom(roomId: string) {
+    const result = await mutate({ roomId })
 
     if (result?.data?.deleteRoom?.success) {
       return { success: true }
@@ -119,8 +119,20 @@ export function useDeleteRoom() {
   }
 }
 
-export function useJoinRoom() {
-  const { mutate, loading, error } = useMutation(JOIN_ROOM_MUTATION)
+export function useJoinRoom(hostSlug?: string, roomSlug?: string) {
+  const { mutate, loading, error } = useMutation(
+    JOIN_ROOM_MUTATION,
+    () => ({
+      refetchQueries: hostSlug && roomSlug 
+        ? [
+            {
+              query: ROOM_QUERY,
+              variables: { hostSlug, roomSlug }
+            }
+          ]
+        : [],
+    })
+  )
 
   async function joinRoom(roomId: string) {
     const result = await mutate({ roomId })

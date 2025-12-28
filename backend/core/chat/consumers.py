@@ -8,6 +8,7 @@ from django.conf import settings
 from datetime import datetime
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -25,7 +26,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.initialized = False
         self.consume_task = None
 
-
+    # TODO: Move validation to forms
     @property
     def max_body_length(self):
         """
@@ -62,20 +63,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.consumer_group = f"chat_group:{self.username}:{self.room_slug}"
         self.consumer_name = f"consumer:{self.user.id}:{self.channel_name}"
 
-        from ..models import Room
+        from ..models import Room, Participant
         try:
             room = await database_sync_to_async(Room.objects.get)(
                 host__username=self.username,
                 slug=self.room_slug
             )
         except Room.DoesNotExist:
+            logger.warning(f"Room not found: {self.username}/{self.room_slug}")
             await self.close()
             return
 
         is_participant = await database_sync_to_async(
-            room.participants.filter(id=self.user.id).exists
+            Participant.objects.filter(user=self.user, room=room).exists
         )()
+        
         if not is_participant:
+            logger.warning(
+                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.slug}"
+            )
             await self.close()
             return
 
@@ -225,6 +231,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def handle_new_message(self, room, message_body):
         """Handle creation of a new message"""
         from ..models import Message
+        from ..services import MessageService
 
         @database_sync_to_async
         def create_message(user, room, body):
@@ -232,6 +239,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message.full_clean()
             message.save()
             return message
+        
+        @database_sync_to_async
+        def serialize(message):
+            return MessageService.serialize(message)
 
         try:
             new_message = await create_message(
@@ -245,7 +256,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             return
 
-        serialized = new_message.serialize()
+        serialized = await serialize(new_message)
         message_data = {
             'type': 'chat_message',
             'action': 'new',
@@ -259,16 +270,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def handle_delete_message(self, message_id):
         """Handle deletion of a message"""
         from ..models import Message
+        from ..services import MessageService
+        from ..exceptions import PermissionException
 
         @database_sync_to_async
         def get_message():
             return Message.objects.get(id=message_id)
         @database_sync_to_async
-        def check_owner(message):
-            return message.user_id == self.user.id
-        @database_sync_to_async
-        def delete_message(message):
-            message.delete()
+        def delete_with_service(message):
+            return MessageService.delete_message(self.user, message)
 
         try:
             message = await get_message()
@@ -276,11 +286,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send_error("Message not found.")
             return
 
-        if not await check_owner(message):
-            await self.send_error("You can only delete your own messages.")
+        try:
+            await delete_with_service(message)
+        except PermissionException as e:
+            await self.send_error(str(e))
             return
 
-        await delete_message(message)
         message_data = {
             'type': 'chat_message',
             'action': 'delete',
@@ -294,6 +305,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def handle_update_message(self, message_id, new_body):
         """Handle updating a message"""
         from ..models import Message
+        from ..services import MessageService
 
         @database_sync_to_async
         def get_message():
@@ -303,8 +315,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return message.user_id == self.user.id
         @database_sync_to_async
         def do_update(message):
-            message.update(new_body)
-            return message.updated
+            message = MessageService.update_message(
+                user=self.user,
+                message=message,
+                body=new_body
+            )
+            return message.updated_at
 
         try:
             message = await get_message()
@@ -329,8 +345,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'action': 'update',
             'id': message_id,
             'body': new_body,
-            'edited': True,
-            'updated': updated_ts.isoformat() if updated_ts else None,
+            'is_edited': True,
+            'updated_at': updated_ts.isoformat() if updated_ts else None,
         }
 
         # Publish to both channels and Redis Streams

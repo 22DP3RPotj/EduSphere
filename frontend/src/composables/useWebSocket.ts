@@ -14,7 +14,7 @@ import type {
   OutgoingDeleteMessage,
 } from "@/types"
 
-export function useWebSocket(userSlug: string, roomSlug: string) {
+export function useWebSocket(hostSlug: string, roomSlug: string) {
   const socket: Ref<WebSocket | null> = ref(null)
   const messages: Ref<Message[]> = ref([])
   const connectionStatus: Ref<ConnectionStatus> = ref("disconnected")
@@ -39,7 +39,7 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
 
   async function fetchInitialMessages(): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetchRoomMessages(userSlug, roomSlug);
+      const response = await fetchRoomMessages(hostSlug, roomSlug);
       messages.value = [...response];
 
       return { success: true }
@@ -64,7 +64,7 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
     }
 
     // Initialize WebSocket connection
-    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${userSlug}/${roomSlug}`
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${hostSlug}/${roomSlug}`
     connectionStatus.value = "connecting"
     connectionError.value = null
 
@@ -103,8 +103,9 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
 
       socket.value.onerror = (err) => {
         console.error("[v0] WebSocket error:", err)
+        console.error("[v0] WebSocket URL attempted:", wsUrl)
         connectionStatus.value = "error"
-        connectionError.value = "Connection error occurred"
+        connectionError.value = "Connection error - check permissions and ensure you are a participant"
         isConnected.value = false
         attemptReconnect()
       }
@@ -129,9 +130,9 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
     const newMessage: Message = {
       id: data.id,
       body: data.body,
-      created: data.created,
-      updated: data.updated,
-      edited: data.edited,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_edited: data.is_edited,
       user: {
         id: data.user_id,
         username: data.user,
@@ -154,8 +155,8 @@ export function useWebSocket(userSlug: string, roomSlug: string) {
       messages.value[index] = {
         ...messages.value[index],
         body: data.body,
-        edited: data.edited,
-        updated: data.updated,
+        is_edited: data.is_edited,
+        updated_at: data.updated_at,
       } as Message
     }
   }

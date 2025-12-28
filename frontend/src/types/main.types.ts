@@ -22,8 +22,8 @@ export interface Room {
   topics: Topic[];
   description: string;
   participants: User[];
-  updated: string;
-  created: string;
+  updated_at: string;
+  created_at: string;
 }
 
 export interface Message {
@@ -31,9 +31,9 @@ export interface Message {
   user: User;
   room: Room;
   body: string;
-  edited: boolean;
-  created: string;
-  updated: string;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Report {
@@ -42,8 +42,8 @@ export interface Report {
   reason: string;
   status: string;
   moderatorNote: string | null;
-  created: string;
-  updated: string;
+  created_at: string;
+  updated_at: string;
   user: User;
   room: Room;
   moderator: User | null;

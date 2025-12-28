@@ -205,7 +205,7 @@
               <div class="message-room">
                 <font-awesome-icon icon="comments" class="room-icon" />
                 <span>{{ message.room.name }}</span>
-                <span class="message-date">{{ formatDate(message.created) }}</span>
+                <span class="message-date">{{ formatDate(message.created_at) }}</span>
               </div>
               <div class="message-content-preview">
                 {{ message.body }}
@@ -254,7 +254,7 @@
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
-                <span class="room-date">Created {{ formatDate(room.created) }}</span>
+                <span class="room-date">Created {{ formatDate(room.created_at) }}</span>
               </div>
             </div>
           </div>
@@ -295,7 +295,7 @@
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
-                <span class="room-date">Created {{ formatDate(room.created) }}</span>
+                <span class="room-date">Created {{ formatDate(room.created_at) }}</span>
               </div>
             </div>
           </div>

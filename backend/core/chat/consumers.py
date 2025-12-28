@@ -70,13 +70,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 slug=self.room_slug
             )
         except Room.DoesNotExist:
+            logger.warning(f"Room not found: {self.username}/{self.room_slug}")
             await self.close()
             return
 
         is_participant = await database_sync_to_async(
             Participant.objects.filter(user=self.user, room=room).exists
         )()
+        
         if not is_participant:
+            logger.warning(
+                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.slug}"
+            )
             await self.close()
             return
 

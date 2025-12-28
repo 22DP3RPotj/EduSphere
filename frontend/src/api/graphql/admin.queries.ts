@@ -17,15 +17,15 @@ export const GET_ALL_USERS = gql`
 `;
 
 export const GET_ALL_REPORTS = gql`
-  query GetAllReports($status: ReportStatus, $reason: ReportReason, $user: String) {
-    allReports(status: $status, reason: $reason, user: $user) {
+  query GetAllReports($status: ReportStatus, $reason: ReportReason, $userId: UUID) {
+    allReports(status: $status, reason: $reason, userId: $userId) {
       id
       body
       reason
       status
       moderatorNote
-      created
-      updated
+      createdAt
+      updatedAt
       user {
         id
         username
@@ -51,7 +51,7 @@ export const GET_ALL_REPORTS = gql`
 `;
 
 export const GET_REPORT_COUNT = gql`
-  query GetReportCount($status: ReportStatus, $reason: ReportReason, $user: String) {
-    reportCount(status: $status, reason: $reason, user: $user)
+  query GetReportCount($status: ReportStatus, $reason: ReportReason, $userId: UUID) {
+    reportCount(status: $status, reason: $reason, userId: $userId)
   }
 `;

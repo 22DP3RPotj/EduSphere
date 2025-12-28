@@ -60,9 +60,24 @@ export const JOIN_ROOM_MUTATION = gql`
     mutation JoinRoom($roomId: UUID!) {
         joinRoom(roomId: $roomId) {
             room {
+                id
+                name
+                slug
+                description
+                createdAt
+                host {
+                    id
+                    username
+                    name
+                    avatar
+                }
                 participants {
                     id
                     username
+                    avatar
+                }
+                topics {
+                    name
                 }
             }
         }
@@ -82,8 +97,8 @@ export const UPDATE_MESSAGE_MUTATION = gql`
         updateMessage(messageId: $messageId, body: $body) {
             message {
                 body
-                edited
-                updated
+                isEdited
+                updatedAt
             }
         }
     }

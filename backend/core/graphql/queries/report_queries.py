@@ -21,12 +21,12 @@ class ReportQuery(graphene.ObjectType):
         ReportType,
         status=ReportStatusEnum(required=False),
         reason=ReportReasonEnum(required=False),
-        user=graphene.String(required=False),
+        user_id=graphene.UUID(required=False),
     )
     report_count = graphene.Int(
         status=ReportStatusEnum(required=False),
         reason=ReportReasonEnum(required=False),
-        user=graphene.String(required=False),
+        user_id=graphene.UUID(required=False),
     )
 
     @login_required

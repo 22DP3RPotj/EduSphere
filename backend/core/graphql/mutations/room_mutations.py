@@ -20,12 +20,22 @@ class CreateRoom(graphene.Mutation):
         name = graphene.String(required=True)
         topic_names = graphene.List(graphene.String, required=True)
         description = graphene.String(required=True)
-        visibility = RoomVisibilityEnum(required=True)
+        visibility = RoomVisibilityEnum(required=False)
 
     room = graphene.Field(RoomType)
 
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, name: str, topic_names: list[str], description: str, visibility: Room.Visibility):
+    def mutate(
+        self,
+        info: graphene.ResolveInfo,
+        name: str,
+        topic_names: list[str],
+        description: str,
+        visibility: Optional[Room.Visibility] = None
+    ):
+        if visibility is None:
+            visibility = Room.Visibility.PUBLIC
+            
         try:
             room = RoomService.create_room(
                 user=info.context.user,

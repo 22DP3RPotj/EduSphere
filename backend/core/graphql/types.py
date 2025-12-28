@@ -60,8 +60,11 @@ class RoleType(DjangoObjectType):
 
 
 class ParticipantType(DjangoObjectType):
+    id = graphene.UUID(required=True)
     user = graphene.Field(UserType, required=True)
     role = graphene.Field(RoleType)
+    username = graphene.String()
+    avatar = graphene.String()
 
     class Meta:
         model = Participant
@@ -72,6 +75,16 @@ class ParticipantType(DjangoObjectType):
             "joined_at",
         )
 
+    def resolve_id(self, info):
+        return self.user.id
+    
+    def resolve_username(self, info):
+        return self.user.username
+    
+    def resolve_avatar(self, info):
+        return self.user.avatar
+
+# TODO: Return UserType instead of ParticipantType
 class RoomType(DjangoObjectType):
     participants = graphene.List(ParticipantType)
     topics = graphene.List(TopicType)
@@ -95,6 +108,9 @@ class RoomType(DjangoObjectType):
     
     def resolve_participants(self, info):
         return Participant.objects.select_related("user", "role").filter(room=self)
+    
+    def resolve_topics(self, info):
+        return self.topics.all()
     
     
 class MessageType(DjangoObjectType):

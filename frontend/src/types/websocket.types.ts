@@ -15,9 +15,9 @@ export interface WSBaseMessage {
 export interface WSNewMessage extends WSBaseMessage {
   action: 'new';
   body: string;
-  created: string;
-  updated: string;
-  edited: boolean;
+  created_at: string;
+  updated_at: string;
+  is_edited: boolean;
   user: string;
   user_id: string;
   userAvatar: string;
@@ -26,8 +26,8 @@ export interface WSNewMessage extends WSBaseMessage {
 export interface WSUpdateMessage extends WSBaseMessage {
   action: 'update';
   body: string;
-  edited: boolean;
-  updated: string;
+  is_edited: boolean;
+  updated_at: string;
 }
 
 export interface WSDeleteMessage extends WSBaseMessage {

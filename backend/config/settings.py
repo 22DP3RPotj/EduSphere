@@ -196,9 +196,9 @@ CHANNEL_LAYERS = {
 }
 
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+REDIS_HOST = env("REDIS_HOST", default="localhost")
+REDIS_PORT = env.int("REDIS_PORT", default=6379)
+REDIS_DB = env.int("REDIS_DB", default=0)
 
 REDIS_STREAMS = {
     'MAX_STREAM_LENGTH': 10000,

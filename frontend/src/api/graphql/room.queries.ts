@@ -7,7 +7,7 @@ export const ROOM_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             host {
                 id
                 username
@@ -18,6 +18,9 @@ export const ROOM_QUERY = gql`
                 id
                 username
                 avatar
+                user {
+                    id
+                }
             }
             topics {
                 name
@@ -33,7 +36,7 @@ export const ROOMS_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             topics {
                 name
             }
@@ -56,7 +59,7 @@ export const USER_WITH_ROOMS_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             topics { name }
             host { username }
         }
@@ -65,7 +68,7 @@ export const USER_WITH_ROOMS_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             topics { name }
             host { username }
         }
@@ -80,7 +83,7 @@ export const HOMEPAGE_INITIAL_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             topics {
                 name
             }
@@ -99,7 +102,7 @@ export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             topics { name }
             host { username }
         }
@@ -113,7 +116,7 @@ export const ROOMS_NOT_PARTICIPATED_BY_USER_QUERY = gql`
             name
             slug
             description
-            created
+            createdAt
             topics { name }
             host { username }
         }
@@ -130,9 +133,9 @@ export const ROOM_MESSAGES_QUERY = gql`
                 avatar
             }
             body
-            edited
-            created
-            updated
+            isEdited
+            createdAt
+            updatedAt
         }
     }
 `;
@@ -142,9 +145,9 @@ export const MESSAGES_BY_USER_QUERY = gql`
         messagesByUser(userSlug: $userSlug) {
             id
             body
-            edited
-            updated
-            created
+            isEdited
+            updatedAt
+            createdAt
             room {
                 slug
                 name

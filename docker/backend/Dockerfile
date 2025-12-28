@@ -1,5 +1,5 @@
 # docker/backend/Dockerfile
-FROM python:slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -12,17 +12,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install uvicorn gunicorn psycopg2
+# Install Poetry (recommended way)
+RUN pip install --no-cache-dir pipx && \
+    pipx ensurepath && \
+    pipx install poetry
 
-# Copy project
+ENV PATH="/root/.local/bin:${PATH}"
+
+# Copy project metadata for dependency install
+COPY pyproject.toml poetry.lock* ./
+
+# Install Python dependencies (no virtualenvs in Docker)
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --no-root
+
+# Copy full project
 COPY . .
 
-# Create directories if they don't exist
+# Create runtime directories
 RUN mkdir -p staticfiles media/avatars logs
 
-# Command to run the server
+# Entrypoint + default command
 ENTRYPOINT ["/app/docker/backend/entrypoint.sh"]
 CMD ["uvicorn", "backend.config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--lifespan", "off"]

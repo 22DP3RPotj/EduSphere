@@ -1,4 +1,3 @@
-import uuid
 from typing import Optional
 
 from django.db import IntegrityError
@@ -7,7 +6,6 @@ from backend.core.models import Report, Room, User, Participant
 from backend.core.forms import ReportForm
 from backend.core.exceptions import (
     FormValidationException,
-    ValidationException,
     PermissionException,
     ConflictException,
 )

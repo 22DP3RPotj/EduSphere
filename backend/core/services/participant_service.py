@@ -1,7 +1,6 @@
-import uuid
 from typing import Optional
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 
 from backend.core.models import Participant, User, Room, Role
 from backend.core.enums import PermissionCode

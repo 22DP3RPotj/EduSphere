@@ -6,7 +6,6 @@ from backend.core.models import User, Room, Topic, Participant
 from backend.core.forms import RoomForm
 from backend.core.exceptions import (
     FormValidationException,
-    ValidationException,
     PermissionException,
     ConflictException
 )

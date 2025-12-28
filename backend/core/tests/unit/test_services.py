@@ -691,7 +691,7 @@ class ParticipantServiceTest(ServiceTestBase):
         """Test changing role without permission raises PermissionException."""
         participant = self._add_member(self.other_user, self.member_role)
         
-        member_participant = self._add_member(self.member, self.member_role)
+        self._add_member(self.member, self.member_role)
         
         with self.assertRaises(PermissionException):
             ParticipantService.change_participant_role(
@@ -1745,7 +1745,6 @@ class IntegrationTests(ServiceTestBase):
         )
         
         # Get the default roles
-        owner_role = room.roles.get(name=RoleCode.OWNER.label)
         member_role = room.roles.get(name=RoleCode.MEMBER.label)
         
         # Add multiple participants with roles
@@ -1819,12 +1818,12 @@ class IntegrationTests(ServiceTestBase):
         self._add_member(self.member, self.member_role)
         
         # Create messages as member
-        msg1 = MessageService.create_message(
+        MessageService.create_message(
             user=self.member,
             room=self.room,
             body="Message 1"
         )
-        msg2 = MessageService.create_message(
+        MessageService.create_message(
             user=self.member,
             room=self.room,
             body="Message 2"

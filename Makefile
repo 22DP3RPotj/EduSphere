@@ -11,33 +11,41 @@ help:
 	@echo "make report     - Run tests with coverage report"
 	@echo "make clean      - Clean generated files and caches"
 	@echo "make clean-logs - Clear log files"
+	@echo "make docker-compose-up   - Start services with Docker Compose"
+	@echo "make docker-compose-down - Stop services with Docker Compose"
+
+
+PY = poetry run python
+PX = poetry run
+
+export DJANGO_SETTINGS_MODULE=backend.config.settings
 
 setup:
 	sudo service postgresql start; \
 	sudo service nginx start; \
 	mkdir -p logs; \
 	mkdir -p media/avatars; \
-	python manage.py collectstatic --noinput; \
+	$(PY) manage.py collectstatic --noinput; \
 
 run: setup
 	pnpm --prefix frontend run build
-	DJANGO_SETTINGS_MODULE=backend.config.settings uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
+	$(PX) uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
 
 unit-test:
-	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.unit
+	$(PY) manage.py test backend/core core.tests.unit
 
 integration-test: setup
-	DJANGO_SETTINGS_MODULE=backend.config.settings python manage.py test backend/core core.tests.integration
+	$(PY) manage.py test backend/core core.tests.integration
 
 coverage:
-	DJANGO_SETTINGS_MODULE=backend.config.settings coverage run --source='backend.core' -m django test backend/core/tests/unit
+	$(PX) coverage run --source='backend.core' -m django test backend/core/tests/unit
 
 report:
 	if [ ! -f .coverage ]; then
 		make coverage
 	fi
 
-	coverage report --skip-empty
+	$(PX) coverage report --skip-empty
 
 clean:
 	find . -type f -name '*.pyc' -delete

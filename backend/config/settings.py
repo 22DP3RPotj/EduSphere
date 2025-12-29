@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     "backend.core.apps.CoreConfig",
-    "backend.api.apps.ApiConfig",
     "channels",
     "corsheaders",
     "graphene_django",

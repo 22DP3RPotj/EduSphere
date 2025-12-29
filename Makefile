@@ -41,10 +41,9 @@ coverage:
 	$(PX) coverage run --source='backend.core' -m django test backend/core/tests/unit
 
 report:
-	if [ ! -f .coverage ]; then
-		make coverage
+	if [ ! -f .coverage ]; then \
+		$(MAKE) coverage; \
 	fi
-
 	$(PX) coverage report --skip-empty
 
 clean:

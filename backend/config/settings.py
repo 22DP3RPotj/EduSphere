@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     "backend.core.apps.CoreConfig",
+    "backend.graphql.apps.GraphQLConfig",
     "channels",
     "corsheaders",
     "graphene_django",
@@ -111,7 +112,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'backend.core.graphql.middleware': {
+        'backend.graphql.middleware': {
             'handlers': ['graphql_file'],
             'level': 'DEBUG',
             'propagate': False,
@@ -128,10 +129,10 @@ ASGI_APPLICATION = "backend.config.asgi.application"
 WSGI_APPLICATION = "backend.config.wsgi.application"
 
 GRAPHENE = {
-    "SCHEMA": "backend.core.graphql.schema.schema",
+    "SCHEMA": "backend.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        # "backend.core.graphql.middleware.ValidationMiddleware",
+        # "backend.graphql.middleware.ValidationMiddleware",
     ],
 }
 

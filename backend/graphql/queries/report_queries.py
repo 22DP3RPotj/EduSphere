@@ -7,7 +7,7 @@ from graphql import GraphQLError
 from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
-from backend.core.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.core.models import Report
 
 

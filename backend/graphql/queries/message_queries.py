@@ -4,7 +4,7 @@ from graphql import GraphQLError
 from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
-from backend.core.graphql.types import MessageType
+from backend.graphql.types import MessageType
 from backend.core.models import Participant, Room, User, Message
 
 

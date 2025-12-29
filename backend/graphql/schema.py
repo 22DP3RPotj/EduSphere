@@ -1,7 +1,6 @@
 import graphene
 
-from .queries import Query
-from .mutations import Mutation
+from backend.graphql.api import Query, Mutation
 
 
 schema = graphene.Schema(

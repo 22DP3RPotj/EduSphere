@@ -5,7 +5,7 @@ from graphql_jwt.decorators import superuser_required
 
 from django.db.models import Q, QuerySet
 
-from backend.core.graphql.types import UserType
+from backend.graphql.types import UserType
 from backend.core.exceptions import ErrorCode
 from backend.core.models import User
 

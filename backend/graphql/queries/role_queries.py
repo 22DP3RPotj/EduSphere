@@ -4,7 +4,7 @@ from graphql import GraphQLError
 
 from django.db.models import QuerySet
 
-from backend.core.graphql.types import RoleType
+from backend.graphql.types import RoleType
 from backend.core.models import Role, Room
 from backend.core.services import RoleService
 from backend.core.exceptions import ErrorCode

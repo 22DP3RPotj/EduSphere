@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.db.models import Count, QuerySet
 
-from backend.core.graphql.types import TopicType
+from backend.graphql.types import TopicType
 from backend.core.models import Topic
 
 

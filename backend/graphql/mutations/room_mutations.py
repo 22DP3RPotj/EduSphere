@@ -4,7 +4,7 @@ from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.core.graphql.types import RoomType, RoomVisibilityEnum
+from backend.graphql.types import RoomType, RoomVisibilityEnum
 from backend.core.models import Room, Participant
 from backend.core.services import RoomService
 from backend.core.exceptions import (

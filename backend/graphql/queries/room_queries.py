@@ -5,7 +5,7 @@ from graphql import GraphQLError
 from django.db.models import Q, Count, QuerySet, Prefetch
 
 from backend.core.exceptions import ErrorCode
-from backend.core.graphql.types import RoomType
+from backend.graphql.types import RoomType
 from backend.core.models import Room, User, Participant
 
 

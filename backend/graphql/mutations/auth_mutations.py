@@ -1,7 +1,7 @@
 import graphene
 import graphql_jwt
 
-from backend.core.graphql.types import UserType
+from backend.graphql.types import UserType
 
 
 class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):

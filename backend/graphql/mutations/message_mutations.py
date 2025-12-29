@@ -3,7 +3,7 @@ import uuid
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.core.graphql.types import MessageType
+from backend.graphql.types import MessageType
 from backend.core.models import Message, Room
 from backend.core.services import MessageService
 from backend.core.exceptions import (

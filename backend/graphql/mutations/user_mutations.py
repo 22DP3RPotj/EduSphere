@@ -7,8 +7,8 @@ from graphql import GraphQLError
 
 from django.db import transaction
 
-from backend.core.graphql.types import UserType
-from backend.core.graphql.utils import format_form_errors
+from backend.graphql.types import UserType
+from backend.graphql.utils import format_form_errors
 from backend.core.models import User
 from backend.core.forms import UserForm, RegisterForm
 

@@ -4,7 +4,7 @@ from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.core.graphql.types import RoleType
+from backend.graphql.types import RoleType
 from backend.core.exceptions import ConflictException, PermissionException, FormValidationException, ErrorCode
 from backend.core.models import Role, Room
 from backend.core.services.role_service import RoleService

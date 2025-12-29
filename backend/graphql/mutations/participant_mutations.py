@@ -3,7 +3,7 @@ import uuid
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.core.graphql.types import ParticipantType
+from backend.graphql.types import ParticipantType
 from backend.core.models import Participant, Room, Role, User
 from backend.core.services import ParticipantService
 from backend.core.exceptions import (

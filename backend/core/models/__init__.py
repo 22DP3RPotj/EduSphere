@@ -1,4 +1,4 @@
-from backend.core.models.models import User, Room, Topic, Message, Report, Participant, Role, Permission, Invite
+from backend.core.models.models import User, Room, Topic, Message, Report, Invite
 
 __all__ = [
     "User",
@@ -6,8 +6,5 @@ __all__ = [
     "Topic",
     "Message",
     "Report",
-    "Participant",
-    "Role",
-    "Permission",
     "Invite",
 ]

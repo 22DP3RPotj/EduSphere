@@ -63,7 +63,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.consumer_group = f"chat_group:{self.username}:{self.room_slug}"
         self.consumer_name = f"consumer:{self.user.id}:{self.channel_name}"
 
-        from ..models import Room, Participant
+        from backend.core.models import Room
+        from backend.access.models import Participant
         try:
             room = await database_sync_to_async(Room.objects.get)(
                 host__username=self.username,

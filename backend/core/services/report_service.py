@@ -2,7 +2,8 @@ from typing import Optional
 
 from django.db import IntegrityError
 
-from backend.core.models import Report, Room, User, Participant
+from backend.core.models import Report, Room, User
+from backend.access.models import Participant
 from backend.core.forms import ReportForm
 from backend.core.exceptions import (
     FormValidationException,

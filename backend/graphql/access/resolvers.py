@@ -4,10 +4,12 @@ from graphql import GraphQLError
 
 from django.db.models import QuerySet
 
-from backend.graphql.types import RoleType
-from backend.core.models import Role, Room
-from backend.core.services import RoleService
 from backend.core.exceptions import ErrorCode
+from backend.graphql.access.types import RoleType
+from backend.core.models import Room
+from backend.core.services import RoleService
+from backend.access.models import Role
+
 
 class RoleQuery(graphene.ObjectType):
     role = graphene.Field(

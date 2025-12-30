@@ -2,7 +2,7 @@ from django.utils.text import slugify
 from django.contrib.auth.base_user import BaseUserManager
 
 
-class CustomUserManager(BaseUserManager):
+class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def create_user(self, email, username, name, password=None, **extra_fields):

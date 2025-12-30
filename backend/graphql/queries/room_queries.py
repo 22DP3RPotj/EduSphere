@@ -1,12 +1,13 @@
-import graphene
 from typing import Optional
+import graphene
 from graphql import GraphQLError
 
 from django.db.models import Q, Count, QuerySet, Prefetch
 
+from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
+from backend.core.models.models import Room, User
 from backend.graphql.types import RoomType
-from backend.core.models import Room, User, Participant
 
 
 class RoomQuery(graphene.ObjectType):
@@ -119,4 +120,3 @@ class RoomQuery(graphene.ObjectType):
         )
 
         return queryset
-    

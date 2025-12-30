@@ -2,7 +2,8 @@ from typing import Optional
 
 from django.db import IntegrityError, transaction
 
-from backend.core.models import User, Room, Topic, Participant
+from backend.core.models import User, Room, Topic
+from backend.access.models import Participant
 from backend.core.forms import RoomForm
 from backend.core.exceptions import (
     FormValidationException,
@@ -10,7 +11,7 @@ from backend.core.exceptions import (
     ConflictException
 )
 from backend.core.services import RoleService
-from backend.core.enums import RoleCode, PermissionCode
+from backend.access.enums import RoleCode, PermissionCode
 
 class RoomService:
     """Service for room mutation operations."""

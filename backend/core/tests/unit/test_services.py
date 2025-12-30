@@ -6,9 +6,9 @@ from django.test import TestCase, tag
 from django.utils import timezone
 
 from backend.core.models import (
-    Room, Message, Role, Participant, 
-    Report, Invite, User as BaseUser
+    Room, Message, Report, Invite, User as BaseUser
 )
+from backend.access.models import Role, Participant
 from backend.core.services import (
     InviteService, MessageService, ParticipantService, 
     ReportService, RoleService, RoomService
@@ -16,7 +16,7 @@ from backend.core.services import (
 from backend.core.exceptions import (
     PermissionException, ValidationException, ConflictException, FormValidationException
 )
-from backend.core.enums import PermissionCode, RoleCode
+from backend.access.enums import PermissionCode, RoleCode
 
 User = get_user_model()
 

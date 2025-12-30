@@ -5,7 +5,8 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.graphql.types import RoomType, RoomVisibilityEnum
-from backend.core.models import Room, Participant
+from backend.core.models import Room
+from backend.access.models import Participant
 from backend.core.services import RoomService
 from backend.core.exceptions import (
     PermissionException,

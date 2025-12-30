@@ -2,8 +2,8 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from backend.core.models import User, Room, Message, Report, Invite, Role
-
+from backend.core.models import User, Room, Message, Report, Invite
+from backend.access.models import Role
 
 class RegisterForm(UserCreationForm):
     class Meta:

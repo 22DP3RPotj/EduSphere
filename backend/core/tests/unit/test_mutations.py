@@ -7,8 +7,9 @@ from django.test import override_settings, tag
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 
-from backend.core.models import Room, Topic, Message, Participant, Role, Permission
-from backend.core.enums import PermissionCode
+from backend.core.models import Room, Topic, Message
+from backend.access.models import Participant, Role, Permission
+from backend.access.enums import PermissionCode
 
 from .utils import create_test_image
 

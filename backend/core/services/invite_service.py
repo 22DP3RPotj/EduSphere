@@ -5,9 +5,9 @@ from typing import Optional
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from backend.core.models import Invite, Room, User, Role, Participant
+from backend.core.models import Invite, Room, User
+from backend.access.models import Role, Participant
 from backend.core.forms import InviteForm
-from backend.core.enums import PermissionCode
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,
@@ -15,6 +15,7 @@ from backend.core.exceptions import (
     ValidationException,
 )
 from backend.core.services.role_service import RoleService
+from backend.access.enums import PermissionCode
 
 
 class InviteService:

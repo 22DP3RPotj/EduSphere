@@ -1,4 +1,4 @@
-from .enums import PermissionCode, RoleCode
+from backend.access.enums import PermissionCode, RoleCode
 
 
 PERMISSION_TEMPLATES = {

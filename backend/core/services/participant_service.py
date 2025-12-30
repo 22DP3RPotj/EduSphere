@@ -2,8 +2,9 @@ from typing import Optional
 
 from django.db import IntegrityError
 
-from backend.core.models import Participant, User, Room, Role
-from backend.core.enums import PermissionCode
+from backend.core.models import User, Room
+from backend.access.models import Role, Participant
+from backend.access.enums import PermissionCode
 from backend.core.exceptions import PermissionException, ConflictException, ValidationException
 from backend.core.services.role_service import RoleService
 

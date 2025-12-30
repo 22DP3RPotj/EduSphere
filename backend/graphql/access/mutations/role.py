@@ -4,9 +4,10 @@ from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.graphql.types import RoleType
+from backend.graphql.access.types import RoleType
 from backend.core.exceptions import ConflictException, PermissionException, FormValidationException, ErrorCode
-from backend.core.models import Role, Room
+from backend.core.models import Room
+from backend.access.models import Role
 from backend.core.services.role_service import RoleService
 
 
@@ -201,10 +202,3 @@ class RemovePermissionsFromRole(graphene.Mutation):
 
         return RemovePermissionsFromRole(role=role)
 
-
-class RoleMutation(graphene.ObjectType):
-    create_role = CreateRole.Field()
-    update_role = UpdateRole.Field()
-    delete_role = DeleteRole.Field()
-    assign_permissions_to_role = AssignPermissionsToRole.Field()
-    remove_permissions_from_role = RemovePermissionsFromRole.Field()

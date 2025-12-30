@@ -2,7 +2,7 @@ from django.db import migrations
 
 
 def create_permissions(apps, schema_editor):
-    Permission = apps.get_model("core", "Permission")
+    Permission = apps.get_model("access", "Permission")
 
     permissions = {
         "room.delete": "Delete room",
@@ -12,6 +12,7 @@ def create_permissions(apps, schema_editor):
         "room.kick": "Remove users from the room",
         "room.role_manage": "Manage room roles and permissions",
         "room.delete_message": "Delete messages from the room",
+        "room.upload_file": "Allow file uploads",
     }
 
     for code, description in permissions.items():
@@ -22,7 +23,7 @@ def create_permissions(apps, schema_editor):
 
 
 def remove_permissions(apps, schema_editor):
-    Permission = apps.get_model("core", "Permission")
+    Permission = apps.get_model("access", "Permission")
 
     Permission.objects.filter(
         code__in=[
@@ -33,6 +34,7 @@ def remove_permissions(apps, schema_editor):
             "room.kick",
             "room.role_manage",
             "room.delete_message",
+            "room.upload_file",
         ]
     ).delete()
 
@@ -40,7 +42,7 @@ def remove_permissions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0001_initial"),
+        ("access", "0002_initial"),
     ]
 
     operations = [

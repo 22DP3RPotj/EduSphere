@@ -3,8 +3,9 @@ import uuid
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.graphql.types import ParticipantType
-from backend.core.models import Participant, Room, Role, User
+from backend.graphql.access.types import ParticipantType
+from backend.core.models import Room, User
+from backend.access.models import Participant, Role
 from backend.core.services import ParticipantService
 from backend.core.exceptions import (
     PermissionException,
@@ -122,8 +123,3 @@ class RemoveParticipant(graphene.Mutation):
 
         return RemoveParticipant(success=success)
 
-
-class ParticipantMutation(graphene.ObjectType):
-    add_participant = AddParticipant.Field()
-    change_participant_role = ChangeParticipantRole.Field()
-    remove_participant = RemoveParticipant.Field()

@@ -1,8 +1,8 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.core.models import User, Room, Topic, Message, Report, Participant, Role, Permission, Invite
-
+from backend.core.models import User, Room, Topic, Message, Report, Invite
+from backend.access.models import Participant
 
 ReportReasonEnum = graphene.Enum.from_enum(Report.ReportReason)
 ReportStatusEnum = graphene.Enum.from_enum(Report.ReportStatus)
@@ -35,58 +35,8 @@ class TopicType(DjangoObjectType):
         )
 
 
-class PermissionType(DjangoObjectType):
-    class Meta:
-        model = Permission
-        fields = (
-            "id",
-            "code",
-            "description"
-        )
-        
-
-class RoleType(DjangoObjectType):
-    permissions = graphene.List(PermissionType)
-    
-    class Meta:
-        model = Role
-        fields = (
-            "id",
-            "name",
-            "description",
-            "priority",
-            "permissions",
-        )
-
-
-class ParticipantType(DjangoObjectType):
-    id = graphene.UUID(required=True)
-    user = graphene.Field(UserType, required=True)
-    role = graphene.Field(RoleType)
-    username = graphene.String()
-    avatar = graphene.String()
-
-    class Meta:
-        model = Participant
-        fields = (
-            "id",
-            "user",
-            "role",
-            "joined_at",
-        )
-
-    def resolve_id(self, info):
-        return self.user.id
-    
-    def resolve_username(self, info):
-        return self.user.username
-    
-    def resolve_avatar(self, info):
-        return self.user.avatar
-
-# TODO: Return UserType instead of ParticipantType
 class RoomType(DjangoObjectType):
-    participants = graphene.List(ParticipantType)
+    participants = graphene.List("backend.graphql.access.types.ParticipantType")
     topics = graphene.List(TopicType)
     host = graphene.Field(UserType, required=True)
     visibility = graphene.Field(RoomVisibilityEnum, required=True)
@@ -156,7 +106,7 @@ class ReportType(DjangoObjectType):
 class InviteType(DjangoObjectType):
     inviter = graphene.Field(UserType, required=True)
     invitee = graphene.Field(UserType, required=True)
-    role = graphene.Field(RoleType, required=True)
+    role = graphene.Field("backend.graphql.access.types.RoleType", required=True)
     
     class Meta:
         model = Invite

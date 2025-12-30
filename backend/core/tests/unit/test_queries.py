@@ -4,7 +4,8 @@ from graphql_jwt.testcases import JSONWebTokenTestCase
 from django.contrib.auth import get_user_model
 from django.test import tag
 
-from backend.core.models import Room, Topic, Message, Participant, Role
+from backend.core.models import Room, Topic, Message
+from backend.access.models import Participant, Role
 
 User = get_user_model()
 

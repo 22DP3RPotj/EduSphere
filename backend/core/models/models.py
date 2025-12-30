@@ -7,11 +7,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.core.validators import FileExtensionValidator, MaxValueValidator
+from django.core.validators import FileExtensionValidator
 
-from backend.core.enums import PermissionCode
-
-from .managers import CustomUserManager
+from .managers import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -29,7 +27,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
 
-    objects = CustomUserManager()
+    objects = UserManager()
 
     USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
@@ -78,7 +76,6 @@ class Topic(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
-# TODO: possible roles rework
 
 class Room(models.Model):
     class Visibility(models.TextChoices):
@@ -87,13 +84,13 @@ class Room(models.Model):
         
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
-    default_role = models.ForeignKey("Role", on_delete=models.SET_NULL, related_name='default_for_rooms', null=True, blank=True)
+    default_role = models.ForeignKey("access.Role", on_delete=models.SET_NULL, related_name='default_for_rooms', null=True, blank=True)
     topics = models.ManyToManyField(Topic, related_name='rooms')
     visibility = models.CharField(max_length=16, choices=Visibility.choices, default=Visibility.PUBLIC)
     name = models.CharField(max_length=64)
     slug = models.SlugField(max_length=64)
     description = models.TextField(blank=True, default='', max_length=512)
-    participants = models.ManyToManyField(User, related_name='participants', through="Participant", blank=True)
+    participants = models.ManyToManyField(User, related_name='participants', through="access.Participant", blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -127,74 +124,6 @@ class Room(models.Model):
         })
 
 
-class Permission(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=64, choices=PermissionCode.choices, unique=True, editable=False)
-    description = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.code
-    
-    class Meta:
-        app_label = 'core'
-        ordering = ['code']
-        indexes = [
-            models.Index(fields=['code']),
-        ]
-
-
-class Role(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=32)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='roles')
-    description = models.TextField(max_length=512, blank=True, default='')
-    priority = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(100)])
-    permissions = models.ManyToManyField(Permission, related_name='roles', blank=True)
-
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        app_label = 'core'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['room', 'name'],
-                name='unique_role_name_per_room'
-            ),
-        ]
-    
-
-class Participant(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='memberships')
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-    joined_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        app_label = 'core'
-        indexes = [
-            models.Index(fields=['room', 'joined_at']),
-            models.Index(fields=['room', 'user']),
-            models.Index(fields=['room', 'role']),
-            models.Index(fields=['user', 'joined_at']),
-            models.Index(fields=['user']),
-        ]
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'room'], name='unique_participant'),
-        ]
-        ordering = ['-joined_at']
-        
-    def clean(self):
-        if self.role.room_id != self.room_id:
-            raise ValidationError("Role must belong to the same room as the participant.")
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-        
-    def __str__(self):
-        return f"{self.user.username} in {self.room.name}"
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -312,7 +241,7 @@ class Invite(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='invites')
     inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invites')
     invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_invites')
-    role = models.ForeignKey(Role, on_delete=models.PROTECT)
+    role = models.ForeignKey("access.Role", on_delete=models.PROTECT)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     status = models.CharField(max_length=16, choices=InviteStatus.choices, default=InviteStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -34,9 +34,6 @@ class CreateRoom(graphene.Mutation):
         description: str,
         visibility: Optional[Room.Visibility] = None
     ):
-        if visibility is None:
-            visibility = Room.Visibility.PUBLIC
-            
         try:
             room = RoomService.create_room(
                 user=info.context.user,

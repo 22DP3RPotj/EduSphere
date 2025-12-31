@@ -10,7 +10,7 @@ from backend.core.exceptions import (
     PermissionException,
     ConflictException
 )
-from backend.core.services import RoleService
+from backend.access.services import RoleService
 from backend.access.enums import RoleCode, PermissionCode
 
 class RoomService:
@@ -27,11 +27,12 @@ class RoomService:
     
     @staticmethod
     def create_room(
+        *,
         user: User,
         name: str,
         description: str,
-        visibility: Room.Visibility,
         topic_names: list[str],
+        visibility: Optional[Room.Visibility] = None,
     ) -> Room:
         """
         Create a new room.
@@ -63,7 +64,8 @@ class RoomService:
         with transaction.atomic():
             room: Room = form.save(commit=False)
             room.host = user
-            room.visibility = visibility
+            if visibility is not None:
+                room.visibility = visibility
             room.save()
             
             topics = [
@@ -93,6 +95,7 @@ class RoomService:
     
     @staticmethod
     def update_room(
+        *,
         user: User,
         room: Room,
         name: Optional[str] = None,

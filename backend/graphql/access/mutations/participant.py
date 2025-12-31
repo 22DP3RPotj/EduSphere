@@ -6,7 +6,7 @@ from graphql import GraphQLError
 from backend.graphql.access.types import ParticipantType
 from backend.core.models import Room, User
 from backend.access.models import Participant, Role
-from backend.core.services import ParticipantService
+from backend.access.services import ParticipantService
 from backend.core.exceptions import (
     PermissionException,
     ValidationException,

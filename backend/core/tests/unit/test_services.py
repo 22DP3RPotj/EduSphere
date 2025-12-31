@@ -10,9 +10,10 @@ from backend.core.models import (
 )
 from backend.access.models import Role, Participant
 from backend.core.services import (
-    InviteService, MessageService, ParticipantService, 
-    ReportService, RoleService, RoomService
+    InviteService, MessageService,
+    ReportService, RoomService
 )
+from backend.access.services import RoleService, ParticipantService
 from backend.core.exceptions import (
     PermissionException, ValidationException, ConflictException, FormValidationException
 )

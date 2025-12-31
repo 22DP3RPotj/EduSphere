@@ -14,7 +14,7 @@ from backend.core.exceptions import (
     ConflictException,
     ValidationException,
 )
-from backend.core.services.role_service import RoleService
+from backend.access.services import RoleService
 from backend.access.enums import PermissionCode
 
 

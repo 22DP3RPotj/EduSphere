@@ -2,7 +2,8 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from backend.core.models import User, Room, Message, Report, Invite
+from backend.core.models import User, Message, Report, Invite
+from backend.room.models import Room
 from backend.access.models import Role
 
 class RegisterForm(UserCreationForm):

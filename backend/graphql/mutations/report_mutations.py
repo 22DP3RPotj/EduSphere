@@ -11,7 +11,8 @@ from backend.core.exceptions import (
     FormValidationException,
 )
 from backend.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
-from backend.core.models import Report, Room
+from backend.core.models import Report
+from backend.room.models import Room
 from backend.core.services import ReportService
 
 

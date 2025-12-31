@@ -1,12 +1,12 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.core.models import User, Room, Topic, Message, Report, Invite
+from backend.core.models import User, Message, Report, Invite
+from backend.room.models import Room, Topic
 from backend.access.models import Participant
 
 ReportReasonEnum = graphene.Enum.from_enum(Report.ReportReason)
 ReportStatusEnum = graphene.Enum.from_enum(Report.ReportStatus)
-RoomVisibilityEnum = graphene.Enum.from_enum(Room.Visibility)
 InviteStatusEnum = graphene.Enum.from_enum(Invite.InviteStatus)
 
 
@@ -24,48 +24,11 @@ class UserType(DjangoObjectType):
             "is_superuser",
             "date_joined",
         )
-
-
-class TopicType(DjangoObjectType):
-    class Meta:
-        model = Topic
-        fields = (
-            "id",
-            "name",
-        )
-
-
-class RoomType(DjangoObjectType):
-    participants = graphene.List("backend.graphql.access.types.ParticipantType")
-    topics = graphene.List(TopicType)
-    host = graphene.Field(UserType, required=True)
-    visibility = graphene.Field(RoomVisibilityEnum, required=True)
-
-    class Meta:
-        model = Room
-        fields = (
-            "id",
-            "host",
-            "topics",
-            "name",
-            "slug",
-            "visibility",
-            "description",
-            "participants",
-            "updated_at",
-            "created_at",
-        )
-    
-    def resolve_participants(self, info):
-        return Participant.objects.select_related("user", "role").filter(room=self)
-    
-    def resolve_topics(self, info):
-        return self.topics.all()
     
     
 class MessageType(DjangoObjectType):
     user = graphene.Field(UserType, required=True)
-    room = graphene.Field(RoomType)
+    room = graphene.Field("backend.graphql.room.types.RoomType")
     
     class Meta:
         model = Message

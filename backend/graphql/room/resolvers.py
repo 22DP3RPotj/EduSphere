@@ -6,8 +6,9 @@ from django.db.models import Q, Count, QuerySet, Prefetch
 
 from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
-from backend.core.models.models import Room, User
-from backend.graphql.types import RoomType
+from backend.core.models import User
+from backend.room.models import Room
+from backend.graphql.room.types import RoomType
 
 
 class RoomQuery(graphene.ObjectType):

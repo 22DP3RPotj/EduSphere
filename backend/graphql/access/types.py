@@ -1,9 +1,10 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.core.models import Room
+from backend.room.models import Room
 from backend.access.models import Participant, Role, Permission
-from backend.graphql.types import UserType, TopicType, RoomVisibilityEnum
+from backend.graphql.types import UserType
+from backend.graphql.room.types import TopicType, RoomVisibilityEnum
 
 class PermissionType(DjangoObjectType):
     class Meta:
@@ -29,7 +30,6 @@ class RoleType(DjangoObjectType):
         )
 
 
-# TODO: Use real id
 class ParticipantType(DjangoObjectType):
     user = graphene.Field(UserType, required=True)
     role = graphene.Field(RoleType)
@@ -51,31 +51,3 @@ class ParticipantType(DjangoObjectType):
     def resolve_avatar(self, info):
         return self.user.avatar
 
-# TODO: Return UserType instead of ParticipantType
-class RoomType(DjangoObjectType):
-    participants = graphene.List(ParticipantType)
-    topics = graphene.List(TopicType)
-    host = graphene.Field(UserType, required=True)
-    visibility = graphene.Field(RoomVisibilityEnum, required=True)
-
-    class Meta:
-        model = Room
-        fields = (
-            "id",
-            "host",
-            "topics",
-            "name",
-            "slug",
-            "visibility",
-            "description",
-            "participants",
-            "updated_at",
-            "created_at",
-        )
-    
-    def resolve_participants(self, info):
-        return Participant.objects.select_related("user", "role").filter(room=self)
-    
-    def resolve_topics(self, info):
-        return self.topics.all()
-    

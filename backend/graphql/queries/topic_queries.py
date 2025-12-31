@@ -3,8 +3,8 @@ from typing import Optional
 
 from django.db.models import Count, QuerySet
 
-from backend.graphql.types import TopicType
-from backend.core.models import Topic
+from backend.graphql.room.types import TopicType
+from backend.room.models import Topic
 
 
 class TopicQuery(graphene.ObjectType):

@@ -3,7 +3,6 @@ from django.db import models
 from django.db.models.constraints import Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.forms import ValidationError
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -51,85 +50,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         ]
     
 
-class Topic(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=32, unique=True)
-
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        app_label = 'core'
-        ordering = [Lower('name')]
-        indexes = [
-            models.Index(fields=['name']),
-        ]
-        constraints = [
-            CheckConstraint(
-                condition=Q(name__regex=r'^[A-Za-z]+$'),
-                name='letters_only_in_topic_name',
-                violation_error_message="Topic name must consist of letters only."
-            ),
-        ]
-    
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-
-class Room(models.Model):
-    class Visibility(models.TextChoices):
-        PUBLIC = 'PUBLIC', 'Public'
-        PRIVATE = 'PRIVATE', 'Private'
-        
-    id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_rooms')
-    default_role = models.ForeignKey("access.Role", on_delete=models.SET_NULL, related_name='default_for_rooms', null=True, blank=True)
-    topics = models.ManyToManyField(Topic, related_name='rooms')
-    visibility = models.CharField(max_length=16, choices=Visibility.choices, blank=True, default=Visibility.PUBLIC)
-    name = models.CharField(max_length=64)
-    slug = models.SlugField(max_length=64)
-    description = models.TextField(blank=True, default='', max_length=512)
-    participants = models.ManyToManyField(User, related_name='participants', through="access.Participant", blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        app_label = 'core'
-        ordering = ['-updated_at', '-created_at']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['host', 'slug'],
-                name='unique_room_per_host',
-                violation_error_message='You already have a room with this name.'
-            )
-        ]
-        indexes = [
-            models.Index(fields=['updated_at']),
-        ]
-        
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        self.full_clean()
-        super().save(*args, **kwargs)
-        
-    def get_absolute_url(self):
-        return reverse('room', kwargs={
-            'username': self.host.username,
-            'room': self.slug,
-        })
-
-
-
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    room = models.ForeignKey("room.Room", on_delete=models.CASCADE)
     body = models.TextField(max_length=2048)
     is_edited = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -180,8 +105,8 @@ class Report(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reports')
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='reports')
+    user = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True, related_name='reports')
+    room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='reports')
     body = models.TextField(max_length=2048)
     reason = models.CharField(max_length=32, choices=ReportReason.choices)
     status = models.CharField(max_length=32, choices=ReportStatus.choices, default=ReportStatus.PENDING)
@@ -238,9 +163,9 @@ class Invite(models.Model):
         EXPIRED = 'EXPIRED', 'Expired'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='invites')
-    inviter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invites')
-    invitee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_invites')
+    room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='invites')
+    inviter = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='sent_invites')
+    invitee = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='received_invites')
     role = models.ForeignKey("access.Role", on_delete=models.PROTECT)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     status = models.CharField(max_length=16, choices=InviteStatus.choices, default=InviteStatus.PENDING)

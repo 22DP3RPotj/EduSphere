@@ -5,7 +5,8 @@ from graphql import GraphQLError
 
 from backend.graphql.types import InviteType
 from backend.graphql.access.types import ParticipantType
-from backend.core.models import Room, User
+from backend.core.models import User
+from backend.room.models import Room
 from backend.access.models import Role
 from backend.core.services import InviteService
 from backend.core.exceptions import (

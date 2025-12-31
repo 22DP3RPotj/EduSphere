@@ -6,7 +6,7 @@ from graphql import GraphQLError
 
 from backend.graphql.access.types import RoleType
 from backend.core.exceptions import ConflictException, PermissionException, FormValidationException, ErrorCode
-from backend.core.models import Room
+from backend.room.models import Room
 from backend.access.models import Role
 from backend.access.services import RoleService
 

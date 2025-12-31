@@ -6,7 +6,7 @@ from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.access.types import RoleType
-from backend.core.models import Room
+from backend.room.models import Room
 from backend.access.services import RoleService
 from backend.access.models import Role
 

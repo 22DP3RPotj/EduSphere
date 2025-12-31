@@ -1,7 +1,7 @@
 import django_filters
 from django.db.models import Q
 
-from backend.core.models import Room, Topic
+from backend.room.models import Room, Topic
 
 
 class RoomFilter(django_filters.FilterSet):

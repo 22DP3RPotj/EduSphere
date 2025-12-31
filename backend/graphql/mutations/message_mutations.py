@@ -4,7 +4,8 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.graphql.types import MessageType
-from backend.core.models import Message, Room
+from backend.core.models import Message
+from backend.room.models import Room
 from backend.core.services import MessageService
 from backend.core.exceptions import (
     PermissionException,

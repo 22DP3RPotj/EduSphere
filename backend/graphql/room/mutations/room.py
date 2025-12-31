@@ -4,8 +4,8 @@ from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.graphql.types import RoomType, RoomVisibilityEnum
-from backend.core.models import Room
+from backend.graphql.room.types import RoomType, RoomVisibilityEnum
+from backend.room.models import Room
 from backend.access.models import Participant
 from backend.core.services import RoomService
 from backend.core.exceptions import (
@@ -149,9 +149,3 @@ class JoinRoom(graphene.Mutation):
         
         return JoinRoom(room=room)
 
-
-class RoomMutation(graphene.ObjectType):
-    create_room = CreateRoom.Field()
-    delete_room = DeleteRoom.Field()
-    update_room = UpdateRoom.Field()
-    join_room = JoinRoom.Field()

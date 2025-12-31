@@ -5,7 +5,8 @@ from typing import Optional
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from backend.core.models import Invite, Room, User
+from backend.core.models import Invite, User
+from backend.room.models import Room
 from backend.access.models import Role, Participant
 from backend.core.forms import InviteForm
 from backend.core.exceptions import (

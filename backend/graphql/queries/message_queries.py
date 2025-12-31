@@ -5,7 +5,8 @@ from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.types import MessageType
-from backend.core.models import Room, User, Message
+from backend.core.models import User, Message
+from backend.room.models import Room
 from backend.access.models import Participant
 
 

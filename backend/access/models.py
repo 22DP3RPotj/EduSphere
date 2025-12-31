@@ -26,7 +26,7 @@ class Permission(models.Model):
 class Role(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=32)
-    room = models.ForeignKey("core.Room", on_delete=models.CASCADE, related_name='roles')
+    room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='roles')
     description = models.TextField(max_length=512, blank=True, default='')
     priority = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(100)])
     permissions = models.ManyToManyField(Permission, related_name='roles', blank=True)
@@ -47,7 +47,7 @@ class Role(models.Model):
 class Participant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey("core.User", on_delete=models.CASCADE)
-    room = models.ForeignKey("core.Room", on_delete=models.CASCADE, related_name='memberships')
+    room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='memberships')
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 

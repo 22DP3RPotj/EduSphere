@@ -5,7 +5,8 @@ from django.test import TestCase, tag
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from backend.core.models import Room, Topic, Message, Report, Invite
+from backend.core.models import Message, Report, Invite
+from backend.room.models import Room, Topic
 from backend.access.models import Permission, Role, Participant
 from backend.access.enums import PermissionCode
 

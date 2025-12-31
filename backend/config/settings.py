@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "backend.core.apps.CoreConfig",
     "backend.access.apps.AccessConfig",
+    "backend.room.apps.RoomConfig",
     "backend.graphql.apps.GraphQLConfig",
     "graphql_jwt.refresh_token",
     "channels",

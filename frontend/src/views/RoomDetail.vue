@@ -219,7 +219,7 @@ import { parseGraphQLError } from '@/utils/errorParser';
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { User, Room } from '@/types';
+import type { User, Room, Participant } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -317,7 +317,7 @@ const isParticipant = computed(() => {
   const user = authStore.user;
   if (!room.value || !user || !room.value.participants) return false;
   
-  return room.value.participants.some((p: User) => p.id === user.id);
+  return room.value.participants.some((p: Participant) => p.user.id === user.id);
 });
 
 const { 

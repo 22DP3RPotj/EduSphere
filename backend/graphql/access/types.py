@@ -31,7 +31,6 @@ class RoleType(DjangoObjectType):
 
 # TODO: Use real id
 class ParticipantType(DjangoObjectType):
-    id = graphene.UUID(required=True)
     user = graphene.Field(UserType, required=True)
     role = graphene.Field(RoleType)
     username = graphene.String()
@@ -45,9 +44,6 @@ class ParticipantType(DjangoObjectType):
             "role",
             "joined_at",
         )
-
-    def resolve_id(self, info):
-        return self.user.id
     
     def resolve_username(self, info):
         return self.user.username

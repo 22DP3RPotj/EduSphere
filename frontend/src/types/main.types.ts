@@ -1,5 +1,8 @@
+export type UUID = string & { readonly __brand: unique symbol }
+export type DateTime = string & { readonly __brand: unique symbol }
+
 export interface User {
-  id: string;
+  id: UUID;
   username: string;
   name: string;
   bio: string | null;
@@ -10,40 +13,63 @@ export interface User {
   dateJoined: string;
 }
 
+export interface Permission {
+  id: UUID;
+  code: string;
+  description: string;
+}
+
+export interface Role {
+  id: UUID;
+  name: string;
+  description: string;
+  priority: number;
+  permissions: Permission[];
+}
+
+export interface Participant {
+  id: UUID;
+  user: User;
+  role: Role;
+  joined_at: string;
+}
+
 export interface Topic {
+  // id: UUID;
   name: string;
 }
 
 export interface Room {
-  id: string;
+  id: UUID;
   name: string;
   slug: string;
   host: User;
   topics: Topic[];
   description: string;
   participants: User[];
-  updated_at: string;
-  created_at: string;
+  updated_at: DateTime;
+  created_at: DateTime;
 }
 
 export interface Message {
-  id: string;
+  id: UUID;
   user: User;
   room: Room;
+  parent: Message | null;
   body: string;
   is_edited: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at: DateTime;
+  updated_at: DateTime;
 }
 
 export interface Report {
-  id: string;
+  id: UUID;
   body: string;
   reason: string;
   status: string;
   moderatorNote: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: DateTime;
+  updated_at: DateTime;
   user: User;
   room: Room;
   moderator: User | null;

@@ -2,9 +2,6 @@ import graphene
 from graphene_django.types import DjangoObjectType
 
 from backend.core.models import User, Message
-from backend.invite.models import Invite
-
-InviteStatusEnum = graphene.Enum.from_enum(Invite.InviteStatus)
 
 
 class UserType(DjangoObjectType):

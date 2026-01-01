@@ -4,6 +4,7 @@ from graphene_django.types import DjangoObjectType
 from backend.invite.models import Invite
 
 
+InviteStatusEnum = graphene.Enum.from_enum(Invite.InviteStatus)
 
 class InviteType(DjangoObjectType):
     inviter = graphene.Field("backend.graphql.types.UserType", required=True)

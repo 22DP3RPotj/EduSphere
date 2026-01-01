@@ -32,7 +32,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         Return the maximum length of the message body.
         """
-        from ..models import Message
+        from backend.core.models import Message
         return Message._meta.get_field("body").max_length
 
     async def send_error(self, error_message):
@@ -196,7 +196,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message_type = data.get('type', 'text')
 
-        from ..models import Room
+        from backend.room.models import Room
         room = await database_sync_to_async(Room.objects.get)(
             host__username=self.username,
             slug=self.room_slug
@@ -305,8 +305,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_update_message(self, message_id, new_body):
         """Handle updating a message"""
-        from ..models import Message
-        from ..services import MessageService
+        from backend.core.models import Message
+        from backend.core.services import MessageService
 
         @database_sync_to_async
         def get_message():

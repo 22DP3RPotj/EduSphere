@@ -5,6 +5,8 @@ from django.db.models.functions import Lower
 from django.urls import reverse
 from django.utils.text import slugify
 
+from backend.room.choices import Visibility
+
 
 class Topic(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -33,9 +35,7 @@ class Topic(models.Model):
     
 
 class Room(models.Model):
-    class Visibility(models.TextChoices):
-        PUBLIC = 'PUBLIC', 'Public'
-        PRIVATE = 'PRIVATE', 'Private'
+    Visibility = Visibility
         
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     host = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='hosted_rooms')

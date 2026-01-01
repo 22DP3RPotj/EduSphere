@@ -1,11 +1,11 @@
 import graphene
 from graphene_django import DjangoObjectType
 
-from backend.moderation.models import Report, ReportReason, ReportStatus
+from backend.moderation.models import Report
 
 
-ReportReasonEnum = graphene.Enum.from_enum(ReportReason)
-ReportStatusEnum = graphene.Enum.from_enum(ReportStatus)
+ReportReasonEnum = graphene.Enum.from_enum(Report.ReportReason)
+ReportStatusEnum = graphene.Enum.from_enum(Report.ReportStatus)
 
 
 class ReportType(DjangoObjectType):

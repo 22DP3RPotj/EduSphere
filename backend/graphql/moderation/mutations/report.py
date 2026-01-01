@@ -13,7 +13,7 @@ from backend.core.exceptions import (
 from backend.graphql.moderation.types import ReportType, ReportReasonEnum, ReportStatusEnum
 from backend.moderation.models import Report
 from backend.room.models import Room
-from backend.core.services import ReportService
+from backend.moderation.services import ReportService
 
 
 class CreateReport(graphene.Mutation):

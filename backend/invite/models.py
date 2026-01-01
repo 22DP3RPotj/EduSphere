@@ -48,3 +48,11 @@ class Invite(models.Model):
     def is_expired(self) -> bool:
         """Check if invite has expired based on expires_at timestamp."""
         return timezone.now() > self.expires_at
+    
+    @property
+    def is_resolved(self) -> bool:
+        """Check if invite has been resolved (accepted or declined)"""
+        return self.status in [
+            self.InviteStatus.ACCEPTED,
+            self.InviteStatus.DECLINED,
+        ]

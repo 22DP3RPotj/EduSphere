@@ -76,6 +76,10 @@ class InviteService:
         if Invite.active_invites(invitee=invitee, room=room).exists():
             raise ConflictException("This user already has an active invite to this room.")
         
+        # TODO: move to forms
+        if expires_at <= timezone.now():
+            raise ValidationException("Expiration date must be in the future.")
+        
         data = {
             "expires_at": expires_at,
         }
@@ -190,6 +194,39 @@ class InviteService:
         invite.delete()
         
         return True
+    
+    # TODO: make it possible to resend for anyone with permission
+    @staticmethod
+    def resend_invite(user: User, invite: Invite, new_expires_at: datetime) -> Invite:
+        """
+        Resend an invite by updating its expiration date.
+        
+        Args:
+            user: User resending the invite (must be the inviter)
+            invite: The invite to resend
+            new_expires_at: New expiration datetime
+            
+        Returns:
+            The updated Invite instance
+            
+        Raises:
+            PermissionException: If user is not the inviter
+            ValidationException: If invite is already resolved (accepted or declined)
+        """
+        
+        if invite.inviter != user:
+            raise PermissionException("Only the inviter can resend an invite.")
+        
+        if invite.is_resolved:
+            raise ValidationException("Cannot resend a resolved invite.")
+        
+        if new_expires_at <= timezone.now():
+            raise ValidationException("Expiration date must be in the future.")
+        
+        invite.expires_at = new_expires_at
+        invite.save(update_fields=["expires_at"])
+        
+        return invite
     
     @staticmethod
     def _update_if_expired(invite: Invite) -> None:

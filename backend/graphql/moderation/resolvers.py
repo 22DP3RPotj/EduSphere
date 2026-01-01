@@ -12,12 +12,12 @@ from backend.moderation.models import Report
 
 
 class ReportQuery(graphene.ObjectType):
-    my_reports = graphene.List(ReportType)
+    submitted_reports = graphene.List(ReportType)
     report = graphene.Field(
         ReportType,
         report_id=graphene.UUID(required=True)
     )
-    all_reports = graphene.List(
+    reports = graphene.List(
         ReportType,
         status=ReportStatusEnum(required=False),
         reason=ReportReasonEnum(required=False),
@@ -30,7 +30,7 @@ class ReportQuery(graphene.ObjectType):
     )
 
     @login_required
-    def resolve_my_reports(self, info: graphene.ResolveInfo) -> QuerySet[Report]:
+    def resolve_submitted_reports(self, info: graphene.ResolveInfo) -> QuerySet[Report]:
         return Report.objects.filter(user=info.context.user).select_related('room', 'moderator', 'user')
 
     @login_required
@@ -47,7 +47,7 @@ class ReportQuery(graphene.ObjectType):
 
     # TODO: Add pagination
     @superuser_required
-    def resolve_all_reports(
+    def resolve_reports(
         self,
         info: graphene.ResolveInfo,
         status: Optional[Report.ReportStatus] = None,

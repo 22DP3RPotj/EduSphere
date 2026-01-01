@@ -57,10 +57,12 @@ class ReportForm(ModelForm):
         fields = ('reason', 'body')
 
 
+# TODO: validate datetime
 class InviteForm(ModelForm):
     class Meta:
         model = Invite
         fields = ('expires_at',)
+
 
 
 class RoleForm(ModelForm):

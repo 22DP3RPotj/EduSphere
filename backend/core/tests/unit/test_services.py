@@ -1583,23 +1583,46 @@ class RoleServiceAdvancedTests(ServiceTestBase):
 class InviteServiceAdvancedTests(ServiceTestBase):
     """Advanced tests for InviteService - expiry, cascades, edge cases."""
     
-    def test_invite_expires_after_expiry_time(self):
+    def test_invite_cannot_be_sent_with_past_expiry(self):
         """Test invite is marked expired when retrieved after expiry."""
         self._add_member(self.member, self.owner_role)
         
         # Create invite that expires in the past
         expires_at = timezone.now() - timedelta(hours=1)
+
+        with self.assertRaises(ValidationException):
+            InviteService.send_invite(
+                inviter=self.member,
+                room=self.room,
+                invitee=self.other_user,
+                role=self.member_role,
+                expires_at=expires_at
+            )
+    
+    def test_update_expired_invites(self):
+        """Test updating expired invites."""
+        self._add_member(self.member, self.owner_role)
+        
+        # Create an invite with future expiry (so validation passes)
+        future_time = timezone.now() + timedelta(days=7)
         invite = InviteService.send_invite(
             inviter=self.member,
             room=self.room,
             invitee=self.other_user,
             role=self.member_role,
-            expires_at=expires_at
+            expires_at=future_time
         )
         
-        # Get the invite - should be marked as expired
-        retrieved = InviteService.get_invite_by_token(invite.token)
-        self.assertEqual(retrieved.status, Invite.InviteStatus.EXPIRED)
+        # Manually set expiry to past (simulate time passing)
+        invite.expires_at = timezone.now() - timedelta(hours=1)
+        invite.save(update_fields=["expires_at"])
+        
+        # Update expired invites
+        InviteService._update_expired_invites()
+        
+        # Verify status changed
+        invite.refresh_from_db()
+        self.assertEqual(invite.status, Invite.InviteStatus.EXPIRED)
     
     def test_invite_can_be_accepted_within_validity(self):
         """Test valid invite can be accepted."""

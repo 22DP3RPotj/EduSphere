@@ -6,12 +6,14 @@ class ErrorCode(StrEnum):
     VALIDATION_ERROR = "VALIDATION_ERROR"
     PERMISSION_DENIED = "PERMISSION_DENIED"
     NOT_FOUND = "NOT_FOUND"
+    INVALID_OPERATION = "INVALID_OPERATION"
     CONFLICT = "CONFLICT"
     ALREADY_EXISTS = "ALREADY_EXISTS"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     BAD_REQUEST = "BAD_REQUEST"
 
 
+# Rework to accept different error codes
 class DomainException(Exception):
     """Base class for all expected domain-level exceptions."""
     code: ErrorCode

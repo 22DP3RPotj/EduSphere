@@ -212,11 +212,11 @@ class ReportQueryTests(JSONWebTokenTestCase):
             status="RESOLVED"
         )
 
-    def test_my_reports(self):
+    def test_submitted_reports(self):
         self.client.authenticate(self.user)
         query = """
             query {
-                myReports {
+                submittedReports {
                     reason
                     body
                     status
@@ -225,7 +225,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
         """
         result: ExecutionResult = self.client.execute(query)
         self.assertIsNone(result.errors)
-        self.assertEqual(len(result.data["myReports"]), 2)
+        self.assertEqual(len(result.data["submittedReports"]), 2)
 
     def test_report_detail(self):
         self.client.authenticate(self.user)
@@ -242,11 +242,11 @@ class ReportQueryTests(JSONWebTokenTestCase):
         self.assertIsNone(result.errors)
         self.assertEqual(result.data["report"]["reason"], "SPAM")
 
-    def test_all_reports_as_moderator(self):
+    def test_reports_as_moderator(self):
         self.client.authenticate(self.moderator)
         query = """
             query {
-                allReports {
+                reports {
                     reason
                     status
                 }
@@ -254,4 +254,4 @@ class ReportQueryTests(JSONWebTokenTestCase):
         """
         result: ExecutionResult = self.client.execute(query)
         self.assertIsNone(result.errors)
-        self.assertEqual(len(result.data["allReports"]), 2)
+        self.assertEqual(len(result.data["reports"]), 2)

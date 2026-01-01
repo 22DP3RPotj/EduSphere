@@ -144,3 +144,29 @@ class CancelInvite(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code})
 
         return CancelInvite(success=success)
+
+
+class ResendInvite(graphene.Mutation):
+    class Arguments:
+        token = graphene.UUID(required=True)
+        expires_at = graphene.DateTime()
+        
+    invite = graphene.Field(InviteType)
+    
+    @login_required
+    def mutate(self, info: graphene.ResolveInfo, token: uuid.UUID, expires_at: graphene.DateTime):
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite is None:
+            raise GraphQLError(f"Invite with token '{token}' not found.", extensions={"code": ErrorCode.NOT_FOUND})
+        
+        try:
+            invite = InviteService.resend_invite(
+                user=info.context.user,
+                invite=invite,
+                new_expires_at=expires_at
+            )
+        except (PermissionException, ValidationException) as e:
+            raise GraphQLError(str(e), extensions={"code": e.code})
+
+        return ResendInvite(invite=invite)

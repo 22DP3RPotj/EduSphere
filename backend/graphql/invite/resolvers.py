@@ -14,7 +14,8 @@ from backend.invite.services import InviteService
 
 
 class InviteQuery(graphene.ObjectType):
-    my_invites = graphene.List(InviteType)
+    reveived_invites = graphene.List(InviteType)
+    sent_invites = graphene.List(InviteType)
     invite = graphene.Field(
         InviteType,
         token=graphene.UUID(required=True)
@@ -32,8 +33,19 @@ class InviteQuery(graphene.ObjectType):
     )
 
     @login_required
-    def resolve_my_invites(self, info: graphene.ResolveInfo) -> QuerySet[Invite]:
+    def resolve_received_invites(self, info: graphene.ResolveInfo) -> QuerySet[Invite]:
         queryset = Invite.objects.filter(invitee=info.context.user).select_related('inviter', 'invitee', 'role')
+        
+        queryset.filter(
+            status=Invite.InviteStatus.PENDING,
+            expires_at__lt=timezone.now()
+        ).update(status=Invite.InviteStatus.EXPIRED)
+        
+        return queryset
+    
+    @login_required
+    def resolved_sent_invites(self, info: graphene.ResolveInfo) -> QuerySet[Invite]:
+        queryset = Invite.objects.filter(inviter=info.context.user).select_related('inviter', 'invitee', 'role')
         
         queryset.filter(
             status=Invite.InviteStatus.PENDING,

@@ -9,12 +9,12 @@ from .mutations.invite import (
     CancelInvite,
 )
 
-# TODO: not do that
-class InviteQuery(InviteQuery,graphene.ObjectType):
+
+class InviteQueries(InviteQuery,graphene.ObjectType):
     pass
 
 
-class InviteMutation(graphene.ObjectType):
+class InviteMutations(graphene.ObjectType):
     send_invite = SendInvite.Field()
     accept_invite = AcceptInvite.Field()
     decline_invite = DeclineInvite.Field()

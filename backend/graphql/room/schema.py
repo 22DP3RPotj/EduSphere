@@ -1,6 +1,6 @@
 import graphene
 
-from .resolvers import RoomQuery
+from .resolvers import RoomQuery, TopicQuery
 
 from .mutations.room import (
     CreateRoom,
@@ -9,11 +9,11 @@ from .mutations.room import (
     JoinRoom
 )
 
-class RoomSchema(RoomQuery, graphene.ObjectType):
+class RoomQueries(RoomQuery, TopicQuery, graphene.ObjectType):
     pass
 
 
-class RoomMutation(graphene.ObjectType):
+class RoomMutations(graphene.ObjectType):
     create_room = CreateRoom.Field()
     delete_room = DeleteRoom.Field()
     update_room = UpdateRoom.Field()

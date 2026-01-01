@@ -14,10 +14,11 @@ from .mutations.role import (
     UpdateRole
 )
 
-class AccessQuery(RoleQuery, graphene.ObjectType):
+
+class AccessQueries(RoleQuery, graphene.ObjectType):
     pass
 
-class AccessMutation(graphene.ObjectType):
+class AccessMutations(graphene.ObjectType):
     add_participant = AddParticipant.Field()
     change_participant_role = ChangeParticipantRole.Field()
     remove_participant = RemoveParticipant.Field()

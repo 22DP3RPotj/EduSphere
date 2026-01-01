@@ -7,11 +7,11 @@ from .mutations.report import (
 from .resolvers import ReportQuery
 
 
-class ModerationQuery(ReportQuery, graphene.ObjectType):
+class ModerationQueries(ReportQuery, graphene.ObjectType):
     pass
 
 
-class ModerationMutation(graphene.ObjectType):
+class ModerationMutations(graphene.ObjectType):
     create_report = CreateReport.Field()
     update_report = UpdateReport.Field()
     delete_report = DeleteReport.Field()

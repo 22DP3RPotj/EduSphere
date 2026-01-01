@@ -53,6 +53,9 @@ clean:
 clean-logs:
 	rm -rf logs/*
 
+clean-migrations:
+	find backend -path "*/migrations/*.py" -not -name "__init__.py" -delete
+
 docker-compose-up:
 	docker-compose --env-file ./docker.env up -d --build
 

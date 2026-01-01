@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "backend.room.apps.RoomConfig",
     "backend.access.apps.AccessConfig",
     "backend.moderation.apps.ModerationConfig",
+    "backend.invite.apps.InviteConfig",
     "backend.graphql.apps.GraphQLConfig",
     
     # Third-party apps

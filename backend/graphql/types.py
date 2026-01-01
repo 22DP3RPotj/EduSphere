@@ -1,7 +1,8 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.core.models import User, Message, Invite
+from backend.core.models import User, Message
+from backend.invite.models import Invite
 
 InviteStatusEnum = graphene.Enum.from_enum(Invite.InviteStatus)
 
@@ -37,25 +38,6 @@ class MessageType(DjangoObjectType):
             "created_at",
             "updated_at",
         )
-
-class InviteType(DjangoObjectType):
-    inviter = graphene.Field(UserType, required=True)
-    invitee = graphene.Field(UserType, required=True)
-    role = graphene.Field("backend.graphql.access.types.RoleType", required=True)
-    
-    class Meta:
-        model = Invite
-        fields = (
-            "id",
-            "inviter",
-            "invitee",
-            "role",
-            "token",
-            "status",
-            "created_at",
-            "expires_at",
-        )
-
 
 class AuthStatusType(graphene.ObjectType):
     is_authenticated = graphene.Boolean(required=True)

@@ -6,14 +6,16 @@ from django.test import TestCase, tag
 from django.utils import timezone
 
 from backend.core.models import (
-    Message, Invite, User as BaseUser
+    Message, User as BaseUser
 )
+from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.access.models import Role, Participant
 from backend.moderation.models import Report
 from backend.core.services import (
-    InviteService, MessageService
+    MessageService
 )
+from backend.invite.services import InviteService
 from backend.room.services import RoomService
 from backend.moderation.services import ReportService
 from backend.access.services import RoleService, ParticipantService

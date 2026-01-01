@@ -3,12 +3,12 @@ import uuid
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.graphql.types import InviteType
+from backend.graphql.invite.types import InviteType
 from backend.graphql.access.types import ParticipantType
 from backend.core.models import User
 from backend.room.models import Room
 from backend.access.models import Role
-from backend.core.services import InviteService
+from backend.invite.services import InviteService
 from backend.core.exceptions import (
     PermissionException,
     FormValidationException,
@@ -144,10 +144,3 @@ class CancelInvite(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code})
 
         return CancelInvite(success=success)
-
-
-class InviteMutation(graphene.ObjectType):
-    send_invite = SendInvite.Field()
-    accept_invite = AcceptInvite.Field()
-    decline_invite = DeclineInvite.Field()
-    cancel_invite = CancelInvite.Field()

@@ -8,9 +8,11 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from backend.core.exceptions import ErrorCode
-from backend.graphql.types import InviteStatusEnum, InviteType
-from backend.core.models import Invite
-from backend.core.services import InviteService
+from backend.graphql.types import InviteStatusEnum
+from backend.graphql.invite.types import InviteType
+from backend.invite.models import Invite
+from backend.invite.services import InviteService
+
 
 class InviteQuery(graphene.ObjectType):
     my_invites = graphene.List(InviteType)

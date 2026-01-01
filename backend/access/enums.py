@@ -1,12 +1,12 @@
-from django.db.models import TextChoices
+from django.db import models
 
 
-class RoleCode(TextChoices):
+class RoleCode(models.TextChoices):
     OWNER = "owner", "Owner"
     MEMBER = "member", "Member"
 
 
-class PermissionCode(TextChoices):
+class PermissionCode(models.TextChoices):
     ROOM_DELETE = "room.delete", "Delete room"
     ROOM_UPDATE = "room.update", "Update room"
     ROOM_MANAGE_VISIBILITY = "room.manage_visibility", "Manage room visibility"

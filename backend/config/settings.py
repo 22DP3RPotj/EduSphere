@@ -37,17 +37,23 @@ AUTH_USER_MODEL = "core.User"
 # Application definition
 
 INSTALLED_APPS = [
+    # Default Django apps
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
+    
+    # Custom apps
     "backend.core.apps.CoreConfig",
-    "backend.access.apps.AccessConfig",
     "backend.room.apps.RoomConfig",
+    "backend.access.apps.AccessConfig",
+    "backend.moderation.apps.ModerationConfig",
     "backend.graphql.apps.GraphQLConfig",
-    "graphql_jwt.refresh_token",
-    "channels",
-    "corsheaders",
+    
+    # Third-party apps
+    "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
+    "channels.apps.ChannelsConfig",
+    "corsheaders.apps.CorsHeadersAppConfig",
     "graphene_django",
     "django_cleanup.apps.CleanupConfig",
 ]

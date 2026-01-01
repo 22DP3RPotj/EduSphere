@@ -10,8 +10,8 @@ from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
 )
-from backend.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
-from backend.core.models import Report
+from backend.graphql.moderation.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.moderation.models import Report
 from backend.room.models import Room
 from backend.core.services import ReportService
 
@@ -97,9 +97,3 @@ class DeleteReport(graphene.Mutation):
 
         report.delete()
         return DeleteReport(success=True)
-
-
-class ReportMutation(graphene.ObjectType):
-    create_report = CreateReport.Field()
-    update_report = UpdateReport.Field()
-    delete_report = DeleteReport.Field()

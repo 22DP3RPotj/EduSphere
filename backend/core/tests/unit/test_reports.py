@@ -4,7 +4,7 @@ from graphql_jwt.testcases import JSONWebTokenTestCase
 from django.test import tag
 from django.contrib.auth import get_user_model
 
-from backend.core.models import Report
+from backend.moderation.models import Report
 from backend.room.models import Room, Topic
 from backend.access.models import Participant, Role
 

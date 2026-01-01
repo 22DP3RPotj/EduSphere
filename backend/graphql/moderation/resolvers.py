@@ -7,8 +7,8 @@ from graphql import GraphQLError
 from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
-from backend.graphql.types import ReportType, ReportReasonEnum, ReportStatusEnum
-from backend.core.models import Report
+from backend.graphql.moderation.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.moderation.models import Report
 
 
 class ReportQuery(graphene.ObjectType):

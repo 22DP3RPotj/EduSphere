@@ -216,7 +216,7 @@ class InviteService:
             The Invite instance if valid token, None otherwise
         """
         try:
-            invite = Invite.objects.get(token=token)
+            invite = Invite.objects.select_related('inviter', 'invitee', 'role').get(token=token)
         except Invite.DoesNotExist:
             return None
         

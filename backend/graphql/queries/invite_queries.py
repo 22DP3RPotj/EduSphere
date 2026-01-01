@@ -5,11 +5,12 @@ from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.types import InviteStatusEnum, InviteType
 from backend.core.models import Invite
-
+from backend.core.services import InviteService
 
 class InviteQuery(graphene.ObjectType):
     my_invites = graphene.List(InviteType)
@@ -17,7 +18,7 @@ class InviteQuery(graphene.ObjectType):
         InviteType,
         token=graphene.UUID(required=True)
     )
-    all_invites = graphene.List(
+    invites = graphene.List(
         InviteType,
         status=InviteStatusEnum(required=False),
         inviter=graphene.UUID(required=False),
@@ -31,13 +32,20 @@ class InviteQuery(graphene.ObjectType):
 
     @login_required
     def resolve_my_invites(self, info: graphene.ResolveInfo) -> QuerySet[Invite]:
-        return Invite.objects.filter(invitee=info.context.user).select_related('inviter', 'invitee', 'role')
+        queryset = Invite.objects.filter(invitee=info.context.user).select_related('inviter', 'invitee', 'role')
+        
+        queryset.filter(
+            status=Invite.InviteStatus.PENDING,
+            expires_at__lt=timezone.now()
+        ).update(status=Invite.InviteStatus.EXPIRED)
+        
+        return queryset
 
     @login_required
     def resolve_invite(self, info: graphene.ResolveInfo, token: uuid.UUID) -> Invite:
-        try:
-            invite = Invite.objects.select_related('inviter', 'invitee', 'role').get(token=token)
-        except Invite.DoesNotExist:
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite is None:
             raise GraphQLError("Invite not found", extensions={"code": ErrorCode.NOT_FOUND})
         
         if invite.invitee != info.context.user and invite.inviter != info.context.user:
@@ -62,6 +70,11 @@ class InviteQuery(graphene.ObjectType):
             queryset = queryset.filter(invitee_id=invitee_id)
         if inviter_id:
             queryset = queryset.filter(inviter_id=inviter_id)
+            
+        queryset.filter(
+            status=Invite.InviteStatus.PENDING,
+            expires_at__lt=timezone.now()
+        ).update(status=Invite.InviteStatus.EXPIRED)
 
         return queryset
     

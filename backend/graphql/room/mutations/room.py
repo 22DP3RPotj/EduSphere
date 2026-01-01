@@ -7,7 +7,7 @@ from graphql import GraphQLError
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
 from backend.room.models import Room
 from backend.access.models import Participant
-from backend.core.services import RoomService
+from backend.room.services import RoomService
 from backend.core.exceptions import (
     PermissionException,
     FormValidationException,

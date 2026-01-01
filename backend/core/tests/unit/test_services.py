@@ -12,8 +12,9 @@ from backend.room.models import Room
 from backend.access.models import Role, Participant
 from backend.moderation.models import Report
 from backend.core.services import (
-    InviteService, MessageService, RoomService
+    InviteService, MessageService
 )
+from backend.room.services import RoomService
 from backend.moderation.services import ReportService
 from backend.access.services import RoleService, ParticipantService
 from backend.core.exceptions import (

@@ -49,10 +49,3 @@ class ParticipantType(DjangoObjectType):
     
     def resolve_avatar(self, info):
         return self.user.avatar
-
-
-__all__ = [
-    "ParticipantType",
-    "RoleType",
-    "PermissionType",
-]

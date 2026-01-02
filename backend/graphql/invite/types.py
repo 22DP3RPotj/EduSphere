@@ -24,9 +24,3 @@ class InviteType(DjangoObjectType):
             "created_at",
             "expires_at",
         )
-
-
-__all__ = [
-    "InviteType",
-    "InviteStatusEnum",
-]

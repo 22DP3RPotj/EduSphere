@@ -18,10 +18,3 @@ class RoomMutations(graphene.ObjectType):
     delete_room = DeleteRoom.Field()
     update_room = UpdateRoom.Field()
     join_room = JoinRoom.Field()
-
-
-
-__all__ = [
-    "RoomQueries",
-    "RoomMutations",
-]

@@ -36,9 +36,3 @@ class MessageStatusType(graphene.ObjectType):
             "status",
             "timestamp",
         )
-
-
-__all__ = [
-    "MessageType",
-    "MessageStatusType",
-]

@@ -19,9 +19,3 @@ class InviteMutations(graphene.ObjectType):
     accept_invite = AcceptInvite.Field()
     decline_invite = DeclineInvite.Field()
     cancel_invite = CancelInvite.Field()
-    
-
-__all__ = [
-    "InviteQueries",
-    "InviteMutations",
-]

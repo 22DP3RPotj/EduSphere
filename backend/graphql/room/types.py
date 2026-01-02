@@ -43,10 +43,3 @@ class RoomType(DjangoObjectType):
     
     def resolve_topics(self, info):
         return self.topics.all()
-    
-
-__all__ = [
-    "RoomType",
-    "TopicType",
-    "RoomVisibilityEnum",
-]

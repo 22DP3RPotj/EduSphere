@@ -28,9 +28,3 @@ class AccessMutations(graphene.ObjectType):
     create_role = CreateRole.Field()
     delete_role = DeleteRole.Field()
     update_role = UpdateRole.Field()
-
-
-__all__ = [
-    "AccessQueries",
-    "AccessMutations",
-]

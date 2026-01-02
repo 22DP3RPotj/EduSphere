@@ -23,9 +23,3 @@ class UserType(DjangoObjectType):
 class AuthStatusType(graphene.ObjectType):
     is_authenticated = graphene.Boolean(required=True)
     user = graphene.Field(UserType)
-
-
-__all__ = [
-    "UserType",
-    "AuthStatusType",
-]

@@ -38,14 +38,14 @@ class Room(models.Model):
     Visibility = RoomVisibility
         
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    host = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='hosted_rooms')
+    host = models.ForeignKey("account.User", on_delete=models.CASCADE, related_name='hosted_rooms')
     default_role = models.ForeignKey("access.Role", on_delete=models.SET_NULL, related_name='default_for_rooms', null=True, blank=True)
     topics = models.ManyToManyField(Topic, related_name='rooms')
     visibility = models.CharField(max_length=16, choices=Visibility.choices, blank=True, default=Visibility.PUBLIC)
     name = models.CharField(max_length=64)
     slug = models.SlugField(max_length=64)
     description = models.TextField(blank=True, default='', max_length=512)
-    participants = models.ManyToManyField("core.User", related_name='participants', through="access.Participant", blank=True)
+    participants = models.ManyToManyField("account.User", related_name='participants', through="access.Participant", blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

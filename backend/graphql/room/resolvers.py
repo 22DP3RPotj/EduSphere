@@ -6,7 +6,7 @@ from django.db.models import Q, Count, QuerySet, Prefetch
 
 from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
-from backend.core.models import User
+from backend.account.models import User
 from backend.room.models import Room, Topic
 from backend.graphql.room.types import RoomType, TopicType
 

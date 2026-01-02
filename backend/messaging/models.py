@@ -8,7 +8,7 @@ from backend.messaging.choices import MessageStatusChoices
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
-    user = models.ForeignKey("core.User", on_delete=models.CASCADE)
+    user = models.ForeignKey("account.User", on_delete=models.CASCADE)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE)
     body = models.TextField(max_length=2048)
     is_edited = models.BooleanField(default=False)
@@ -43,7 +43,7 @@ class MessageStatus(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='statuses')
-    user = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='message_statuses')
+    user = models.ForeignKey("account.User", on_delete=models.CASCADE, related_name='message_statuses')
     status = models.CharField(max_length=16, choices=Status.choices)
     timestamp = models.DateTimeField(auto_now=True)
 

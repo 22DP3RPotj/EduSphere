@@ -46,7 +46,7 @@ class Role(models.Model):
 
 class Participant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey("core.User", on_delete=models.CASCADE)
+    user = models.ForeignKey("account.User", on_delete=models.CASCADE)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='memberships')
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)

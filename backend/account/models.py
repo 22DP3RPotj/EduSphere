@@ -5,7 +5,7 @@ from django.utils.text import slugify
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import FileExtensionValidator
 
-from .managers import UserManager
+from backend.account.managers import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -38,7 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
         
     class Meta:
-        app_label = 'core'
+        app_label = 'account'
         ordering = [Lower('username')]
         indexes = [
             models.Index(fields=['email']),

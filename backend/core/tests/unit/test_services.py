@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, tag
 from django.utils import timezone
 
-from backend.core.models import User as BaseUser
+from backend.account.models import User as BaseUser
 from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.access.models import Role, Participant

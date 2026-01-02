@@ -1,10 +1,9 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.room.models import Room
 from backend.access.models import Participant, Role, Permission
-from backend.graphql.types import UserType
-from backend.graphql.room.types import TopicType, RoomVisibilityEnum
+from backend.graphql.account.types import UserType
+
 
 class PermissionType(DjangoObjectType):
     class Meta:

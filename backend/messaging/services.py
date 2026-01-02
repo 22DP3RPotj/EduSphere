@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 
 from backend.messaging.models import Message
-from backend.core.models import User
+from backend.account.models import User
 from backend.room.models import Room
 from backend.access.models import Participant
 

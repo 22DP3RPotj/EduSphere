@@ -7,9 +7,9 @@ from graphql import GraphQLError
 
 from django.db import transaction
 
-from backend.graphql.types import UserType
+from backend.graphql.account.types import UserType
 from backend.graphql.utils import format_form_errors
-from backend.core.models import User
+from backend.account.models import User
 from backend.core.forms import UserForm, RegisterForm
 
 
@@ -111,9 +111,3 @@ class UpdateUserStaffStatus(graphene.Mutation):
             success=True, 
             updated_count=updated_count
         )
-
-class UserMutation(graphene.ObjectType):
-    register_user = RegisterUser.Field()
-    update_user = UpdateUser.Field()
-    update_user_active_status = UpdateUserActiveStatus.Field()
-    update_user_staff_status = UpdateUserStaffStatus.Field()

@@ -4,7 +4,7 @@ from typing import Optional
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 
-from backend.core.models import User
+from backend.account.models import User
 from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.access.models import Participant, Role, Permission

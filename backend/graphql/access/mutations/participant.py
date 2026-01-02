@@ -4,7 +4,7 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.graphql.access.types import ParticipantType
-from backend.core.models import User
+from backend.account.models import User
 from backend.room.models import Room
 from backend.access.models import Participant, Role
 from backend.access.services import ParticipantService

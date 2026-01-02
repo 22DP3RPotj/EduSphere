@@ -4,7 +4,7 @@ from graphql import GraphQLError
 from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
-from backend.core.models import User
+from backend.account.models import User
 from backend.messaging.models import Message
 from backend.room.models import Room
 from backend.access.models import Participant

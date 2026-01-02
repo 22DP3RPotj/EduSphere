@@ -5,7 +5,7 @@ from backend.messaging.models import Message
 
 
 class MessageType(DjangoObjectType):
-    user = graphene.Field("backend.graphql.types.UserType", required=True)
+    user = graphene.Field("backend.graphql.account.types.UserType", required=True)
     room = graphene.Field("backend.graphql.room.types.RoomType")
     
     class Meta:

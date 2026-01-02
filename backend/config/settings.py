@@ -32,7 +32,7 @@ ALLOWED_HOSTS = [
 
 # User Authentication
 
-AUTH_USER_MODEL = "core.User"
+AUTH_USER_MODEL = "account.User"
 
 # Application definition
 
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     
     # Custom apps
+    "backend.account.apps.AccountConfig",
     "backend.core.apps.CoreConfig",
     "backend.room.apps.RoomConfig",
     "backend.messaging.apps.MessagingConfig",

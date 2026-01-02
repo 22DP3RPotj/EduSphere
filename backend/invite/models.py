@@ -10,8 +10,8 @@ class Invite(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='invites')
-    inviter = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='sent_invites')
-    invitee = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='received_invites')
+    inviter = models.ForeignKey("account.User", on_delete=models.CASCADE, related_name='sent_invites')
+    invitee = models.ForeignKey("account.User", on_delete=models.CASCADE, related_name='received_invites')
     role = models.ForeignKey("access.Role", on_delete=models.PROTECT)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)

@@ -20,7 +20,7 @@ class TopicType(DjangoObjectType):
 class RoomType(DjangoObjectType):
     participants = graphene.List("backend.graphql.access.types.ParticipantType")
     topics = graphene.List(TopicType)
-    host = graphene.Field("backend.graphql.types.UserType", required=True)
+    host = graphene.Field("backend.graphql.account.types.UserType", required=True)
     visibility = graphene.Field(RoomVisibilityEnum, required=True)
 
     class Meta:

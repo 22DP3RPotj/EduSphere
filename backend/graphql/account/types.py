@@ -1,8 +1,7 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.core.models import User
-from backend.messaging.models import Message
+from backend.account.models import User
 
 
 class UserType(DjangoObjectType):

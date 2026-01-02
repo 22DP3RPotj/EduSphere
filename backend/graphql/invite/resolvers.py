@@ -37,9 +37,9 @@ class InviteQuery(graphene.ObjectType):
         queryset = Invite.objects.filter(invitee=info.context.user).select_related('inviter', 'invitee', 'role')
         
         queryset.filter(
-            status=Invite.InviteStatus.PENDING,
+            status=Invite.Status.PENDING,
             expires_at__lt=timezone.now()
-        ).update(status=Invite.InviteStatus.EXPIRED)
+        ).update(status=Invite.Status.EXPIRED)
         
         return queryset
     
@@ -48,9 +48,9 @@ class InviteQuery(graphene.ObjectType):
         queryset = Invite.objects.filter(inviter=info.context.user).select_related('inviter', 'invitee', 'role')
         
         queryset.filter(
-            status=Invite.InviteStatus.PENDING,
+            status=Invite.Status.PENDING,
             expires_at__lt=timezone.now()
-        ).update(status=Invite.InviteStatus.EXPIRED)
+        ).update(status=Invite.Status.EXPIRED)
         
         return queryset
 
@@ -71,7 +71,7 @@ class InviteQuery(graphene.ObjectType):
     def resolve_all_invites(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Invite.InviteStatus] = None,
+        status: Optional[Invite.Status] = None,
         invitee_id: Optional[uuid.UUID] = None,
         inviter_id: Optional[uuid.UUID] = None
     ) -> QuerySet[Invite]:
@@ -85,9 +85,9 @@ class InviteQuery(graphene.ObjectType):
             queryset = queryset.filter(inviter_id=inviter_id)
             
         queryset.filter(
-            status=Invite.InviteStatus.PENDING,
+            status=Invite.Status.PENDING,
             expires_at__lt=timezone.now()
-        ).update(status=Invite.InviteStatus.EXPIRED)
+        ).update(status=Invite.Status.EXPIRED)
 
         return queryset
     
@@ -95,7 +95,7 @@ class InviteQuery(graphene.ObjectType):
     def resolve_invite_count(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Invite.InviteStatus] = None,
+        status: Optional[Invite.Status] = None,
         invitee_id: Optional[uuid.UUID] = None,
         inviter_id: Optional[uuid.UUID] = None
     ) -> int:

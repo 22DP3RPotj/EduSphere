@@ -21,7 +21,7 @@ class ReportService:
     def create_report(
         reporter: User,
         room: Room,
-        reason: Report.ReportReason,
+        reason: Report.Reason,
         body: str,
     ) -> Report:
         """
@@ -71,7 +71,7 @@ class ReportService:
     def update_report_status(
         moderator: User,
         report: Report,
-        new_status: Report.ReportStatus,
+        new_status: Report.Status,
         moderator_note: Optional[str] = None,
     ) -> Report:
         """
@@ -127,7 +127,7 @@ class ReportService:
         return ReportService.update_report_status(
             moderator,
             report,
-            Report.ReportStatus.RESOLVED,
+            Report.Status.RESOLVED,
             moderator_note
         )
     
@@ -154,7 +154,7 @@ class ReportService:
         return ReportService.update_report_status(
             moderator,
             report,
-            Report.ReportStatus.DISMISSED,
+            Report.Status.DISMISSED,
             moderator_note
         )
     
@@ -181,6 +181,6 @@ class ReportService:
         return ReportService.update_report_status(
             moderator,
             report,
-            Report.ReportStatus.UNDER_REVIEW,
+            Report.Status.UNDER_REVIEW,
             moderator_note
         )

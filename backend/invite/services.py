@@ -30,9 +30,9 @@ class InviteService:
         Should be called whenever an invite is fetched.
         """
         Invite.objects.filter(
-            status=Invite.InviteStatus.PENDING,
+            status=Invite.Status.PENDING,
             expires_at__lt=timezone.now()
-        ).update(status=Invite.InviteStatus.EXPIRED)
+        ).update(status=Invite.Status.EXPIRED)
     
     @staticmethod
     def send_invite(
@@ -122,7 +122,7 @@ class InviteService:
         if invite.invitee != user:
             raise PermissionException("You can only accept invites sent to you.")
         
-        if invite.status != Invite.InviteStatus.PENDING:
+        if invite.status != Invite.Status.PENDING:
             raise ValidationException(f"Invite is '{invite.status.lower()}' and cannot be accepted.")
         
         try:
@@ -133,7 +133,7 @@ class InviteService:
                     role=invite.role
                 )
                 
-                invite.status = Invite.InviteStatus.ACCEPTED
+                invite.status = Invite.Status.ACCEPTED
                 invite.save(update_fields=["status"])
                 
         except IntegrityError as e:
@@ -160,10 +160,10 @@ class InviteService:
         if invite.invitee != user:
             raise PermissionException("You can only decline invites sent to you.")
         
-        if invite.status != Invite.InviteStatus.PENDING:
+        if invite.status != Invite.Status.PENDING:
             raise ValidationException(f"Invite is {invite.status.lower()} and cannot be declined.")
         
-        invite.status = Invite.InviteStatus.DECLINED
+        invite.status = Invite.Status.DECLINED
         invite.save(update_fields=["status"])
         
         return True
@@ -188,7 +188,7 @@ class InviteService:
         if invite.inviter != user:
             raise PermissionException("Only the inviter can cancel an invite.")
         
-        if invite.status != Invite.InviteStatus.PENDING:
+        if invite.status != Invite.Status.PENDING:
             raise ValidationException(f"Invite is {invite.status.lower()} and cannot be canceled.")
         
         invite.delete()
@@ -236,8 +236,8 @@ class InviteService:
         Args:
             invite: The invite to check
         """
-        if invite.is_expired and invite.status != Invite.InviteStatus.EXPIRED:
-            invite.status = Invite.InviteStatus.EXPIRED
+        if invite.is_expired and invite.status != Invite.Status.EXPIRED:
+            invite.status = Invite.Status.EXPIRED
             invite.save(update_fields=["status"])
     
     @staticmethod

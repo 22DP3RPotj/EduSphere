@@ -4,8 +4,8 @@ from graphene_django import DjangoObjectType
 from backend.moderation.models import Report
 
 
-ReportReasonEnum = graphene.Enum.from_enum(Report.ReportReason)
-ReportStatusEnum = graphene.Enum.from_enum(Report.ReportStatus)
+ReportReasonEnum = graphene.Enum.from_enum(Report.Reason)
+ReportStatusEnum = graphene.Enum.from_enum(Report.Status)
 
 
 class ReportType(DjangoObjectType):

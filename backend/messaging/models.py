@@ -39,10 +39,12 @@ class Message(models.Model):
 
 
 class MessageStatus(models.Model):
+    Status = MessageStatusChoices
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='statuses')
     user = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='message_statuses')
-    status = models.CharField(max_length=16, choices=MessageStatusChoices.choices)
+    status = models.CharField(max_length=16, choices=Status.choices)
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:

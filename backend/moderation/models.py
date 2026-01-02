@@ -7,15 +7,15 @@ from backend.moderation.choices import ReportReason, ReportStatus, ACTIVE_STATUS
 
 
 class Report(models.Model):
-    ReportReason = ReportReason
-    ReportStatus = ReportStatus
+    Reason = ReportReason
+    Status = ReportStatus
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True, related_name='reports')
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='reports')
     body = models.TextField(max_length=2048)
-    reason = models.CharField(max_length=32, choices=ReportReason.choices)
-    status = models.CharField(max_length=32, choices=ReportStatus.choices, default=ReportStatus.PENDING)
+    reason = models.CharField(max_length=32, choices=Reason.choices)
+    status = models.CharField(max_length=32, choices=Status.choices, default=Status.PENDING)
     moderator_note = models.TextField(max_length=512, blank=True, default='')
     moderator = models.ForeignKey(
         User,

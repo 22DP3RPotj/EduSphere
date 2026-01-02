@@ -6,7 +6,7 @@ from backend.invite.choices import InviteStatus
 
 
 class Invite(models.Model):
-    InviteStatus = InviteStatus
+    Status = InviteStatus
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name='invites')
@@ -14,7 +14,7 @@ class Invite(models.Model):
     invitee = models.ForeignKey("core.User", on_delete=models.CASCADE, related_name='received_invites')
     role = models.ForeignKey("access.Role", on_delete=models.PROTECT)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    status = models.CharField(max_length=16, choices=InviteStatus.choices, default=InviteStatus.PENDING)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 
@@ -42,7 +42,7 @@ class Invite(models.Model):
 
     @classmethod
     def active_invites(cls, **filters):
-        return cls.objects.filter(status=cls.InviteStatus.PENDING, **filters)
+        return cls.objects.filter(status=cls.Status.PENDING, **filters)
     
     @property
     def is_expired(self) -> bool:
@@ -53,6 +53,6 @@ class Invite(models.Model):
     def is_resolved(self) -> bool:
         """Check if invite has been resolved (accepted or declined)"""
         return self.status in [
-            self.InviteStatus.ACCEPTED,
-            self.InviteStatus.DECLINED,
+            self.Status.ACCEPTED,
+            self.Status.DECLINED,
         ]

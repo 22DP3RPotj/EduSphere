@@ -50,8 +50,8 @@ class ReportQuery(graphene.ObjectType):
     def resolve_reports(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Report.ReportStatus] = None,
-        reason: Optional[Report.ReportReason] = None,
+        status: Optional[Report.Status] = None,
+        reason: Optional[Report.Reason] = None,
         user_id: Optional[uuid.UUID] = None
     ) -> QuerySet[Report]:
         queryset = Report.objects.select_related('user', 'room', 'moderator')
@@ -69,8 +69,8 @@ class ReportQuery(graphene.ObjectType):
     def resolve_report_count(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Report.ReportStatus] = None,
-        reason: Optional[Report.ReportReason] = None,
+        status: Optional[Report.Status] = None,
+        reason: Optional[Report.Reason] = None,
         user_id: Optional[uuid.UUID] = None
     ) -> int:
         return self.filter(status=status, reason=reason, user_id=user_id).count()

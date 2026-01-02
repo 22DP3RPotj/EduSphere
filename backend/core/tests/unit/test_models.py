@@ -349,27 +349,27 @@ class ReportModelTest(TestCase):
         report = Report.objects.create(
             user=self.user,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="This is spam",
-            status=Report.ReportStatus.PENDING
+            status=Report.Status.PENDING
         )
-        self.assertEqual(report.status, Report.ReportStatus.PENDING)
+        self.assertEqual(report.status, Report.Status.PENDING)
         self.assertTrue(report.is_active_report)
 
     def test_report_active_reports(self):
         Report.objects.create(
             user=self.user,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Spam",
-            status=Report.ReportStatus.PENDING
+            status=Report.Status.PENDING
         )
         Report.objects.create(
             user=self.user,
             room=self.room,
-            reason=Report.ReportReason.HARASSMENT,
+            reason=Report.Reason.HARASSMENT,
             body="Harassment",
-            status=Report.ReportStatus.RESOLVED
+            status=Report.Status.RESOLVED
         )
         active = Report.active_reports()
         self.assertEqual(active.count(), 1)
@@ -378,9 +378,9 @@ class ReportModelTest(TestCase):
         report = Report.objects.create(
             user=self.user,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Spam",
-            status=Report.ReportStatus.PENDING
+            status=Report.Status.PENDING
         )
         self.assertEqual(str(report), f"Report by user on Test Room")
 
@@ -419,7 +419,7 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() + timedelta(days=7)
         )
-        self.assertEqual(invite.status, Invite.InviteStatus.PENDING)
+        self.assertEqual(invite.status, Invite.Status.PENDING)
 
     def test_invite_is_expired(self):
         invite = Invite.objects.create(

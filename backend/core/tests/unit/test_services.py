@@ -111,7 +111,7 @@ class InviteServiceTest(ServiceTestBase):
         self.assertEqual(invite.inviter, self.member)
         self.assertEqual(invite.invitee, self.other_user)
         self.assertEqual(invite.room, self.room)
-        self.assertEqual(invite.status, Invite.InviteStatus.PENDING)
+        self.assertEqual(invite.status, Invite.Status.PENDING)
     
     def test_send_invite_not_participant(self):
         """Test sending invite as non-participant raises PermissionException."""
@@ -229,7 +229,7 @@ class InviteServiceTest(ServiceTestBase):
         
         # Verify invite status updated
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.InviteStatus.ACCEPTED)
+        self.assertEqual(invite.status, Invite.Status.ACCEPTED)
     
     def test_accept_invite_not_invitee(self):
         """Test accepting invite as non-invitee raises PermissionException."""
@@ -261,7 +261,7 @@ class InviteServiceTest(ServiceTestBase):
         )
         
         # Decline the invite first
-        invite.status = Invite.InviteStatus.DECLINED
+        invite.status = Invite.Status.DECLINED
         invite.save()
         
         with self.assertRaises((ValidationException, FormValidationException)):
@@ -318,7 +318,7 @@ class InviteServiceTest(ServiceTestBase):
         
         self.assertTrue(result)
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.InviteStatus.DECLINED)
+        self.assertEqual(invite.status, Invite.Status.DECLINED)
     
     def test_decline_invite_not_invitee(self):
         """Test declining invite as non-invitee raises PermissionException."""
@@ -349,7 +349,7 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at
         )
         
-        invite.status = Invite.InviteStatus.EXPIRED
+        invite.status = Invite.Status.EXPIRED
         invite.save()
         
         with self.assertRaises((ValidationException, FormValidationException)):
@@ -402,7 +402,7 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at
         )
         
-        invite.status = Invite.InviteStatus.ACCEPTED
+        invite.status = Invite.Status.ACCEPTED
         invite.save()
         
         with self.assertRaises((ValidationException, FormValidationException)):
@@ -448,13 +448,13 @@ class InviteServiceTest(ServiceTestBase):
             room=self.room,
             role=self.member_role,
             expires_at=expired_time,
-            status=Invite.InviteStatus.PENDING
+            status=Invite.Status.PENDING
         )
         
         InviteService._update_expired_invites()
         
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.InviteStatus.EXPIRED)
+        self.assertEqual(invite.status, Invite.Status.EXPIRED)
 
 
 @tag("unit", "services")
@@ -876,14 +876,14 @@ class ReportServiceTest(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.INAPPROPRIATE_CONTENT,
+            reason=Report.Reason.INAPPROPRIATE_CONTENT,
             body="This room contains inappropriate content"
         )
         
         self.assertEqual(report.user, self.member)
         self.assertEqual(report.room, self.room)
-        self.assertEqual(report.reason, Report.ReportReason.INAPPROPRIATE_CONTENT)
-        self.assertEqual(report.status, Report.ReportStatus.PENDING)
+        self.assertEqual(report.reason, Report.Reason.INAPPROPRIATE_CONTENT)
+        self.assertEqual(report.status, Report.Status.PENDING)
     
     def test_create_report_not_participant(self):
         """Test creating report as non-participant raises PermissionException."""
@@ -891,7 +891,7 @@ class ReportServiceTest(ServiceTestBase):
             ReportService.create_report(
                 reporter=self.other_user,
                 room=self.room,
-                reason=Report.ReportReason.SPAM,
+                reason=Report.Reason.SPAM,
                 body="Spam"
             )
     
@@ -903,7 +903,7 @@ class ReportServiceTest(ServiceTestBase):
             ReportService.create_report(
                 reporter=self.member,
                 room=self.room,
-                reason=Report.ReportReason.SPAM,
+                reason=Report.Reason.SPAM,
                 body=""  # Empty body
             )
     
@@ -914,7 +914,7 @@ class ReportServiceTest(ServiceTestBase):
         ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="First report"
         )
         
@@ -922,7 +922,7 @@ class ReportServiceTest(ServiceTestBase):
             ReportService.create_report(
                 reporter=self.member,
                 room=self.room,
-                reason=Report.ReportReason.SPAM,
+                reason=Report.Reason.SPAM,
                 body="Second report"
             )
     
@@ -933,18 +933,18 @@ class ReportServiceTest(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Test report"
         )
         
         updated = ReportService.update_report_status(
             moderator=self.moderator,
             report=report,
-            new_status=Report.ReportStatus.UNDER_REVIEW,
+            new_status=Report.Status.UNDER_REVIEW,
             moderator_note="Reviewing this"
         )
         
-        self.assertEqual(updated.status, Report.ReportStatus.UNDER_REVIEW)
+        self.assertEqual(updated.status, Report.Status.UNDER_REVIEW)
         self.assertEqual(updated.moderator, self.moderator)
         self.assertEqual(updated.moderator_note, "Reviewing this")
     
@@ -955,7 +955,7 @@ class ReportServiceTest(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Test report"
         )
         
@@ -963,7 +963,7 @@ class ReportServiceTest(ServiceTestBase):
             ReportService.update_report_status(
                 moderator=self.other_user,
                 report=report,
-                new_status=Report.ReportStatus.RESOLVED
+                new_status=Report.Status.RESOLVED
             )
     
     def test_resolve_report_success(self):
@@ -973,7 +973,7 @@ class ReportServiceTest(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Test report"
         )
         
@@ -983,7 +983,7 @@ class ReportServiceTest(ServiceTestBase):
             moderator_note="Action taken"
         )
         
-        self.assertEqual(resolved.status, Report.ReportStatus.RESOLVED)
+        self.assertEqual(resolved.status, Report.Status.RESOLVED)
     
     def test_dismiss_report_success(self):
         """Test dismissing a report."""
@@ -992,7 +992,7 @@ class ReportServiceTest(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Test report"
         )
         
@@ -1002,7 +1002,7 @@ class ReportServiceTest(ServiceTestBase):
             moderator_note="No action needed"
         )
         
-        self.assertEqual(dismissed.status, Report.ReportStatus.DISMISSED)
+        self.assertEqual(dismissed.status, Report.Status.DISMISSED)
     
     def test_mark_under_review_success(self):
         """Test marking a report as under review."""
@@ -1011,7 +1011,7 @@ class ReportServiceTest(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Test report"
         )
         
@@ -1021,7 +1021,7 @@ class ReportServiceTest(ServiceTestBase):
             moderator_note="Checking this"
         )
         
-        self.assertEqual(review.status, Report.ReportStatus.UNDER_REVIEW)
+        self.assertEqual(review.status, Report.Status.UNDER_REVIEW)
 
 
 @tag("unit", "services")
@@ -1300,7 +1300,7 @@ class ErrorHandlingTests(ServiceTestBase):
         report = ReportService.create_report(
             reporter=self.member,
             room=self.room,
-            reason=Report.ReportReason.SPAM,
+            reason=Report.Reason.SPAM,
             body="Test"
         )
         
@@ -1308,7 +1308,7 @@ class ErrorHandlingTests(ServiceTestBase):
             ReportService.update_report_status(
                 moderator=self.other_user,
                 report=report,
-                new_status=Report.ReportStatus.UNDER_REVIEW
+                new_status=Report.Status.UNDER_REVIEW
             )
 
 
@@ -1619,7 +1619,7 @@ class InviteServiceAdvancedTests(ServiceTestBase):
         
         # Verify status changed
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.InviteStatus.EXPIRED)
+        self.assertEqual(invite.status, Invite.Status.EXPIRED)
     
     def test_invite_can_be_accepted_within_validity(self):
         """Test valid invite can be accepted."""
@@ -1658,7 +1658,7 @@ class InviteServiceAdvancedTests(ServiceTestBase):
         self.assertTrue(success)
         
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.InviteStatus.DECLINED)
+        self.assertEqual(invite.status, Invite.Status.DECLINED)
     
     def test_invite_cannot_be_accepted_twice(self):
         """Test accepted invite cannot be accepted again."""

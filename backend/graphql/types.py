@@ -1,7 +1,8 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.core.models import User, Message
+from backend.core.models import User
+from backend.messaging.models import Message
 
 
 class UserType(DjangoObjectType):
@@ -19,22 +20,6 @@ class UserType(DjangoObjectType):
             "date_joined",
         )
     
-    
-class MessageType(DjangoObjectType):
-    user = graphene.Field(UserType, required=True)
-    room = graphene.Field("backend.graphql.room.types.RoomType")
-    
-    class Meta:
-        model = Message
-        fields = (
-            "id",
-            "user",
-            "room",
-            "body",
-            "is_edited",
-            "created_at",
-            "updated_at",
-        )
 
 class AuthStatusType(graphene.ObjectType):
     is_authenticated = graphene.Boolean(required=True)

@@ -4,10 +4,11 @@ from graphql import GraphQLError
 from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
-from backend.graphql.types import MessageType
-from backend.core.models import User, Message
+from backend.core.models import User
+from backend.messaging.models import Message
 from backend.room.models import Room
 from backend.access.models import Participant
+from backend.graphql.messaging.types import MessageType
 
 
 class MessageQuery(graphene.ObjectType):

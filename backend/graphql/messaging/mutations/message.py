@@ -3,10 +3,10 @@ import uuid
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.graphql.types import MessageType
-from backend.core.models import Message
+from backend.graphql.messaging.types import MessageType
+from backend.messaging.models import Message
 from backend.room.models import Room
-from backend.core.services import MessageService
+from backend.messaging.services import MessageService
 from backend.core.exceptions import (
     PermissionException,
     FormValidationException,
@@ -92,9 +92,3 @@ class UpdateMessage(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
     
         return UpdateMessage(message=message)
-
-
-class MessageMutation(graphene.ObjectType):
-    create_message = CreateMessage.Field()
-    delete_message = DeleteMessage.Field()
-    update_message = UpdateMessage.Field()

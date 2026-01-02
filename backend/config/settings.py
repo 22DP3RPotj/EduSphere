@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # Custom apps
     "backend.core.apps.CoreConfig",
     "backend.room.apps.RoomConfig",
+    "backend.messaging.apps.MessagingConfig",
     "backend.access.apps.AccessConfig",
     "backend.moderation.apps.ModerationConfig",
     "backend.invite.apps.InviteConfig",

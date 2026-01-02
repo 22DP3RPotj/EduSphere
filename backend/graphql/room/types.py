@@ -18,8 +18,8 @@ class TopicType(DjangoObjectType):
 
 
 class RoomType(DjangoObjectType):
-    participants = graphene.List("backend.graphql.access.types.ParticipantType")
-    topics = graphene.List(TopicType)
+    participants = graphene.List("backend.graphql.access.types.ParticipantType", required=True)
+    topics = graphene.List(TopicType, required=True)
     host = graphene.Field("backend.graphql.account.types.UserType", required=True)
     visibility = graphene.Field(RoomVisibilityEnum, required=True)
 
@@ -43,3 +43,10 @@ class RoomType(DjangoObjectType):
     
     def resolve_topics(self, info):
         return self.topics.all()
+    
+
+__all__ = [
+    "RoomType",
+    "TopicType",
+    "RoomVisibilityEnum",
+]

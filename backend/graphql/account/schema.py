@@ -22,3 +22,9 @@ class AccountMutations(AuthMutation, graphene.ObjectType):
     update_user = UpdateUser.Field()
     update_user_active_status = UpdateUserActiveStatus.Field()
     update_user_staff_status = UpdateUserStaffStatus.Field()
+
+
+__all__ = [
+    "AccountQueries",
+    "AccountMutations",
+]

@@ -16,7 +16,7 @@ class PermissionType(DjangoObjectType):
         
 
 class RoleType(DjangoObjectType):
-    permissions = graphene.List(PermissionType)
+    permissions = graphene.List(PermissionType, required=True)
     
     class Meta:
         model = Role
@@ -32,7 +32,7 @@ class RoleType(DjangoObjectType):
 class ParticipantType(DjangoObjectType):
     user = graphene.Field(UserType, required=True)
     role = graphene.Field(RoleType)
-    username = graphene.String()
+    username = graphene.String(required=True)
     avatar = graphene.String()
 
     class Meta:
@@ -50,3 +50,9 @@ class ParticipantType(DjangoObjectType):
     def resolve_avatar(self, info):
         return self.user.avatar
 
+
+__all__ = [
+    "ParticipantType",
+    "RoleType",
+    "PermissionType",
+]

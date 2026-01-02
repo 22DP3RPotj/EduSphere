@@ -15,3 +15,9 @@ class ModerationMutations(graphene.ObjectType):
     create_report = CreateReport.Field()
     update_report = UpdateReport.Field()
     delete_report = DeleteReport.Field()
+
+
+__all__ = [
+    "ModerationQueries",
+    "ModerationMutations",
+]

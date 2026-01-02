@@ -10,6 +10,7 @@ class InviteType(DjangoObjectType):
     inviter = graphene.Field("backend.graphql.account.types.UserType", required=True)
     invitee = graphene.Field("backend.graphql.account.types.UserType", required=True)
     role = graphene.Field("backend.graphql.access.types.RoleType", required=True)
+    status = graphene.Field(InviteStatusEnum, required=True)
     
     class Meta:
         model = Invite
@@ -23,3 +24,9 @@ class InviteType(DjangoObjectType):
             "created_at",
             "expires_at",
         )
+
+
+__all__ = [
+    "InviteType",
+    "InviteStatusEnum",
+]

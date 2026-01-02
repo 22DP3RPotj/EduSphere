@@ -12,7 +12,7 @@ class ReportType(DjangoObjectType):
     reason = graphene.Field(ReportReasonEnum, required=True)
     status = graphene.Field(ReportStatusEnum, required=True)
 
-    user = graphene.Field("backend.graphql.account.types.UserType")
+    user = graphene.Field("backend.graphql.account.types.UserType", required=True)
     moderator = graphene.Field("backend.graphql.account.types.UserType")
 
     class Meta:
@@ -29,3 +29,10 @@ class ReportType(DjangoObjectType):
             "created_at",
             "updated_at",
         )
+
+
+__all__ = [
+    "ReportType",
+    "ReportReasonEnum",
+    "ReportStatusEnum",
+]

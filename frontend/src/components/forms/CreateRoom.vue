@@ -80,7 +80,7 @@
                 selected: roomForm.topicNames.includes(topic)
               }]"
               @mousedown="selectTopic(topic)"
-              @mouseenter="selectedTopicIndex = index"
+              @mouseenter="selectedTopicIndex = Number(index)"
             >
               <span>{{ topic }}</span>
               <span v-if="roomForm.topicNames.includes(topic)" class="selected-indicator">
@@ -258,7 +258,7 @@ async function submitRoom() {
   const result = await createRoom({ ...roomForm.value });
 
   if (result.success) {
-    router.push(`/u/${result.room.host.username}/${result.room.slug}`);
+    router.push(`/r/${result.room.id}`);
   }
 }
 

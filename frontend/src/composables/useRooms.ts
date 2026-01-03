@@ -12,10 +12,10 @@ import {
 
 import type { CreateRoomInput, UpdateRoomInput } from "@/types"
 
-export function useRoomQuery(hostSlug: string, roomSlug: string) {
+export function useRoomQuery(roomId: string) {
   const { result, loading, error, refetch } = useQuery(
     ROOM_QUERY,
-    { hostSlug, roomSlug },
+    { roomId },
     {
       fetchPolicy: "network-only",
     },
@@ -29,10 +29,10 @@ export function useRoomQuery(hostSlug: string, roomSlug: string) {
   }
 }
 
-export function useRoomMessagesQuery(hostSlug: string, roomSlug: string, options?: { enabled?: Ref<boolean> }) {
+export function useRoomMessagesQuery(roomId: string, options?: { enabled?: Ref<boolean> }) {
   const { result, loading, error, refetch } = useQuery(
     ROOM_MESSAGES_QUERY,
-    { hostSlug, roomSlug },
+    { roomId },
     {
       enabled: options?.enabled?.value ?? true,
       fetchPolicy: "network-only",
@@ -119,17 +119,12 @@ export function useDeleteRoom() {
   }
 }
 
-export function useJoinRoom(hostSlug?: string, roomSlug?: string) {
+export function useJoinRoom(roomId?: string) {
   const { mutate, loading, error } = useMutation(
     JOIN_ROOM_MUTATION,
     () => ({
-      refetchQueries: hostSlug && roomSlug 
-        ? [
-            {
-              query: ROOM_QUERY,
-              variables: { hostSlug, roomSlug }
-            }
-          ]
+      refetchQueries: roomId
+        ? [{ query: ROOM_QUERY, variables: { roomId } }]
         : [],
     })
   )

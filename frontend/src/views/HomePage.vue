@@ -51,7 +51,7 @@
                       selected: pendingTopics.includes(topic.name)
                     }]"
                     @mousedown="selectTopic(topic.name)"
-                    @mouseenter="selectedTopicIndex = index"
+                    @mouseenter="selectedTopicIndex = Number(index)"
                   >
                     <span>{{ topic.name }}</span>
                     <span v-if="pendingTopics.includes(topic.name)" class="selected-indicator">
@@ -575,7 +575,7 @@ function toggleView() {
 
 // Navigation functions
 function navigateToRoom(room: Room) {
-  router.push(`/u/${room.host?.username}/${room.slug}`);
+  router.push(`/r/${room.id}`);
 }
 
 watch(() => authStore.isAuthenticated, () => {

@@ -32,18 +32,31 @@ ALLOWED_HOSTS = [
 
 # User Authentication
 
-AUTH_USER_MODEL = "core.User"
+AUTH_USER_MODEL = "account.User"
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Default Django apps
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
+    
+    # Custom apps
+    "backend.account.apps.AccountConfig",
     "backend.core.apps.CoreConfig",
-    "channels",
-    "corsheaders",
+    "backend.room.apps.RoomConfig",
+    "backend.messaging.apps.MessagingConfig",
+    "backend.access.apps.AccessConfig",
+    "backend.moderation.apps.ModerationConfig",
+    "backend.invite.apps.InviteConfig",
+    "backend.graphql.apps.GraphQLConfig",
+    
+    # Third-party apps
+    "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
+    "channels.apps.ChannelsConfig",
+    "corsheaders.apps.CorsHeadersAppConfig",
     "graphene_django",
     "django_cleanup.apps.CleanupConfig",
 ]
@@ -111,7 +124,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'backend.core.graphql.middleware': {
+        'backend.graphql.middleware': {
             'handlers': ['graphql_file'],
             'level': 'DEBUG',
             'propagate': False,
@@ -128,10 +141,10 @@ ASGI_APPLICATION = "backend.config.asgi.application"
 WSGI_APPLICATION = "backend.config.wsgi.application"
 
 GRAPHENE = {
-    "SCHEMA": "backend.core.graphql.schema.schema",
+    "SCHEMA": "backend.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        # "backend.core.graphql.middleware.ValidationMiddleware",
+        # "backend.graphql.middleware.ValidationMiddleware",
     ],
 }
 

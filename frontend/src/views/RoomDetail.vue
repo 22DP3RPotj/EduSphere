@@ -219,14 +219,13 @@ import { parseGraphQLError } from '@/utils/errorParser';
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { User, Room } from '@/types';
+import type { User, Room, Participant, UUID } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
-const hostSlug = route.params.hostSlug as string;
-const roomSlug = route.params.roomSlug as string;
+const roomId = route.params.roomId as string;
 
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
@@ -317,7 +316,7 @@ const isParticipant = computed(() => {
   const user = authStore.user;
   if (!room.value || !user || !room.value.participants) return false;
   
-  return room.value.participants.some((p: User) => p.id === user.id);
+  return room.value.participants.some((p: Participant) => p.user.id === user.id);
 });
 
 const { 
@@ -325,14 +324,14 @@ const {
   loading: roomLoading, 
   error: roomError, 
   refetch: refetchRoom 
-} = useRoomQuery(hostSlug, roomSlug);
+} = useRoomQuery(roomId);
 
 const { 
   messages: initialMessages, 
   loading: messagesLoading, 
   error: messagesError,
   refetch: refetchMessages 
-} = useRoomMessagesQuery(hostSlug, roomSlug, { enabled: isParticipant });
+} = useRoomMessagesQuery(roomId, { enabled: isParticipant });
 
 const { 
   deleteRoom: deleteRoomMutation, 
@@ -344,7 +343,7 @@ const {
   joinRoom: joinRoomMutation, 
   loading: joinLoading, 
   error: joinError 
-} = useJoinRoom();
+} = useJoinRoom(roomId);
 
 const {
   messages: websocketMessages,
@@ -356,7 +355,11 @@ const {
   connectionError: websocketError,
   connectionStatus,
   isConnected
-} = useWebSocket(hostSlug, roomSlug);
+} = useWebSocket(
+  roomId,
+  computed(() => room.value?.host?.username),
+  computed(() => room.value?.slug),
+);
 
 // Error recovery functions
 function retryRoomOperations() {
@@ -393,7 +396,7 @@ function clearMessageOperationErrors() {
   messageOperationErrors.value = { fieldErrors: {}, generalErrors: [] };
 }
 
-async function handleMessageDelete(messageId: string) {
+async function handleMessageDelete(messageId: UUID) {
   clearMessageOperationErrors();
   try {
     const success = deleteWebSocketMessage(messageId);
@@ -409,7 +412,7 @@ async function handleMessageDelete(messageId: string) {
   }
 }
 
-async function handleMessageUpdate(messageId: string, newBody: string) {
+async function handleMessageUpdate(messageId: UUID, newBody: string) {
   clearMessageOperationErrors();
   try {
     const success = updateWebSocketMessage(messageId, newBody);

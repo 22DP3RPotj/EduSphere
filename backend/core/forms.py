@@ -2,8 +2,12 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from backend.core.models import User, Room, Message, Report, Invite, Role
-
+from backend.account.models import User
+from backend.messaging.models import Message
+from backend.invite.models import Invite
+from backend.moderation.models import Report
+from backend.room.models import Room
+from backend.access.models import Role
 
 class RegisterForm(UserCreationForm):
     class Meta:
@@ -54,10 +58,12 @@ class ReportForm(ModelForm):
         fields = ('reason', 'body')
 
 
+# TODO: validate datetime
 class InviteForm(ModelForm):
     class Meta:
         model = Invite
         fields = ('expires_at',)
+
 
 
 class RoleForm(ModelForm):

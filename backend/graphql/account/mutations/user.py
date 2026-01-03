@@ -28,7 +28,7 @@ class RegisterUser(graphene.Mutation):
         form = RegisterForm(kwargs)
 
         if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form.errors)})
         
         user = form.save()
         return RegisterUser(user=user, success=True)
@@ -65,7 +65,7 @@ class UpdateUser(graphene.Mutation):
         )
 
         if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form)})
+            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form.errors)})
         
         form.save()
         return UpdateUser(user=user)

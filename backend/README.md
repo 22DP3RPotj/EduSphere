@@ -40,7 +40,7 @@ docker-compose exec backend python manage.py makemigrations
 
 To start the backend server locally after setup:
 ```bash
-python manage.py runserver
+poetry run python -m backend
 ```
 
 ## API Endpoints

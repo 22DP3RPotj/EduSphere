@@ -29,7 +29,7 @@ setup:
 
 run: setup
 	pnpm --prefix frontend run build
-	$(PX) uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
+	$(PY) -m backend
 
 unit-test:
 	$(PX) pytest -q -m unit

@@ -62,15 +62,15 @@ class QueryTests(JSONWebTokenTestCase):
 
     def test_room_query(self):
         query = """
-            query GetRoom($hostSlug: String!, $roomSlug: String!) {
-                room(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+            query GetRoom($roomId: UUID!) {
+                room(roomId: $roomId) {
                     name
                     description
                     visibility
                 }
             }
         """
-        variables = {"hostSlug": self.user.username, "roomSlug": self.room.slug}
+        variables = {"roomId": str(self.room.id)}
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertIsNone(result.errors)
         self.assertEqual(result.data["room"]["name"], self.room.name)
@@ -122,13 +122,13 @@ class QueryTests(JSONWebTokenTestCase):
         self.client.authenticate(self.user)
         
         query = """
-            query GetMessages($hostSlug: String!, $roomSlug: String!) {
-                messages(hostSlug: $hostSlug, roomSlug: $roomSlug) {
+            query GetMessages($roomId: UUID!) {
+                messages(roomId: $roomId) {
                     body
                 }
             }
         """
-        variables = {"hostSlug": self.user.username, "roomSlug": self.room.slug}
+        variables = {"roomId": str(self.room.id)}
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertEqual(len(result.data["messages"]), 1)
         self.assertEqual(result.data["messages"][0]["body"], self.message.body)

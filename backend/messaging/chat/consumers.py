@@ -222,7 +222,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     {
                         'data': json.dumps(message_data),
                         'consumer_name': self.consumer_name,
-                        'timestamp': datetime.utcnow().isoformat()
+                        'timestamp': datetime.now().isoformat()
                     }
                 )
             )

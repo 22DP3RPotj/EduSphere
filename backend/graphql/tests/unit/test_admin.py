@@ -1,8 +1,8 @@
 from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
-from django.test import tag
 from django.contrib.auth import get_user_model
+from django.test import tag
 
 from backend.messaging.models import Message
 from backend.room.models import Room, Topic
@@ -17,28 +17,28 @@ class AdminQueryTests(JSONWebTokenTestCase):
             name="Test User",
             username="testuser",
             email="test@email.com",
-            is_superuser=True
+            is_superuser=True,
         )
-        
+
         self.topic_tech = Topic.objects.create(name="Tech")
         self.topic_music = Topic.objects.create(name="Music")
-        
+
         self.room = Room.objects.create(
             host=self.user,
             name="Test Room",
-            description="Test Description"
+            description="Test Description",
         )
         self.room.topics.add(self.topic_tech)
-        
+
         self.message = Message.objects.create(
             user=self.user,
             room=self.room,
-            body="Hello!"
+            body="Hello!",
         )
 
     def test_users_query_with_search(self):
         self.client.authenticate(self.user)
-        
+
         query = """
             query GetUsers($search: String) {
                 users(search: $search) {
@@ -56,10 +56,10 @@ class AdminQueryTests(JSONWebTokenTestCase):
             name="Regular User",
             username="regularuser",
             email="regular@email.com",
-            is_superuser=False
+            is_superuser=False,
         )
         self.client.authenticate(non_privileged_user)
-        
+
         query = """
             query GetUsers($search: String) {
                 users(search: $search) {
@@ -71,4 +71,3 @@ class AdminQueryTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertIsNotNone(result.errors)
         self.assertTrue(len(result.errors) > 0)
-

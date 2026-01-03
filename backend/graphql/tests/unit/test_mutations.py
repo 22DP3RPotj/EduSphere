@@ -3,16 +3,15 @@ import tempfile
 from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
-from django.test import override_settings, tag
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings, tag
 
+from backend.access.enums import PermissionCode
+from backend.access.models import Participant, Permission, Role
 from backend.messaging.models import Message
 from backend.room.models import Room, Topic
-from backend.access.models import Participant, Role, Permission
-from backend.access.enums import PermissionCode
-
-from .utils import create_test_image
+from backend.tests.utils import create_test_image
 
 User = get_user_model()
 
@@ -56,7 +55,7 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "name": "New User",
             "email": "new@email.com",
             "password1": "securepassword123",
-            "password2": "securepassword123"
+            "password2": "securepassword123",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
@@ -89,7 +88,7 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "name": "Test User",
             "email": "test@email.com",
             "password1": "1qwerty23",
-            "password2": "4asdfgh56"
+            "password2": "4asdfgh56",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
 
@@ -130,10 +129,7 @@ class UserMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        result: ExecutionResult = self.client.execute(
-            mutation,
-            variables={"avatar": avatar}
-        )
+        result: ExecutionResult = self.client.execute(mutation, variables={"avatar": avatar})
         self.assertIsNone(result.errors)
         user.refresh_from_db()
         self.assertTrue(user.avatar.name.endswith(".jpg"))
@@ -153,8 +149,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             email="other@email.com",
         )
         self.topic = Topic.objects.create(name="ExistingTopic")
-        
-        # Create permissions
+
         Permission.objects.get_or_create(code=PermissionCode.ROOM_UPDATE, defaults={"description": "Update room"})
         Permission.objects.get_or_create(code=PermissionCode.ROOM_DELETE, defaults={"description": "Delete room"})
 
@@ -176,16 +171,14 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             "name": "New Room",
             "topicNames": ["NewTopic"],
             "description": "A test room",
-            "visibility": "PUBLIC"
+            "visibility": "PUBLIC",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         room = Room.objects.get(name="New Room")
         self.assertEqual(room.host, self.user)
         self.assertEqual(room.visibility, Room.Visibility.PUBLIC)
-        # Check that default role was set
         self.assertIsNotNone(room.default_role)
-        # Check that host is a participant
         self.assertTrue(Participant.objects.filter(user=self.user, room=room).exists())
 
     def test_create_room_private(self):
@@ -203,7 +196,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             "name": "Private Room",
             "topicNames": [],
             "description": "",
-            "visibility": "PRIVATE"
+            "visibility": "PRIVATE",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
@@ -214,21 +207,18 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             host=self.user,
             name="Test Room",
             description="Old description",
-            visibility=Room.Visibility.PUBLIC
+            visibility=Room.Visibility.PUBLIC,
         )
         room.topics.add(self.topic)
-        
-        # Create roles with permissions
+
         member_role = Role.objects.create(room=room, name="Member", description="", priority=0)
         owner_role = Role.objects.create(room=room, name="Owner", description="", priority=100)
-        
-        # Attach update permission to owner role
+
         update_perm = Permission.objects.get(code=PermissionCode.ROOM_UPDATE)
         owner_role.permissions.add(update_perm)
-        
+
         room.default_role = member_role
         room.save()
-        # Give user owner role to update
         Participant.objects.create(user=self.user, room=room, role=owner_role)
 
         self.client.authenticate(self.user)
@@ -247,7 +237,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             "roomId": str(room.id),
             "name": "Updated Room",
             "description": "New description",
-            "visibility": "PRIVATE"
+            "visibility": "PRIVATE",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
@@ -259,18 +249,15 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_delete_room_success(self):
         room = Room.objects.create(host=self.user, name="Test Room", description="")
         room.topics.add(self.topic)
-        
-        # Create roles with permissions
+
         member_role = Role.objects.create(room=room, name="Member", description="", priority=0)
         owner_role = Role.objects.create(room=room, name="Owner", description="", priority=100)
-        
-        # Attach delete permission to owner role
+
         delete_perm = Permission.objects.get(code=PermissionCode.ROOM_DELETE)
         owner_role.permissions.add(delete_perm)
-        
+
         room.default_role = member_role
         room.save()
-        # Give user owner role to delete
         Participant.objects.create(user=self.user, room=room, role=owner_role)
 
         self.client.authenticate(self.user)
@@ -311,7 +298,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             host=self.user,
             name="Test Room",
             description="",
-            visibility=Room.Visibility.PUBLIC
+            visibility=Room.Visibility.PUBLIC,
         )
         role = Role.objects.create(room=room, name="Member", description="", priority=0)
         room.default_role = role
@@ -337,7 +324,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             host=self.user,
             name="Test Room",
             description="",
-            visibility=Room.Visibility.PUBLIC
+            visibility=Room.Visibility.PUBLIC,
         )
         role = Role.objects.create(room=room, name="Member", description="", priority=0)
         room.default_role = role
@@ -359,7 +346,6 @@ class RoomMutationsTests(JSONWebTokenTestCase):
 
 @tag("unit")
 class MessageMutationsTests(JSONWebTokenTestCase):
-
     def setUp(self):
         self.user = User.objects.create_user(
             name="TestUser",
@@ -378,7 +364,7 @@ class MessageMutationsTests(JSONWebTokenTestCase):
                 email="host@email.com",
             ),
             name="Test Room",
-            description=""
+            description="",
         )
         self.topic = Topic.objects.create(name="TestTopic")
         self.room.topics.add(self.topic)
@@ -441,17 +427,17 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
             username="adminuser",
             email="admin@email.com",
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
         self.user1 = User.objects.create_user(
             name="User1",
-            username="user1", 
+            username="user1",
             email="user1@email.com",
         )
         self.user2 = User.objects.create_user(
             name="User2",
             username="user2",
-            email="user2@email.com", 
+            email="user2@email.com",
         )
 
     def test_update_user_active_status(self):
@@ -464,15 +450,12 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {
-            "userIds": [str(self.user1.id), str(self.user2.id)],
-            "isActive": False
-        }
+        variables = {"userIds": [str(self.user1.id), str(self.user2.id)], "isActive": False}
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["updateUserActiveStatus"]["success"])
         self.assertEqual(result.data["updateUserActiveStatus"]["updatedCount"], 2)
-        
+
         self.user1.refresh_from_db()
         self.user2.refresh_from_db()
         self.assertFalse(self.user1.is_active)
@@ -488,14 +471,11 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {
-            "userIds": [str(self.user1.id)],
-            "isStaff": True
-        }
+        variables = {"userIds": [str(self.user1.id)], "isStaff": True}
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["updateUserStaffStatus"]["success"])
         self.assertEqual(result.data["updateUserStaffStatus"]["updatedCount"], 1)
-        
+
         self.user1.refresh_from_db()
         self.assertTrue(self.user1.is_staff)

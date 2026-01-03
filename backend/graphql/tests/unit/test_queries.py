@@ -4,9 +4,9 @@ from graphql_jwt.testcases import JSONWebTokenTestCase
 from django.contrib.auth import get_user_model
 from django.test import tag
 
+from backend.access.models import Participant, Role
 from backend.messaging.models import Message
 from backend.room.models import Room, Topic
-from backend.access.models import Participant, Role
 
 User = get_user_model()
 
@@ -14,33 +14,32 @@ User = get_user_model()
 @tag("unit")
 class QueryTests(JSONWebTokenTestCase):
     def setUp(self):
-        
         self.user = User.objects.create_user(
             name="Test User",
             username="testuser",
             email="test@email.com",
         )
-        
+
         self.topic_tech = Topic.objects.create(name="Tech")
         self.topic_music = Topic.objects.create(name="Music")
-        
+
         self.room = Room.objects.create(
             host=self.user,
             name="Test Room",
             description="Test Description",
-            visibility=Room.Visibility.PUBLIC
+            visibility=Room.Visibility.PUBLIC,
         )
         self.role = Role.objects.create(room=self.room, name="Member", description="", priority=0)
         self.room.default_role = self.role
         self.room.save()
         self.room.topics.add(self.topic_tech)
-        
+
         Participant.objects.create(user=self.user, room=self.room, role=self.role)
-        
+
         self.message = Message.objects.create(
             user=self.user,
             room=self.room,
-            body="Hello!"
+            body="Hello!",
         )
 
     def test_rooms_query(self):
@@ -78,7 +77,7 @@ class QueryTests(JSONWebTokenTestCase):
     def test_me_query(self):
         self.client.authenticate(self.user)
         query = """
-            query { 
+            query {
                 me {
                     username
                 }
@@ -120,7 +119,7 @@ class QueryTests(JSONWebTokenTestCase):
 
     def test_messages_query(self):
         self.client.authenticate(self.user)
-        
+
         query = """
             query GetMessages($roomId: UUID!) {
                 messages(roomId: $roomId) {
@@ -132,7 +131,7 @@ class QueryTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertEqual(len(result.data["messages"]), 1)
         self.assertEqual(result.data["messages"][0]["body"], self.message.body)
-    
+
     def test_rooms_with_search_filter(self):
         query = """
             query GetRooms($search: String) {
@@ -175,7 +174,7 @@ class QueryTests(JSONWebTokenTestCase):
         self.assertIn("Music", topic_names)
 
         variables = {"topics": ["Tech"]}
-        result: ExecutionResult = self.client.execute(query, variables)
+        result = self.client.execute(query, variables)
         self.assertEqual(len(result.data["rooms"]), 1)
 
     def test_rooms_participated_by_user(self):
@@ -221,4 +220,3 @@ class QueryTests(JSONWebTokenTestCase):
         topic_names = [topic["name"] for topic in result.data["topics"]]
         self.assertIn("Tech", topic_names)
         self.assertIn("Music", topic_names)
-

@@ -32,13 +32,30 @@ run: setup
 	$(PX) uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
 
 unit-test:
-	$(PY) manage.py test backend/core core.tests.unit
+	$(PY) manage.py test \
+		backend.account.tests.unit \
+		backend.access.tests.unit \
+		backend.room.tests.unit \
+		backend.messaging.tests.unit \
+		backend.invite.tests.unit \
+		backend.moderation.tests.unit \
+		backend.graphql.tests.unit \
+		backend.core.tests.unit
 
 integration-test: setup
-	$(PY) manage.py test backend/core core.tests.integration
+	$(PY) manage.py test backend.core.tests.integration
 
 coverage:
-	$(PX) coverage run --source='backend.core' -m django test backend/core/tests/unit
+	$(PX) coverage run --source='backend' manage.py test \
+		backend.account.tests.unit \
+		backend.access.tests.unit \
+		backend.room.tests.unit \
+		backend.messaging.tests.unit \
+		backend.invite.tests.unit \
+		backend.moderation.tests.unit \
+		backend.graphql.tests.unit \
+		backend.core.tests.unit \
+		backend.core.tests.integration
 
 report:
 	if [ ! -f .coverage ]; then \

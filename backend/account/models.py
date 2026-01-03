@@ -39,7 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         
     class Meta:
         app_label = 'account'
-        ordering = [Lower('username')]
+        ordering = [Lower('username').asc()]
         indexes = [
             models.Index(fields=['email']),
             models.Index(fields=['username']),

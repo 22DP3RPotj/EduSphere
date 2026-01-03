@@ -1,7 +1,19 @@
+from typing import TypedDict
+
 from backend.access.enums import PermissionCode, RoleCode
 
 
-PERMISSION_TEMPLATES = {
+class PermissionTemplate(TypedDict):
+    description: str
+
+
+class RoleTemplate(TypedDict):
+    description: str
+    permission_codes: list[str]
+    priority: int
+
+
+PERMISSION_TEMPLATES: dict[PermissionCode, PermissionTemplate] = {
     PermissionCode.ROOM_DELETE: {
         "description": "Delete room",
     },
@@ -25,10 +37,10 @@ PERMISSION_TEMPLATES = {
     },
 }
 
-DEFAULT_ROLE_TEMPLATES = {
+DEFAULT_ROLE_TEMPLATES: dict[RoleCode, RoleTemplate] = {
     RoleCode.OWNER: {
         "description": "Room owner",
-        "permission_codes": PermissionCode.values,
+        "permission_codes": list(PermissionCode.values),
         "priority": 100,
     },
     RoleCode.MEMBER: {

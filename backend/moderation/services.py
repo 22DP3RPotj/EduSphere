@@ -3,6 +3,7 @@ from typing import Optional
 from django.db import IntegrityError
 
 from backend.account.models import User
+from backend.moderation.choices import ReportReason, ReportStatus
 from backend.moderation.models import Report
 from backend.room.models import Room
 from backend.access.models import Participant
@@ -21,7 +22,7 @@ class ReportService:
     def create_report(
         reporter: User,
         room: Room,
-        reason: Report.Reason,
+        reason: ReportReason,
         body: str,
     ) -> Report:
         """
@@ -71,7 +72,7 @@ class ReportService:
     def update_report_status(
         moderator: User,
         report: Report,
-        new_status: Report.Status,
+        new_status: ReportStatus,
         moderator_note: Optional[str] = None,
     ) -> Report:
         """

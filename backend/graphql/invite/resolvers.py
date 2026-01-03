@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.invite.types import InviteType, InviteStatusEnum
+from backend.invite.choices import InviteStatus
 from backend.invite.models import Invite
 from backend.invite.services import InviteService
 
@@ -71,7 +72,7 @@ class InviteQuery(graphene.ObjectType):
     def resolve_all_invites(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Invite.Status] = None,
+        status: Optional[InviteStatus] = None,
         invitee_id: Optional[uuid.UUID] = None,
         inviter_id: Optional[uuid.UUID] = None
     ) -> QuerySet[Invite]:
@@ -95,7 +96,7 @@ class InviteQuery(graphene.ObjectType):
     def resolve_invite_count(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Invite.Status] = None,
+        status: Optional[InviteStatus] = None,
         invitee_id: Optional[uuid.UUID] = None,
         inviter_id: Optional[uuid.UUID] = None
     ) -> int:

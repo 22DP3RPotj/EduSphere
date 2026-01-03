@@ -1,0 +1,57 @@
+name: Backend Types
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHONPATH: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.3'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Configure Poetry virtualenv
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies + venv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root --with typecheck
+
+      - name: Run mypy type checks
+        run: make typecheck

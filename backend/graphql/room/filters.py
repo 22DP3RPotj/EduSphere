@@ -20,7 +20,7 @@ class RoomFilter(django_filters.FilterSet):
     
     class Meta:
         model = Room
-        fields = []
+        fields: list[str] = []
     
     def filter_search(self, queryset, name, value):
         """Search across name and description."""

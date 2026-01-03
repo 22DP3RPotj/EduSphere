@@ -5,6 +5,7 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
+from backend.room.choices import RoomVisibility
 from backend.room.models import Room
 from backend.access.models import Participant
 from backend.room.services import RoomService
@@ -32,7 +33,7 @@ class CreateRoom(graphene.Mutation):
         name: str,
         topic_names: list[str],
         description: str,
-        visibility: Optional[Room.Visibility] = None
+        visibility: Optional[RoomVisibility] = None
     ):
         try:
             room = RoomService.create_room(
@@ -67,7 +68,7 @@ class UpdateRoom(graphene.Mutation):
         name: Optional[str] = None,
         description: Optional[str] = None,
         topic_names: Optional[list[str]] = None,
-        visibility: Optional[Room.Visibility] = None,
+        visibility: Optional[RoomVisibility] = None,
     ):
         try:
             room = Room.objects.get(id=room_id)

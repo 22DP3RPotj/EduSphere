@@ -8,6 +8,7 @@ from django.db.models import QuerySet
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.moderation.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.moderation.choices import ReportReason, ReportStatus
 from backend.moderation.models import Report
 
 
@@ -50,8 +51,8 @@ class ReportQuery(graphene.ObjectType):
     def resolve_reports(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Report.Status] = None,
-        reason: Optional[Report.Reason] = None,
+        status: Optional[ReportStatus] = None,
+        reason: Optional[ReportReason] = None,
         user_id: Optional[uuid.UUID] = None
     ) -> QuerySet[Report]:
         queryset = Report.objects.select_related('user', 'room', 'moderator')
@@ -69,8 +70,8 @@ class ReportQuery(graphene.ObjectType):
     def resolve_report_count(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[Report.Status] = None,
-        reason: Optional[Report.Reason] = None,
+        status: Optional[ReportStatus] = None,
+        reason: Optional[ReportReason] = None,
         user_id: Optional[uuid.UUID] = None
     ) -> int:
         return self.filter(status=status, reason=reason, user_id=user_id).count()

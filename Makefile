@@ -49,6 +49,10 @@ report:
 	fi
 	$(PX) coverage report --skip-empty
 
+
+typecheck:
+	$(PX) mypy backend
+
 clean:
 	find . -type f -name '*.pyc' -delete
 	rm -rf .coverage

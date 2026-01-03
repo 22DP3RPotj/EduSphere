@@ -3,6 +3,7 @@ from typing import Optional
 from django.db import IntegrityError, transaction
 
 from backend.account.models import User
+from backend.room.choices import RoomVisibility
 from backend.room.models import Room, Topic
 from backend.access.models import Participant
 from backend.core.forms import RoomForm
@@ -22,7 +23,7 @@ class RoomService:
             user=user, room=room
         ).exists()
         
-        is_public = room.visibility == Room.Visibility.PUBLIC
+        is_public = room.visibility == RoomVisibility.PUBLIC
         
         return is_participant or is_public
     
@@ -33,7 +34,7 @@ class RoomService:
         name: str,
         description: str,
         topic_names: list[str],
-        visibility: Optional[Room.Visibility] = None,
+        visibility: Optional[RoomVisibility] = None,
     ) -> Room:
         """
         Create a new room.
@@ -101,7 +102,7 @@ class RoomService:
         room: Room,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        visibility: Optional[Room.Visibility] = None,
+        visibility: Optional[RoomVisibility] = None,
         topic_names: Optional[list[str]] = None,
     ) -> Room:
         """

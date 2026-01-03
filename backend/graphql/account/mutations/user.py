@@ -1,11 +1,13 @@
 import graphene
 import uuid
-from typing import Optional
+from typing import Optional, cast
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
 from django.db import transaction
+from django.core.files.uploadedfile import UploadedFile
+from django.utils.datastructures import MultiValueDict
 
 from backend.graphql.account.types import UserType
 from backend.graphql.utils import format_form_errors
@@ -33,6 +35,7 @@ class RegisterUser(graphene.Mutation):
         user = form.save()
         return RegisterUser(user=user, success=True)
 
+# TODO: rework argument types
 class UpdateUser(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=False)
@@ -58,9 +61,13 @@ class UpdateUser(graphene.Mutation):
             "bio": bio or user.bio,
         }
         
+        files = None
+        if avatar is not None:
+            files = MultiValueDict({"avatar": [cast(UploadedFile, avatar)]})
+
         form = UserForm(
             data=data,
-            files={"avatar": avatar} if avatar else None,
+            files=files,
             instance=user
         )
 

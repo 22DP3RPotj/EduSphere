@@ -29,7 +29,7 @@ class CreateRole(graphene.Mutation):
         name: str,
         description: str,
         priority: int,
-        permission_ids: Optional[list[uuid.UUID]] = None,
+        permission_ids: list[uuid.UUID],
     ):
         try:
             room = Room.objects.get(id=room_id)

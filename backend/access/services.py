@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
@@ -38,6 +38,9 @@ class RoleService:
         Returns:
             True if permission set is valid, False otherwise
         """
+        if participant.role is None:
+            return False
+
         user_perms = {p.id for p in participant.role.permissions.all()}
         requested_perms = set(permission_ids)
     
@@ -57,6 +60,9 @@ class RoleService:
             True if user can affect the target role, False otherwise
         """
         
+        if participant.role is None:
+            return False
+
         return participant.role.priority > target_role.priority
             
     @staticmethod
@@ -152,7 +158,7 @@ class RoleService:
         Args:
             room: The room
         """
-        for [role_code, data] in DEFAULT_ROLE_TEMPLATES.items():
+        for role_code, data in DEFAULT_ROLE_TEMPLATES.items():
             role = Role.objects.create(
                 room=room,
                 name=role_code.label,
@@ -160,7 +166,7 @@ class RoleService:
                 description=data["description"],
             )
             perms = Permission.objects.filter(
-                code__in=[c for c in data["permission_codes"]]
+                code__in=data["permission_codes"]
             )
             role.permissions.set(perms)
 
@@ -197,9 +203,13 @@ class RoleService:
         if participant is None:
             raise PermissionException("You are not a participant of this room and cannot create roles.")
         
-        if not RoleService.has_permission(user, room, PermissionCode.ROOM_ROLE_MANAGE):
-            raise PermissionException("You don't have permission to manage roles in this room")
-        
+        if participant.role is None or not RoleService.has_permission(
+            user,
+            room,
+            PermissionCode.ROOM_ROLE_MANAGE
+        ):
+            raise PermissionException("You don't have permission to manage roles in this room.")
+
         user_priority = participant.role.priority
         
         if priority >= user_priority:
@@ -208,7 +218,7 @@ class RoleService:
                 f"Your priority: {user_priority}, "
                 f"Attempted priority: {priority}"
             )
-        
+
         if permission_ids:
             if not RoleService._is_valid_permission_set(participant, permission_ids):
                 raise PermissionException(
@@ -216,7 +226,7 @@ class RoleService:
                     "You can only grant permissions your role already possesses."
                 )
         
-        data = {
+        data: dict[str, Any] = {
             "name": name,
             "description": description,
             "priority": priority,
@@ -280,7 +290,7 @@ class RoleService:
         if not RoleService.can_affect_role(participant, role):
             raise PermissionException("Cannot affect roles with higher or equal priority.")
         
-        data = {}
+        data: dict[str, Any] = {}
         
         if name is not None:
             data["name"] = name
@@ -450,7 +460,9 @@ class RoleService:
         if not RoleService.can_affect_role(participant, role):
             raise PermissionException("Cannot affect roles with higher or equal priority.")
 
-        role.permissions.remove(*permission_ids)
+        if permission_ids:
+            permissions = list(Permission.objects.filter(id__in=permission_ids))
+            role.permissions.remove(*permissions)
         return role
 
 
@@ -584,6 +596,9 @@ class ParticipantService:
             user_participant = RoleService.get_participant(user, participant.room)
             if user_participant is None:
                 raise PermissionException("You must be a participant to remove others.")
+
+            if participant.role is None:
+                raise ValidationException("Participant has no role assigned.")
             
             if not RoleService.can_affect_role(user_participant, participant.role):
                 raise PermissionException("Cannot remove participants with higher or equal role priority.")

@@ -11,6 +11,7 @@ from backend.core.exceptions import (
     FormValidationException,
 )
 from backend.graphql.moderation.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.moderation.choices import ReportReason, ReportStatus
 from backend.moderation.models import Report
 from backend.room.models import Room
 from backend.moderation.services import ReportService
@@ -25,7 +26,7 @@ class CreateReport(graphene.Mutation):
     report = graphene.Field(ReportType)
     
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID, reason: Report.Reason, body: str):
+    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID, reason: ReportReason, body: str):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
@@ -61,7 +62,7 @@ class UpdateReport(graphene.Mutation):
         self,
         info: graphene.ResolveInfo,
         report_id: uuid.UUID,
-        status: Optional[Report.Status] = None,
+        status: Optional[ReportStatus] = None,
         moderator_note: Optional[str] = None
     ):
         try:
@@ -73,7 +74,7 @@ class UpdateReport(graphene.Mutation):
             report = ReportService.update_report_status(
                 moderator=info.context.user,
                 report=report,
-                new_status=status if status is not None else report.status,
+                new_status=status if status is not None else ReportStatus(report.status),
                 moderator_note=moderator_note
             )
         except PermissionException as e:

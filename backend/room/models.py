@@ -1,6 +1,6 @@
 import uuid
 from django.db import models
-from django.db.models.constraints import Q, CheckConstraint
+from django.db.models import Q, CheckConstraint
 from django.db.models.functions import Lower
 from django.urls import reverse
 from django.utils.text import slugify
@@ -17,7 +17,7 @@ class Topic(models.Model):
     
     class Meta:
         app_label = 'room'
-        ordering = [Lower('name')]
+        ordering = [Lower('name').asc()]
         indexes = [
             models.Index(fields=['name']),
         ]

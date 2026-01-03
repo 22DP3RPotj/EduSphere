@@ -14,7 +14,7 @@ from backend.invite.services import InviteService
 
 
 class InviteQuery(graphene.ObjectType):
-    reveived_invites = graphene.List(InviteType)
+    received_invites = graphene.List(InviteType)
     sent_invites = graphene.List(InviteType)
     invite = graphene.Field(
         InviteType,

@@ -2,7 +2,7 @@ import { ref, type Ref } from "vue"
 import { useAuthStore } from "@/stores/auth.store"
 import { ROOM_MESSAGES_QUERY } from "@/api/graphql";
 import { apolloClient } from "@/api/apollo.client";
-import type { Room, Message } from "@/types"
+import type { Room, Message, DateTime, UUID } from "@/types"
 import type {
   ConnectionStatus,
   ReceivedWebSocketMessage,
@@ -30,6 +30,14 @@ export function useWebSocket(
   
   const MAX_RECONNECT_ATTEMPTS = 5
   const RECONNECT_DELAY = 3000
+
+  function asDateTime(value: string): DateTime {
+    return value as unknown as DateTime
+  }
+
+  function asUUID(value: string): UUID {
+    return value as unknown as UUID
+  }
 
   async function fetchRoomMessages(): Promise<Message[]> {
     const response = await apolloClient.query({
@@ -134,15 +142,17 @@ export function useWebSocket(
     }
   }
 
+  // TODO: real values
   function handleNewMessage(data: WSNewMessage): void {
     const newMessage: Message = {
-      id: data.id,
+      id: asUUID(data.id),
       body: data.body,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
+      created_at: asDateTime(data.created_at),
+      updated_at: asDateTime(data.updated_at),
+      parent: null,
       is_edited: data.is_edited,
       user: {
-        id: data.user_id,
+        id: asUUID(data.user_id),
         username: data.user,
         avatar: data.userAvatar,
         name: data.user,
@@ -158,19 +168,21 @@ export function useWebSocket(
   }
 
   function handleUpdateMessage(data: WSUpdateMessage): void {
-    const index = messages.value.findIndex((m) => m.id === data.id)
+    const messageId = asUUID(data.id)
+    const index = messages.value.findIndex((m) => m.id === messageId)
     if (index !== -1) {
       messages.value[index] = {
         ...messages.value[index],
         body: data.body,
         is_edited: data.is_edited,
-        updated_at: data.updated_at,
+        updated_at: asDateTime(data.updated_at),
       } as Message
     }
   }
 
   function handleDeleteMessage(data: WSDeleteMessage): void {
-    messages.value = messages.value.filter((m) => m.id !== data.id)
+    const messageId = asUUID(data.id)
+    messages.value = messages.value.filter((m) => m.id !== messageId)
   }
 
   function attemptReconnect(): void {
@@ -204,7 +216,7 @@ export function useWebSocket(
     }
   }
 
-  function deleteMessage(messageId: string): boolean {
+  function deleteMessage(messageId: UUID): boolean {
     if (!socket.value || socket.value.readyState !== WebSocket.OPEN) {
       connectionError.value = "Not connected to chat server"
       return false
@@ -224,7 +236,7 @@ export function useWebSocket(
     }
   }
 
-  function updateMessage(messageId: string, newBody: string): boolean {
+  function updateMessage(messageId: UUID, newBody: string): boolean {
     if (!socket.value || socket.value.readyState !== WebSocket.OPEN) {
       connectionError.value = "Not connected to chat server"
       return false

@@ -51,7 +51,7 @@
                       selected: pendingTopics.includes(topic.name)
                     }]"
                     @mousedown="selectTopic(topic.name)"
-                    @mouseenter="selectedTopicIndex = index"
+                    @mouseenter="selectedTopicIndex = Number(index)"
                   >
                     <span>{{ topic.name }}</span>
                     <span v-if="pendingTopics.includes(topic.name)" class="selected-indicator">

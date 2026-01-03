@@ -219,7 +219,7 @@ import { parseGraphQLError } from '@/utils/errorParser';
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { User, Room, Participant } from '@/types';
+import type { User, Room, Participant, UUID } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -396,7 +396,7 @@ function clearMessageOperationErrors() {
   messageOperationErrors.value = { fieldErrors: {}, generalErrors: [] };
 }
 
-async function handleMessageDelete(messageId: string) {
+async function handleMessageDelete(messageId: UUID) {
   clearMessageOperationErrors();
   try {
     const success = deleteWebSocketMessage(messageId);
@@ -412,7 +412,7 @@ async function handleMessageDelete(messageId: string) {
   }
 }
 
-async function handleMessageUpdate(messageId: string, newBody: string) {
+async function handleMessageUpdate(messageId: UUID, newBody: string) {
   clearMessageOperationErrors();
   try {
     const success = updateWebSocketMessage(messageId, newBody);

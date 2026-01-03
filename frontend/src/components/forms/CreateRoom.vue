@@ -80,7 +80,7 @@
                 selected: roomForm.topicNames.includes(topic)
               }]"
               @mousedown="selectTopic(topic)"
-              @mouseenter="selectedTopicIndex = index"
+              @mouseenter="selectedTopicIndex = Number(index)"
             >
               <span>{{ topic }}</span>
               <span v-if="roomForm.topicNames.includes(topic)" class="selected-indicator">

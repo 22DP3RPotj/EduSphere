@@ -326,11 +326,10 @@ class InviteServiceTest(ServiceTestBase):
 
     def test_get_invite_by_token_not_found(self):
         fake_token = uuid.uuid4()
-        try:
-            result = InviteService.get_invite_by_token(fake_token)
-            self.assertIsNone(result)
-        except UnboundLocalError:
-            pass
+
+        result = InviteService.get_invite_by_token(fake_token)
+        self.assertIsNone(result)
+
 
     def test_update_expired_invites(self):
         self._add_member(self.member, self.owner_role)

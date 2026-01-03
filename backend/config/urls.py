@@ -1,5 +1,3 @@
-# from django.urls import include
-
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -14,4 +12,3 @@ urlpatterns = [
         )
     )),
 ]
-

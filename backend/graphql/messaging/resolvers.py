@@ -1,3 +1,4 @@
+import uuid
 import graphene
 from graphql import GraphQLError
 
@@ -14,20 +15,16 @@ from backend.graphql.messaging.types import MessageType
 class MessageQuery(graphene.ObjectType):
     messages = graphene.List(
         MessageType,
-        host_slug=graphene.String(required=True),
-        room_slug=graphene.String(required=True)
+        room_id=graphene.UUID(required=True)
     )
     messages_by_user = graphene.List(
         MessageType,
         user_slug=graphene.String(required=True),   
     )
     
-    def resolve_messages(self, info: graphene.ResolveInfo, host_slug: str, room_slug: str) -> QuerySet[Message]:
+    def resolve_messages(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> QuerySet[Message]:
         try:
-            room = Room.objects.get(
-                host__username=host_slug,
-                slug=room_slug
-            )
+            room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": "NOT_FOUND"})
         

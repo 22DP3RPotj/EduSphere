@@ -1,4 +1,5 @@
 from typing import Optional
+import uuid
 import graphene
 from graphql import GraphQLError
 
@@ -14,8 +15,7 @@ from backend.graphql.room.types import RoomType, TopicType
 class RoomQuery(graphene.ObjectType):
     room = graphene.Field(
         RoomType,
-        host_slug=graphene.String(required=True),
-        room_slug=graphene.String(required=True)
+        room_id=graphene.UUID(required=True)
     )
     rooms = graphene.List(
         RoomType,
@@ -32,11 +32,19 @@ class RoomQuery(graphene.ObjectType):
         user_slug=graphene.String(required=True)
     )
     
-    def resolve_room(self, info: graphene.ResolveInfo, host_slug: str, room_slug: str) -> Room:
+    def resolve_room(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> Room:
         try:
-            room = Room.objects.get(
-                host__username=host_slug,
-                slug=room_slug
+            room = (
+                Room.objects
+                .select_related('host')
+                .prefetch_related(
+                    'topics',
+                    Prefetch(
+                        'memberships',
+                        queryset=Participant.objects.select_related('user', 'role')
+                    )
+                )
+                .get(id=room_id)
             )
         except Room.DoesNotExist:
             raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})

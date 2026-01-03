@@ -225,8 +225,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
-const hostSlug = route.params.hostSlug as string;
-const roomSlug = route.params.roomSlug as string;
+const roomId = route.params.roomId as string;
 
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
@@ -325,14 +324,14 @@ const {
   loading: roomLoading, 
   error: roomError, 
   refetch: refetchRoom 
-} = useRoomQuery(hostSlug, roomSlug);
+} = useRoomQuery(roomId);
 
 const { 
   messages: initialMessages, 
   loading: messagesLoading, 
   error: messagesError,
   refetch: refetchMessages 
-} = useRoomMessagesQuery(hostSlug, roomSlug, { enabled: isParticipant });
+} = useRoomMessagesQuery(roomId, { enabled: isParticipant });
 
 const { 
   deleteRoom: deleteRoomMutation, 
@@ -344,7 +343,7 @@ const {
   joinRoom: joinRoomMutation, 
   loading: joinLoading, 
   error: joinError 
-} = useJoinRoom();
+} = useJoinRoom(roomId);
 
 const {
   messages: websocketMessages,
@@ -356,7 +355,11 @@ const {
   connectionError: websocketError,
   connectionStatus,
   isConnected
-} = useWebSocket(hostSlug, roomSlug);
+} = useWebSocket(
+  roomId,
+  computed(() => room.value?.host?.username),
+  computed(() => room.value?.slug),
+);
 
 // Error recovery functions
 function retryRoomOperations() {

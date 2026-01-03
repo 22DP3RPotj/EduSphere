@@ -14,7 +14,11 @@ import type {
   OutgoingDeleteMessage,
 } from "@/types"
 
-export function useWebSocket(hostSlug: string, roomSlug: string) {
+export function useWebSocket(
+  roomId: string,
+  hostSlug?: Ref<string | undefined>,
+  roomSlug?: Ref<string | undefined>,
+) {
   const socket: Ref<WebSocket | null> = ref(null)
   const messages: Ref<Message[]> = ref([])
   const connectionStatus: Ref<ConnectionStatus> = ref("disconnected")
@@ -27,10 +31,10 @@ export function useWebSocket(hostSlug: string, roomSlug: string) {
   const MAX_RECONNECT_ATTEMPTS = 5
   const RECONNECT_DELAY = 3000
 
-  async function fetchRoomMessages(hostSlug: string, roomSlug: string): Promise<Message[]> {
+  async function fetchRoomMessages(): Promise<Message[]> {
     const response = await apolloClient.query({
       query: ROOM_MESSAGES_QUERY,
-      variables: { hostSlug, roomSlug },
+      variables: { roomId },
       fetchPolicy: 'network-only'
     });
 
@@ -39,7 +43,7 @@ export function useWebSocket(hostSlug: string, roomSlug: string) {
 
   async function fetchInitialMessages(): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetchRoomMessages(hostSlug, roomSlug);
+      const response = await fetchRoomMessages();
       messages.value = [...response];
 
       return { success: true }
@@ -56,6 +60,10 @@ export function useWebSocket(hostSlug: string, roomSlug: string) {
       return { success: false, error: "Authentication required" }
     }
 
+    if (!hostSlug?.value || !roomSlug?.value) {
+      return { success: false, error: "Room details not loaded" }
+    }
+
     // Fetch initial messages
     const fetchResult = await fetchInitialMessages()
     if (!fetchResult.success) {
@@ -64,7 +72,7 @@ export function useWebSocket(hostSlug: string, roomSlug: string) {
     }
 
     // Initialize WebSocket connection
-    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${hostSlug}/${roomSlug}`
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${hostSlug.value}/${roomSlug.value}`
     connectionStatus.value = "connecting"
     connectionError.value = null
 

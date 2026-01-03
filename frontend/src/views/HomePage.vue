@@ -575,7 +575,7 @@ function toggleView() {
 
 // Navigation functions
 function navigateToRoom(room: Room) {
-  router.push(`/u/${room.host?.username}/${room.slug}`);
+  router.push(`/r/${room.id}`);
 }
 
 watch(() => authStore.isAuthenticated, () => {

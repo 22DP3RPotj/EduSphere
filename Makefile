@@ -7,7 +7,7 @@ help:
 	@echo "================================"
 	@echo "make setup      - Initialize environment and services"
 	@echo "make run        - Build frontend and run development server"
-	@echo "make test       - Run unit tests"
+	@echo "make test       - Run all tests (pytest)"
 	@echo "make report     - Run tests with coverage report"
 	@echo "make clean      - Clean generated files and caches"
 	@echo "make clean-logs - Clear log files"
@@ -32,30 +32,16 @@ run: setup
 	$(PX) uvicorn backend.config.asgi:application --host 127.0.0.1 --port 8000 --lifespan=off --reload
 
 unit-test:
-	$(PY) manage.py test \
-		backend.account.tests.unit \
-		backend.access.tests.unit \
-		backend.room.tests.unit \
-		backend.messaging.tests.unit \
-		backend.invite.tests.unit \
-		backend.moderation.tests.unit \
-		backend.graphql.tests.unit \
-		backend.core.tests.unit
+	$(PX) pytest -q -m unit
 
 integration-test: setup
-	$(PY) manage.py test backend.core.tests.integration
+	$(PX) pytest -q -m integration
+
+test:
+	$(PX) pytest -q
 
 coverage:
-	$(PX) coverage run --source='backend' manage.py test \
-		backend.account.tests.unit \
-		backend.access.tests.unit \
-		backend.room.tests.unit \
-		backend.messaging.tests.unit \
-		backend.invite.tests.unit \
-		backend.moderation.tests.unit \
-		backend.graphql.tests.unit \
-		backend.core.tests.unit \
-		backend.core.tests.integration
+	$(PX) coverage run --source='backend' -m pytest -q
 
 report:
 	if [ ! -f .coverage ]; then \

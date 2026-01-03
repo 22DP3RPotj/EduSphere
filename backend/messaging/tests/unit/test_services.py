@@ -1,4 +1,6 @@
-from django.test import tag
+import pytest
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 from backend.core.exceptions import FormValidationException, PermissionException, ValidationException
 from backend.messaging.models import Message
@@ -6,7 +8,6 @@ from backend.messaging.services import MessageService
 from backend.tests.service_base import ServiceTestBase
 
 
-@tag("unit", "services")
 class MessageServiceTest(ServiceTestBase):
     """Test MessageService methods."""
 

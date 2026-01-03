@@ -2,7 +2,10 @@ from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
 from django.contrib.auth import get_user_model
-from django.test import tag
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.access.models import Participant, Role
 from backend.messaging.models import Message
@@ -11,7 +14,6 @@ from backend.room.models import Room, Topic
 User = get_user_model()
 
 
-@tag("unit")
 class QueryTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(

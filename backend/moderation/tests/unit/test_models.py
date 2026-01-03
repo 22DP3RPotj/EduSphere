@@ -1,5 +1,9 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, tag
+from django.test import TestCase
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.moderation.models import Report
 from backend.room.models import Room
@@ -7,7 +11,6 @@ from backend.room.models import Room
 User = get_user_model()
 
 
-@tag("unit")
 class ReportModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(

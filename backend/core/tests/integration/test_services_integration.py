@@ -1,8 +1,11 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import tag
 from django.utils import timezone
+
+import pytest
+
+pytestmark = [pytest.mark.integration, pytest.mark.services]
 
 from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant
@@ -17,7 +20,6 @@ from backend.tests.service_base import ServiceTestBase
 User = get_user_model()
 
 
-@tag("services", "integration")
 class IntegrationTests(ServiceTestBase):
     """Cross-service integration tests."""
 

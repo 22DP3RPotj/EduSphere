@@ -1,6 +1,8 @@
 import uuid
 
-from django.test import tag
+import pytest
+
+pytestmark = [pytest.mark.unit, pytest.mark.services, pytest.mark.error_handling]
 
 from backend.core.exceptions import PermissionException
 from backend.invite.services import InviteService
@@ -9,7 +11,6 @@ from backend.moderation.services import ReportService
 from backend.tests.service_base import ServiceTestBase
 
 
-@tag("unit", "services", "error-handling")
 class ErrorHandlingTests(ServiceTestBase):
     """Test error handling across services."""
 

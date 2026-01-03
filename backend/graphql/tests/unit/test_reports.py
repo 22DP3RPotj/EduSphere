@@ -2,7 +2,9 @@ from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
 from django.contrib.auth import get_user_model
-from django.test import tag
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.access.models import Participant, Role
 from backend.moderation.models import Report
@@ -10,8 +12,6 @@ from backend.room.models import Room, Topic
 
 User = get_user_model()
 
-
-@tag("unit")
 class ReportMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -141,8 +141,6 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         self.assertTrue(result.data["deleteReport"]["success"])
         self.assertFalse(Report.objects.filter(id=report.id).exists())
 
-
-@tag("unit")
 class ReportQueryTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(

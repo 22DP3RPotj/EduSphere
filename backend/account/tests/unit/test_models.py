@@ -1,10 +1,13 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, tag
+from django.test import TestCase
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 User = get_user_model()
 
 
-@tag("unit")
 class UserModelTest(TestCase):
     def test_user_creation(self):
         user = User.objects.create_user(

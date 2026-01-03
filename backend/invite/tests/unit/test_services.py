@@ -2,8 +2,11 @@ import uuid
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import tag
 from django.utils import timezone
+
+import pytest
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 from backend.core.exceptions import ConflictException, FormValidationException, PermissionException, ValidationException
 from backend.invite.models import Invite
@@ -15,7 +18,6 @@ from backend.tests.service_base import ServiceTestBase
 User = get_user_model()
 
 
-@tag("unit", "services")
 class InviteServiceTest(ServiceTestBase):
     """Test InviteService methods."""
 
@@ -349,7 +351,7 @@ class InviteServiceTest(ServiceTestBase):
         self.assertEqual(invite.status, Invite.Status.EXPIRED)
 
 
-@tag("unit", "services", "invite-advanced")
+@pytest.mark.invite_advanced
 class InviteServiceAdvancedTests(ServiceTestBase):
     """Advanced tests for InviteService - expiry, cascades, edge cases."""
 

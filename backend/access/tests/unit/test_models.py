@@ -1,6 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase, tag
+from django.test import TestCase
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.access.enums import PermissionCode
 from backend.access.models import Participant, Permission, Role
@@ -9,7 +13,6 @@ from backend.room.models import Room
 User = get_user_model()
 
 
-@tag("unit")
 class PermissionModelTest(TestCase):
     def test_permission_creation(self):
         permission, _created = Permission.objects.get_or_create(
@@ -26,7 +29,6 @@ class PermissionModelTest(TestCase):
         self.assertEqual(str(permission), PermissionCode.ROOM_UPDATE)
 
 
-@tag("unit")
 class RoleModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -76,7 +78,6 @@ class RoleModelTest(TestCase):
         self.assertEqual(str(role), "Moderator")
 
 
-@tag("unit")
 class ParticipantModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(

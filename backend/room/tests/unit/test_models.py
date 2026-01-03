@@ -1,13 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase, tag
+from django.test import TestCase
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.room.models import Room, Topic
 
 User = get_user_model()
 
 
-@tag("unit")
 class TopicModelTest(TestCase):
     def test_topic_creation(self):
         topic = Topic.objects.create(name="Programming")
@@ -23,7 +26,6 @@ class TopicModelTest(TestCase):
             topic.full_clean()
 
 
-@tag("unit")
 class RoomModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(

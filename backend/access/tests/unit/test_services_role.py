@@ -2,8 +2,11 @@ import uuid
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import tag
 from django.utils import timezone
+
+import pytest
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant, Role
@@ -15,7 +18,6 @@ from backend.tests.service_base import ServiceTestBase
 User = get_user_model()
 
 
-@tag("unit", "services")
 class RoleServiceTest(ServiceTestBase):
     """Test RoleService methods."""
 
@@ -223,7 +225,7 @@ class RoleServiceTest(ServiceTestBase):
         self.assertEqual(updated.permissions.count(), len(perm_ids) - 1)
 
 
-@tag("unit", "services", "role-advanced")
+@pytest.mark.role_advanced
 class RoleServiceAdvancedTests(ServiceTestBase):
     """Advanced tests for RoleService - priority, permission escalation, cascading."""
 

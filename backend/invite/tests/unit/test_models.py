@@ -1,8 +1,12 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, tag
+from django.test import TestCase
 from django.utils import timezone
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.invite.models import Invite
 from backend.access.models import Role
@@ -11,7 +15,6 @@ from backend.room.models import Room
 User = get_user_model()
 
 
-@tag("unit")
 class InviteModelTest(TestCase):
     def setUp(self):
         self.inviter = User.objects.create_user(

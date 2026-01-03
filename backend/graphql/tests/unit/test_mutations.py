@@ -5,7 +5,11 @@ from graphql_jwt.testcases import JSONWebTokenTestCase
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings, tag
+from django.test import override_settings
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.access.enums import PermissionCode
 from backend.access.models import Participant, Permission, Role
@@ -15,8 +19,6 @@ from backend.tests.utils import create_test_image
 
 User = get_user_model()
 
-
-@tag("unit")
 class UserMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.temp_media = tempfile.TemporaryDirectory()
@@ -134,8 +136,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
         user.refresh_from_db()
         self.assertTrue(user.avatar.name.endswith(".jpg"))
 
-
-@tag("unit")
 class RoomMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -343,8 +343,6 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNotNone(result.errors)
 
-
-@tag("unit")
 class MessageMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -418,8 +416,6 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNotNone(result.errors)
 
-
-@tag("unit")
 class UserAdminMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.admin = User.objects.create_user(

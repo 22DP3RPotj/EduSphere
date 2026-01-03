@@ -1,6 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase, tag
+from django.test import TestCase
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from backend.messaging.models import Message
 from backend.room.models import Room
@@ -8,7 +12,6 @@ from backend.room.models import Room
 User = get_user_model()
 
 
-@tag("unit")
 class MessageModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(

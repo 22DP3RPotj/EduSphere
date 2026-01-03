@@ -1,4 +1,6 @@
-from django.test import tag
+import pytest
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 from backend.core.exceptions import ConflictException, FormValidationException, PermissionException, ValidationException
 from backend.moderation.models import Report
@@ -6,7 +8,6 @@ from backend.moderation.services import ReportService
 from backend.tests.service_base import ServiceTestBase
 
 
-@tag("unit", "services")
 class ReportServiceTest(ServiceTestBase):
     """Test ReportService methods."""
 

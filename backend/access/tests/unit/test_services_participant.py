@@ -12,7 +12,7 @@ from backend.core.exceptions import (
     ValidationException,
 )
 from backend.room.models import Room
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 
 class ParticipantServiceTest(ServiceTestBase):

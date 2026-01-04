@@ -18,7 +18,7 @@ from backend.invite.models import Invite
 from backend.invite.services import InviteService
 from backend.room.models import Room
 from backend.access.services import RoleService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 User = get_user_model()
 

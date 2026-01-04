@@ -36,7 +36,7 @@ django-stubs = {extras = ["compatible-mypy"], version = "^5.2.8"}
 mypy = "^1.19.1"
 
 [tool.django-stubs]
-
+django_settings_module = "backend.config.settings"
 
 [tool.poetry.group.testing]
 optional = true
@@ -46,6 +46,26 @@ coverage = "^7.13.0"
 pytest = "^9.0.2"
 pytest-django = "^4.11.1"
 
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "backend.config.settings"
+python_files = ["test_*.py"]
+testpaths = ["backend"]
+addopts = "-ra"
+markers = [
+  "unit: Unit tests",
+  "integration: Integration tests",
+  "services: Service-layer tests",
+  "role-advanced: Legacy Django tag (normalized to role_advanced)",
+  "role_advanced: Advanced role service tests",
+  "invite-advanced: Legacy Django tag (normalized to invite_advanced)",
+  "invite_advanced: Advanced invite service tests",
+  "error-handling: Legacy Django tag (normalized to error_handling)",
+  "error_handling: Error handling tests",
+]
+filterwarnings = [
+  "ignore:datetime\\.datetime\\.utcnow\\(\\) is deprecated.*:DeprecationWarning:graphql_jwt\\..*",
+]
+
 [tool.coverage.run]
 branch = true
 source = ["backend"]
@@ -54,6 +74,7 @@ omit = [
   "*/tests/*",
   "*/migrations/*",
   "*/__init__.py",
+  "*/__main__.py",
   "*/manage.py",
   "*/asgi.py",
   "*/wsgi.py",
@@ -70,6 +91,7 @@ omit = [
   "*/tests/*",
   "*/migrations/*",
   "*/__init__.py",
+  "*/__main__.py",
   "*/manage.py",
   "*/asgi.py",
   "*/wsgi.py",

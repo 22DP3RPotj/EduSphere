@@ -15,7 +15,7 @@ from backend.access.enums import PermissionCode
 from backend.access.models import Participant, Permission, Role
 from backend.messaging.models import Message
 from backend.room.models import Room, Topic
-from backend.tests.utils import create_test_image
+from backend.core.tests.utils import create_test_image
 
 User = get_user_model()
 

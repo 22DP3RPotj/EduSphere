@@ -7,7 +7,7 @@ from backend.access.models import Participant
 from backend.core.exceptions import FormValidationException, PermissionException
 from backend.room.models import Room
 from backend.room.services import RoomService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 
 class RoomServiceTest(ServiceTestBase):

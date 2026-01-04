@@ -15,7 +15,7 @@ from backend.messaging.models import Message
 from backend.messaging.services import MessageService
 from backend.room.models import Room
 from backend.room.services import RoomService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 User = get_user_model()
 

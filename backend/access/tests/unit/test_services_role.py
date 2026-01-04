@@ -17,7 +17,7 @@ from backend.core.exceptions import (
     ValidationException,
 )
 from backend.invite.services import InviteService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 User = get_user_model()
 

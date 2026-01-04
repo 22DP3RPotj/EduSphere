@@ -9,7 +9,7 @@ from backend.core.exceptions import (
 )
 from backend.messaging.models import Message
 from backend.messaging.services import MessageService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 
 class MessageServiceTest(ServiceTestBase):

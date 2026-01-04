@@ -37,7 +37,6 @@ mypy = "^1.19.1"
 ruff = "^0.14.10"
 
 [tool.django-stubs]
-django_settings_module = "backend.config.settings"
 
 [tool.poetry.group.testing]
 optional = true

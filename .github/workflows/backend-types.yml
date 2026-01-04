@@ -23,7 +23,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PYTHONPATH: backend
+      DJANGO_SETTINGS_MODULE: backend.config.settings
+      SECRET_KEY: test_secret_key
+      DEBUG: 'False'
+      DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
 
     steps:
       - name: Checkout code

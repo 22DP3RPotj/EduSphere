@@ -1,4 +1,4 @@
-.PHONY: help setup run unit-test report clean clean-logs
+.PHONY: help setup run unit-test report clean clean-logs clean-migrations typecheck lint format docker-compose-up docker-compose-down
 
 PY = poetry run python
 PX = poetry run
@@ -56,6 +56,9 @@ typecheck:
 	$(PX) mypy backend
 
 lint:
+	$(PX) ruff check backend
+
+format:
 	$(PX) ruff format --check backend
 
 clean:

@@ -37,18 +37,63 @@ mypy = "^1.19.1"
 
 [tool.django-stubs]
 
+
 [tool.poetry.group.testing]
 optional = true
 
 [tool.poetry.group.testing.dependencies]
 coverage = "^7.13.0"
+pytest = "^9.0.2"
 pytest-django = "^4.11.1"
+
+[tool.coverage.run]
+branch = true
+source = ["backend"]
+omit = [
+  "*/venv/*",
+  "*/tests/*",
+  "*/migrations/*",
+  "*/__init__.py",
+  "*/manage.py",
+  "*/asgi.py",
+  "*/wsgi.py",
+  "*/admin.py",
+  "*/urls.py",
+  "*/apps.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+omit = [
+  "*/venv/*",
+  "*/tests/*",
+  "*/migrations/*",
+  "*/__init__.py",
+  "*/manage.py",
+  "*/asgi.py",
+  "*/wsgi.py",
+  "*/admin.py",
+  "*/urls.py",
+  "*/apps.py",
+]
+
 
 [tool.poetry.group.linting]
 optional = true
 
 [tool.poetry.group.linting.dependencies]
 ruff = "^0.14.10"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"

@@ -2,12 +2,8 @@ import graphene
 
 from .resolvers import RoomQuery, TopicQuery
 
-from .mutations.room import (
-    CreateRoom,
-    DeleteRoom,
-    UpdateRoom,
-    JoinRoom
-)
+from .mutations.room import CreateRoom, DeleteRoom, UpdateRoom, JoinRoom
+
 
 class RoomQueries(RoomQuery, TopicQuery, graphene.ObjectType):
     pass

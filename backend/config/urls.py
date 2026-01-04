@@ -6,9 +6,8 @@ from graphene_file_upload.django import FileUploadGraphQLView
 
 
 urlpatterns = [
-    path("graphql/", jwt_cookie(
-        csrf_exempt(
-            FileUploadGraphQLView.as_view(graphiql=settings.DEBUG)
-        )
-    )),
+    path(
+        "graphql/",
+        jwt_cookie(csrf_exempt(FileUploadGraphQLView.as_view(graphiql=settings.DEBUG))),
+    ),
 ]

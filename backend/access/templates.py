@@ -19,7 +19,7 @@ PERMISSION_TEMPLATES: dict[PermissionCode, PermissionTemplate] = {
     },
     PermissionCode.ROOM_UPDATE: {
         "description": "Update room settings",
-    }, 
+    },
     PermissionCode.ROOM_MANAGE_VISIBILITY: {
         "description": "Manage room visibility settings",
     },
@@ -49,4 +49,3 @@ DEFAULT_ROLE_TEMPLATES: dict[RoleCode, RoleTemplate] = {
         "priority": 0,
     },
 }
-

@@ -34,18 +34,21 @@ optional = true
 [tool.poetry.group.typecheck.dependencies]
 django-stubs = {extras = ["compatible-mypy"], version = "^5.2.8"}
 mypy = "^1.19.1"
-ruff = "^0.14.10"
 
 [tool.django-stubs]
 
 [tool.poetry.group.testing]
 optional = true
 
-
 [tool.poetry.group.testing.dependencies]
 coverage = "^7.13.0"
 pytest-django = "^4.11.1"
 
+[tool.poetry.group.linting]
+optional = true
+
+[tool.poetry.group.linting.dependencies]
+ruff = "^0.14.10"
 
 [tool.mypy]
 python_version = "3.12"

@@ -30,10 +30,13 @@ class RegisterUser(graphene.Mutation):
         form = RegisterForm(kwargs)
 
         if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form.errors)})
-        
+            raise GraphQLError(
+                "Invalid data", extensions={"errors": format_form_errors(form.errors)}
+            )
+
         user = form.save()
         return RegisterUser(user=user, success=True)
+
 
 # TODO: rework argument types
 class UpdateUser(graphene.Mutation):
@@ -54,30 +57,28 @@ class UpdateUser(graphene.Mutation):
         avatar: Optional[Upload] = None,
     ):
         user = info.context.user
-        
+
         data = {
             "username": username or user.username,
             "name": name or user.name,
             "bio": bio or user.bio,
         }
-        
+
         files = None
         if avatar is not None:
             files = MultiValueDict({"avatar": [cast(UploadedFile, avatar)]})
 
-        form = UserForm(
-            data=data,
-            files=files,
-            instance=user
-        )
+        form = UserForm(data=data, files=files, instance=user)
 
         if not form.is_valid():
-            raise GraphQLError("Invalid data", extensions={"errors": format_form_errors(form.errors)})
-        
+            raise GraphQLError(
+                "Invalid data", extensions={"errors": format_form_errors(form.errors)}
+            )
+
         form.save()
         return UpdateUser(user=user)
-        
-        
+
+
 class UpdateUserActiveStatus(graphene.Mutation):
     class Arguments:
         user_ids = graphene.List(graphene.UUID, required=True)
@@ -87,16 +88,15 @@ class UpdateUserActiveStatus(graphene.Mutation):
     updated_count = graphene.Int()
 
     @superuser_required
-    def mutate(self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_active: bool):
+    def mutate(
+        self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_active: bool
+    ):
         with transaction.atomic():
-            updated_count = User.objects.filter(
-                id__in=user_ids
-            ).update(is_active=is_active)
-            
-        return UpdateUserActiveStatus(
-            success=True, 
-            updated_count=updated_count
-        )
+            updated_count = User.objects.filter(id__in=user_ids).update(
+                is_active=is_active
+            )
+
+        return UpdateUserActiveStatus(success=True, updated_count=updated_count)
 
 
 class UpdateUserStaffStatus(graphene.Mutation):
@@ -108,13 +108,12 @@ class UpdateUserStaffStatus(graphene.Mutation):
     updated_count = graphene.Int()
 
     @superuser_required
-    def mutate(self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_staff: bool):
+    def mutate(
+        self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_staff: bool
+    ):
         with transaction.atomic():
-            updated_count = User.objects.filter(
-                id__in=user_ids
-            ).update(is_staff=is_staff)
-            
-        return UpdateUserStaffStatus(
-            success=True, 
-            updated_count=updated_count
-        )
+            updated_count = User.objects.filter(id__in=user_ids).update(
+                is_staff=is_staff
+            )
+
+        return UpdateUserStaffStatus(success=True, updated_count=updated_count)

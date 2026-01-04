@@ -13,42 +13,38 @@ from backend.graphql.room.types import RoomType, TopicType
 
 
 class RoomQuery(graphene.ObjectType):
-    room = graphene.Field(
-        RoomType,
-        room_id=graphene.UUID(required=True)
-    )
+    room = graphene.Field(RoomType, room_id=graphene.UUID(required=True))
     rooms = graphene.List(
         RoomType,
         host_slug=graphene.String(),
         search=graphene.String(),
-        topics=graphene.List(graphene.String)
+        topics=graphene.List(graphene.String),
     )
     rooms_participated_by_user = graphene.List(
-        RoomType,
-        user_slug=graphene.String(required=True)
+        RoomType, user_slug=graphene.String(required=True)
     )
     rooms_not_participated_by_user = graphene.List(
-        RoomType,
-        user_slug=graphene.String(required=True)
+        RoomType, user_slug=graphene.String(required=True)
     )
-    
+
     def resolve_room(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> Room:
         try:
             room = (
-                Room.objects
-                .select_related('host')
+                Room.objects.select_related("host")
                 .prefetch_related(
-                    'topics',
+                    "topics",
                     Prefetch(
-                        'memberships',
-                        queryset=Participant.objects.select_related('user', 'role')
-                    )
+                        "memberships",
+                        queryset=Participant.objects.select_related("user", "role"),
+                    ),
                 )
                 .get(id=room_id)
             )
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         return room
 
     def resolve_rooms(
@@ -56,101 +52,103 @@ class RoomQuery(graphene.ObjectType):
         info: graphene.ResolveInfo,
         host_slug: Optional[str] = None,
         search: Optional[str] = None,
-        topics: Optional[list[str]] = None
+        topics: Optional[list[str]] = None,
     ) -> QuerySet[Room]:
         queryset = (
-            Room.objects
-            .annotate(participants_count=Count('participants'))
-            .select_related('host')
+            Room.objects.annotate(participants_count=Count("participants"))
+            .select_related("host")
             .prefetch_related(
-                'topics',
+                "topics",
                 Prefetch(
-                    'memberships',
-                    queryset=Participant.objects.select_related('user', 'role')
-                )
+                    "memberships",
+                    queryset=Participant.objects.select_related("user", "role"),
+                ),
             )
         )
 
         if host_slug:
             queryset = queryset.filter(host__username=host_slug)
-            
+
         if search:
             queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(description__icontains=search)
+                Q(name__icontains=search) | Q(description__icontains=search)
             )
-            
+
         if topics:
             queryset = queryset.filter(topics__name__in=topics).distinct()
 
-        return queryset.order_by('-participants_count' , '-created_at')
-    
-    def resolve_rooms_participated_by_user(self, info: graphene.ResolveInfo, user_slug: str) -> QuerySet[Room]:
+        return queryset.order_by("-participants_count", "-created_at")
+
+    def resolve_rooms_participated_by_user(
+        self, info: graphene.ResolveInfo, user_slug: str
+    ) -> QuerySet[Room]:
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
-            raise GraphQLError("User not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "User not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         queryset = (
-            Room.objects
-            .filter(participants=user)
-            .annotate(participants_count=Count('participants'))
-            .order_by('-participants_count', '-created_at')
-            .select_related('host')
+            Room.objects.filter(participants=user)
+            .annotate(participants_count=Count("participants"))
+            .order_by("-participants_count", "-created_at")
+            .select_related("host")
             .prefetch_related(
-                'topics',
+                "topics",
                 Prefetch(
-                    'memberships',
-                    queryset=Participant.objects.select_related('user', 'role')
-                )
+                    "memberships",
+                    queryset=Participant.objects.select_related("user", "role"),
+                ),
             )
         )
-        
+
         return queryset
-    
-    def resolve_rooms_not_participated_by_user(self, info: graphene.ResolveInfo, user_slug: str) -> QuerySet[Room]:
+
+    def resolve_rooms_not_participated_by_user(
+        self, info: graphene.ResolveInfo, user_slug: str
+    ) -> QuerySet[Room]:
         try:
             user = User.objects.get(username=user_slug)
         except User.DoesNotExist:
-            raise GraphQLError("User not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "User not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         queryset = (
-            Room.objects
-            .exclude(participants=user)
-            .annotate(participants_count=Count('participants'))
-            .order_by('-participants_count', '-created_at')
-            .select_related('host')
-            .prefetch_related('topics',
+            Room.objects.exclude(participants=user)
+            .annotate(participants_count=Count("participants"))
+            .order_by("-participants_count", "-created_at")
+            .select_related("host")
+            .prefetch_related(
+                "topics",
                 Prefetch(
-                    'memberships',
-                    queryset=Participant.objects.select_related('user', 'role')
-                )
+                    "memberships",
+                    queryset=Participant.objects.select_related("user", "role"),
+                ),
             )
         )
 
         return queryset
+
 
 class TopicQuery(graphene.ObjectType):
     topics = graphene.List(
-        TopicType,
-        search=graphene.String(),
-        min_rooms=graphene.Int()
+        TopicType, search=graphene.String(), min_rooms=graphene.Int()
     )
-     
+
     def resolve_topics(
         self,
         info: graphene.ResolveInfo,
         search: Optional[str] = None,
-        min_rooms: Optional[int] = None
+        min_rooms: Optional[int] = None,
     ) -> QuerySet[Topic]:
-        queryset = Topic.objects.annotate(
-            room_count=Count('rooms')
-        )
-        
+        queryset = Topic.objects.annotate(room_count=Count("rooms"))
+
         if search:
             queryset = queryset.filter(name__icontains=search)
-            
+
         if min_rooms:
             queryset = queryset.filter(room_count__gte=min_rooms)
 
-        return queryset.order_by('-room_count')
+        return queryset.order_by("-room_count")

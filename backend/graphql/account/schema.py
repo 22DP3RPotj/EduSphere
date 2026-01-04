@@ -1,9 +1,6 @@
 import graphene
 
-from .resolvers import (
-    AuthQuery,
-    UserQuery
-)
+from .resolvers import AuthQuery, UserQuery
 from .mutations.user import (
     RegisterUser,
     UpdateUser,

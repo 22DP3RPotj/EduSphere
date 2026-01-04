@@ -1,5 +1,10 @@
 .PHONY: help setup run unit-test report clean clean-logs
 
+PY = poetry run python
+PX = poetry run
+
+export DJANGO_SETTINGS_MODULE=backend.config.settings
+
 all: help
 
 help:
@@ -11,14 +16,11 @@ help:
 	@echo "make report     - Run tests with coverage report"
 	@echo "make clean      - Clean generated files and caches"
 	@echo "make clean-logs - Clear log files"
+	@echo "make clean-migrations - Remove Django migration files"
+	@echo "make typecheck  - Run mypy type checks"
+	@echo "make lint       - Run ruff linter checks"
 	@echo "make docker-compose-up   - Start services with Docker Compose"
 	@echo "make docker-compose-down - Stop services with Docker Compose"
-
-
-PY = poetry run python
-PX = poetry run
-
-export DJANGO_SETTINGS_MODULE=backend.config.settings
 
 setup:
 	sudo service postgresql start; \
@@ -52,6 +54,9 @@ report:
 
 typecheck:
 	$(PX) mypy backend
+
+lint:
+	$(PX) ruff format --check backend
 
 clean:
 	find . -type f -name '*.pyc' -delete

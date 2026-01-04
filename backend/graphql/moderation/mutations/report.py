@@ -10,7 +10,11 @@ from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
 )
-from backend.graphql.moderation.types import ReportType, ReportReasonEnum, ReportStatusEnum
+from backend.graphql.moderation.types import (
+    ReportType,
+    ReportReasonEnum,
+    ReportStatusEnum,
+)
 from backend.moderation.choices import ReportReason, ReportStatus
 from backend.moderation.models import Report
 from backend.room.models import Room
@@ -24,20 +28,25 @@ class CreateReport(graphene.Mutation):
         body = graphene.String(required=True)
 
     report = graphene.Field(ReportType)
-    
+
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID, reason: ReportReason, body: str):
+    def mutate(
+        self,
+        info: graphene.ResolveInfo,
+        room_id: uuid.UUID,
+        reason: ReportReason,
+        body: str,
+    ):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         try:
             report = ReportService.create_report(
-                reporter=info.context.user,
-                room=room,
-                reason=reason,
-                body=body
+                reporter=info.context.user, room=room, reason=reason, body=body
             )
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
@@ -45,7 +54,7 @@ class CreateReport(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code})
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
-        
+
         return CreateReport(report=report)
 
 
@@ -63,19 +72,23 @@ class UpdateReport(graphene.Mutation):
         info: graphene.ResolveInfo,
         report_id: uuid.UUID,
         status: Optional[ReportStatus] = None,
-        moderator_note: Optional[str] = None
+        moderator_note: Optional[str] = None,
     ):
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:
-            raise GraphQLError("Report not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         try:
             report = ReportService.update_report_status(
                 moderator=info.context.user,
                 report=report,
-                new_status=status if status is not None else ReportStatus(report.status),
-                moderator_note=moderator_note
+                new_status=status
+                if status is not None
+                else ReportStatus(report.status),
+                moderator_note=moderator_note,
             )
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
@@ -94,7 +107,9 @@ class DeleteReport(graphene.Mutation):
         try:
             report = Report.objects.get(id=report_id)
         except Report.DoesNotExist:
-            raise GraphQLError("Report not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         report.delete()
         return DeleteReport(success=True)

@@ -1,4 +1,4 @@
-name: Backend Types
+name: Backend Typecheck
 
 on:
   push:
@@ -54,7 +54,7 @@ jobs:
             ${{ runner.os }}-poetry-
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root --with typecheck
+        run: poetry install --no-interaction --no-root --with linting
 
       - name: Run mypy type checks
-        run: make typecheck
+        run: make lint

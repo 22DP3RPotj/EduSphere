@@ -6,7 +6,9 @@ from channels.middleware import BaseMiddleware
 
 def _get_anonymous_user():
     from django.contrib.auth.models import AnonymousUser
+
     return AnonymousUser()
+
 
 @database_sync_to_async
 def _get_user(token: str):
@@ -22,13 +24,14 @@ class JwtAuthMiddleware(BaseMiddleware):
     validates it via graphql_jwt.shortcuts.get_user_by_token, and
     populates scope['user'].
     """
+
     async def __call__(self, scope, receive, send):
         # Grab raw cookie header (if any)
         headers = {name: value for name, value in scope.get("headers", [])}
         raw_cookie = headers.get(b"cookie", b"").decode()
 
         user = _get_anonymous_user()
-        
+
         if raw_cookie:
             cookie = SimpleCookie(raw_cookie)
             if "JWT" in cookie:

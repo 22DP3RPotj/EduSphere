@@ -54,7 +54,9 @@ class ServiceTestBase(TestCase):
         self.owner_role = self.room.roles.get(name=RoleCode.OWNER.label)
         self.member_role = self.room.roles.get(name=RoleCode.MEMBER.label)
 
-        Participant.objects.create(user=self.owner, room=self.room, role=self.owner_role)
+        Participant.objects.create(
+            user=self.owner, room=self.room, role=self.owner_role
+        )
 
     def _add_member(self, user: BaseUser, role: Role | None = None) -> Participant:
         if role is None:

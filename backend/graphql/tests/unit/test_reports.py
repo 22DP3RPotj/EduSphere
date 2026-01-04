@@ -12,6 +12,7 @@ from backend.room.models import Room, Topic
 
 User = get_user_model()
 
+
 class ReportMutationsTests(JSONWebTokenTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -37,7 +38,9 @@ class ReportMutationsTests(JSONWebTokenTestCase):
             description="Test Description",
             visibility=Room.Visibility.PUBLIC,
         )
-        self.role = Role.objects.create(room=self.room, name="Member", description="", priority=0)
+        self.role = Role.objects.create(
+            room=self.room, name="Member", description="", priority=0
+        )
         self.room.default_role = self.role
         self.room.save()
         Participant.objects.create(user=self.user, room=self.room, role=self.role)
@@ -59,7 +62,11 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"roomId": str(self.room.id), "reason": "SPAM", "body": "This room contains spam"}
+        variables = {
+            "roomId": str(self.room.id),
+            "reason": "SPAM",
+            "body": "This room contains spam",
+        }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         self.assertEqual(result.data["createReport"]["report"]["reason"], "SPAM")
@@ -81,13 +88,19 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"roomId": str(self.room.id), "reason": "SPAM", "body": "Test report"}
+        variables = {
+            "roomId": str(self.room.id),
+            "reason": "SPAM",
+            "body": "Test report",
+        }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNotNone(result.errors)
         self.assertEqual(result.errors[0].extensions["code"], "PERMISSION_DENIED")
 
     def test_create_report_already_reported(self):
-        Report.objects.create(user=self.user, room=self.room, reason="SPAM", body="Existing report")
+        Report.objects.create(
+            user=self.user, room=self.room, reason="SPAM", body="Existing report"
+        )
 
         self.client.authenticate(self.user)
         mutation = """
@@ -97,13 +110,19 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"roomId": str(self.room.id), "reason": "HARASSMENT", "body": "Another report"}
+        variables = {
+            "roomId": str(self.room.id),
+            "reason": "HARASSMENT",
+            "body": "Another report",
+        }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNotNone(result.errors)
         self.assertEqual(result.errors[0].extensions["code"], "CONFLICT")
 
     def test_update_report_as_moderator(self):
-        report = Report.objects.create(user=self.user, room=self.room, reason="SPAM", body="Test report")
+        report = Report.objects.create(
+            user=self.user, room=self.room, reason="SPAM", body="Test report"
+        )
 
         self.client.authenticate(self.moderator)
         mutation = """
@@ -117,15 +136,25 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"reportId": str(report.id), "status": "RESOLVED", "moderatorNote": "Issue resolved"}
+        variables = {
+            "reportId": str(report.id),
+            "status": "RESOLVED",
+            "moderatorNote": "Issue resolved",
+        }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         self.assertEqual(result.data["updateReport"]["report"]["status"], "RESOLVED")
-        self.assertEqual(result.data["updateReport"]["report"]["moderatorNote"], "Issue resolved")
-        self.assertEqual(result.data["updateReport"]["report"]["moderator"]["username"], "moderator")
+        self.assertEqual(
+            result.data["updateReport"]["report"]["moderatorNote"], "Issue resolved"
+        )
+        self.assertEqual(
+            result.data["updateReport"]["report"]["moderator"]["username"], "moderator"
+        )
 
     def test_delete_report_as_moderator(self):
-        report = Report.objects.create(user=self.user, room=self.room, reason="SPAM", body="Test report")
+        report = Report.objects.create(
+            user=self.user, room=self.room, reason="SPAM", body="Test report"
+        )
 
         self.client.authenticate(self.moderator)
         mutation = """
@@ -140,6 +169,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["deleteReport"]["success"])
         self.assertFalse(Report.objects.filter(id=report.id).exists())
+
 
 class ReportQueryTests(JSONWebTokenTestCase):
     def setUp(self):
@@ -165,7 +195,9 @@ class ReportQueryTests(JSONWebTokenTestCase):
             description="Test Description",
         )
 
-        self.report1 = Report.objects.create(user=self.user, room=self.room, reason="SPAM", body="First report")
+        self.report1 = Report.objects.create(
+            user=self.user, room=self.room, reason="SPAM", body="First report"
+        )
         self.report2 = Report.objects.create(
             user=self.user,
             room=self.room,

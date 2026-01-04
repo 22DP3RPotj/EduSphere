@@ -8,16 +8,12 @@ from backend.graphql.account.types import UserType
 class PermissionType(DjangoObjectType):
     class Meta:
         model = Permission
-        fields = (
-            "id",
-            "code",
-            "description"
-        )
-        
+        fields = ("id", "code", "description")
+
 
 class RoleType(DjangoObjectType):
     permissions = graphene.List(PermissionType, required=True)
-    
+
     class Meta:
         model = Role
         fields = (
@@ -43,9 +39,9 @@ class ParticipantType(DjangoObjectType):
             "role",
             "joined_at",
         )
-    
+
     def resolve_username(self, info):
         return self.user.username
-    
+
     def resolve_avatar(self, info):
         return self.user.avatar

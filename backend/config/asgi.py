@@ -5,11 +5,11 @@ from backend.messaging.chat.routing import websocket_urlpatterns
 from backend.messaging.chat.middleware import JwtAuthMiddleware
 
 
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AllowedHostsOriginValidator(
-        JwtAuthMiddleware(
-            URLRouter(websocket_urlpatterns)
-        )
-    ),
-})
+application = ProtocolTypeRouter(
+    {
+        "http": get_asgi_application(),
+        "websocket": AllowedHostsOriginValidator(
+            JwtAuthMiddleware(URLRouter(websocket_urlpatterns))
+        ),
+    }
+)

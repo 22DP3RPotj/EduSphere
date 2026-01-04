@@ -10,7 +10,7 @@ from .mutations.invite import (
 )
 
 
-class InviteQueries(InviteQuery,graphene.ObjectType):
+class InviteQueries(InviteQuery, graphene.ObjectType):
     pass
 
 

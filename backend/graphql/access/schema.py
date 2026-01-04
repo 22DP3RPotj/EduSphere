@@ -4,25 +4,26 @@ from .resolvers import RoleQuery
 from .mutations.participant import (
     AddParticipant,
     ChangeParticipantRole,
-    RemoveParticipant
+    RemoveParticipant,
 )
 from .mutations.role import (
     AssignPermissionsToRole,
     RemovePermissionsFromRole,
     CreateRole,
     DeleteRole,
-    UpdateRole
+    UpdateRole,
 )
 
 
 class AccessQueries(RoleQuery, graphene.ObjectType):
     pass
 
+
 class AccessMutations(graphene.ObjectType):
     add_participant = AddParticipant.Field()
     change_participant_role = ChangeParticipantRole.Field()
     remove_participant = RemoveParticipant.Field()
-    
+
     assign_permissions_to_role = AssignPermissionsToRole.Field()
     remove_permissions_from_role = RemovePermissionsFromRole.Field()
     create_role = CreateRole.Field()

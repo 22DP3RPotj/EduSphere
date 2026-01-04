@@ -98,7 +98,9 @@ def test_validation_middleware_swallow_validation_exceptions(monkeypatch):
         return "ok"
 
     monkeypatch.setattr(mw, "parse", lambda _: "AST")
-    monkeypatch.setattr(mw, "validate", lambda **_: (_ for _ in ()).throw(ValueError("boom")))
+    monkeypatch.setattr(
+        mw, "validate", lambda **_: (_ for _ in ()).throw(ValueError("boom"))
+    )
 
     info = _make_info(body=json.dumps({"query": "query { x }"}).encode())
     assert middleware.resolve(next_, None, info) == "ok"

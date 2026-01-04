@@ -33,7 +33,9 @@ def test_require_room_permission_requires_authentication():
         return "ok"
 
     with pytest.raises(GraphQLError) as exc:
-        resolver(None, _make_info(user=SimpleNamespace(is_authenticated=False)), room_id="1")
+        resolver(
+            None, _make_info(user=SimpleNamespace(is_authenticated=False)), room_id="1"
+        )
 
     assert exc.value.extensions["code"] == ErrorCode.PERMISSION_DENIED
 
@@ -51,7 +53,9 @@ def test_require_room_permission_room_not_found(monkeypatch):
     monkeypatch.setattr(dec.Room.objects, "get", fake_get)
 
     with pytest.raises(GraphQLError) as exc:
-        resolver(None, _make_info(user=SimpleNamespace(is_authenticated=True)), room_id="1")
+        resolver(
+            None, _make_info(user=SimpleNamespace(is_authenticated=True)), room_id="1"
+        )
 
     assert exc.value.extensions["code"] == ErrorCode.NOT_FOUND
 
@@ -65,10 +69,14 @@ def test_require_room_permission_permission_denied(monkeypatch):
 
     room = object()
     monkeypatch.setattr(dec.Room.objects, "get", lambda **_: room)
-    monkeypatch.setattr(dec.RoleService, "has_permission", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        dec.RoleService, "has_permission", lambda *args, **kwargs: False
+    )
 
     with pytest.raises(GraphQLError) as exc:
-        resolver(None, _make_info(user=SimpleNamespace(is_authenticated=True)), room_id="1")
+        resolver(
+            None, _make_info(user=SimpleNamespace(is_authenticated=True)), room_id="1"
+        )
 
     assert exc.value.extensions["code"] == ErrorCode.PERMISSION_DENIED
 
@@ -87,6 +95,8 @@ def test_require_room_permission_success_injects_room(monkeypatch):
     monkeypatch.setattr(dec.Room.objects, "get", lambda **_: room)
     monkeypatch.setattr(dec.RoleService, "has_permission", lambda *args, **kwargs: True)
 
-    result = resolver(None, _make_info(user=SimpleNamespace(is_authenticated=True)), room_id="1")
+    result = resolver(
+        None, _make_info(user=SimpleNamespace(is_authenticated=True)), room_id="1"
+    )
     assert result == "ok"
     assert captured["room"] is room

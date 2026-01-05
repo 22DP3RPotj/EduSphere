@@ -23,6 +23,9 @@ SECRET_KEY = env("SECRET_KEY")
 
 DEBUG = env("DEBUG")
 
+GIT_SHA = env("GIT_SHA", default="unknown")
+APP_VERSION = env("APP_VERSION", default="unknown")
+
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
@@ -49,6 +52,7 @@ INSTALLED_APPS = [
     "backend.moderation.apps.ModerationConfig",
     "backend.invite.apps.InviteConfig",
     "backend.graphql.apps.GraphQLConfig",
+    "backend.infra.apps.InfraConfig",
     # Third-party apps
     "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
     "channels.apps.ChannelsConfig",

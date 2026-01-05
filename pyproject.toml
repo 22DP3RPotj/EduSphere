@@ -100,7 +100,6 @@ omit = [
   "*/apps.py",
 ]
 
-
 [tool.poetry.group.linting]
 optional = true
 

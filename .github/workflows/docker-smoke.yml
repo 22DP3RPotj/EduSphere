@@ -60,11 +60,23 @@ jobs:
           set -euo pipefail
           docker compose up -d --wait --wait-timeout 120
 
-      - name: Django basic checks (inside backend)
+      - name: Assert backend is healthy
         run: |
           set -euo pipefail
-          docker compose exec -T backend poetry run python manage.py check
-          docker compose exec -T backend poetry run python manage.py migrate --noinput
+          backend_id="$(docker compose ps -q backend)"
+          if [ -z "$backend_id" ]; then
+            echo "backend container id not found"
+            docker compose ps
+            exit 1
+          fi
+
+          status="$(docker inspect --format '{{.State.Health.Status}}' "$backend_id" 2>/dev/null || true)"
+          echo "backend health: ${status:-unknown}"
+          if [ "$status" != "healthy" ]; then
+            docker inspect --format '{{json .State.Health}}' "$backend_id" || true
+            docker compose logs --no-color --tail=300 backend
+            exit 1
+          fi
 
       - name: HTTP smoke via nginx
         run: |

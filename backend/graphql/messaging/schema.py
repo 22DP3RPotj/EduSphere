@@ -1,11 +1,7 @@
 import graphene
 
 from .resolvers import MessageQuery
-from .mutations.message import (
-    CreateMessage,
-    DeleteMessage,
-    UpdateMessage
-)
+from .mutations.message import CreateMessage, DeleteMessage, UpdateMessage
 
 
 class MessagingQueries(MessageQuery, graphene.ObjectType):

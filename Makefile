@@ -1,4 +1,9 @@
-.PHONY: help setup run unit-test report clean clean-logs
+.PHONY: help setup run unit-test report clean clean-logs clean-migrations typecheck lint format docker-compose-up docker-compose-down
+
+PY = poetry run python
+PX = poetry run
+
+export DJANGO_SETTINGS_MODULE=backend.config.settings
 
 all: help
 
@@ -11,14 +16,11 @@ help:
 	@echo "make report     - Run tests with coverage report"
 	@echo "make clean      - Clean generated files and caches"
 	@echo "make clean-logs - Clear log files"
+	@echo "make clean-migrations - Remove Django migration files"
+	@echo "make typecheck  - Run mypy type checks"
+	@echo "make lint       - Run ruff linter checks"
 	@echo "make docker-compose-up   - Start services with Docker Compose"
 	@echo "make docker-compose-down - Stop services with Docker Compose"
-
-
-PY = poetry run python
-PX = poetry run
-
-export DJANGO_SETTINGS_MODULE=backend.config.settings
 
 setup:
 	sudo service postgresql start; \
@@ -48,6 +50,16 @@ report:
 		$(MAKE) coverage; \
 	fi
 	$(PX) coverage report --skip-empty
+
+
+typecheck:
+	$(PX) mypy backend
+
+lint:
+	$(PX) ruff check backend
+
+format:
+	$(PX) ruff format --check backend
 
 clean:
 	find . -type f -name '*.pyc' -delete

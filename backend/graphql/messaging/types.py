@@ -6,10 +6,11 @@ from backend.messaging.models import Message, MessageStatus
 
 MessageStatusEnum = graphene.Enum.from_enum(MessageStatus.Status)
 
+
 class MessageType(DjangoObjectType):
     user = graphene.Field("backend.graphql.account.types.UserType", required=True)
     room = graphene.Field("backend.graphql.room.types.RoomType", required=True)
-    
+
     class Meta:
         model = Message
         fields = (
@@ -27,7 +28,7 @@ class MessageStatusType(graphene.ObjectType):
     message = graphene.Field(MessageType, required=True)
     room = graphene.Field("backend.graphql.room.types.RoomType", required=True)
     status = graphene.Field(MessageStatusEnum, required=True)
-    
+
     class Meta:
         model = MessageStatus
         fields = (

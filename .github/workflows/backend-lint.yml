@@ -1,4 +1,4 @@
-name: Django Tests
+name: Backend Lint
 
 on:
   push:
@@ -19,23 +19,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  ruff:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_pass
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     env:
       DJANGO_SETTINGS_MODULE: backend.config.settings
@@ -69,17 +54,9 @@ jobs:
             ${{ runner.os }}-poetry-
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root
+        run: poetry install --no-interaction --no-root --with linting
 
-      - name: Create logs directory
-        run: mkdir -p logs
-
-      - name: Wait for DB
+      - name: Run ruff
         run: |
-          until pg_isready -h localhost -p 5432; do sleep 1; done
-
-      - name: Run Django unit-tests (Makefile target)
-        run: poetry run make coverage
-
-      - name: Check coverage threshold
-        run: poetry run coverage report --fail-under=70
+          make lint
+          make format

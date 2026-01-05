@@ -7,67 +7,139 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('room', '0001_initial'),
+        ("room", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Message',
+            name="Message",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('body', models.TextField(max_length=2048)),
-                ('is_edited', models.BooleanField(default=False)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='replies', to='messaging.message')),
-                ('room', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='room.room')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("body", models.TextField(max_length=2048)),
+                ("is_edited", models.BooleanField(default=False)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="replies",
+                        to="messaging.message",
+                    ),
+                ),
+                (
+                    "room",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="room.room"
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='MessageStatus',
+            name="MessageStatus",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('status', models.CharField(choices=[('SENT', 'Sent'), ('DELIVERED', 'Delivered'), ('SEEN', 'Seen')], max_length=16)),
-                ('timestamp', models.DateTimeField(auto_now=True)),
-                ('message', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='statuses', to='messaging.message')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='message_statuses', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("SENT", "Sent"),
+                            ("DELIVERED", "Delivered"),
+                            ("SEEN", "Seen"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now=True)),
+                (
+                    "message",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="statuses",
+                        to="messaging.message",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="message_statuses",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.AddIndex(
-            model_name='message',
-            index=models.Index(fields=['room', 'user', 'created_at'], name='messaging_m_room_id_ac496f_idx'),
+            model_name="message",
+            index=models.Index(
+                fields=["room", "user", "created_at"],
+                name="messaging_m_room_id_ac496f_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='message',
-            index=models.Index(fields=['room', 'created_at'], name='messaging_m_room_id_689271_idx'),
+            model_name="message",
+            index=models.Index(
+                fields=["room", "created_at"], name="messaging_m_room_id_689271_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='message',
-            index=models.Index(fields=['room', '-created_at'], name='messaging_m_room_id_3d58b2_idx'),
+            model_name="message",
+            index=models.Index(
+                fields=["room", "-created_at"], name="messaging_m_room_id_3d58b2_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='message',
-            index=models.Index(fields=['user', 'created_at'], name='messaging_m_user_id_d77318_idx'),
+            model_name="message",
+            index=models.Index(
+                fields=["user", "created_at"], name="messaging_m_user_id_d77318_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='message',
-            index=models.Index(fields=['user'], name='messaging_m_user_id_ea1dac_idx'),
+            model_name="message",
+            index=models.Index(fields=["user"], name="messaging_m_user_id_ea1dac_idx"),
         ),
         migrations.AddIndex(
-            model_name='messagestatus',
-            index=models.Index(fields=['message', 'user'], name='messaging_m_message_e347af_idx'),
+            model_name="messagestatus",
+            index=models.Index(
+                fields=["message", "user"], name="messaging_m_message_e347af_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='messagestatus',
-            constraint=models.UniqueConstraint(fields=('message', 'user'), name='unique_message_status_per_user'),
+            model_name="messagestatus",
+            constraint=models.UniqueConstraint(
+                fields=("message", "user"), name="unique_message_status_per_user"
+            ),
         ),
     ]

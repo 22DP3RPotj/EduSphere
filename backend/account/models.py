@@ -13,11 +13,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     username = models.SlugField(max_length=32, unique=True)
     name = models.CharField(max_length=32)
-    bio = models.TextField(blank=True, default='', max_length=4096)
+    bio = models.TextField(blank=True, default="", max_length=4096)
     avatar = models.ImageField(
-        upload_to='avatars',
-        blank=True, null=True,
-        validators=[FileExtensionValidator(['svg','png','jpg','jpeg'])]
+        upload_to="avatars",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(["svg", "png", "jpg", "jpeg"])],
     )
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -25,9 +26,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
-    EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'name']
+    USERNAME_FIELD = "email"
+    EMAIL_FIELD = "email"
+    REQUIRED_FIELDS = ["username", "name"]
 
     def __str__(self):
         return self.username
@@ -36,12 +37,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.username = slugify(self.username)
         self.full_clean()
         super().save(*args, **kwargs)
-        
+
     class Meta:
-        app_label = 'account'
-        ordering = [Lower('username')]
+        app_label = "account"
+        ordering = [Lower("username").asc()]
         indexes = [
-            models.Index(fields=['email']),
-            models.Index(fields=['username']),
-            models.Index(fields=['date_joined'])
+            models.Index(fields=["email"]),
+            models.Index(fields=["username"]),
+            models.Index(fields=["date_joined"]),
         ]

@@ -4,8 +4,6 @@ services:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    env_file:
-      - ./docker.env
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
@@ -32,17 +30,24 @@ services:
     volumes:
       - ./media:/app/media
       - static_volume:/app/staticfiles
-    env_file:
-      - ./docker.env
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=${DATABASE_URL}
       - DJANGO_SETTINGS_MODULE=backend.config.settings
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/infra/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   # Nginx service with built-in frontend
   nginx:
@@ -55,7 +60,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:

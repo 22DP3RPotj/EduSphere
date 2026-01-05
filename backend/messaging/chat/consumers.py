@@ -11,14 +11,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.redis_client = redis.Redis(
-            host=getattr(settings, 'REDIS_HOST', 'localhost'),
-            port=getattr(settings, 'REDIS_PORT', 6379),
-            db=getattr(settings, 'REDIS_DB', 0),
-            decode_responses=True
+            host=getattr(settings, "REDIS_HOST", "localhost"),
+            port=getattr(settings, "REDIS_PORT", 6379),
+            db=getattr(settings, "REDIS_DB", 0),
+            decode_responses=True,
         )
         self.consumer_group = None
         self.consumer_name = None
@@ -33,6 +34,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Return the maximum length of the message body.
         """
         from backend.messaging.models import Message
+
         return Message._meta.get_field("body").max_length
 
     async def send_error(self, error_message):
@@ -47,16 +49,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Authenticate user, verify room exists and that the user is a participant,
         then add to group and accept the WebSocket connection.
         """
-        user = self.scope.get('user')
+        user = self.scope.get("user")
 
         if not user or not user.is_authenticated:
             await self.close()
             return
-        
+
         self.user = user
-        self.username = self.scope['url_route']['kwargs']['username']
-        self.room_slug = self.scope['url_route']['kwargs']['room']
-        self.room_group_name = f'chat_{self.username}_{self.room_slug}'
+        self.username = self.scope["url_route"]["kwargs"]["username"]
+        self.room_slug = self.scope["url_route"]["kwargs"]["room"]
+        self.room_group_name = f"chat_{self.username}_{self.room_slug}"
 
         # Redis Streams setup
         self.stream_key = f"chat_stream:{self.username}:{self.room_slug}"
@@ -65,10 +67,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         from backend.room.models import Room
         from backend.access.models import Participant
+
         try:
             room = await database_sync_to_async(Room.objects.get)(
-                host__username=self.username,
-                slug=self.room_slug
+                host__username=self.username, slug=self.room_slug
             )
         except Room.DoesNotExist:
             logger.warning(f"Room not found: {self.username}/{self.room_slug}")
@@ -78,7 +80,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         is_participant = await database_sync_to_async(
             Participant.objects.filter(user=self.user, room=room).exists
         )()
-        
+
         if not is_participant:
             logger.warning(
                 f"User {self.user.username} ({self.user.id}) is not a participant of room {room.slug}"
@@ -89,10 +91,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Setup Redis Streams consumer group
         await self.setup_redis_streams()
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         self.initialized = True
         await self.accept()
 
@@ -103,13 +102,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             # Create consumer group if it doesn't exist
             await asyncio.get_event_loop().run_in_executor(
-                None, 
+                None,
                 lambda: self.redis_client.xgroup_create(
-                    self.stream_key, 
-                    self.consumer_group, 
-                    id='0', 
-                    mkstream=True
-                )
+                    self.stream_key, self.consumer_group, id="0", mkstream=True
+                ),
             )
         except redis.exceptions.ResponseError as e:
             if "BUSYGROUP" not in str(e):
@@ -123,10 +119,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     lambda: self.redis_client.xreadgroup(
                         self.consumer_group,
                         self.consumer_name,
-                        {self.stream_key: '>'},
+                        {self.stream_key: ">"},
                         count=1,
-                        block=1000
-                    )
+                        block=1000,
+                    ),
                 )
 
                 for stream, msgs in messages:
@@ -139,21 +135,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def process_stream_message(self, msg_id, fields):
         """Process a message from Redis Streams"""
         try:
-            if fields.get('consumer_name') == self.consumer_name:
+            if fields.get("consumer_name") == self.consumer_name:
                 await asyncio.get_event_loop().run_in_executor(
                     None,
-                    lambda: self.redis_client.xack(self.stream_key, self.consumer_group, msg_id)
+                    lambda: self.redis_client.xack(
+                        self.stream_key, self.consumer_group, msg_id
+                    ),
                 )
                 return
 
-            message_data = json.loads(fields.get('data', '{}'))
+            message_data = json.loads(fields.get("data", "{}"))
             await self.send(text_data=json.dumps(message_data))
-            
+
             await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: self.redis_client.xack(self.stream_key, self.consumer_group, msg_id)
+                lambda: self.redis_client.xack(
+                    self.stream_key, self.consumer_group, msg_id
+                ),
             )
-            
+
         except Exception as e:
             logger.error(f"Error processing stream message: {e}")
 
@@ -163,30 +163,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         if not self.initialized:
             return
-        
+
         if self.consume_task:
             self.consume_task.cancel()
             try:
                 await self.consume_task
             except asyncio.CancelledError:
                 pass
-        
+
         try:
             await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.redis_client.xgroup_delconsumer(
-                    self.stream_key,
-                    self.consumer_group,
-                    self.consumer_name
-                )
+                    self.stream_key, self.consumer_group, self.consumer_name
+                ),
             )
         except Exception as e:
             logger.error(f"Error removing consumer: {e}")
 
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
         """
@@ -194,23 +189,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Assumes only participants reach this point.
         """
         data = json.loads(text_data)
-        message_type = data.get('type', 'text')
+        message_type = data.get("type", "text")
 
         from backend.room.models import Room
+
         room = await database_sync_to_async(Room.objects.get)(
-            host__username=self.username,
-            slug=self.room_slug
+            host__username=self.username, slug=self.room_slug
         )
 
-        if message_type == 'text':
-            await self.handle_new_message(room, data.get('message'))
-        elif message_type == 'delete':
-            await self.handle_delete_message(data.get('messageId'))
-        elif message_type == 'update':
-            await self.handle_update_message(
-                data.get('messageId'),
-                data.get('message')
-            )
+        if message_type == "text":
+            await self.handle_new_message(room, data.get("message"))
+        elif message_type == "delete":
+            await self.handle_delete_message(data.get("messageId"))
+        elif message_type == "update":
+            await self.handle_update_message(data.get("messageId"), data.get("message"))
 
     async def publish_to_stream(self, message_data):
         """Publish message to Redis Streams"""
@@ -220,11 +212,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 lambda: self.redis_client.xadd(
                     self.stream_key,
                     {
-                        'data': json.dumps(message_data),
-                        'consumer_name': self.consumer_name,
-                        'timestamp': datetime.now().isoformat()
-                    }
-                )
+                        "data": json.dumps(message_data),
+                        "consumer_name": self.consumer_name,
+                        "timestamp": datetime.now().isoformat(),
+                    },
+                ),
             )
         except Exception as e:
             logger.error(f"Error publishing to stream: {e}")
@@ -240,27 +232,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message.full_clean()
             message.save()
             return message
-        
+
         @database_sync_to_async
         def serialize(message):
             return MessageService.serialize(message)
 
         try:
             new_message = await create_message(
-                user=self.user,
-                room=room,
-                body=message_body
+                user=self.user, room=room, body=message_body
             )
         except ValidationError:
-            await self.send_error(
-                f"Message exceeds {self.max_body_length} characters."
-            )
+            await self.send_error(f"Message exceeds {self.max_body_length} characters.")
             return
 
         serialized = await serialize(new_message)
         message_data = {
-            'type': 'chat_message',
-            'action': 'new',
+            "type": "chat_message",
+            "action": "new",
             **serialized,
         }
 
@@ -277,6 +265,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         @database_sync_to_async
         def get_message():
             return Message.objects.get(id=message_id)
+
         @database_sync_to_async
         def delete_with_service(message):
             return MessageService.delete_message(self.user, message)
@@ -294,9 +283,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         message_data = {
-            'type': 'chat_message',
-            'action': 'delete',
-            'id': message_id,
+            "type": "chat_message",
+            "action": "delete",
+            "id": message_id,
         }
 
         # Publish to both channels and Redis Streams
@@ -311,15 +300,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         @database_sync_to_async
         def get_message():
             return Message.objects.get(id=message_id)
+
         @database_sync_to_async
         def check_owner(message):
             return message.user_id == self.user.id
+
         @database_sync_to_async
         def do_update(message):
             message = MessageService.update_message(
-                user=self.user,
-                message=message,
-                body=new_body
+                user=self.user, message=message, body=new_body
             )
             return message.updated_at
 
@@ -336,18 +325,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             updated_ts = await do_update(message)
         except ValidationError:
-            await self.send_error(
-                f"Message exceeds {self.max_body_length} characters."
-            )
+            await self.send_error(f"Message exceeds {self.max_body_length} characters.")
             return
 
         message_data = {
-            'type': 'chat_message',
-            'action': 'update',
-            'id': message_id,
-            'body': new_body,
-            'is_edited': True,
-            'updated_at': updated_ts.isoformat() if updated_ts else None,
+            "type": "chat_message",
+            "action": "update",
+            "id": message_id,
+            "body": new_body,
+            "is_edited": True,
+            "updated_at": updated_ts.isoformat() if updated_ts else None,
         }
 
         # Publish to both channels and Redis Streams
@@ -360,31 +347,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         await self.send(text_data=json.dumps(event))
 
-    async def get_message_history(self, start_id='0', count=50):
+    async def get_message_history(self, start_id="0", count=50):
         """Retrieve message history from Redis Streams"""
         try:
             messages = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: self.redis_client.xrange(
-                    self.stream_key,
-                    start_id,
-                    '+',
-                    count=count
-                )
+                    self.stream_key, start_id, "+", count=count
+                ),
             )
-            
+
             history = []
             for msg_id, fields in messages:
                 try:
-                    message_data = json.loads(fields.get('data', '{}'))
-                    history.append({
-                        'id': msg_id,
-                        'timestamp': fields.get('timestamp'),
-                        **message_data
-                    })
+                    message_data = json.loads(fields.get("data", "{}"))
+                    history.append(
+                        {
+                            "id": msg_id,
+                            "timestamp": fields.get("timestamp"),
+                            **message_data,
+                        }
+                    )
                 except json.JSONDecodeError:
                     continue
-                    
+
             return history
         except Exception as e:
             logger.error(f"Error retrieving message history: {e}")

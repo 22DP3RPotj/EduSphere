@@ -5,6 +5,7 @@ from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
+from backend.room.choices import RoomVisibility
 from backend.room.models import Room
 from backend.access.models import Participant
 from backend.room.services import RoomService
@@ -12,7 +13,7 @@ from backend.core.exceptions import (
     PermissionException,
     FormValidationException,
     ConflictException,
-    ErrorCode
+    ErrorCode,
 )
 
 
@@ -32,7 +33,7 @@ class CreateRoom(graphene.Mutation):
         name: str,
         topic_names: list[str],
         description: str,
-        visibility: Optional[Room.Visibility] = None
+        visibility: Optional[RoomVisibility] = None,
     ):
         try:
             room = RoomService.create_room(
@@ -48,6 +49,7 @@ class CreateRoom(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code})
 
         return CreateRoom(room=room)
+
 
 class UpdateRoom(graphene.Mutation):
     class Arguments:
@@ -67,13 +69,15 @@ class UpdateRoom(graphene.Mutation):
         name: Optional[str] = None,
         description: Optional[str] = None,
         topic_names: Optional[list[str]] = None,
-        visibility: Optional[Room.Visibility] = None,
+        visibility: Optional[RoomVisibility] = None,
     ):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         try:
             room = RoomService.update_room(
                 user=info.context.user,
@@ -89,7 +93,7 @@ class UpdateRoom(graphene.Mutation):
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
         return UpdateRoom(room=room)
-    
+
 
 class DeleteRoom(graphene.Mutation):
     class Arguments:
@@ -102,17 +106,17 @@ class DeleteRoom(graphene.Mutation):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
-        try:
-            success = RoomService.delete_room(
-                user=info.context.user,
-                room=room
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
+
+        try:
+            success = RoomService.delete_room(user=info.context.user, room=room)
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
 
         return DeleteRoom(success=success)
+
 
 class JoinRoom(graphene.Mutation):
     class Arguments:
@@ -127,25 +131,24 @@ class JoinRoom(graphene.Mutation):
                 id=room_id,
             )
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         if Participant.objects.filter(user=info.context.user, room=room).exists():
             raise GraphQLError(
                 "Already a participant of this room",
-                extensions={"code": ErrorCode.PERMISSION_DENIED}
+                extensions={"code": ErrorCode.PERMISSION_DENIED},
             )
-            
+
         if room.visibility == Room.Visibility.PRIVATE:
             raise GraphQLError(
                 "Cannot join a private room",
-                extensions={"code": ErrorCode.PERMISSION_DENIED}
+                extensions={"code": ErrorCode.PERMISSION_DENIED},
             )
 
         Participant.objects.create(
-            user=info.context.user,
-            room=room,
-            role=room.default_role
+            user=info.context.user, room=room, role=room.default_role
         )
-        
-        return JoinRoom(room=room)
 
+        return JoinRoom(room=room)

@@ -5,9 +5,7 @@ from datetime import timedelta
 
 
 # Initialize environment variables
-env = environ.Env(
-    DEBUG=(bool, False)
-)
+env = environ.Env(DEBUG=(bool, False))
 
 # Build paths inside the project like this: BASE_DIR / "subdir".
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -24,6 +22,9 @@ environ.Env.read_env(ENV_PATH)
 SECRET_KEY = env("SECRET_KEY")
 
 DEBUG = env("DEBUG")
+
+GIT_SHA = env("GIT_SHA", default="unknown")
+APP_VERSION = env("APP_VERSION", default="unknown")
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -42,7 +43,6 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
-    
     # Custom apps
     "backend.account.apps.AccountConfig",
     "backend.core.apps.CoreConfig",
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "backend.moderation.apps.ModerationConfig",
     "backend.invite.apps.InviteConfig",
     "backend.graphql.apps.GraphQLConfig",
-    
+    "backend.infra.apps.InfraConfig",
     # Third-party apps
     "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
     "channels.apps.ChannelsConfig",
@@ -73,13 +73,13 @@ MIDDLEWARE = [
 
 # TODO: When moving to production with HTTPS
 # SECURE_SETTINGS = {
-    # "SECURE_SSL_REDIRECT": True,  # Redirect all HTTP to HTTPS
-    # "SECURE_HSTS_SECONDS": 31536000,  # 1 year
-    # "SECURE_HSTS_INCLUDE_SUBDOMAINS": True,
-    # "SECURE_HSTS_PRELOAD": True,
-    # "SECURE_CONTENT_TYPE_NOSNIFF": True,
-    # "SECURE_BROWSER_XSS_FILTER": True,
-    # "SECURE_PROXY_SSL_HEADER": ("HTTP_X_FORWARDED_PROTO", "https"),
+# "SECURE_SSL_REDIRECT": True,  # Redirect all HTTP to HTTPS
+# "SECURE_HSTS_SECONDS": 31536000,  # 1 year
+# "SECURE_HSTS_INCLUDE_SUBDOMAINS": True,
+# "SECURE_HSTS_PRELOAD": True,
+# "SECURE_CONTENT_TYPE_NOSNIFF": True,
+# "SECURE_BROWSER_XSS_FILTER": True,
+# "SECURE_PROXY_SSL_HEADER": ("HTTP_X_FORWARDED_PROTO", "https"),
 # }
 
 ROOT_URLCONF = "backend.config.urls"
@@ -87,9 +87,7 @@ ROOT_URLCONF = "backend.config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            BASE_DIR / "templates"
-        ],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -103,36 +101,36 @@ TEMPLATES = [
 ]
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'graphql_file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'graphql.log',
-            'formatter': 'verbose',
+    "handlers": {
+        "graphql_file": {
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "logs" / "graphql.log",
+            "formatter": "verbose",
         },
-        'root_file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'general.log',
-            'formatter': 'verbose',
-        },
-    },
-    'loggers': {
-        'backend.graphql.middleware': {
-            'handlers': ['graphql_file'],
-            'level': 'DEBUG',
-            'propagate': False,
+        "root_file": {
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "logs" / "general.log",
+            "formatter": "verbose",
         },
     },
-    'root': {
-        'handlers': ['root_file'],
-        'level': 'WARNING',
+    "loggers": {
+        "backend.graphql.middleware": {
+            "handlers": ["graphql_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["root_file"],
+        "level": "WARNING",
     },
 }
 
@@ -161,10 +159,10 @@ GRAPHQL_JWT = {
 }
 
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax" # TODO: "Strict"
+SESSION_COOKIE_SAMESITE = "Lax"  # TODO: "Strict"
 
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = "Lax" # TODO: "Strict"
+CSRF_COOKIE_SAMESITE = "Lax"  # TODO: "Strict"
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
@@ -199,10 +197,12 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(
-                env("REDIS_HOST", default="localhost"),
-                env("REDIS_PORT", default="6379")
-            )],
+            "hosts": [
+                (
+                    env("REDIS_HOST", default="localhost"),
+                    env("REDIS_PORT", default="6379"),
+                )
+            ],
         },
     },
 }
@@ -213,9 +213,9 @@ REDIS_PORT = env.int("REDIS_PORT", default=6379)
 REDIS_DB = env.int("REDIS_DB", default=0)
 
 REDIS_STREAMS = {
-    'MAX_STREAM_LENGTH': 10000,
-    'MESSAGE_TTL': 86400,
-    'CONSUMER_TIMEOUT': 300,
+    "MAX_STREAM_LENGTH": 10000,
+    "MESSAGE_TTL": 86400,
+    "CONSUMER_TIMEOUT": 300,
 }
 
 # Password validation

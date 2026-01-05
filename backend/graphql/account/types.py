@@ -18,7 +18,7 @@ class UserType(DjangoObjectType):
             "is_superuser",
             "date_joined",
         )
-    
+
 
 class AuthStatusType(graphene.ObjectType):
     is_authenticated = graphene.Boolean(required=True)

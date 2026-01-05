@@ -8,12 +8,17 @@ import pytest
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 
-from backend.core.exceptions import ConflictException, FormValidationException, PermissionException, ValidationException
+from backend.core.exceptions import (
+    ConflictException,
+    FormValidationException,
+    PermissionException,
+    ValidationException,
+)
 from backend.invite.models import Invite
 from backend.invite.services import InviteService
 from backend.room.models import Room
 from backend.access.services import RoleService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 User = get_user_model()
 
@@ -329,7 +334,6 @@ class InviteServiceTest(ServiceTestBase):
 
         result = InviteService.get_invite_by_token(fake_token)
         self.assertIsNone(result)
-
 
     def test_update_expired_invites(self):
         self._add_member(self.member, self.owner_role)

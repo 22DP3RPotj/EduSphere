@@ -20,19 +20,25 @@ class RoleQuery(graphene.ObjectType):
         RoleType,
         room_id=graphene.UUID(required=True),
     )
-    
+
     def resolve_role(self, info: graphene.ResolveInfo, role_id: uuid.UUID) -> Role:
         role = RoleService.get_role_by_id(role_id)
-        
+
         if role is None:
-            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         return role
 
-    def resolve_room_roles(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> QuerySet[Role]:
+    def resolve_room_roles(
+        self, info: graphene.ResolveInfo, room_id: uuid.UUID
+    ) -> QuerySet[Role]:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         return RoleService.get_room_roles(room)

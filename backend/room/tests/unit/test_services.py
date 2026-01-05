@@ -7,7 +7,7 @@ from backend.access.models import Participant
 from backend.core.exceptions import FormValidationException, PermissionException
 from backend.room.models import Room
 from backend.room.services import RoomService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 
 class RoomServiceTest(ServiceTestBase):
@@ -73,7 +73,9 @@ class RoomServiceTest(ServiceTestBase):
 
     def test_update_room_no_permission(self):
         with self.assertRaises(PermissionException):
-            RoomService.update_room(user=self.other_user, room=self.room, name="Hacked Room")
+            RoomService.update_room(
+                user=self.other_user, room=self.room, name="Hacked Room"
+            )
 
     def test_delete_room_success(self):
         result = RoomService.delete_room(self.owner, self.room)

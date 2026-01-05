@@ -8,7 +8,7 @@ from backend.core.exceptions import PermissionException
 from backend.invite.services import InviteService
 from backend.moderation.models import Report
 from backend.moderation.services import ReportService
-from backend.tests.service_base import ServiceTestBase
+from backend.core.tests.service_base import ServiceTestBase
 
 
 class ErrorHandlingTests(ServiceTestBase):

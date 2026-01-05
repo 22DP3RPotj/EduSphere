@@ -1,0 +1,85 @@
+name: Backend Test
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: backend.config.settings
+      SECRET_KEY: test_secret_key
+      DEBUG: 'False'
+      DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.3'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Configure Poetry virtualenv
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies + venv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Create logs directory
+        run: mkdir -p logs
+
+      - name: Wait for DB
+        run: |
+          until pg_isready -h localhost -p 5432; do sleep 1; done
+
+      - name: Run Django tests (Makefile target)
+        run: poetry run make coverage
+
+      - name: Check coverage threshold
+        run: poetry run coverage report --fail-under=70

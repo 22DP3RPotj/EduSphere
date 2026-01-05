@@ -18,7 +18,9 @@ class TopicType(DjangoObjectType):
 
 
 class RoomType(DjangoObjectType):
-    participants = graphene.List("backend.graphql.access.types.ParticipantType", required=True)
+    participants = graphene.List(
+        "backend.graphql.access.types.ParticipantType", required=True
+    )
     topics = graphene.List(TopicType, required=True)
     host = graphene.Field("backend.graphql.account.types.UserType", required=True)
     visibility = graphene.Field(RoomVisibilityEnum, required=True)
@@ -37,9 +39,9 @@ class RoomType(DjangoObjectType):
             "updated_at",
             "created_at",
         )
-    
+
     def resolve_participants(self, info):
         return Participant.objects.select_related("user", "role").filter(room=self)
-    
+
     def resolve_topics(self, info):
         return self.topics.all()

@@ -12,7 +12,7 @@ from backend.core.exceptions import (
     PermissionException,
     ValidationException,
     ConflictException,
-    ErrorCode
+    ErrorCode,
 )
 
 
@@ -35,23 +35,27 @@ class AddParticipant(graphene.Mutation):
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
-            raise GraphQLError("Room not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            raise GraphQLError("User not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "User not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
-            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         try:
             participant = ParticipantService.add_participant(
-                room=room,
-                user=user,
-                role=role
+                room=room, user=user, role=role
             )
         except ValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
@@ -78,18 +82,20 @@ class ChangeParticipantRole(graphene.Mutation):
         try:
             participant = Participant.objects.get(id=participant_id)
         except Participant.DoesNotExist:
-            raise GraphQLError("Participant not found", extensions={"code": ErrorCode.NOT_FOUND})
-        
+            raise GraphQLError(
+                "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
-            raise GraphQLError("Role not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         try:
             participant = ParticipantService.change_participant_role(
-                user=info.context.user,
-                participant=participant,
-                new_role=role
+                user=info.context.user, participant=participant, new_role=role
             )
         except (PermissionException, ValidationException) as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
@@ -112,15 +118,15 @@ class RemoveParticipant(graphene.Mutation):
         try:
             participant = Participant.objects.get(id=participant_id)
         except Participant.DoesNotExist:
-            raise GraphQLError("Participant not found", extensions={"code": ErrorCode.NOT_FOUND})
+            raise GraphQLError(
+                "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
 
         try:
             success = ParticipantService.remove_participant(
-                user=info.context.user,
-                participant=participant
+                user=info.context.user, participant=participant
             )
         except PermissionException as e:
             raise GraphQLError(str(e), extensions={"code": e.code})
 
         return RemoveParticipant(success=success)
-

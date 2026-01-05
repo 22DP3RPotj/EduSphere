@@ -1,9 +1,5 @@
 import graphene
-from .mutations.report import (
-    CreateReport,
-    UpdateReport,
-    DeleteReport
-)
+from .mutations.report import CreateReport, UpdateReport, DeleteReport
 from .resolvers import ReportQuery
 
 

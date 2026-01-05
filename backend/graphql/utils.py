@@ -2,6 +2,7 @@
 
 from django.forms.utils import ErrorDict
 
+
 def format_form_errors(errors: ErrorDict) -> dict[str, list[str]]:
     return {
         field: [e["message"] for e in errs]

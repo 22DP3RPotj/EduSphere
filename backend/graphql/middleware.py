@@ -35,7 +35,7 @@ class ValidationMiddleware:
 
         except json.JSONDecodeError:
             pass
-        except Exception as e:
+        except Exception:
             return next_(root, info, **kwargs)
 
         return next_(root, info, **kwargs)

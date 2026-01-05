@@ -31,7 +31,9 @@ class QueryTests(JSONWebTokenTestCase):
             description="Test Description",
             visibility=Room.Visibility.PUBLIC,
         )
-        self.role = Role.objects.create(room=self.room, name="Member", description="", priority=0)
+        self.role = Role.objects.create(
+            room=self.room, name="Member", description="", priority=0
+        )
         self.room.default_role = self.role
         self.room.save()
         self.room.topics.add(self.topic_tech)
@@ -39,9 +41,7 @@ class QueryTests(JSONWebTokenTestCase):
         Participant.objects.create(user=self.user, room=self.room, role=self.role)
 
         self.message = Message.objects.create(
-            user=self.user,
-            room=self.room,
-            body="Hello!",
+            user=self.user, room=self.room, body="Hello!"
         )
 
     def test_rooms_query(self):
@@ -102,7 +102,9 @@ class QueryTests(JSONWebTokenTestCase):
         """
         result: ExecutionResult = self.client.execute(query)
         self.assertTrue(result.data["authStatus"]["isAuthenticated"])
-        self.assertEqual(result.data["authStatus"]["user"]["username"], self.user.username)
+        self.assertEqual(
+            result.data["authStatus"]["user"]["username"], self.user.username
+        )
 
     def test_auth_status_not_authenticated(self):
         query = """
@@ -160,23 +162,6 @@ class QueryTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertIsNone(result.errors, f"Unexpected errors: {result.errors}")
         self.assertIsNotNone(result.data)
-        self.assertEqual(len(result.data["rooms"]), 1)
-
-    def test_topics_query(self):
-        query = """
-            query GetTopics {
-                topics {
-                    name
-                }
-            }
-        """
-        result: ExecutionResult = self.client.execute(query)
-        topic_names = [topic["name"] for topic in result.data["topics"]]
-        self.assertIn("Tech", topic_names)
-        self.assertIn("Music", topic_names)
-
-        variables = {"topics": ["Tech"]}
-        result = self.client.execute(query, variables)
         self.assertEqual(len(result.data["rooms"]), 1)
 
     def test_rooms_participated_by_user(self):

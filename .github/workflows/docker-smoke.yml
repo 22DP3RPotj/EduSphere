@@ -34,11 +34,11 @@ jobs:
     env:
       SECRET_KEY: test_secret_key
       DEBUG: 'False'
-      DB_NAME: test_db
-      DB_USER: test_user
-      DB_PASSWORD: test_pass
-      DB_HOST: postgres
-      DB_PORT: '5432'
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: '5432'
       DATABASE_URL: postgresql://test_user:test_pass@postgres:5432/test_db
       REDIS_HOST: redis
       REDIS_PORT: '6379'

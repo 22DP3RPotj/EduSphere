@@ -65,11 +65,7 @@ A full-stack real-time messaging platform built with Django (backend) and Vue.js
 2. Configure environment variables (create `.env` file):
    ```env
    SECRET_KEY=secret_key
-   DB_NAME=coredb
-   DB_USER=db_user
-   DB_PASSWORD=db_password
-   DB_HOST=localhost
-   DB_PORT=5432
+   DATABASE_URL=postgresql://coreuser:your-db-password@postgres:5432/coredb
 
    REDIS_HOST=localhost
    REDIS_PORT=6379
@@ -130,14 +126,13 @@ Access the application at [http://localhost](http://localhost)
 
 2. Configure environment variables (create `docker.env` file in project root):
    ```env
-   SECRET_KEY=your-secret-key-here
-   DEBUG=True
+   SECRET_KEY=secret-key
 
-   DB_NAME=coredb
-   DB_USER=coreuser
-   DB_PASSWORD=your-db-password
-   DB_HOST=postgres
-   DB_PORT=5432
+   POSTGRES_NAME=coredb
+   POSTGRES_USER=coreuser
+   POSTGRES_PASSWORD=your-db-password
+   POSTGRES_HOST=postgres
+   POSTGRES_PORT=5432
 
    DATABASE_URL=postgresql://coreuser:your-db-password@postgres:5432/coredb
 

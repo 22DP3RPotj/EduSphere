@@ -16,8 +16,6 @@ import type {
 
 export function useWebSocket(
   roomId: string,
-  hostSlug?: Ref<string | undefined>,
-  roomSlug?: Ref<string | undefined>,
 ) {
   const socket: Ref<WebSocket | null> = ref(null)
   const messages: Ref<Message[]> = ref([])
@@ -68,10 +66,6 @@ export function useWebSocket(
       return { success: false, error: "Authentication required" }
     }
 
-    if (!hostSlug?.value || !roomSlug?.value) {
-      return { success: false, error: "Room details not loaded" }
-    }
-
     // Fetch initial messages
     const fetchResult = await fetchInitialMessages()
     if (!fetchResult.success) {
@@ -80,7 +74,7 @@ export function useWebSocket(
     }
 
     // Initialize WebSocket connection
-    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${hostSlug.value}/${roomSlug.value}`
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${roomId}`
     connectionStatus.value = "connecting"
     connectionError.value = null
 

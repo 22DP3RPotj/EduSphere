@@ -16,9 +16,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.redis_client = redis.Redis(
-            host=getattr(settings, "REDIS_HOST", "localhost"),
-            port=getattr(settings, "REDIS_PORT", 6379),
-            db=getattr(settings, "REDIS_DB", 0),
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
             decode_responses=True,
         )
         self.consumer_group = None
@@ -26,6 +26,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.stream_key = None
         self.initialized = False
         self.consume_task = None
+        self.room_id = None
 
     # TODO: Move validation to forms
     @property
@@ -56,24 +57,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         self.user = user
-        self.username = self.scope["url_route"]["kwargs"]["username"]
-        self.room_slug = self.scope["url_route"]["kwargs"]["room"]
-        self.room_group_name = f"chat_{self.username}_{self.room_slug}"
+        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+        room_id_str = str(self.room_id)
+        self.room_group_name = f"chat_{room_id_str}"
 
         # Redis Streams setup
-        self.stream_key = f"chat_stream:{self.username}:{self.room_slug}"
-        self.consumer_group = f"chat_group:{self.username}:{self.room_slug}"
+        self.stream_key = f"chat_stream:{room_id_str}"
+        self.consumer_group = f"chat_group:{room_id_str}"
         self.consumer_name = f"consumer:{self.user.id}:{self.channel_name}"
 
         from backend.room.models import Room
         from backend.access.models import Participant
 
         try:
-            room = await database_sync_to_async(Room.objects.get)(
-                host__username=self.username, slug=self.room_slug
-            )
+            room = await database_sync_to_async(Room.objects.get)(id=self.room_id)
         except Room.DoesNotExist:
-            logger.warning(f"Room not found: {self.username}/{self.room_slug}")
+            logger.warning(f"Room not found: {self.room_id}")
             await self.close()
             return
 
@@ -83,7 +82,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         if not is_participant:
             logger.warning(
-                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.slug}"
+                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.id}"
             )
             await self.close()
             return
@@ -193,9 +192,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         from backend.room.models import Room
 
-        room = await database_sync_to_async(Room.objects.get)(
-            host__username=self.username, slug=self.room_slug
-        )
+        room = await database_sync_to_async(Room.objects.get)(id=self.room_id)
 
         if message_type == "text":
             await self.handle_new_message(room, data.get("message"))

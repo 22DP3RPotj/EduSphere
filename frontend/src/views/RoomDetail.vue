@@ -357,8 +357,6 @@ const {
   isConnected
 } = useWebSocket(
   roomId,
-  computed(() => room.value?.host?.username),
-  computed(() => room.value?.slug),
 );
 
 // Error recovery functions

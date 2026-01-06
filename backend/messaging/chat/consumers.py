@@ -144,7 +144,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             await self.redis_client.aclose()
         except (RedisError, OSError):
-            logger.warning(f"Error closing redis client.", exc_info=True)
+            logger.warning("Error closing redis client.", exc_info=True)
 
     async def receive(self, text_data):
         """
@@ -177,6 +177,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if not isinstance(message_body, str):
                 await self.send_error("Missing or invalid 'message'.")
                 return
+            # TODO: move to form validation
             if len(message_body) > self.max_body_length:
                 await self.send_error(
                     f"Message exceeds {self.max_body_length} characters."
@@ -361,7 +362,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
         except (RedisError, OSError):
             logger.error(
-                f"Error retrieving message history (redis unavailable).", exc_info=True
+                "Error retrieving message history (redis unavailable).", exc_info=True
             )
             return []
 

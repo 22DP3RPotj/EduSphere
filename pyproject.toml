@@ -38,11 +38,14 @@ mypy = "^1.19.1"
 [tool.django-stubs]
 django_settings_module = "backend.config.settings"
 
+
+
 [tool.poetry.group.testing]
 optional = true
 
 [tool.poetry.group.testing.dependencies]
 coverage = "^7.13.0"
+daphne = "^4.2.1"
 pytest = "^9.0.2"
 pytest-django = "^4.11.1"
 
@@ -99,6 +102,8 @@ omit = [
   "*/urls.py",
   "*/apps.py",
 ]
+
+
 
 [tool.poetry.group.linting]
 optional = true

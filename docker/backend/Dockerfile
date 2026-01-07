@@ -1,7 +1,13 @@
 # docker/backend/Dockerfile
 FROM python:3.12-slim
 
+ARG GIT_SHA=unknown
+ARG APP_VERSION=unknown
+
 WORKDIR /app
+
+ENV GIT_SHA=${GIT_SHA}
+ENV APP_VERSION=${APP_VERSION}
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

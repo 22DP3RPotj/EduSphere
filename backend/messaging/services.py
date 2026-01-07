@@ -157,11 +157,13 @@ class MessageService:
         """
         return {
             "id": str(message.id),
-            "user": message.author.username,
-            "user_id": str(message.author.id),
+            "author": message.author.username,
+            "author_id": str(message.author.id),
             "body": message.body,
             "is_edited": message.is_edited,
             "created_at": message.created_at.isoformat(),
             "updated_at": message.updated_at.isoformat(),
-            "user_avatar": message.author.avatar.name if message.author.avatar else None,
+            "authorAvatar": (
+                message.author.avatar.name if message.author.avatar else None
+            ),
         }

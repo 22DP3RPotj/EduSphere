@@ -23,7 +23,7 @@
             :title="new Date(props.message.created_at).toLocaleString()"
           >
             {{ formattedTimestamp }}
-            <span v-if="props.message.is_edited" class="is_edited-indicator">(is_edited)</span>
+            <span v-if="props.message.is_edited" class="is_edited-indicator">(edited)</span>
           </span>
         </div>
         
@@ -119,7 +119,7 @@ const showActions = ref<boolean>(false);
 const editTextarea = ref<HTMLTextAreaElement | null>(null);
 
 const isMessageOwner = computed(() => {
-  return (props.message.user?.id || props.message.user_id) === props.currentUserId;
+  return props.message.author?.id === props.currentUserId;
 });
 
 const formattedTimestamp = computed(() => {
@@ -132,11 +132,11 @@ const formattedTimestamp = computed(() => {
 });
 
 const userDisplayName = computed(() => {
-  return props.message.user?.username || props.message.user || '[Unknown]';
+  return props.message.author?.username || props.message.author || '[Unknown]';
 });
 
 const userAvatar = computed(() => {
-  const avatar = props.message.user?.avatar || props.message.userAvatar;
+  const avatar = props.message.author?.avatar || props.message.authorAvatar;
   return avatar ? `/media/${avatar}` : '/default.svg';
 })
 

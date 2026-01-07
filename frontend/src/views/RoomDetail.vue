@@ -152,7 +152,7 @@
               :key="message.id" 
               :message="message"
               :current-user-id="authStore.user?.id"
-              :is-host="message.user.id === room?.host?.id"
+              :is-host="message.author?.id === room?.host?.id"
               @delete-message="handleMessageDelete"
               @update-message="handleMessageUpdate"
             />
@@ -585,7 +585,7 @@ watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.va
 watch(() => messages.value.length, (newLength, oldLength) => {
   if (newLength > oldLength) {
     const lastMessage = messages.value[messages.value.length - 1];
-    if (lastMessage?.user?.id === authStore.user?.id) {
+    if (lastMessage?.author?.id === authStore.user?.id) {
       nextTick(() => {
         scrollToBottom();
       });

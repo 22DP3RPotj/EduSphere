@@ -120,6 +120,6 @@ class MessageServiceTest(ServiceTestBase):
         serialized = MessageService.serialize(message)
 
         self.assertEqual(serialized["body"], "Test message")
-        self.assertEqual(serialized["user"], self.member.username)
+        self.assertEqual(serialized["author"], self.member.username)
         self.assertIn("id", serialized)
         self.assertIn("created_at", serialized)

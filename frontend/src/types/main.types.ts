@@ -53,7 +53,7 @@ export interface Room {
 
 export interface Message {
   id: UUID;
-  user: User;
+  author: User;
   room: Room;
   parent: Message | null;
   body: string;
@@ -101,7 +101,7 @@ export interface RoomFilters {
 
 export interface MessageFilters {
   room?: string;
-  user?: string;
+  author?: string;
   search?: string;
 }
 

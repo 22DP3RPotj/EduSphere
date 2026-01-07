@@ -187,7 +187,7 @@ def test_text_message_broadcasts_and_persists_history(asgi_app, room_and_partici
         assert payload["type"] == "chat_message"
         assert payload["action"] == "new"
         assert payload["body"] == "hi"
-        assert payload["user"] == member.username
+        assert payload["author"] == member.username
 
         await communicator.disconnect()
 

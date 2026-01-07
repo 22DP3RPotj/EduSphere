@@ -2,7 +2,7 @@ import { ref, type Ref } from "vue"
 import { useAuthStore } from "@/stores/auth.store"
 import { ROOM_MESSAGES_QUERY } from "@/api/graphql";
 import { apolloClient } from "@/api/apollo.client";
-import type { Room, Message, DateTime, UUID } from "@/types"
+import type { Room, Message, DateTime, UUID, GqlMessage } from "@/types"
 import type {
   ConnectionStatus,
   ReceivedWebSocketMessage,
@@ -44,7 +44,18 @@ export function useWebSocket(
       fetchPolicy: 'network-only'
     });
 
-    return response.data?.messages || [];
+    const items: GqlMessage[] = response.data?.messages || []
+    const normalized: Message[] = items.map((m): Message => ({
+      id: asUUID(m.id as string),
+      author: m.author,
+      room: m.room,
+      parent: null,
+      body: m.body,
+      is_edited: m.isEdited,
+      created_at: asDateTime(m.createdAt as string),
+      updated_at: asDateTime(m.updatedAt as string),
+    }))
+    return normalized
   }
 
   async function fetchInitialMessages(): Promise<{ success: boolean; error?: string }> {
@@ -145,11 +156,11 @@ export function useWebSocket(
       updated_at: asDateTime(data.updated_at),
       parent: null,
       is_edited: data.is_edited,
-      user: {
-        id: asUUID(data.user_id),
-        username: data.user,
-        avatar: data.userAvatar,
-        name: data.user,
+      author: {
+        id: asUUID(data.author_id),
+        username: data.author,
+        avatar: data.authorAvatar,
+        name: data.author,
         bio: null,
         isStaff: false,
         isActive: false,

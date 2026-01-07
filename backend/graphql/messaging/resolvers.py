@@ -32,7 +32,7 @@ class MessageQuery(graphene.ObjectType):
                 "Not a participant", extensions={"code": ErrorCode.PERMISSION_DENIED}
             )
 
-        return room.message_set.select_related("user").order_by("created_at")
+        return room.message_set.select_related("author").order_by("created_at")
 
     def resolve_messages_by_user(
         self, info: graphene.ResolveInfo, user_slug: str

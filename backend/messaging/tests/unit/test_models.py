@@ -28,7 +28,7 @@ class MessageModelTest(TestCase):
 
     def test_message_creation(self):
         message = Message.objects.create(
-            user=self.user,
+            author=self.user,
             room=self.room,
             body="Hello world!",
         )
@@ -37,7 +37,7 @@ class MessageModelTest(TestCase):
 
     def test_message_str(self):
         message = Message.objects.create(
-            user=self.user,
+            author=self.user,
             room=self.room,
             body="A" * 100,
         )
@@ -45,7 +45,7 @@ class MessageModelTest(TestCase):
 
     def test_message_str_short(self):
         message = Message.objects.create(
-            user=self.user,
+            author=self.user,
             room=self.room,
             body="Short",
         )
@@ -59,12 +59,12 @@ class MessageModelTest(TestCase):
             visibility=Room.Visibility.PUBLIC,
         )
         parent_message = Message.objects.create(
-            user=self.user,
+            author=self.user,
             room=other_room,
             body="Parent",
         )
         child_message = Message(
-            user=self.user,
+            author=self.user,
             room=self.room,
             body="Child",
             parent=parent_message,

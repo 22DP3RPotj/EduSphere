@@ -235,7 +235,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         @database_sync_to_async
         def create_message(user, room, body):
-            message = Message(user=user, room=room, body=body)
+            message = Message(author=user, room=room, body=body)
             message.full_clean()
             message.save()
             return message
@@ -310,7 +310,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         @database_sync_to_async
         def check_owner(message):
-            return message.user_id == self.user.id
+            return message.author_id == self.user.id
 
         @database_sync_to_async
         def do_update(message):

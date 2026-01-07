@@ -23,7 +23,7 @@ class MessageServiceTest(ServiceTestBase):
         )
 
         self.assertIsNotNone(message)
-        self.assertEqual(message.user, self.member)
+        self.assertEqual(message.author, self.member)
         self.assertEqual(message.room, self.room)
         self.assertEqual(message.body, "Test message content")
         self.assertFalse(message.is_edited)

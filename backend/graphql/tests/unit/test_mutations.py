@@ -397,7 +397,7 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         Participant.objects.create(user=self.user, room=self.room, role=self.role)
 
     def test_delete_message_success(self):
-        message = Message.objects.create(user=self.user, room=self.room, body="Test")
+        message = Message.objects.create(author=self.user, room=self.room, body="Test")
         self.client.authenticate(self.user)
         mutation = """
             mutation DeleteMessage($messageId: UUID!) {
@@ -412,7 +412,7 @@ class MessageMutationsTests(JSONWebTokenTestCase):
 
     def test_update_message_success(self):
         message = Message.objects.create(
-            user=self.user, room=self.room, body="Original"
+            author=self.user, room=self.room, body="Original"
         )
         self.client.authenticate(self.user)
         mutation = """
@@ -431,7 +431,7 @@ class MessageMutationsTests(JSONWebTokenTestCase):
 
     def test_update_message_not_owner(self):
         message = Message.objects.create(
-            user=self.user, room=self.room, body="Original"
+            author=self.user, room=self.room, body="Original"
         )
         self.client.authenticate(self.other_user)
         mutation = """

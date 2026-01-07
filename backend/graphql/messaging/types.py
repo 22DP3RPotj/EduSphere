@@ -23,6 +23,10 @@ class MessageType(DjangoObjectType):
             "updated_at",
         )
 
+    # Keep GraphQL field name `user` but resolve from `author` model field
+    def resolve_user(self, info):
+        return self.author
+
 
 class MessageStatusType(graphene.ObjectType):
     message = graphene.Field(MessageType, required=True)

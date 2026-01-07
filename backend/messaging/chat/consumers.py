@@ -9,7 +9,11 @@ from redis.exceptions import RedisError
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from backend.core.exceptions import (
+    FormValidationException,
+    PermissionException,
+    ConflictException,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -35,16 +39,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.initialized = False
         self.room_id = None
         self.room = None
-
-    # TODO: Move validation to forms
-    @property
-    def max_body_length(self):
-        """
-        Return the maximum length of the message body.
-        """
-        from backend.messaging.models import Message
-
-        return Message._meta.get_field("body").max_length
 
     @property
     def max_messages_per_second(self) -> int:
@@ -78,9 +72,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             logger.warning("Rate limit check failed (redis unavailable)", exc_info=True)
             return False
 
+    # TODO: standardize error message format
     async def send_error(self, error_message):
         """
         Send an error message to the WebSocket client.
+        Accepts a string or a structured dict.
         """
         payload = {"error": error_message}
         await self.send(text_data=json.dumps(payload))
@@ -177,12 +173,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if not isinstance(message_body, str):
                 await self.send_error("Missing or invalid 'message'.")
                 return
-            # TODO: move to form validation
-            if len(message_body) > self.max_body_length:
-                await self.send_error(
-                    f"Message exceeds {self.max_body_length} characters."
-                )
-                return
             await self.handle_new_message(room, message_body)
             return
 
@@ -202,11 +192,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return
             if not isinstance(new_body, str):
                 await self.send_error("Missing or invalid 'message'.")
-                return
-            if len(new_body) > self.max_body_length:
-                await self.send_error(
-                    f"Message exceeds {self.max_body_length} characters."
-                )
                 return
             await self.handle_update_message(message_id, new_body)
             return
@@ -230,15 +215,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_new_message(self, room, message_body):
         """Handle creation of a new message"""
-        from backend.messaging.models import Message
         from backend.messaging.services import MessageService
 
         @database_sync_to_async
         def create_message(user, room, body):
-            message = Message(author=user, room=room, body=body)
-            message.full_clean()
-            message.save()
-            return message
+            return MessageService.create_message(user=user, room=room, body=body)
 
         @database_sync_to_async
         def serialize(message):
@@ -248,8 +229,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             new_message = await create_message(
                 user=self.user, room=room, body=message_body
             )
-        except ValidationError:
-            await self.send_error(f"Message exceeds {self.max_body_length} characters.")
+        except FormValidationException as e:
+            await self.send_error({"message": str(e), "errors": e.errors})
+            return
+        except (PermissionException, ConflictException) as e:
+            await self.send_error(str(e))
             return
 
         serialized = await serialize(new_message)
@@ -274,7 +258,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return Message.objects.get(id=message_id)
 
         @database_sync_to_async
-        def delete_with_service(message):
+        def delete_message(message):
             return MessageService.delete_message(self.user, message)
 
         try:
@@ -284,7 +268,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            await delete_with_service(message)
+            await delete_message(message)
         except PermissionException as e:
             await self.send_error(str(e))
             return
@@ -309,15 +293,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return Message.objects.get(id=message_id)
 
         @database_sync_to_async
-        def check_owner(message):
-            return message.author_id == self.user.id
-
-        @database_sync_to_async
         def do_update(message):
-            message = MessageService.update_message(
+            return MessageService.update_message(
                 user=self.user, message=message, body=new_body
             )
-            return message.updated_at
+
+        @database_sync_to_async
+        def serialize(message):
+            return MessageService.serialize(message)
 
         try:
             message = await get_message()
@@ -325,23 +308,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send_error("Message not found.")
             return
 
-        if not await check_owner(message):
-            await self.send_error("You can only edit your own messages.")
-            return
-
         try:
-            updated_ts = await do_update(message)
-        except ValidationError:
-            await self.send_error(f"Message exceeds {self.max_body_length} characters.")
+            updated_message = await do_update(message)
+        except FormValidationException as e:
+            await self.send_error({"message": str(e), "errors": e.errors})
+            return
+        except (PermissionException, ConflictException) as e:
+            await self.send_error(str(e))
             return
 
+        serialized = await serialize(updated_message)
         message_data = {
             "type": "chat_message",
             "action": "update",
-            "id": message_id,
-            "body": new_body,
-            "is_edited": True,
-            "updated_at": updated_ts.isoformat() if updated_ts else None,
+            **serialized,
         }
 
         # Realtime fanout (single mechanism)

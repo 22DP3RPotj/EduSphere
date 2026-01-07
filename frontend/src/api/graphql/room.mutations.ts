@@ -4,6 +4,7 @@ export const CREATE_ROOM_MUTATION = gql`
     mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!) {
         createRoom(name: $name, topicNames: $topicNames, description: $description) {
             room {
+                id
                 name
                 slug
                 description

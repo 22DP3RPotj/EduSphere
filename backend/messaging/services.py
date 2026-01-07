@@ -163,7 +163,7 @@ class MessageService:
             "is_edited": message.is_edited,
             "created_at": message.created_at.isoformat(),
             "updated_at": message.updated_at.isoformat(),
-            "authorAvatar": (
+            "author_avatar": (
                 message.author.avatar.name if message.author.avatar else None
             ),
         }

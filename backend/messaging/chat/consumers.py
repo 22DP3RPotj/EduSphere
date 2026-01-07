@@ -1,3 +1,4 @@
+import uuid
 import json
 import logging
 from datetime import datetime
@@ -63,12 +64,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         key = f"ws_rl:{self.room_id}:{self.user.id}"
         try:
-            count = await self.redis_client.incr(key)
-            if count == 1:
-                await self.redis_client.expire(key, 1)
+            pipe = self.redis_client.pipeline(transaction=True)
+            pipe.incr(key)
+            pipe.expire(key, 1)
+            count, _ = await pipe.execute()
             return count > limit
         except (RedisError, OSError):
-            # If Redis is down, fail open rather than breaking chat entirely.
             logger.warning("Rate limit check failed (redis unavailable)", exc_info=True)
             return False
 
@@ -93,7 +94,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         self.user = user
-        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+        raw_room_id = self.scope.get("url_route", {}).get("kwargs", {}).get("room_id")
+        try:
+            self.room_id = uuid.UUID(str(raw_room_id))
+        except (ValueError, TypeError, AttributeError):
+            logger.warning(f"Invalid room_id (not a UUID): {raw_room_id!r}")
+            await self.close()
+            return
+
         room_id_str = str(self.room_id)
         self.room_group_name = f"chat_{room_id_str}"
 

@@ -131,6 +131,7 @@ const formattedTimestamp = computed(() => {
   }
 });
 
+// TODO: handle cases where author is just a string (legacy)
 const userDisplayName = computed(() => {
   return props.message.author?.username || props.message.author || '[Unknown]';
 });

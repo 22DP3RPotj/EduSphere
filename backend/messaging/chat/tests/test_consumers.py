@@ -8,7 +8,10 @@ from backend.messaging.chat.routing import websocket_urlpatterns
 
 
 class FakeRedis:
-    """Minimal async Redis fake for incr/expire/xadd/xrange/aclose used by ChatConsumer."""
+    """Minimal async Redis fake for incr/expire/expire/xadd/xrange/aclose used by ChatConsumer.
+
+    Includes a lightweight pipeline implementation to mirror redis.asyncio.Redis.pipeline().
+    """
 
     last_instance = None
 
@@ -25,6 +28,31 @@ class FakeRedis:
     async def expire(self, key: str, seconds: int) -> bool:
         # TTL isn't simulated; good enough for functional tests.
         return True
+
+    class _Pipeline:
+        def __init__(self, client: "FakeRedis"):
+            self._client = client
+            self._ops: list[tuple[str, tuple]] = []
+
+        def incr(self, key: str):
+            self._ops.append(("incr", (key,)))
+            return self
+
+        def expire(self, key: str, seconds: int):
+            self._ops.append(("expire", (key, seconds)))
+            return self
+
+        async def execute(self):
+            results = []
+            for name, args in self._ops:
+                fn = getattr(self._client, name)
+                res = await fn(*args)
+                results.append(res)
+            self._ops.clear()
+            return results
+
+    def pipeline(self, transaction: bool = True):
+        return FakeRedis._Pipeline(self)
 
     async def xadd(self, stream: str, fields: dict[str, str]) -> str:
         seq = self._stream_seq.get(stream, 0) + 1

@@ -25,6 +25,8 @@ def ready(request: HttpRequest) -> JsonResponse:
             },
             status=503,
         )
-
-    checks["database"] = "ok"
-    return JsonResponse({"status": "ok", "checks": checks}, status=200)
+    else:
+        checks["database"] = "ok"
+        return JsonResponse({"status": "ok", "checks": checks}, status=200)
+    finally:
+        connection.close()

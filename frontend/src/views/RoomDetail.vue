@@ -160,11 +160,11 @@
           
           <!-- Message input -->
           <div v-if="canSendMessage" class="message-input-container">
-            <!-- Error display for message operations -->
-            <div v-if="messageOperationErrors.generalErrors.length > 0" class="error-message message-error">
+            <!-- Error display for message operations and advisories (input-level) -->
+            <div v-if="inputErrors.generalErrors.length > 0" class="error-message message-error">
               <font-awesome-icon icon="exclamation-circle" />
               <div class="error-list">
-                <p v-for="(errMsg, index) in messageOperationErrors.generalErrors" :key="index">{{ errMsg }}</p>
+                <p v-for="(errMsg, index) in inputErrors.generalErrors" :key="index">{{ errMsg }}</p>
               </div>
             </div>
 
@@ -273,6 +273,19 @@ const messageOperationErrors = ref<{ fieldErrors: Record<string, string[]>; gene
   generalErrors: [] 
 });
 
+// Visible advisory near input and typing tracking
+const visibleAdvisory = ref<string | null>(null);
+const lastInputChangeAt = ref<number>(Date.now());
+let advisoryTimer: number | null = null;
+
+// Prefer specific advisory over generic message errors
+const inputErrors = computed(() => {
+  if (visibleAdvisory.value) {
+    return { fieldErrors: {}, generalErrors: [visibleAdvisory.value] };
+  }
+  return { fieldErrors: {}, generalErrors: [...messageOperationErrors.value.generalErrors] };
+});
+
 const connectionStatusTitle = computed(() => {
   switch (connectionStatus.value) {
     case 'connected': return 'Connected to chat';
@@ -353,6 +366,7 @@ const {
   updateMessage: updateWebSocketMessage,
   closeWebSocket,
   connectionError: websocketError,
+  advisoryMessage,
   connectionStatus,
   isConnected
 } = useWebSocket(
@@ -509,7 +523,7 @@ async function handleJoin() {
   }
 }
 
-function sendMessage() {
+async function sendMessage() {
   if (!messageInput.value.trim()) return;
   
   clearMessageOperationErrors();
@@ -523,14 +537,20 @@ function sendMessage() {
   }
   
   try {
-    const success = sendWebSocketMessage(messageInput.value);
+    const success = await sendWebSocketMessage(messageInput.value);
     if (success) {
       messageInput.value = '';
+      // Clear any lingering advisory after a successful send
+      if (advisoryMessage.value) advisoryMessage.value = null;
+      visibleAdvisory.value = null;
     } else {
-      messageOperationErrors.value = {
-        fieldErrors: {},
-        generalErrors: ['Failed to send message. Please try again.']
-      };
+      // Keep input; prefer server advisory over generic message
+      if (!advisoryMessage.value && !visibleAdvisory.value) {
+        messageOperationErrors.value = {
+          fieldErrors: {},
+          generalErrors: ['Message not sent. Please try again.']
+        };
+      }
     }
   } catch (err) {
     messageOperationErrors.value = {
@@ -569,6 +589,10 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('click', closeRoomActionsMenu);
+  if (advisoryTimer) {
+    clearTimeout(advisoryTimer);
+    advisoryTimer = null;
+  }
 });
 
 watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.value], 
@@ -581,6 +605,26 @@ watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.va
   }, 
   { immediate: true }
 );
+
+// Delay rate-limit advisory until 1s of no typing; show other advisories immediately
+watch(() => advisoryMessage.value, (msg) => {
+  if (advisoryTimer) {
+    clearTimeout(advisoryTimer);
+    advisoryTimer = null;
+  }
+  if (!msg) {
+    visibleAdvisory.value = null;
+    return;
+  }
+});
+
+// Track typing; hide advisory while the user is active
+watch(() => messageInput.value, (val) => {
+  lastInputChangeAt.value = Date.now();
+  if (val) {
+    visibleAdvisory.value = null;
+  }
+});
 
 watch(() => messages.value.length, (newLength, oldLength) => {
   if (newLength > oldLength) {

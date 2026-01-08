@@ -278,6 +278,10 @@ const visibleAdvisory = ref<string | null>(null);
 const lastInputChangeAt = ref<number>(Date.now());
 let advisoryTimer: number | null = null;
 
+function isRateLimitAdvisory(msg: string): boolean {
+  return /(rate\s*limit|too\s*many|slow\s*down|throttl)/i.test(msg);
+}
+
 // Prefer specific advisory over generic message errors
 const inputErrors = computed(() => {
   if (visibleAdvisory.value) {
@@ -589,7 +593,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('click', closeRoomActionsMenu);
-  if (advisoryTimer) {
+  if (advisoryTimer !== null) {
     clearTimeout(advisoryTimer);
     advisoryTimer = null;
   }
@@ -608,7 +612,7 @@ watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.va
 
 // Delay rate-limit advisory until 1s of no typing; show other advisories immediately
 watch(() => advisoryMessage.value, (msg) => {
-  if (advisoryTimer) {
+  if (advisoryTimer !== null) {
     clearTimeout(advisoryTimer);
     advisoryTimer = null;
   }
@@ -616,6 +620,21 @@ watch(() => advisoryMessage.value, (msg) => {
     visibleAdvisory.value = null;
     return;
   }
+
+  if (!isRateLimitAdvisory(msg)) {
+    visibleAdvisory.value = msg;
+    return;
+  }
+
+  const msSinceLastTyping = Date.now() - lastInputChangeAt.value;
+  const delay = Math.max(0, 1000 - msSinceLastTyping);
+  advisoryTimer = window.setTimeout(() => {
+    // Only show if still relevant
+    if (advisoryMessage.value === msg) {
+      visibleAdvisory.value = msg;
+    }
+    advisoryTimer = null;
+  }, delay);
 });
 
 // Track typing; hide advisory while the user is active
@@ -623,6 +642,21 @@ watch(() => messageInput.value, (val) => {
   lastInputChangeAt.value = Date.now();
   if (val) {
     visibleAdvisory.value = null;
+  }
+
+  // If we have a rate-limit advisory pending, delay showing it until 1s after typing stops.
+  const msg = advisoryMessage.value;
+  if (msg && isRateLimitAdvisory(msg)) {
+    if (advisoryTimer !== null) {
+      clearTimeout(advisoryTimer);
+      advisoryTimer = null;
+    }
+    advisoryTimer = window.setTimeout(() => {
+      if (advisoryMessage.value === msg) {
+        visibleAdvisory.value = msg;
+      }
+      advisoryTimer = null;
+    }, 1000);
   }
 });
 

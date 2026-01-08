@@ -41,7 +41,7 @@ class QueryTests(JSONWebTokenTestCase):
         Participant.objects.create(user=self.user, room=self.room, role=self.role)
 
         self.message = Message.objects.create(
-            user=self.user, room=self.room, body="Hello!"
+            author=self.user, room=self.room, body="Hello!"
         )
 
     def test_rooms_query(self):

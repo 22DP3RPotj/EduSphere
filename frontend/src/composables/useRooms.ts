@@ -1,4 +1,5 @@
 import { computed, type Ref } from "vue"
+import type { Message, GqlMessage, UUID, DateTime } from "@/types"
 import { useMutation, useQuery } from "@vue/apollo-composable"
 import {
   CREATE_ROOM_MUTATION,
@@ -39,8 +40,22 @@ export function useRoomMessagesQuery(roomId: string, options?: { enabled?: Ref<b
     },
   )
 
+  const normalizeMessages = (items?: GqlMessage[]): Message[] => {
+    if (!items) return []
+    return items.map((m): Message => ({
+      id: m.id as UUID,
+      author: m.author,
+      room: m.room,
+      parent: null,
+      body: m.body,
+      is_edited: m.isEdited,
+      created_at: m.createdAt as DateTime,
+      updated_at: m.updatedAt as DateTime,
+    }))
+  }
+
   return {
-    messages: computed(() => result.value?.messages || []),
+    messages: computed(() => normalizeMessages(result.value?.messages)),
     loading,
     error,
     refetch,

@@ -23,7 +23,7 @@ class MessageServiceTest(ServiceTestBase):
         )
 
         self.assertIsNotNone(message)
-        self.assertEqual(message.user, self.member)
+        self.assertEqual(message.author, self.member)
         self.assertEqual(message.room, self.room)
         self.assertEqual(message.body, "Test message content")
         self.assertFalse(message.is_edited)
@@ -120,6 +120,6 @@ class MessageServiceTest(ServiceTestBase):
         serialized = MessageService.serialize(message)
 
         self.assertEqual(serialized["body"], "Test message")
-        self.assertEqual(serialized["user"], self.member.username)
+        self.assertEqual(serialized["author"], self.member.username)
         self.assertIn("id", serialized)
         self.assertIn("created_at", serialized)

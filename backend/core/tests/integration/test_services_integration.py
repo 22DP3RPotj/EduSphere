@@ -96,7 +96,7 @@ class IntegrationTests(ServiceTestBase):
             user=self.member, room=self.room, body="Message 2"
         )
 
-        self.assertEqual(Message.objects.filter(user=self.member).count(), 2)
+        self.assertEqual(Message.objects.filter(author=self.member).count(), 2)
 
         participant = Participant.objects.get(user=self.member, room=self.room)
         ParticipantService.remove_participant(self.owner, participant)

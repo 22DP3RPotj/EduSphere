@@ -218,6 +218,9 @@ REDIS_STREAMS = {
     "CONSUMER_TIMEOUT": 300,
 }
 
+# TODO: group settings
+MAX_MESSAGES_PER_SEC = 0
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

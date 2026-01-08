@@ -1,5 +1,5 @@
-from django.db import connection
-from django.db.utils import OperationalError, DatabaseError
+from django.db import connection, close_old_connections
+from django.db.utils import DatabaseError
 from django.http import JsonResponse, HttpRequest
 from django.views.decorators.http import require_GET
 
@@ -11,13 +11,13 @@ def live(request: HttpRequest) -> JsonResponse:
 
 @require_GET
 def ready(request: HttpRequest) -> JsonResponse:
+    close_old_connections()
+
     checks: dict[str, str] = {}
 
     try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            checks["database"] = "ok"
-    except (OperationalError, DatabaseError):
+        connection.ensure_connection()
+    except DatabaseError:
         return JsonResponse(
             {
                 "status": "error",
@@ -25,5 +25,8 @@ def ready(request: HttpRequest) -> JsonResponse:
             },
             status=503,
         )
-
-    return JsonResponse({"status": "ok", "checks": checks}, status=200)
+    else:
+        checks["database"] = "ok"
+        return JsonResponse({"status": "ok", "checks": checks}, status=200)
+    finally:
+        connection.close()

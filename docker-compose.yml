@@ -27,6 +27,9 @@ services:
     build: 
       context: .
       dockerfile: ./docker/backend/Dockerfile
+      args:
+        - GIT_SHA=${GIT_SHA:-unknown}
+        - APP_VERSION=${APP_VERSION:-unknown}
     volumes:
       - ./media:/app/media
       - static_volume:/app/staticfiles

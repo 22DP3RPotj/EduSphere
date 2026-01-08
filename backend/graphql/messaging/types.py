@@ -8,14 +8,14 @@ MessageStatusEnum = graphene.Enum.from_enum(MessageStatus.Status)
 
 
 class MessageType(DjangoObjectType):
-    user = graphene.Field("backend.graphql.account.types.UserType", required=True)
+    author = graphene.Field("backend.graphql.account.types.UserType", required=True)
     room = graphene.Field("backend.graphql.room.types.RoomType", required=True)
 
     class Meta:
         model = Message
         fields = (
             "id",
-            "user",
+            "author",
             "room",
             "body",
             "is_edited",

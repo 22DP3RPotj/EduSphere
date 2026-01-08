@@ -1,8 +1,19 @@
-import type { User, Room, Message } from './main.types';
+import type { User, Room, Message, UUID, DateTime } from './main.types';
 
 export interface LoginInput {
   email: string;
   password: string;
+}
+
+
+export type GqlMessage = {
+  id: UUID | string
+  author: User
+  room: Room
+  body: string
+  isEdited: boolean
+  createdAt: DateTime | string
+  updatedAt: DateTime | string
 }
 
 export interface RegisterInput {

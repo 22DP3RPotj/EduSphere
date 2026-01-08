@@ -18,9 +18,9 @@ export interface WSNewMessage extends WSBaseMessage {
   created_at: string;
   updated_at: string;
   is_edited: boolean;
-  user: string;
-  user_id: string;
-  userAvatar: string;
+  author: string;
+  author_id: string;
+  authorAvatar: string;
 }
 
 export interface WSUpdateMessage extends WSBaseMessage {

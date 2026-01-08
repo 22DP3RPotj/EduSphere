@@ -127,7 +127,7 @@ export const ROOM_MESSAGES_QUERY = gql`
     query RoomMessages($roomId: UUID!) {
         messages(roomId: $roomId) {
             id
-            user {
+            author {
                 id
                 username
                 avatar

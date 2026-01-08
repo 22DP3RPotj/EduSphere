@@ -58,7 +58,7 @@ class MessageService:
 
         try:
             message = form.save(commit=False)
-            message.user = user
+            message.author = user
             message.room = room
             message.save()
         except IntegrityError as e:
@@ -90,7 +90,7 @@ class MessageService:
             FormValidationException: If form validation fails
             ConflictException: If update conflicts
         """
-        if message.user != user:
+        if message.author != user:
             raise PermissionException("You can only edit your own messages.")
 
         data = {
@@ -133,7 +133,7 @@ class MessageService:
             PermissionException: If user doesn't have permission to delete the message
         """
         # User can delete their own messages or must have ROOM_DELETE_MESSAGE permission
-        if message.user != user:
+        if message.author != user:
             if not RoleService.has_permission(
                 user, message.room, PermissionCode.ROOM_DELETE_MESSAGE
             ):
@@ -157,11 +157,13 @@ class MessageService:
         """
         return {
             "id": str(message.id),
-            "user": message.user.username,
-            "user_id": str(message.user.id),
+            "author": message.author.username,
+            "author_id": str(message.author.id),
             "body": message.body,
             "is_edited": message.is_edited,
             "created_at": message.created_at.isoformat(),
             "updated_at": message.updated_at.isoformat(),
-            "user_avatar": message.user.avatar.name if message.user.avatar else None,
+            "author_avatar": (
+                message.author.avatar.name if message.author.avatar else None
+            ),
         }

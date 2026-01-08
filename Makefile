@@ -72,6 +72,8 @@ clean-migrations:
 	find backend -path "*/migrations/*.py" -not -name "__init__.py" -delete
 
 docker-compose-up:
+	GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null || echo unknown) \
+	APP_VERSION=$$(git describe --tags --dirty --always 2>/dev/null || echo unknown) \
 	docker-compose --env-file ./docker.env up -d --build
 
 docker-compose-down:

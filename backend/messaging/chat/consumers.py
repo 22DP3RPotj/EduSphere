@@ -1,45 +1,83 @@
+import uuid
 import json
-import redis
-import asyncio
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.db import database_sync_to_async
-from django.core.exceptions import ValidationError
-from django.conf import settings
-from datetime import datetime
 import logging
+from datetime import datetime
+from enum import StrEnum
+from typing import Any, Optional
+
+import redis.asyncio as aioredis
+from redis.exceptions import RedisError
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
+from backend.core.exceptions import (
+    FormValidationException,
+    PermissionException,
+    ConflictException,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
+class ClientMessageType(StrEnum):
+    TEXT = "text"
+    DELETE = "delete"
+    UPDATE = "update"
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.redis_client = redis.Redis(
-            host=getattr(settings, "REDIS_HOST", "localhost"),
-            port=getattr(settings, "REDIS_PORT", 6379),
-            db=getattr(settings, "REDIS_DB", 0),
+        # Async Redis client (avoids per-call thread executor overhead)
+        self.redis_client = aioredis.Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
             decode_responses=True,
         )
-        self.consumer_group = None
-        self.consumer_name = None
         self.stream_key = None
         self.initialized = False
-        self.consume_task = None
+        self.room_id = None
+        self.room = None
 
-    # TODO: Move validation to forms
     @property
-    def max_body_length(self):
-        """
-        Return the maximum length of the message body.
-        """
-        from backend.messaging.models import Message
+    def max_messages_per_second(self) -> int:
+        """Set `MAX_MESSAGES_PER_SEC=0` to disable."""
+        return settings.MAX_MESSAGES_PER_SEC
 
-        return Message._meta.get_field("body").max_length
+    def _parse_message_type(self, raw: Any) -> Optional[ClientMessageType]:
+        if raw is None:
+            return ClientMessageType.TEXT
+        try:
+            return ClientMessageType(str(raw))
+        except ValueError:
+            return None
 
+    async def _rate_limited(self) -> bool:
+        limit = self.max_messages_per_second
+        if limit <= 0:
+            return False
+
+        if not self.room_id or not self.user:
+            return False
+
+        key = f"ws_rl:{self.room_id}:{self.user.id}"
+        try:
+            pipe = self.redis_client.pipeline(transaction=True)
+            pipe.incr(key)
+            pipe.expire(key, 1)
+            count, _ = await pipe.execute()
+            return count > limit
+        except (RedisError, OSError):
+            logger.warning("Rate limit check failed (redis unavailable)", exc_info=True)
+            return False
+
+    # TODO: standardize error message format
     async def send_error(self, error_message):
         """
         Send an error message to the WebSocket client.
+        Accepts a string or a structured dict.
         """
         payload = {"error": error_message}
         await self.send(text_data=json.dumps(payload))
@@ -56,24 +94,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         self.user = user
-        self.username = self.scope["url_route"]["kwargs"]["username"]
-        self.room_slug = self.scope["url_route"]["kwargs"]["room"]
-        self.room_group_name = f"chat_{self.username}_{self.room_slug}"
+        raw_room_id = self.scope.get("url_route", {}).get("kwargs", {}).get("room_id")
+        try:
+            self.room_id = uuid.UUID(str(raw_room_id))
+        except (ValueError, TypeError, AttributeError):
+            logger.warning(f"Invalid room_id (not a UUID): {raw_room_id!r}")
+            await self.close()
+            return
 
-        # Redis Streams setup
-        self.stream_key = f"chat_stream:{self.username}:{self.room_slug}"
-        self.consumer_group = f"chat_group:{self.username}:{self.room_slug}"
-        self.consumer_name = f"consumer:{self.user.id}:{self.channel_name}"
+        room_id_str = str(self.room_id)
+        self.room_group_name = f"chat_{room_id_str}"
+
+        # Redis Streams history key
+        self.stream_key = f"chat_stream:{room_id_str}"
 
         from backend.room.models import Room
         from backend.access.models import Participant
 
         try:
-            room = await database_sync_to_async(Room.objects.get)(
-                host__username=self.username, slug=self.room_slug
-            )
+            room = await database_sync_to_async(Room.objects.get)(id=self.room_id)
         except Room.DoesNotExist:
-            logger.warning(f"Room not found: {self.username}/{self.room_slug}")
+            logger.warning(f"Room not found: {self.room_id}")
             await self.close()
             return
 
@@ -83,155 +124,110 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         if not is_participant:
             logger.warning(
-                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.slug}"
+                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.id}"
             )
             await self.close()
             return
 
-        # Setup Redis Streams consumer group
-        await self.setup_redis_streams()
+        # Cache room to avoid DB lookup on every received message
+        self.room = room
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         self.initialized = True
         await self.accept()
 
-        self.consume_task = asyncio.create_task(self.consume_stream_messages())
-
-    async def setup_redis_streams(self):
-        """Setup Redis Streams consumer group"""
-        try:
-            # Create consumer group if it doesn't exist
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.redis_client.xgroup_create(
-                    self.stream_key, self.consumer_group, id="0", mkstream=True
-                ),
-            )
-        except redis.exceptions.ResponseError as e:
-            if "BUSYGROUP" not in str(e):
-                logger.error(f"Error creating consumer group: {e}")
-
-    async def consume_stream_messages(self):
-        try:
-            while True:
-                messages = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: self.redis_client.xreadgroup(
-                        self.consumer_group,
-                        self.consumer_name,
-                        {self.stream_key: ">"},
-                        count=1,
-                        block=1000,
-                    ),
-                )
-
-                for stream, msgs in messages:
-                    for msg_id, fields in msgs:
-                        await self.process_stream_message(msg_id, fields)
-
-        except asyncio.CancelledError:
-            logger.debug(f"Redis consumer task cancelled for {self.channel_name}")
-
-    async def process_stream_message(self, msg_id, fields):
-        """Process a message from Redis Streams"""
-        try:
-            if fields.get("consumer_name") == self.consumer_name:
-                await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: self.redis_client.xack(
-                        self.stream_key, self.consumer_group, msg_id
-                    ),
-                )
-                return
-
-            message_data = json.loads(fields.get("data", "{}"))
-            await self.send(text_data=json.dumps(message_data))
-
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.redis_client.xack(
-                    self.stream_key, self.consumer_group, msg_id
-                ),
-            )
-
-        except Exception as e:
-            logger.error(f"Error processing stream message: {e}")
-
     async def disconnect(self, close_code):
         """
-        Leave the room group on disconnect and cleanup Redis Streams.
+        Leave the room group on disconnect.
         """
         if not self.initialized:
             return
 
-        if self.consume_task:
-            self.consume_task.cancel()
-            try:
-                await self.consume_task
-            except asyncio.CancelledError:
-                pass
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
         try:
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.redis_client.xgroup_delconsumer(
-                    self.stream_key, self.consumer_group, self.consumer_name
-                ),
-            )
-        except Exception as e:
-            logger.error(f"Error removing consumer: {e}")
-
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+            await self.redis_client.aclose()
+        except (RedisError, OSError):
+            logger.warning("Error closing redis client.", exc_info=True)
 
     async def receive(self, text_data):
         """
         Handle incoming messages: text, delete, or update.
         Assumes only participants reach this point.
         """
-        data = json.loads(text_data)
-        message_type = data.get("type", "text")
+        if await self._rate_limited():
+            await self.send_error("Too many messages. Please slow down.")
+            return
 
-        from backend.room.models import Room
+        try:
+            data = json.loads(text_data)
+        except json.JSONDecodeError:
+            await self.send_error("Invalid JSON.")
+            return
 
-        room = await database_sync_to_async(Room.objects.get)(
-            host__username=self.username, slug=self.room_slug
-        )
+        msg_type = self._parse_message_type(data.get("type"))
+        if msg_type is None:
+            await self.send_error("Unknown message type.")
+            return
 
-        if message_type == "text":
-            await self.handle_new_message(room, data.get("message"))
-        elif message_type == "delete":
-            await self.handle_delete_message(data.get("messageId"))
-        elif message_type == "update":
-            await self.handle_update_message(data.get("messageId"), data.get("message"))
+        # `self.room` is cached in connect(); fall back defensively.
+        room = self.room
+        if room is None:
+            await self.send_error("Room not loaded.")
+            return
+
+        if msg_type is ClientMessageType.TEXT:
+            message_body = data.get("message")
+            if not isinstance(message_body, str):
+                await self.send_error("Missing or invalid 'message'.")
+                return
+            await self.handle_new_message(room, message_body)
+            return
+
+        if msg_type is ClientMessageType.DELETE:
+            message_id = data.get("messageId")
+            if not message_id:
+                await self.send_error("Missing 'messageId'.")
+                return
+            await self.handle_delete_message(message_id)
+            return
+
+        if msg_type is ClientMessageType.UPDATE:
+            message_id = data.get("messageId")
+            new_body = data.get("message")
+            if not message_id:
+                await self.send_error("Missing 'messageId'.")
+                return
+            if not isinstance(new_body, str):
+                await self.send_error("Missing or invalid 'message'.")
+                return
+            await self.handle_update_message(message_id, new_body)
+            return
 
     async def publish_to_stream(self, message_data):
-        """Publish message to Redis Streams"""
+        """Publish message to Redis Streams (history/persistence only)."""
         try:
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.redis_client.xadd(
-                    self.stream_key,
-                    {
-                        "data": json.dumps(message_data),
-                        "consumer_name": self.consumer_name,
-                        "timestamp": datetime.now().isoformat(),
-                    },
-                ),
+            await self.redis_client.xadd(
+                self.stream_key,
+                {
+                    "data": json.dumps(message_data),
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
-        except Exception as e:
-            logger.error(f"Error publishing to stream: {e}")
+        except TypeError:
+            logger.error("Message data not JSON-serializable", exc_info=True)
+        except (RedisError, OSError):
+            logger.error(
+                "Error publishing to stream (redis unavailable)", exc_info=True
+            )
 
     async def handle_new_message(self, room, message_body):
         """Handle creation of a new message"""
-        from backend.messaging.models import Message
         from backend.messaging.services import MessageService
 
         @database_sync_to_async
         def create_message(user, room, body):
-            message = Message(user=user, room=room, body=body)
-            message.full_clean()
-            message.save()
-            return message
+            return MessageService.create_message(user=user, room=room, body=body)
 
         @database_sync_to_async
         def serialize(message):
@@ -241,8 +237,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             new_message = await create_message(
                 user=self.user, room=room, body=message_body
             )
-        except ValidationError:
-            await self.send_error(f"Message exceeds {self.max_body_length} characters.")
+        except FormValidationException as e:
+            await self.send_error({"message": str(e), "errors": e.errors})
+            return
+        except (PermissionException, ConflictException) as e:
+            await self.send_error(str(e))
             return
 
         serialized = await serialize(new_message)
@@ -252,7 +251,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             **serialized,
         }
 
-        # Publish to both channels and Redis Streams
+        # Realtime fanout (single mechanism)
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
@@ -267,7 +266,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return Message.objects.get(id=message_id)
 
         @database_sync_to_async
-        def delete_with_service(message):
+        def delete_message(message):
             return MessageService.delete_message(self.user, message)
 
         try:
@@ -277,7 +276,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            await delete_with_service(message)
+            await delete_message(message)
         except PermissionException as e:
             await self.send_error(str(e))
             return
@@ -288,7 +287,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "id": message_id,
         }
 
-        # Publish to both channels and Redis Streams
+        # Realtime fanout (single mechanism)
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
@@ -302,15 +301,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return Message.objects.get(id=message_id)
 
         @database_sync_to_async
-        def check_owner(message):
-            return message.user_id == self.user.id
-
-        @database_sync_to_async
         def do_update(message):
-            message = MessageService.update_message(
+            return MessageService.update_message(
                 user=self.user, message=message, body=new_body
             )
-            return message.updated_at
+
+        @database_sync_to_async
+        def serialize(message):
+            return MessageService.serialize(message)
 
         try:
             message = await get_message()
@@ -318,26 +316,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send_error("Message not found.")
             return
 
-        if not await check_owner(message):
-            await self.send_error("You can only edit your own messages.")
-            return
-
         try:
-            updated_ts = await do_update(message)
-        except ValidationError:
-            await self.send_error(f"Message exceeds {self.max_body_length} characters.")
+            updated_message = await do_update(message)
+        except FormValidationException as e:
+            await self.send_error({"message": str(e), "errors": e.errors})
+            return
+        except (PermissionException, ConflictException) as e:
+            await self.send_error(str(e))
             return
 
+        serialized = await serialize(updated_message)
         message_data = {
             "type": "chat_message",
             "action": "update",
-            "id": message_id,
-            "body": new_body,
-            "is_edited": True,
-            "updated_at": updated_ts.isoformat() if updated_ts else None,
+            **serialized,
         }
 
-        # Publish to both channels and Redis Streams
+        # Realtime fanout (single mechanism)
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
@@ -350,28 +345,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def get_message_history(self, start_id="0", count=50):
         """Retrieve message history from Redis Streams"""
         try:
-            messages = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.redis_client.xrange(
-                    self.stream_key, start_id, "+", count=count
-                ),
+            messages = await self.redis_client.xrange(
+                self.stream_key, start_id, "+", count=count
             )
-
-            history = []
-            for msg_id, fields in messages:
-                try:
-                    message_data = json.loads(fields.get("data", "{}"))
-                    history.append(
-                        {
-                            "id": msg_id,
-                            "timestamp": fields.get("timestamp"),
-                            **message_data,
-                        }
-                    )
-                except json.JSONDecodeError:
-                    continue
-
-            return history
-        except Exception as e:
-            logger.error(f"Error retrieving message history: {e}")
+        except (RedisError, OSError):
+            logger.error(
+                "Error retrieving message history (redis unavailable).", exc_info=True
+            )
             return []
+
+        history = []
+        for msg_id, fields in messages:
+            raw = fields.get("data")
+            if not raw:
+                continue
+            try:
+                message_data = json.loads(raw)
+            except json.JSONDecodeError:
+                # Corrupt entry in stream: skip but keep going
+                logger.warning(
+                    f"Corrupt JSON in redis stream entry {msg_id}", exc_info=True
+                )
+                continue
+
+            history.append(
+                {"id": msg_id, "timestamp": fields.get("timestamp"), **message_data}
+            )
+        return history

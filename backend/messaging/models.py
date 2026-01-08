@@ -10,7 +10,7 @@ class Message(models.Model):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
     )
-    user = models.ForeignKey("account.User", on_delete=models.CASCADE)
+    author = models.ForeignKey("account.User", on_delete=models.CASCADE)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE)
     body = models.TextField(max_length=2048)
     is_edited = models.BooleanField(default=False)
@@ -23,11 +23,11 @@ class Message(models.Model):
     class Meta:
         app_label = "messaging"
         indexes = [
-            models.Index(fields=["room", "user", "created_at"]),
+            models.Index(fields=["room", "author", "created_at"]),
             models.Index(fields=["room", "created_at"]),
             models.Index(fields=["room", "-created_at"]),
-            models.Index(fields=["user", "created_at"]),
-            models.Index(fields=["user"]),
+            models.Index(fields=["author", "created_at"]),
+            models.Index(fields=["author"]),
         ]
         ordering = ["-created_at"]
 

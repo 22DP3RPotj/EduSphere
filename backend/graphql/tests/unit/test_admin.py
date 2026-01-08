@@ -33,7 +33,7 @@ class AdminQueryTests(JSONWebTokenTestCase):
         self.room.topics.add(self.topic_tech)
 
         self.message = Message.objects.create(
-            user=self.user,
+            author=self.user,
             room=self.room,
             body="Hello!",
         )

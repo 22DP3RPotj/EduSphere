@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 from django.core.validators import MaxValueValidator
-from django.forms import ValidationError
+from django.core.exceptions import ValidationError
 
 from backend.access.enums import PermissionCode
 

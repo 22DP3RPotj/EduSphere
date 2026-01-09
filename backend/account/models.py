@@ -2,13 +2,14 @@ import uuid
 
 from django.db import models
 from django.db.models.functions import Lower
+from django.conf import settings
 from django.utils.text import slugify
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import FileExtensionValidator
 
 from backend.account.managers import UserManager
 from backend.account.files.paths import avatar_upload_path
-from backend.account.files.validators import ImageValidator
+from backend.core.files.validators import FileSizeValidator, ImageValidator
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -24,6 +25,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         validators=[
             FileExtensionValidator(["svg", "png", "jpg", "jpeg"]),
             ImageValidator(),
+            FileSizeValidator(settings.MAX_FILE_SIZE_MB),
         ],
     )
     is_staff = models.BooleanField(default=False)

@@ -221,6 +221,8 @@ REDIS_STREAMS = {
 # TODO: group settings
 MAX_MESSAGES_PER_SEC = 0
 
+MAX_FILE_SIZE_MB = 10
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

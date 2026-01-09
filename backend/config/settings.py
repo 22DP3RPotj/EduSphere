@@ -110,22 +110,10 @@ LOGGING = {
         },
     },
     "handlers": {
-        "graphql_file": {
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "graphql.log",
-            "formatter": "verbose",
-        },
         "root_file": {
             "class": "logging.FileHandler",
             "filename": BASE_DIR / "logs" / "general.log",
             "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "backend.graphql.middleware": {
-            "handlers": ["graphql_file"],
-            "level": "DEBUG",
-            "propagate": False,
         },
     },
     "root": {

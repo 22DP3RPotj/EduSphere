@@ -15,6 +15,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { buildAvatarUrl } from '@/utils/media';
 
 const props = defineProps({
   user: {
@@ -37,8 +38,7 @@ const username = computed(() => {
 });
 
 const avatarSrc = computed(() => {
-  const avatar = props.user.avatar
-  return avatar ? `/media/${avatar}` : '/default.svg';
+  return buildAvatarUrl(props.user.avatar);
 });
 
 const initials = computed(() => {

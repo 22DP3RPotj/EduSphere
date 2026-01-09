@@ -20,7 +20,7 @@ export interface WSNewMessage extends WSBaseMessage {
   is_edited: boolean;
   author: string;
   author_id: string;
-  authorAvatar: string;
+  author_avatar: string | null;
 }
 
 export interface WSUpdateMessage extends WSBaseMessage {

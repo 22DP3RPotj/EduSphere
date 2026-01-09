@@ -228,7 +228,7 @@ export function useWebSocket(
       author: {
         id: asUUID(data.author_id),
         username: data.author,
-        avatar: data.authorAvatar,
+        avatar: data.author_avatar,
         name: data.author,
         bio: null,
         isStaff: false,

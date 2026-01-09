@@ -124,7 +124,7 @@
               @click="navigateToUserProfile(participant.username)"
             >
               <img 
-                :src="participant.avatar ? `/media/${participant.avatar}` : '/default.svg'" 
+                :src="participantAvatarUrls[participant.id] || '/default.svg'" 
                 :alt="`${participant.username}`"
                 class="participant-avatar"
               />
@@ -209,6 +209,7 @@
 </template>
 
 <script lang="ts" setup>
+import { buildAvatarUrl } from '@/utils/media';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
@@ -327,6 +328,14 @@ const participants = computed<ParticipantWithHost[]>(() => {
   }
   
   return allParticipants;
+});
+
+const participantAvatarUrls = computed<Record<string, string>>(() => {
+  const urls: Record<string, string> = {};
+  for (const participant of participants.value) {
+    urls[participant.id] = buildAvatarUrl((participant as unknown as User).avatar ?? null);
+  }
+  return urls;
 });
 
 const isParticipant = computed(() => {

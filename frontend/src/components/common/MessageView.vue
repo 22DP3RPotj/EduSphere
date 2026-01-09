@@ -95,6 +95,7 @@
 <script lang="ts" setup>
 import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { format } from 'timeago.js';
+import { buildAvatarUrl } from '@/utils/media';
 
 const props = defineProps({
   message: {
@@ -138,7 +139,7 @@ const userDisplayName = computed(() => {
 
 const userAvatar = computed(() => {
   const avatar = props.message.author?.avatar || props.message.authorAvatar;
-  return avatar ? `/media/${avatar}` : '/default.svg';
+  return buildAvatarUrl(avatar);
 })
 
 function handleMessageDelete() {

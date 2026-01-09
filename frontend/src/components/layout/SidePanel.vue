@@ -55,7 +55,7 @@
           <template v-if="isAuthenticated">
             <router-link :to="`/u/${currentUser?.username}`" class="user-profile" @click="closePanel">
               <img 
-                :src="currentUser?.avatar ? `/media/${currentUser.avatar}` : '/default.svg'" 
+                :src="buildAvatarUrl(currentUser?.avatar ?? null)"
                 :alt="`${currentUser?.username}'s avatar`" 
                 class="user-avatar"
               />
@@ -88,6 +88,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
+import { buildAvatarUrl } from '@/utils/media';
 
 const authStore = useAuthStore();
 const { 

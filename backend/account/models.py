@@ -1,4 +1,5 @@
 import uuid
+
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils.text import slugify
@@ -6,6 +7,8 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import FileExtensionValidator
 
 from backend.account.managers import UserManager
+from backend.account.files.paths import avatar_upload_path
+from backend.account.files.validators import ImageValidator
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -15,10 +18,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=32)
     bio = models.TextField(blank=True, default="", max_length=4096)
     avatar = models.ImageField(
-        upload_to="avatars",
+        upload_to=avatar_upload_path,
         blank=True,
         null=True,
-        validators=[FileExtensionValidator(["svg", "png", "jpg", "jpeg"])],
+        validators=[
+            FileExtensionValidator(["svg", "png", "jpg", "jpeg"]),
+            ImageValidator(),
+        ],
     )
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)

@@ -10,6 +10,7 @@ export const LOGIN_MUTATION = gql`
                 id
                 username
                 name
+                avatar
                 isSuperuser
             }
         }

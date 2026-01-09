@@ -143,7 +143,7 @@
               <td class="col-user">
                 <div class="user-info">
                   <img
-                    :src="user.avatar ? `/media/${user.avatar}` : '/default.svg'"
+                    :src="buildAvatarUrl(user.avatar)"
                     :alt="user.username"
                     class="user-avatar"
                   />
@@ -419,6 +419,7 @@ import {
   useUpdateReport,
   useDeleteReport,
 } from '@/composables/useAdmin';
+import { buildAvatarUrl } from '@/utils/media';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
 import type { Report, User } from '@/types';
 

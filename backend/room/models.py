@@ -2,8 +2,6 @@ import uuid
 from django.db import models
 from django.db.models import Q, CheckConstraint
 from django.db.models.functions import Lower
-from django.urls import reverse
-from django.utils.text import slugify
 
 from backend.room.choices import RoomVisibility
 
@@ -53,7 +51,6 @@ class Room(models.Model):
         max_length=16, choices=Visibility.choices, blank=True, default=Visibility.PUBLIC
     )
     name = models.CharField(max_length=64)
-    slug = models.SlugField(max_length=64)
     description = models.TextField(blank=True, default="", max_length=512)
     participants = models.ManyToManyField(
         "account.User",
@@ -72,7 +69,7 @@ class Room(models.Model):
         ordering = ["-updated_at", "-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["host", "slug"],
+                fields=["host", "name"],
                 name="unique_room_per_host",
                 violation_error_message="You already have a room with this name.",
             )
@@ -82,16 +79,5 @@ class Room(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return reverse(
-            "room",
-            kwargs={
-                "username": self.host.username,
-                "room": self.slug,
-            },
-        )

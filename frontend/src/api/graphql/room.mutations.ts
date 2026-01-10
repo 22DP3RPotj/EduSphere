@@ -6,7 +6,6 @@ export const CREATE_ROOM_MUTATION = gql`
             room {
                 id
                 name
-                slug
                 description
                 topics { name }
                 host {
@@ -63,7 +62,6 @@ export const JOIN_ROOM_MUTATION = gql`
             room {
                 id
                 name
-                slug
                 description
                 createdAt
                 host {

@@ -5,7 +5,6 @@ export const ROOM_QUERY = gql`
         room(roomId: $roomId) {
             id
             name
-            slug
             description
             createdAt
             host {
@@ -34,7 +33,6 @@ export const ROOMS_QUERY = gql`
         rooms(hostSlug: $hostSlug, search: $search, topics: $topics) {
             id
             name
-            slug
             description
             createdAt
             topics {
@@ -57,7 +55,6 @@ export const USER_WITH_ROOMS_QUERY = gql`
         roomsParticipatedByUser(userSlug: $userSlug) {
             id
             name
-            slug
             description
             createdAt
             topics { name }
@@ -66,7 +63,6 @@ export const USER_WITH_ROOMS_QUERY = gql`
         roomsNotParticipatedByUser(userSlug: $userSlug) {
             id
             name
-            slug
             description
             createdAt
             topics { name }
@@ -81,7 +77,6 @@ export const HOMEPAGE_INITIAL_QUERY = gql`
         rooms(search: $search, topics: $topics) {
             id
             name
-            slug
             description
             createdAt
             topics {
@@ -100,7 +95,6 @@ export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
         roomsParticipatedByUser(userSlug: $userSlug) {
             id
             name
-            slug
             description
             createdAt
             topics { name }
@@ -114,7 +108,6 @@ export const ROOMS_NOT_PARTICIPATED_BY_USER_QUERY = gql`
         roomsNotParticipatedByUser(userSlug: $userSlug) {
             id
             name
-            slug
             description
             createdAt
             topics { name }
@@ -150,7 +143,6 @@ export const MESSAGES_BY_USER_QUERY = gql`
             createdAt
             room {
                 id
-                slug
                 name
                 host {
                     username

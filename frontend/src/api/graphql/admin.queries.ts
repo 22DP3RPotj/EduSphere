@@ -35,7 +35,6 @@ export const GET_ALL_REPORTS = gql`
       room {
         id
         name
-        slug
         host {
           id
           username

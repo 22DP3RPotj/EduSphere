@@ -42,7 +42,6 @@ export interface Topic {
 export interface Room {
   id: UUID;
   name: string;
-  slug: string;
   host: User;
   topics: Topic[];
   description: string;

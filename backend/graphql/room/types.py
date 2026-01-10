@@ -32,7 +32,6 @@ class RoomType(DjangoObjectType):
             "host",
             "topics",
             "name",
-            "slug",
             "visibility",
             "description",
             "participants",

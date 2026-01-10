@@ -45,15 +45,6 @@ class RoomModelTest(TestCase):
         self.assertEqual(room.host, self.user)
         self.assertEqual(room.visibility, Room.Visibility.PUBLIC)
 
-    def test_room_slug_generation(self):
-        room = Room.objects.create(
-            host=self.user,
-            name="Test Room",
-            description="",
-            visibility=Room.Visibility.PUBLIC,
-        )
-        self.assertEqual(room.slug, "test-room")
-
     def test_room_unique_constraint(self):
         Room.objects.create(
             host=self.user,

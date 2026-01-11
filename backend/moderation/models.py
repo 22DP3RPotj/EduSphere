@@ -1,4 +1,5 @@
 import uuid
+import pghistory
 from django.db import models
 from django.db.models import Q
 
@@ -65,3 +66,15 @@ class Report(models.Model):
     @property
     def is_active_report(self):
         return self.status in ACTIVE_STATUSES
+
+
+class ReportHistory(
+    pghistory.create_event_model(
+        Report,
+        model_name="ReportHistory",
+        fields=["body", "reason", "status", "moderator_note", "moderator"],
+    )
+):
+    class Meta:
+        db_table = "moderation_report_history"
+        app_label = "moderation"

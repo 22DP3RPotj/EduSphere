@@ -1,6 +1,7 @@
 import graphene
 from graphene_django import DjangoObjectType
 
+from backend.moderation.models import ReportHistory
 from backend.moderation.models import Report
 
 
@@ -29,3 +30,21 @@ class ReportType(DjangoObjectType):
             "created_at",
             "updated_at",
         )
+
+
+class ReportHistoryType(DjangoObjectType):
+    actor_id = graphene.UUID()
+
+    class Meta:
+        model = ReportHistory
+        fields = (
+            "actor_id",
+            "body",
+            "reason",
+            "status",
+            "moderator_note",
+            "moderator",
+        )
+
+    def resolve_actor_id(self, info: graphene.ResolveInfo):
+        return self.pgh_context.metadata.get("user", None)

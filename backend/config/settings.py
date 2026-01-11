@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     "channels.apps.ChannelsConfig",
     "corsheaders.apps.CorsHeadersAppConfig",
     "graphene_django",
+    "pgtrigger",
+    "pghistory",
     "django_cleanup.apps.CleanupConfig",
 ]
 
@@ -69,6 +71,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "pghistory.middleware.HistoryMiddleware",
 ]
 
 # TODO: When moving to production with HTTPS

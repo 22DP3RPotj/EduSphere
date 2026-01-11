@@ -14,6 +14,7 @@ django-cors-headers = "^4.9.0"
 django-environ = "^0.12.0"
 django-graphql-jwt = "^0.4.0"
 django-filter = "^25.2"
+django-pghistory = "^3.9.1"
 djangorestframework = "^3.16.1"
 graphene = "^3.4.3"
 graphene-file-upload = "^1.3.0"
@@ -37,8 +38,6 @@ mypy = "^1.19.1"
 
 [tool.django-stubs]
 django_settings_module = "backend.config.settings"
-
-
 
 
 
@@ -109,6 +108,7 @@ omit = [
 
 
 
+
 [tool.poetry.group.linting]
 optional = true
 
@@ -129,17 +129,24 @@ ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
-# Hmmm
-disable_error_code = "annotation-unchecked"
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_untyped_defs = false
 check_untyped_defs = false
-ignore_missing_imports = true
 explicit_package_bases = true
 namespace_packages = true
 plugins = ["mypy_django_plugin.main"]
+
+# incompatibility with django-pghistory dynamic models
+disable_error_code = [
+  "annotation-unchecked",
+  "django-manager-missing",
+  "misc",
+]
+# Runtime generated imports
+ignore_missing_imports = true
+
 
 [build-system]
 requires = ["poetry-core"]

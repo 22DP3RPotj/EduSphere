@@ -112,14 +112,20 @@ export function useWebSocket(
 
     // Initialize WebSocket connection
     const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${roomId}`
+    
+    // Close existing connection if any
+    closeWebSocket()
+    
     connectionStatus.value = "connecting"
     connectionError.value = null
     advisoryMessage.value = null
 
     try {
-      socket.value = new WebSocket(wsUrl)
+      const ws = new WebSocket(wsUrl)
+      socket.value = ws
 
-      socket.value.onopen = () => {
+      ws.onopen = () => {
+        if (socket.value !== ws) return
         connectionStatus.value = "connected"
         connectionError.value = null
         advisoryMessage.value = null
@@ -127,7 +133,8 @@ export function useWebSocket(
         isConnected.value = true
       }
 
-      socket.value.onmessage = (event: MessageEvent) => {
+      ws.onmessage = (event: MessageEvent) => {
+        if (socket.value !== ws) return
         try {
           const raw = JSON.parse(event.data)
           // Error envelope from server (advisory: do not mark connection error)
@@ -184,7 +191,8 @@ export function useWebSocket(
         }
       }
 
-      socket.value.onerror = (err) => {
+      ws.onerror = (err) => {
+        if (socket.value !== ws) return
         console.error("[v0] WebSocket error:", err)
         console.error("[v0] WebSocket URL attempted:", wsUrl)
         connectionStatus.value = "error"
@@ -196,7 +204,8 @@ export function useWebSocket(
         attemptReconnect()
       }
 
-      socket.value.onclose = (event) => {
+      ws.onclose = (event) => {
+        if (socket.value !== ws) return
         connectionStatus.value = "disconnected"
         isConnected.value = false
         // Fail all pending sends

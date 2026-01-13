@@ -71,7 +71,6 @@ class Report(models.Model):
 class ReportHistory(
     pghistory.create_event_model(
         Report,
-        model_name="ReportHistory",
         fields=["body", "reason", "status", "moderator_note", "moderator"],
     )
 ):

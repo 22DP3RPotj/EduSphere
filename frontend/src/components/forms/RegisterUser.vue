@@ -132,16 +132,40 @@ const parsedErrors = computed(() => {
   return parseGraphQLError(registerError.value)
 })
 
-const fieldErrors = computed(() => parsedErrors.value.fieldErrors)
+const localFieldErrors = ref<Record<string, string[]>>({})
+
+const fieldErrors = computed(() => {
+  const baseErrors = parsedErrors.value.fieldErrors || {}
+  const merged: Record<string, string[]> = { ...baseErrors }
+
+  for (const [key, messages] of Object.entries(localFieldErrors.value)) {
+    if (merged[key]) {
+      merged[key] = [...merged[key], ...messages]
+    } else {
+      merged[key] = messages
+    }
+  }
+  return merged
+})
 const generalErrors = computed(() => parsedErrors.value.generalErrors)
 
 watch(formData, () => {
+  localFieldErrors.value = {}
   if (registerError.value) {
     // Errors will be cleared on next mutation attempt
   }
 }, { deep: true })
 
 async function handleSubmit() {
+  localFieldErrors.value = {}
+
+  if (formData.value.password1 !== formData.value.password2) {
+    localFieldErrors.value = {
+      password2: ["Passwords don't match"]
+    }
+    return
+  }
+
   const result = await register(formData.value)
 
   if (result.success) {

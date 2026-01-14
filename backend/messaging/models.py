@@ -1,4 +1,5 @@
 import uuid
+from django.conf import settings
 from django.db import models
 from django.forms import ValidationError
 
@@ -10,7 +11,7 @@ class Message(models.Model):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
     )
-    author = models.ForeignKey("account.User", on_delete=models.CASCADE)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE)
     body = models.TextField(max_length=2048)
     is_edited = models.BooleanField(default=False)
@@ -50,7 +51,7 @@ class MessageStatus(models.Model):
         Message, on_delete=models.CASCADE, related_name="statuses"
     )
     user = models.ForeignKey(
-        "account.User", on_delete=models.CASCADE, related_name="message_statuses"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="message_statuses"
     )
     status = models.CharField(max_length=16, choices=Status.choices)
     timestamp = models.DateTimeField(auto_now=True)

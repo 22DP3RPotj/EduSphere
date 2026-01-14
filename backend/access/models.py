@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
@@ -51,7 +52,7 @@ class Role(models.Model):
 
 class Participant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey("account.User", on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     room = models.ForeignKey(
         "room.Room", on_delete=models.CASCADE, related_name="memberships"
     )

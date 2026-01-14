@@ -71,7 +71,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "pghistory.middleware.HistoryMiddleware",
+    "backend.core.middleware.PgHistoryMiddleware",
 ]
 
 # TODO: When moving to production with HTTPS

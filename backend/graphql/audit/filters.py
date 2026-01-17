@@ -1,4 +1,7 @@
 import django_filters
+from backend.account.models import UserHistory
+from backend.room.models import RoomHistory
+from backend.invite.models import InviteHistory
 
 
 class BaseAuditFilter(django_filters.FilterSet):
@@ -17,6 +20,7 @@ class UserAuditFilter(BaseAuditFilter):
     email = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
+        model = UserHistory
         fields = ["username", "email", "is_staff", "is_superuser", "is_active"]
 
 
@@ -24,9 +28,11 @@ class RoomAuditFilter(BaseAuditFilter):
     name = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
+        model = RoomHistory
         fields = ["name", "visibility"]
 
 
 class InviteAuditFilter(BaseAuditFilter):
     class Meta:
+        model = InviteHistory
         fields = ["status"]

@@ -14,10 +14,10 @@ class BaseAuditType(graphene.ObjectType):
     pgh_obj_id = graphene.UUID()
 
     def resolve_actor(self, info):
-        context = self.pgh_context or {}
-        user_id = context.get("user")
-        if user_id:
-            return User.objects.filter(id=user_id).first()
+        if self.pgh_context:
+            user_id = self.pgh_context.metadata.get("user")
+            if user_id:
+                return User.objects.filter(id=user_id).first()
         return None
 
 

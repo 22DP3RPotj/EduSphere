@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
+from django.utils.text import slugify
 from backend.account.models import User
 from backend.messaging.models import Message
 from backend.invite.models import Invite
@@ -42,9 +43,19 @@ class RoomForm(ModelForm):
 class UserForm(ModelForm):
     avatar = forms.ImageField(widget=forms.FileInput, required=False)
 
+    username = forms.SlugField(
+        error_messages={
+            "invalid": "Username can only contain letters, numbers, underscores, and hyphens."
+        }
+    )
+
     class Meta:
         model = User
         fields = ("username", "name", "avatar", "bio")
+
+    def clean_username(self) -> str:
+        username = self.cleaned_data["username"]
+        return slugify(username.strip())
 
 
 class MessageForm(ModelForm):

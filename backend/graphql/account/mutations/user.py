@@ -38,10 +38,10 @@ class RegisterUser(graphene.Mutation):
         return RegisterUser(user=user, success=True)
 
 
-# TODO: rework argument types
 class UpdateUser(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=False)
+        username = graphene.String(required=False)
         bio = graphene.String(required=False)
         avatar = Upload(required=False)
 

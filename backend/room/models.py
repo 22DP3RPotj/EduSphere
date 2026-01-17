@@ -1,4 +1,6 @@
 import uuid
+import pghistory
+from django.conf import settings
 from django.db import models
 from django.db.models import Q, CheckConstraint
 from django.db.models.functions import Lower
@@ -37,7 +39,7 @@ class Room(models.Model):
 
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     host = models.ForeignKey(
-        "account.User", on_delete=models.CASCADE, related_name="hosted_rooms"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hosted_rooms"
     )
     default_role = models.ForeignKey(
         "access.Role",
@@ -53,7 +55,7 @@ class Room(models.Model):
     name = models.CharField(max_length=64)
     description = models.TextField(blank=True, default="", max_length=512)
     participants = models.ManyToManyField(
-        "account.User",
+        settings.AUTH_USER_MODEL,
         related_name="participants",
         through="access.Participant",
         blank=True,
@@ -81,3 +83,13 @@ class Room(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class RoomHistory(
+    pghistory.create_event_model(
+        Room,
+        fields=["name", "description", "visibility", "default_role"],
+    )
+):
+    class Meta:
+        app_label = "room"

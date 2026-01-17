@@ -1,5 +1,7 @@
 import uuid
+import pghistory
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 
 from backend.invite.choices import InviteStatus
@@ -13,10 +15,12 @@ class Invite(models.Model):
         "room.Room", on_delete=models.CASCADE, related_name="invites"
     )
     inviter = models.ForeignKey(
-        "account.User", on_delete=models.CASCADE, related_name="sent_invites"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_invites"
     )
     invitee = models.ForeignKey(
-        "account.User", on_delete=models.CASCADE, related_name="received_invites"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="received_invites",
     )
     role = models.ForeignKey("access.Role", on_delete=models.PROTECT)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -64,3 +68,13 @@ class Invite(models.Model):
             self.Status.ACCEPTED,
             self.Status.DECLINED,
         ]
+
+
+class InviteHistory(
+    pghistory.create_event_model(
+        Invite,
+        fields=["status", "role"],
+    )
+):
+    class Meta:
+        app_label = "invite"

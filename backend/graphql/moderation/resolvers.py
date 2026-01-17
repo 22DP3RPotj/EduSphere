@@ -57,7 +57,7 @@ class ReportQuery(graphene.ObjectType):
 
         return report
 
-    # TODO: Add pagination
+    # TODO: Add cursor based pagination
     @superuser_required
     def resolve_reports(
         self,

@@ -1,4 +1,6 @@
 import uuid
+import pghistory
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
@@ -12,7 +14,10 @@ class Report(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        "account.User", on_delete=models.SET_NULL, null=True, related_name="reports"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="reports",
     )
     room = models.ForeignKey(
         "room.Room", on_delete=models.CASCADE, related_name="reports"
@@ -65,3 +70,13 @@ class Report(models.Model):
     @property
     def is_active_report(self):
         return self.status in ACTIVE_STATUSES
+
+
+class ReportHistory(
+    pghistory.create_event_model(
+        Report,
+        fields=["body", "reason", "status", "moderator_note", "moderator"],
+    )
+):
+    class Meta:
+        app_label = "moderation"

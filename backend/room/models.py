@@ -1,4 +1,5 @@
 import uuid
+import pghistory
 from django.conf import settings
 from django.db import models
 from django.db.models import Q, CheckConstraint
@@ -82,3 +83,13 @@ class Room(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class RoomHistory(
+    pghistory.create_event_model(
+        Room,
+        fields=["name", "description", "visibility", "default_role"],
+    )
+):
+    class Meta:
+        app_label = "room"

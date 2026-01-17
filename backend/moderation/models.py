@@ -14,7 +14,10 @@ class Report(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="reports"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="reports",
     )
     room = models.ForeignKey(
         "room.Room", on_delete=models.CASCADE, related_name="reports"
@@ -76,5 +79,4 @@ class ReportHistory(
     )
 ):
     class Meta:
-        db_table = "moderation_report_history"
         app_label = "moderation"

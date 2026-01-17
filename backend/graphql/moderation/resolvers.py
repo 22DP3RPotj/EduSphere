@@ -30,11 +30,6 @@ class ReportQuery(graphene.ObjectType):
         reason=ReportReasonEnum(required=False),
         user_id=graphene.UUID(required=False),
     )
-    # report_history = graphene.List(
-    #     ReportHistoryType,
-    #     report_id=graphene.UUID(required=True),
-    # )
-    # events = graphene.List(CoreEventType)
 
     @login_required
     def resolve_submitted_reports(self, info: graphene.ResolveInfo) -> QuerySet[Report]:
@@ -62,7 +57,7 @@ class ReportQuery(graphene.ObjectType):
 
         return report
 
-    # TODO: Add pagination
+    # TODO: Add cursor based pagination
     @superuser_required
     def resolve_reports(
         self,
@@ -91,23 +86,3 @@ class ReportQuery(graphene.ObjectType):
         user_id: Optional[uuid.UUID] = None,
     ) -> int:
         return self.filter(status=status, reason=reason, user_id=user_id).count()
-
-    # TODO: Remove
-    # def resolve_report_history(
-    #     self,
-    #     info: graphene.ResolveInfo,
-    #     report_id: uuid.UUID,
-    # ) -> QuerySet[ReportHistory]:
-    #     try:
-    #         report = Report.objects.get(id=report_id)
-    #     except Report.DoesNotExist:
-    #         raise GraphQLError(
-    #             "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
-    #         )
-
-    #     return ReportHistory.objects.filter(pgh_obj_id=report.id).order_by(
-    #         "-pgh_created_at", "-pgh_id"
-    #     )
-
-    # def resolve_events(self, info: graphene.ResolveInfo):
-    #     return CoreEvent.objects.all()

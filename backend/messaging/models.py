@@ -51,7 +51,9 @@ class MessageStatus(models.Model):
         Message, on_delete=models.CASCADE, related_name="statuses"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="message_statuses"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="message_statuses",
     )
     status = models.CharField(max_length=16, choices=Status.choices)
     timestamp = models.DateTimeField(auto_now=True)

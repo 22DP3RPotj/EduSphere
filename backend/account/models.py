@@ -1,5 +1,6 @@
 import uuid
 
+import pghistory
 from django.conf import settings
 from django.db import models
 from django.db.models.functions import Lower
@@ -54,3 +55,13 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["username"]),
             models.Index(fields=["date_joined"]),
         ]
+
+
+class UserHistory(
+    pghistory.create_event_model(
+        User,
+        fields=["username", "email", "is_active", "is_staff", "is_superuser"],
+    )
+):
+    class Meta:
+        app_label = "account"

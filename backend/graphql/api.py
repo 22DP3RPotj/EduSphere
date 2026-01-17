@@ -6,6 +6,7 @@ from backend.graphql.access.schema import AccessQueries, AccessMutations
 from backend.graphql.moderation.schema import ModerationQueries, ModerationMutations
 from backend.graphql.messaging.schema import MessagingQueries, MessagingMutation
 from backend.graphql.account.schema import AccountQueries, AccountMutations
+from backend.graphql.audit.schema import AuditQueries
 
 
 class Mutation(
@@ -27,6 +28,7 @@ class Query(
     MessagingQueries,
     AccessQueries,
     ModerationQueries,
+    AuditQueries,
     graphene.ObjectType,
 ):
     pass

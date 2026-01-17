@@ -1,4 +1,5 @@
 import graphene
+from graphene_django.filter import DjangoFilterConnectionField
 from graphql_jwt.decorators import superuser_required
 
 from backend.account.models import UserHistory
@@ -14,48 +15,29 @@ from backend.graphql.audit.filters import (
 
 
 class AuditQuery(graphene.ObjectType):
-    user_audits = graphene.List(
+    user_audits = DjangoFilterConnectionField(
         UserAuditType,
-        date_from=graphene.Date(),
-        date_to=graphene.Date(),
-        action=graphene.String(),
-        target_id=graphene.UUID(),
-        username=graphene.String(),
-        email=graphene.String(),
-        limit=graphene.Int(default_value=50),
+        filterset_class=UserAuditFilter,
     )
 
-    room_audits = graphene.List(
+    room_audits = DjangoFilterConnectionField(
         RoomAuditType,
-        date_from=graphene.Date(),
-        date_to=graphene.Date(),
-        action=graphene.String(),
-        target_id=graphene.UUID(),
-        name=graphene.String(),
-        limit=graphene.Int(default_value=50),
+        filterset_class=RoomAuditFilter,
     )
 
-    invite_audits = graphene.List(
+    invite_audits = DjangoFilterConnectionField(
         InviteAuditType,
-        date_from=graphene.Date(),
-        date_to=graphene.Date(),
-        action=graphene.String(),
-        target_id=graphene.UUID(),
-        status=graphene.String(),
-        limit=graphene.Int(default_value=50),
+        filterset_class=InviteAuditFilter,
     )
 
     @superuser_required
-    def resolve_user_audits(self, info, limit=50, **kwargs):
-        qs = UserHistory.objects.all().order_by("-pgh_created_at")
-        return UserAuditFilter(kwargs, queryset=qs).qs[:limit]
+    def resolve_user_audits(self, info, **kwargs):
+        return UserHistory.objects.all().order_by("-pgh_created_at")
 
     @superuser_required
-    def resolve_room_audits(self, info, limit=50, **kwargs):
-        qs = RoomHistory.objects.all().order_by("-pgh_created_at")
-        return RoomAuditFilter(kwargs, queryset=qs).qs[:limit]
+    def resolve_room_audits(self, info, **kwargs):
+        return RoomHistory.objects.all().order_by("-pgh_created_at")
 
     @superuser_required
-    def resolve_invite_audits(self, info, limit=50, **kwargs):
-        qs = InviteHistory.objects.all().order_by("-pgh_created_at")
-        return InviteAuditFilter(kwargs, queryset=qs).qs[:limit]
+    def resolve_invite_audits(self, info, **kwargs):
+        return InviteHistory.objects.all().order_by("-pgh_created_at")

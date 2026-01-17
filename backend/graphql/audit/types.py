@@ -24,6 +24,7 @@ class BaseAuditType(graphene.ObjectType):
 class UserAuditType(BaseAuditType, DjangoObjectType):
     class Meta:
         model = UserHistory
+        interfaces = (graphene.relay.Node,)
         fields = (
             "username",
             "email",
@@ -36,6 +37,7 @@ class UserAuditType(BaseAuditType, DjangoObjectType):
 class RoomAuditType(BaseAuditType, DjangoObjectType):
     class Meta:
         model = RoomHistory
+        interfaces = (graphene.relay.Node,)
         fields = (
             "name",
             "description",
@@ -47,6 +49,7 @@ class RoomAuditType(BaseAuditType, DjangoObjectType):
 class InviteAuditType(BaseAuditType, DjangoObjectType):
     class Meta:
         model = InviteHistory
+        interfaces = (graphene.relay.Node,)
         fields = (
             "status",
             "role",

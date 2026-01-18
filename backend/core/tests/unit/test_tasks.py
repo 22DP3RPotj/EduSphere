@@ -1,10 +1,14 @@
 from unittest import mock
+import pytest
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from django.db import DatabaseError
 import pghistory.models
-from datetime import timedelta
+from datetime import datetime, timedelta
 from backend.core.tasks import cleanup_old_audit_logs
+
+
+pytestmark = pytest.mark.unit
 
 
 # Create a mock model class simulating a pghistory Event model
@@ -29,7 +33,7 @@ class CleanupOldAuditLogsTests(TestCase):
     ):
         """Test that old records are correctly identified and deleted."""
         # Setup fixed time
-        fixed_now = timezone.datetime(2025, 1, 1, 12, 0, 0)
+        fixed_now = timezone.make_aware(datetime(2025, 1, 1, 12, 0, 0))
         mock_timezone.now.return_value = fixed_now
         mock_timezone.timedelta = timedelta  # Use real timedelta
 

@@ -15,6 +15,7 @@ def cleanup_old_audit_logs():
     Deletes audit logs older than settings.AUDIT_LOG_RETENTION_DAYS.
     """
     days = settings.AUDIT_LOG_RETENTION_DAYS
+    batch_size = settings.AUDIT_LOG_BATCH_SIZE
     cutoff_date = timezone.now() - timezone.timedelta(days=days)
 
     logger.info(f"Cleaning up audit logs older than {days} days (before {cutoff_date})")
@@ -30,12 +31,27 @@ def cleanup_old_audit_logs():
                 continue
 
             model_name = f"{model._meta.app_label}.{model.__name__}"
-            try:
-                count, _ = model.objects.filter(pgh_created_at__lt=cutoff_date).delete()
+            model_deleted_count = 0
 
-                if count > 0:
-                    logger.info(f"Deleted {count} records from {model_name}")
-                    total_deleted += count
+            try:
+                while True:
+                    ids_to_delete = list(
+                        model.objects.filter(
+                            pgh_created_at__lt=cutoff_date
+                        ).values_list("pk", flat=True)[:batch_size]
+                    )
+
+                    if not ids_to_delete:
+                        break
+
+                    count, _ = model.objects.filter(pk__in=ids_to_delete).delete()
+                    model_deleted_count += count
+
+                if model_deleted_count > 0:
+                    logger.info(
+                        f"Deleted {model_deleted_count} records from {model_name}"
+                    )
+                    total_deleted += model_deleted_count
             except DatabaseError as e:
                 logger.error(f"Error cleaning up {model_name}: {e}")
 

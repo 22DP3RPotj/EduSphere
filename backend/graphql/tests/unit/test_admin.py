@@ -72,4 +72,4 @@ class AdminQueryTests(JSONWebTokenTestCase):
         variables = {"search": "Test"}
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertIsNotNone(result.errors)
-        self.assertTrue(len(result.errors) > 0)
+        self.assertGreater(len(result.errors), 0)

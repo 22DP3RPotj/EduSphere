@@ -92,7 +92,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
         data = response.data["roomAudits"]["edges"]
 
         # Depending on pghistory config, we expect at least the update event
-        self.assertTrue(len(data) > 0)
+        self.assertGreater(len(data), 0)
 
         # Verify the latest update
         latest = data[-1]["node"]
@@ -104,12 +104,12 @@ class AuditQueryTests(JSONWebTokenTestCase):
         # Test Filter by name
         response = self.client.execute(query, variables={"name": "Updated"})
         self.assertIsNone(response.errors)
-        self.assertTrue(len(response.data["roomAudits"]["edges"]) > 0)
+        self.assertGreater(len(response.data["roomAudits"]["edges"]), 0)
 
         # Test Filter by targetId
         response = self.client.execute(query, variables={"targetId": str(room.id)})
         self.assertIsNone(response.errors)
-        self.assertTrue(len(response.data["roomAudits"]["edges"]) > 0)
+        self.assertGreater(len(response.data["roomAudits"]["edges"]), 0)
         self.assertEqual(
             str(response.data["roomAudits"]["edges"][0]["node"]["pghObjId"]),
             str(room.id),
@@ -148,7 +148,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
         )
         self.assertIsNone(response.errors)
         data = response.data["userAudits"]["edges"]
-        self.assertTrue(len(data) > 0)
+        self.assertGreater(len(data), 0)
 
         latest = data[-1]["node"]
         self.assertEqual(latest["isActive"], False)
@@ -195,7 +195,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
         response = self.client.execute(query)
         self.assertIsNone(response.errors)
         data = response.data["inviteAudits"]["edges"]
-        self.assertTrue(len(data) > 0)
+        self.assertGreater(len(data), 0)
 
         latest = data[0]["node"]
         self.assertEqual(latest["status"], "ACCEPTED")
@@ -232,7 +232,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
             query, variables={"dateFrom": yesterday, "dateTo": tomorrow}
         )
         self.assertIsNone(response.errors)
-        self.assertTrue(len(response.data["userAudits"]["edges"]) > 0)
+        self.assertGreater(len(response.data["userAudits"]["edges"]), 0)
 
         # Test future range (should be empty if we haven't created future events)
         future_start = (now + timezone.timedelta(days=2)).date().isoformat()

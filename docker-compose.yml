@@ -63,7 +63,7 @@ services:
       args:
         - GIT_SHA=${GIT_SHA:-unknown}
         - APP_VERSION=${APP_VERSION:-unknown}
-    command: celery -A backend.config worker -l info
+    command: celery -A backend.config worker -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - ./media:/app/media
     environment:

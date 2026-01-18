@@ -71,8 +71,13 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "backend.core.middleware.PgHistoryMiddleware",
 ]
+
+
+AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED", default=True)
+
+if AUDIT_LOGGING_ENABLED:
+    MIDDLEWARE += ["backend.core.middleware.PgHistoryMiddleware"]
 
 # TODO: When moving to production with HTTPS
 # SECURE_SETTINGS = {
@@ -103,6 +108,12 @@ TEMPLATES = [
     },
 ]
 
+
+LOG_THRESHOLD = env.int("LOG_THRESHOLD", default=30)
+
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -114,8 +125,13 @@ LOGGING = {
     },
     "handlers": {
         "root_file": {
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "general.log",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": LOG_DIR / "general.log",
+            "when": "midnight",
+            "backupCount": LOG_THRESHOLD,
+            "encoding": "utf-8",
+            "delay": True,
+            "utc": True,
             "formatter": "verbose",
         },
     },
@@ -133,6 +149,7 @@ GRAPHENE = {
     "SCHEMA": "backend.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        # TODO: Proper validation
         # "backend.graphql.middleware.ValidationMiddleware",
     ],
 }
@@ -184,20 +201,6 @@ DATABASES = {
     )
 }
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [
-                (
-                    env("REDIS_HOST", default="localhost"),
-                    env("REDIS_PORT", default="6379"),
-                )
-            ],
-        },
-    },
-}
-
 
 REDIS_HOST = env("REDIS_HOST", default="localhost")
 REDIS_PORT = env.int("REDIS_PORT", default=6379)
@@ -207,6 +210,20 @@ REDIS_STREAMS = {
     "MAX_STREAM_LENGTH": 10000,
     "MESSAGE_TTL": 86400,
     "CONSUMER_TIMEOUT": 300,
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                (
+                    REDIS_HOST,
+                    REDIS_PORT,
+                )
+            ],
+        },
+    },
 }
 
 # TODO: group settings

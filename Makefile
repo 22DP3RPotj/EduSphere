@@ -25,7 +25,6 @@ help:
 setup:
 	sudo service postgresql start; \
 	sudo service nginx start; \
-	mkdir -p logs; \
 	mkdir -p media/avatars; \
 	$(PY) manage.py collectstatic --noinput; \
 

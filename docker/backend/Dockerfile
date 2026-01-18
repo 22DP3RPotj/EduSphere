@@ -37,7 +37,7 @@ RUN poetry config virtualenvs.create false && \
 COPY . .
 
 # Create runtime directories
-RUN mkdir -p staticfiles media/avatars logs
+RUN mkdir -p staticfiles media/avatars
 
 # Entrypoint + default command
 ENTRYPOINT ["/app/docker/backend/entrypoint.sh"]

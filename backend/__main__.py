@@ -1,11 +1,12 @@
 import uvicorn
+from django.conf import settings
 
 
 def main():
     uvicorn.run(
         "backend.config.asgi:application",
         port=8000,
-        reload=True,
+        reload=settings.DEBUG,
         lifespan="off",
     )
 

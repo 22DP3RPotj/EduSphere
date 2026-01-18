@@ -2,6 +2,7 @@ import environ
 import dj_database_url
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 
 
 # Initialize environment variables
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     "pgtrigger",
     "pghistory",
     "django_cleanup.apps.CleanupConfig",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -202,6 +204,24 @@ CHANNEL_LAYERS = {
 REDIS_HOST = env("REDIS_HOST", default="localhost")
 REDIS_PORT = env.int("REDIS_PORT", default=6379)
 REDIS_DB = env.int("REDIS_DB", default=0)
+
+# Celery Configuration
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+CELERY_TIMEZONE = "UTC"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+
+CELERY_BEAT_SCHEDULE = {
+    "cleanup_old_audit_logs": {
+        "task": "backend.core.tasks.cleanup_old_audit_logs",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
+
+AUDIT_LOG_RETENTION_DAYS = env.int("AUDIT_LOG_RETENTION_DAYS", default=90)
 
 REDIS_STREAMS = {
     "MAX_STREAM_LENGTH": 10000,

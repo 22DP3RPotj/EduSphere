@@ -91,10 +91,9 @@ class UpdateUserActiveStatus(graphene.Mutation):
     def mutate(
         self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_active: bool
     ):
-        with transaction.atomic():
-            updated_count = User.objects.filter(id__in=user_ids).update(
-                is_active=is_active
-            )
+        updated_count = User.objects.filter(id__in=user_ids).update(
+            is_active=is_active
+        )
 
         return UpdateUserActiveStatus(success=True, updated_count=updated_count)
 
@@ -111,9 +110,8 @@ class UpdateUserStaffStatus(graphene.Mutation):
     def mutate(
         self, info: graphene.ResolveInfo, user_ids: list[uuid.UUID], is_staff: bool
     ):
-        with transaction.atomic():
-            updated_count = User.objects.filter(id__in=user_ids).update(
-                is_staff=is_staff
-            )
+        updated_count = User.objects.filter(id__in=user_ids).update(
+            is_staff=is_staff
+        )
 
         return UpdateUserStaffStatus(success=True, updated_count=updated_count)

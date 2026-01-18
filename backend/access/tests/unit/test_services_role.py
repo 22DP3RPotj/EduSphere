@@ -28,7 +28,7 @@ class RoleServiceTest(ServiceTestBase):
     def test_has_permission_owner(self):
         self.assertTrue(
             RoleService.has_permission(
-                self.owner, self.room, PermissionCode.ROOM_ROLE_MANAGE
+                self.owner, self.room, PermissionCode.ROOM_MANAGE_ROLES
             )
         )
 
@@ -36,7 +36,7 @@ class RoleServiceTest(ServiceTestBase):
         self._add_member(self.member, self.member_role)
         self.assertFalse(
             RoleService.has_permission(
-                self.member, self.room, PermissionCode.ROOM_ROLE_MANAGE
+                self.member, self.room, PermissionCode.ROOM_MANAGE_ROLES
             )
         )
 
@@ -50,7 +50,7 @@ class RoleServiceTest(ServiceTestBase):
 
         self.assertTrue(
             RoleService.has_permission(
-                superuser, self.room, PermissionCode.ROOM_ROLE_MANAGE
+                superuser, self.room, PermissionCode.ROOM_MANAGE_ROLES
             )
         )
 

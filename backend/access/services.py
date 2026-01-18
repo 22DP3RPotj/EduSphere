@@ -169,7 +169,7 @@ class RoleService:
         user: User,
         room: Room,
         name: str,
-        description: str,
+        description: Optional[str],
         priority: int,
         permission_ids: list[uuid.UUID],
     ) -> Role:
@@ -177,7 +177,7 @@ class RoleService:
         Create a new role in a room.
 
         Args:
-            user: User creating the role (must have ROOM_ROLE_MANAGE permission)
+            user: User creating the role (must have ROOM_MANAGE_ROLES permission)
             room: The room to create the role in
             name: Role name
             description: Role description
@@ -188,7 +188,7 @@ class RoleService:
             The created Role instance
 
         Raises:
-            PermissionException: If user doesn't have ROOM_ROLE_MANAGE permission
+            PermissionException: If user doesn't have ROOM_MANAGE_ROLES permission
             ValidationException: If form validation fails
             ConflictException: If role creation conflicts
         """
@@ -200,7 +200,7 @@ class RoleService:
             )
 
         if participant.role is None or not RoleService.has_permission(
-            user, room, PermissionCode.ROOM_ROLE_MANAGE
+            user, room, PermissionCode.ROOM_MANAGE_ROLES
         ):
             raise PermissionException(
                 "You don't have permission to manage roles in this room."
@@ -260,7 +260,7 @@ class RoleService:
         Update a role.
 
         Args:
-            user: User performing the update (must have ROOM_ROLE_MANAGE permission)
+            user: User performing the update (must have ROOM_MANAGE_ROLES permission)
             role: The role to update
             name: New role name (optional)
             description: New role description (optional)
@@ -283,7 +283,7 @@ class RoleService:
             )
 
         if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_ROLE_MANAGE
+            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
         ):
             raise PermissionException(
                 "You don't have permission to manage roles in this room"
@@ -327,9 +327,10 @@ class RoleService:
                     permissions = Permission.objects.filter(id__in=permission_ids)
                     role.permissions.set(permissions)
 
-                return role
         except IntegrityError as e:
             raise ConflictException("Could not update role due to a conflict.") from e
+
+        return role
 
     @staticmethod
     def delete_role(
@@ -339,7 +340,7 @@ class RoleService:
         Delete a role.
 
         Args:
-            user: User performing the deletion (must have ROOM_ROLE_MANAGE permission)
+            user: User performing the deletion (must have ROOM_MANAGE_ROLES permission)
             role: The role to delete
             substitution_role: Role to reassign participants and invites to (required if role has participants/invites)
 
@@ -364,7 +365,7 @@ class RoleService:
             )
 
         if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_ROLE_MANAGE
+            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
         ):
             raise PermissionException(
                 "You don't have permission to manage roles in this room"
@@ -419,7 +420,7 @@ class RoleService:
         Assign permissions to a role.
 
         Args:
-            user: User performing the assignment (must have ROOM_ROLE_MANAGE permission)
+            user: User performing the assignment (must have ROOM_MANAGE_ROLES permission)
             role: The role to assign permissions to
             permission_ids: List of permission IDs
 
@@ -437,7 +438,7 @@ class RoleService:
             )
 
         if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_ROLE_MANAGE
+            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
         ):
             raise PermissionException(
                 "You don't have permission to manage roles in this room"
@@ -468,7 +469,7 @@ class RoleService:
         Remove permissions from a role.
 
         Args:
-            user: User performing the removal (must have ROOM_ROLE_MANAGE permission)
+            user: User performing the removal (must have ROOM_MANAGE_ROLES permission)
             role: The role to remove permissions from
             permission_ids: List of permission IDs to remove
 
@@ -486,7 +487,7 @@ class RoleService:
             )
 
         if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_ROLE_MANAGE
+            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
         ):
             raise PermissionException(
                 "You don't have permission to manage roles in this room"
@@ -533,7 +534,7 @@ class ParticipantService:
     def add_participant(
         room: Room,
         user: User,
-        role: Role,
+        role: Optional[Role],
     ) -> Participant:
         """
         Add a participant to a room.
@@ -550,7 +551,7 @@ class ParticipantService:
             ValidationException: If role doesn't belong to the room
             ConflictException: If user is already a participant
         """
-        if role.room != room:
+        if role is not None and role.room != room:
             raise ValidationException("Role must belong to the same room.")
 
         if Participant.objects.filter(user=user, room=room).exists():
@@ -586,15 +587,15 @@ class ParticipantService:
             PermissionException: If user doesn't have permission
             ValidationException: If role doesn't belong to the room
         """
-        if new_role.room != participant.room:
-            raise ValidationException("New role must belong to the same room.")
-
         if not RoleService.has_permission(
-            user, participant.room, PermissionCode.ROOM_ROLE_MANAGE
+            user, participant.room, PermissionCode.ROOM_MANAGE_ROLES
         ):
             raise PermissionException(
                 "You don't have permission to manage participant roles."
             )
+
+        if new_role.room != participant.room:
+            raise ValidationException("New role must belong to the same room.")
 
         user_participant = RoleService.get_participant(user, participant.room)
         if user_participant is None:
@@ -631,7 +632,7 @@ class ParticipantService:
         # User can remove themselves or must have role management permission
         if user != participant.user:
             if not RoleService.has_permission(
-                user, participant.room, PermissionCode.ROOM_ROLE_MANAGE
+                user, participant.room, PermissionCode.ROOM_MANAGE_ROLES
             ):
                 raise PermissionException(
                     "You don't have permission to remove participants."

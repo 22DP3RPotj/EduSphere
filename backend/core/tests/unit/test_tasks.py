@@ -35,7 +35,7 @@ class CleanupOldAuditLogsTests(TestCase):
         # Setup fixed time
         fixed_now = timezone.make_aware(datetime(2025, 1, 1, 12, 0, 0))
         mock_timezone.now.return_value = fixed_now
-        mock_timezone.timedelta = timedelta  # Use real timedelta
+        mock_timezone.timedelta = timedelta
 
         # Setup mock model behavior
         mock_objects = mock.MagicMock()
@@ -90,7 +90,7 @@ class CleanupOldAuditLogsTests(TestCase):
     @mock.patch("backend.core.tasks.timezone")
     def test_cleanup_database_error(self, mock_timezone, mock_logger, mock_get_models):
         """Test handling of DatabaseError during cleanup."""
-        mock_timezone.now.return_value = timezone.datetime(2025, 1, 1)
+        mock_timezone.now.return_value = timezone.make_aware(datetime(2025, 1, 1))
         mock_timezone.timedelta = timedelta
 
         mock_objects = mock.MagicMock()
@@ -115,7 +115,7 @@ class CleanupOldAuditLogsTests(TestCase):
     @mock.patch("backend.core.tasks.timezone")
     def test_cleanup_ignores_non_pghistory_models(self, mock_timezone, mock_get_models):
         """Test that normal models are ignored."""
-        mock_timezone.now.return_value = timezone.datetime(2025, 1, 1)
+        mock_timezone.now.return_value = timezone.make_aware(datetime(2025, 1, 1))
         mock_timezone.timedelta = timedelta
 
         class NormalModel:
@@ -131,7 +131,7 @@ class CleanupOldAuditLogsTests(TestCase):
     @mock.patch("backend.core.tasks.timezone")
     def test_cleanup_ignores_proxy_models(self, mock_timezone, mock_get_models):
         """Test that proxy models are ignored."""
-        mock_timezone.now.return_value = timezone.datetime(2025, 1, 1)
+        mock_timezone.now.return_value = timezone.make_aware(datetime(2025, 1, 1))
         mock_timezone.timedelta = timedelta
 
         # Temporarily modify the proxy status of the MockEvent

@@ -57,12 +57,7 @@ services:
 
   # Celery Worker
   celery_worker:
-    build: 
-      context: .
-      dockerfile: ./docker/backend/Dockerfile
-      args:
-        - GIT_SHA=${GIT_SHA:-unknown}
-        - APP_VERSION=${APP_VERSION:-unknown}
+    image: edusphere-backend
     command: celery -A backend.config worker -l info
     volumes:
       - ./media:/app/media
@@ -70,13 +65,6 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - DJANGO_SETTINGS_MODULE=backend.config.settings
       - DATABASE_URL=${DATABASE_URL}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,12 +76,7 @@ services:
 
   # Celery Beat
   celery_beat:
-    build: 
-      context: .
-      dockerfile: ./docker/backend/Dockerfile
-      args:
-        - GIT_SHA=${GIT_SHA:-unknown}
-        - APP_VERSION=${APP_VERSION:-unknown}
+    image: edusphere-backend
     command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - ./media:/app/media
@@ -101,13 +84,6 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - DJANGO_SETTINGS_MODULE=backend.config.settings
       - DATABASE_URL=${DATABASE_URL}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
     depends_on:
       postgres:
         condition: service_healthy

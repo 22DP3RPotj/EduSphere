@@ -63,3 +63,43 @@ class UserHistory(
 ):
     class Meta:
         app_label = "account"
+
+
+class UserBan(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="bans",
+    )
+    banned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="issued_bans",
+    )
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        app_label = "account"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_active"]),
+        ]
+
+    def __str__(self):
+        return f"Ban for {self.user.username}"
+
+
+class UserBanHistory(
+    pghistory.create_event_model(
+        UserBan,
+        fields=["user", "banned_by", "reason", "expires_at", "is_active"],
+    )
+):
+    class Meta:
+        app_label = "account"

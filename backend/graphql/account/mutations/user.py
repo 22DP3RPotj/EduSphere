@@ -5,7 +5,6 @@ from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
-from django.db import transaction
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.datastructures import MultiValueDict
 

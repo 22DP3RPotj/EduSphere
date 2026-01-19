@@ -3,20 +3,26 @@ from django.apps import apps
 from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
+from typing import Optional
+from datetime import timedelta
 import pghistory.models
 import logging
+
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task
-def cleanup_old_audit_logs():
+def run_audit_log_cleanup(days: Optional[int] = None, batch_size: Optional[int] = None):
     """
-    Deletes audit logs older than settings.AUDIT_LOG_RETENTION_DAYS.
+    Core logic for cleaning up audit logs.
+    Separated from the task for easier testing and manual execution.
     """
-    days = settings.AUDIT_LOG_RETENTION_DAYS
-    batch_size = settings.AUDIT_LOG_BATCH_SIZE
-    cutoff_date = timezone.now() - timezone.timedelta(days=days)
+    if days is None:
+        days = settings.AUDIT_LOG_RETENTION_DAYS
+    if batch_size is None:
+        batch_size = settings.AUDIT_LOG_BATCH_SIZE
+
+    cutoff_date = timezone.now() - timedelta(days=days)
 
     logger.info(f"Cleaning up audit logs older than {days} days (before {cutoff_date})")
 
@@ -33,27 +39,37 @@ def cleanup_old_audit_logs():
             model_name = f"{model._meta.app_label}.{model.__name__}"
             model_deleted_count = 0
 
-            try:
-                while True:
-                    ids_to_delete = list(
-                        model.objects.filter(
-                            pgh_created_at__lt=cutoff_date
-                        ).values_list("pk", flat=True)[:batch_size]
-                    )
+            while True:
+                ids_to_delete = list(
+                    model.objects.filter(pgh_created_at__lt=cutoff_date).values_list(
+                        "pk", flat=True
+                    )[:batch_size]
+                )
 
-                    if not ids_to_delete:
-                        break
+                if not ids_to_delete:
+                    break
 
-                    count, _ = model.objects.filter(pk__in=ids_to_delete).delete()
-                    model_deleted_count += count
+                # We define the transaction boundary here, per batch, just to be safe,
+                # though single delete statements are atomic by default in Postgres.
+                count, _ = model.objects.filter(pk__in=ids_to_delete).delete()
+                model_deleted_count += count
 
-                if model_deleted_count > 0:
-                    logger.info(
-                        f"Deleted {model_deleted_count} records from {model_name}"
-                    )
-                    total_deleted += model_deleted_count
-            except DatabaseError as e:
-                logger.error(f"Error cleaning up {model_name}: {e}")
+            if model_deleted_count > 0:
+                logger.info(f"Deleted {model_deleted_count} records from {model_name}")
+                total_deleted += model_deleted_count
 
     logger.info(f"Total audit log records deleted: {total_deleted}")
     return total_deleted
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(DatabaseError,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 5},
+)
+def cleanup_old_audit_logs(self):
+    """
+    Celery task wrapper for audit log cleanup.
+    """
+    return run_audit_log_cleanup()

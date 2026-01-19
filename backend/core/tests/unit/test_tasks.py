@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.db import DatabaseError
 import pghistory.models
 from datetime import datetime, timedelta
-from backend.core.tasks import cleanup_old_audit_logs
+
+from backend.core.tasks import run_audit_log_cleanup
 
 
 pytestmark = pytest.mark.unit
@@ -61,7 +62,7 @@ class CleanupOldAuditLogsTests(TestCase):
         mock_get_models.return_value = [self.MockEvent]
 
         # Execute
-        total_deleted = cleanup_old_audit_logs()
+        total_deleted = run_audit_log_cleanup()
 
         # Verify
         expected_cutoff = fixed_now - timedelta(days=30)
@@ -101,15 +102,9 @@ class CleanupOldAuditLogsTests(TestCase):
 
         mock_get_models.return_value = [self.MockEvent]
 
-        total_deleted = cleanup_old_audit_logs()
-
-        # Verify error was logged
-        mock_logger.error.assert_called_with(
-            "Error cleaning up core.MockEvent: Connection failed"
-        )
-
-        # Should return 0 deleted
-        self.assertEqual(total_deleted, 0)
+        # Verify exception is raised instead of logged
+        with self.assertRaises(DatabaseError):
+            run_audit_log_cleanup()
 
     @mock.patch("backend.core.tasks.apps.get_models")
     @mock.patch("backend.core.tasks.timezone")
@@ -123,7 +118,7 @@ class CleanupOldAuditLogsTests(TestCase):
 
         mock_get_models.return_value = [NormalModel]
 
-        total_deleted = cleanup_old_audit_logs()
+        total_deleted = run_audit_log_cleanup()
 
         self.assertEqual(total_deleted, 0)
 
@@ -141,7 +136,7 @@ class CleanupOldAuditLogsTests(TestCase):
         try:
             mock_get_models.return_value = [self.MockEvent]
 
-            total_deleted = cleanup_old_audit_logs()
+            total_deleted = run_audit_log_cleanup()
 
             self.assertEqual(total_deleted, 0)
         finally:

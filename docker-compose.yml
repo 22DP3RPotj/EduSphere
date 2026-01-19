@@ -57,6 +57,44 @@ services:
       timeout: 3s
       retries: 5
 
+  # Celery Worker
+  celery_worker:
+    image: edusphere-backend
+    command: celery -A backend.config worker -l info
+    volumes:
+      - ./media:/app/media
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_SETTINGS_MODULE=backend.config.settings
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    restart: on-failure:5
+
+  # Celery Beat
+  celery_beat:
+    image: edusphere-backend
+    command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./media:/app/media
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_SETTINGS_MODULE=backend.config.settings
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    restart: on-failure:5
+
   # Nginx service with built-in frontend
   nginx:
     build:

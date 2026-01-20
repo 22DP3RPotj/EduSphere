@@ -634,9 +634,8 @@ async function confirmTermination() {
       selectedUsers.value = [];
       closeTerminationModal();
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Failed to terminate user:', e);
-    // Ideally show error toast
   }
 }
 

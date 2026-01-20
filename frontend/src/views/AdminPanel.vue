@@ -52,7 +52,6 @@
               <option :value="null">Select an action...</option>
               <option value="promote">Promote to Staff</option>
               <option value="demote">Remove Staff</option>
-              <option value="terminate">Terminate</option>
               <option value="activate">Activate</option>
             </select>
             <button 
@@ -394,6 +393,43 @@
       </div>
     </div>
 
+    <!-- Termination Modal -->
+    <div v-if="terminationModal.isOpen" class="modal-overlay" @click="closeTerminationModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Terminate User(s)</h3>
+          <button class="modal-close" @click="closeTerminationModal">
+            <font-awesome-icon icon="times" />
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="termination-reason">Reason for Termination</label>
+            <textarea
+              id="termination-reason"
+              v-model="terminationModal.reason"
+              placeholder="Explain why the user is being terminated..."
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="termination-duration">Duration</label>
+             <select id="termination-duration" v-model="terminationModal.duration">
+              <option value="permanent">Permanent</option>
+              <option value="1h">1 Hour</option>
+              <option value="24h">24 Hours</option>
+              <option value="7d">7 Days</option>
+              <option value="30d">30 Days</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeTerminationModal">Cancel</button>
+          <button class="btn-confirm danger" @click="confirmTermination">Terminate</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Confirmation Modal -->
     <ConfirmationModal
       v-if="confirmationModal.isOpen"
@@ -453,7 +489,7 @@ const userSort = ref<{
 });
 const selectedUsers = ref<string[]>([]);
 const activeUserActions = ref<string | null>(null);
-const selectedBulkAction = ref<'promote' | 'demote' | 'terminate' | 'activate' | null>(null);
+const selectedBulkAction = ref<'promote' | 'demote' | 'activate' | null>(null);
 
 // Report Management State
 const reportFiltersUI = ref({
@@ -472,6 +508,14 @@ const moderatorNoteModal = ref({
   input: '',
 });
 const activeReportActions = ref<string | null>(null);
+
+// Termination Modal
+const terminationModal = ref({
+  isOpen: false,
+  userId: '',
+  reason: '',
+  duration: 'permanent',
+});
 
 // Confirmation Modal State
 const confirmationModal = ref({
@@ -543,6 +587,81 @@ const sortedReports = computed(() => {
 function onUserSearch() {
   userSearch.value.filter = userSearch.value.query;
   refetchUsersComposable();
+}
+
+function closeTerminationModal() {
+  terminationModal.value.isOpen = false;
+  terminationModal.value.userId = '';
+  terminationModal.value.reason = '';
+  terminationModal.value.duration = 'permanent';
+}
+
+function calculateExpiresAt(duration: string): string | undefined {
+  if (duration === 'permanent') return undefined;
+
+  const now = new Date();
+  switch (duration) {
+    case '1h':
+      now.setHours(now.getHours() + 1);
+      break;
+    case '24h':
+      now.setHours(now.getHours() + 24);
+      break;
+    case '7d':
+      now.setDate(now.getDate() + 7);
+      break;
+    case '30d':
+      now.setDate(now.getDate() + 30);
+      break;
+  }
+  return now.toISOString();
+}
+
+async function confirmTermination() {
+  const reason = terminationModal.value.reason || 'Administratively banned';
+  const expiresAt = calculateExpiresAt(terminationModal.value.duration);
+
+  try {
+    const result = await updateActiveStatus(
+      terminationModal.value.userId,
+      false, // isActive = false (Ban)
+      reason,
+      expiresAt
+    );
+
+    if (result?.data?.updateUserActiveStatus?.success) {
+      await refetchUsersComposable();
+      selectedUsers.value = [];
+      closeTerminationModal();
+    }
+  } catch (e: any) {
+    console.error('Failed to terminate user:', e);
+    // Ideally show error toast
+  }
+}
+
+function terminateUser(userId: string) {
+  terminationModal.value.userId = userId;
+  terminationModal.value.isOpen = true;
+  activeUserActions.value = null; // Close dropdown
+}
+
+function activateUser(userId: string) {
+  confirmationModal.value = {
+    isOpen: true,
+    title: 'Confirm Activation',
+    message: 'Are you sure you want to activate this user?',
+    action: async () => {
+      const result = await updateActiveStatus([userId], true);
+      if (result?.data?.updateUserActiveStatus?.success) {
+        await refetchUsersComposable();
+        // Clear selection if this user was selected
+        const idx = selectedUsers.value.indexOf(userId);
+        if (idx > -1) selectedUsers.value.splice(idx, 1);
+      }
+    },
+  };
+  activeUserActions.value = null; // Close dropdown
 }
 
 function applyReportFilters() {
@@ -646,34 +765,6 @@ async function demoteUser(userId: string) {
   );
 }
 
-async function terminateUser(userId: string) {
-  activeUserActions.value = null;
-  showConfirmation(
-    'Terminate User',
-    'Are you sure you want to terminate this user? They will not be able to access the platform.',
-    async () => {
-      try {
-        await updateActiveStatus([userId], false);
-        await refetchUsersComposable();
-        selectedUsers.value = [];
-      } catch (error) {
-        console.error('Failed to terminate user:', error);
-        throw error;
-      }
-    }
-  );
-}
-
-async function activateUser(userId: string) {
-  activeUserActions.value = null;
-  try {
-    await updateActiveStatus([userId], true);
-    await refetchUsersComposable();
-    selectedUsers.value = [];
-  } catch (error) {
-    console.error('Failed to activate user:', error);
-  }
-}
 
 // Bulk Actions
 function applyBulkAction() {
@@ -683,9 +774,6 @@ function applyBulkAction() {
       break;
     case 'demote':
       bulkDemoteUsers();
-      break;
-    case 'terminate':
-      bulkTerminateUsers();
       break;
     case 'activate':
       bulkActivateUsers();
@@ -722,23 +810,6 @@ async function bulkDemoteUsers() {
         selectedUsers.value = [];
       } catch (error) {
         console.error('Failed to demote users:', error);
-        throw error;
-      }
-    }
-  );
-}
-
-async function bulkTerminateUsers() {
-  showConfirmation(
-    'Terminate Users',
-    `Are you sure you want to terminate ${selectedUsers.value.length} users? They will not be able to access the platform.`,
-    async () => {
-      try {
-        await updateActiveStatus(selectedUsers.value, false);
-        await refetchUsersComposable();
-        selectedUsers.value = [];
-      } catch (error) {
-        console.error('Failed to terminate users:', error);
         throw error;
       }
     }

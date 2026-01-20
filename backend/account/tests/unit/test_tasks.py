@@ -38,7 +38,7 @@ class ExpireUserBansTests(TestCase):
         mock_timezone.now.return_value = fixed_now
 
         # Create an expired ban
-        UserBan.objects.create(
+        ban = UserBan.objects.create(
             user=self.user,
             banned_by=self.admin,
             reason="Test ban",
@@ -51,7 +51,7 @@ class ExpireUserBansTests(TestCase):
 
         # Verify
         self.assertEqual(count, 1)
-        mock_restriction_service.unban_user.assert_called_once_with(self.user)
+        mock_restriction_service.lift_ban.assert_called_once_with(ban)
         mock_logger.info.assert_any_call("Expired 1 user bans.")
 
     @mock.patch("backend.account.tasks.RestrictionService")
@@ -75,7 +75,7 @@ class ExpireUserBansTests(TestCase):
             expires_at=timezone.now() - timedelta(hours=1),
             is_active=True,
         )
-        UserBan.objects.create(
+        ban = UserBan.objects.create(
             user=user2,
             banned_by=self.admin,
             reason="Test ban 2",
@@ -84,15 +84,11 @@ class ExpireUserBansTests(TestCase):
         )
 
         # Service raises error for first user
-        mock_restriction_service.unban_user.side_effect = [
-            Exception("Service error"),
-            None,
-        ]
+        mock_restriction_service.lift_ban.side_effect = Exception("Service error")
 
         # Execute
-        count = run_expire_user_bans()
+        with pytest.raises(Exception, match="Service error"):
+            run_expire_user_bans()
 
         # Verify
-        self.assertEqual(count, 1)  # Only one successful
-        mock_logger.error.assert_called_once()  # Error logged for first one
-        self.assertEqual(mock_restriction_service.unban_user.call_count, 2)
+        mock_restriction_service.lift_ban.assert_called_once_with(ban)

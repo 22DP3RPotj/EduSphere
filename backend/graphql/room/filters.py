@@ -12,7 +12,7 @@ class RoomFilter(django_filters.FilterSet):
     topics = django_filters.ModelMultipleChoiceFilter(
         field_name="topics__name",
         to_field_name="name",
-        queryset=lambda: Topic.objects.all(),
+        queryset=lambda _: Topic.objects.all(),
     )
 
     class Meta:

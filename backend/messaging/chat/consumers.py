@@ -123,9 +123,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )()
 
         if not is_participant:
-            logger.warning(
-                f"User {self.user.username} ({self.user.id}) is not a participant of room {room.id}"
-            )
             await self.close()
             return
 

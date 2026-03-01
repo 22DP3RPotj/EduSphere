@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "graphene_django",
     "pgtrigger",
     "pghistory",
+    "rules",
     "django_cleanup.apps.CleanupConfig",
     "django_celery_beat",
     "django_prometheus",
@@ -233,6 +234,7 @@ CORS_ALLOWED_ORIGINS = [
 
 AUTHENTICATION_BACKENDS = [
     "graphql_jwt.backends.JSONWebTokenBackend",
+    "rules.permissions.ObjectPermissionBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 

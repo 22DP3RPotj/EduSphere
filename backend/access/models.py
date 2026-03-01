@@ -28,6 +28,10 @@ class Permission(models.Model):
 
 class Role(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Maybe
+    # parent = models.ForeignKey(
+    #     "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="children"
+    # )
     name = models.CharField(max_length=32)
     room = models.ForeignKey(
         "room.Room", on_delete=models.CASCADE, related_name="roles"

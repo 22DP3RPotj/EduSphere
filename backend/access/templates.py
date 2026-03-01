@@ -23,24 +23,24 @@ PERMISSION_TEMPLATES: dict[PermissionCode, PermissionTemplate] = {
     PermissionCode.ROOM_MANAGE_VISIBILITY: {
         "description": "Manage room visibility settings",
     },
-    PermissionCode.ROOM_SEND_INVITE: {
-        "description": "Send and manage room invitations",
+    PermissionCode.ROOM_MANAGE_PARTICIPANTS: {
+        "description": "Invite or remove participants",
     },
-    PermissionCode.ROOM_KICK: {
-        "description": "Remove users from the room",
-    },
-    PermissionCode.ROOM_ROLE_MANAGE: {
+    PermissionCode.ROOM_MANAGE_ROLES: {
         "description": "Manage room roles and permissions",
     },
     PermissionCode.ROOM_DELETE_MESSAGE: {
         "description": "Delete messages from the room",
+    },
+    PermissionCode.ROOM_UPLOAD_FILE: {
+        "description": "Allow file uploads",
     },
 }
 
 DEFAULT_ROLE_TEMPLATES: dict[RoleCode, RoleTemplate] = {
     RoleCode.OWNER: {
         "description": "Room owner",
-        "permission_codes": list(PermissionCode.values),
+        "permission_codes": PermissionCode.values,
         "priority": 100,
     },
     RoleCode.MEMBER: {

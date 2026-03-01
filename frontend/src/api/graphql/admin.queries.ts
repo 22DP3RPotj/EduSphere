@@ -17,8 +17,8 @@ export const GET_ALL_USERS = gql`
 `;
 
 export const GET_ALL_REPORTS = gql`
-  query GetAllReports($status: ReportStatus, $reason: ReportReason, $userId: UUID) {
-    allReports(status: $status, reason: $reason, userId: $userId) {
+  query GetReports($status: ReportStatus, $reason: ReportReason, $userId: UUID) {
+    reports(status: $status, reason: $reason, userId: $userId) {
       id
       body
       reason

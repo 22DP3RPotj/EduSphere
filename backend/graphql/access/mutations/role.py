@@ -3,8 +3,7 @@ import uuid
 from typing import Optional
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
-
-from backend.graphql.access.types import RoleType
+from backend.graphql.access.types import RoleType, RoleDeleteType
 from backend.core.exceptions import (
     ConflictException,
     PermissionException,
@@ -109,9 +108,7 @@ class DeleteRole(graphene.Mutation):
         role_id = graphene.UUID(required=True)
         substitution_role_id = graphene.UUID(required=False)
 
-    success = graphene.Boolean()
-    participants_reassigned = graphene.Int()
-    invites_reassigned = graphene.Int()
+    result = graphene.Field(RoleDeleteType)
 
     @login_required
     def mutate(
@@ -149,11 +146,7 @@ class DeleteRole(graphene.Mutation):
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
-        return DeleteRole(
-            success=result["success"],
-            participants_reassigned=result["participants_reassigned"],
-            invites_reassigned=result["invites_reassigned"],
-        )
+        return DeleteRole(result=result)
 
 
 class AssignPermissionsToRole(graphene.Mutation):

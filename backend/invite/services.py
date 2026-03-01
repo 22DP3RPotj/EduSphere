@@ -45,7 +45,7 @@ class InviteService:
         Send an invite to a user for a room.
 
         Args:
-            inviter: User sending the invite (must have ROOM_SEND_INVITE permission)
+            inviter: User sending the invite (must have ROOM_MANAGE_PARTICIPANTS permission)
             room: The room to invite to
             invitee: The user being invited
             role: The role to assign the invitee
@@ -66,7 +66,7 @@ class InviteService:
             )
 
         if not RoleService.has_permission(
-            inviter, room, PermissionCode.ROOM_SEND_INVITE
+            inviter, room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
         ):
             raise PermissionException(
                 "You don't have permission to invite users to this room."
@@ -179,7 +179,6 @@ class InviteService:
 
         return True
 
-    # TODO: rework
     @staticmethod
     def cancel_invite(user: User, invite: Invite) -> bool:
         """
@@ -196,8 +195,12 @@ class InviteService:
             PermissionException: If user is not the inviter
             ValidationException: If invite is not pending
         """
-        if invite.inviter != user:
-            raise PermissionException("Only the inviter can cancel an invite.")
+        if not RoleService.has_permission(
+            user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
+        ):
+            raise PermissionException(
+                "You don't have permission to cancel invites for this room."
+            )
 
         if invite.status != Invite.Status.PENDING:
             raise ValidationException(
@@ -205,17 +208,15 @@ class InviteService:
             )
 
         invite.delete()
-
         return True
 
-    # TODO: make it possible to resend for anyone with permission
     @staticmethod
     def resend_invite(user: User, invite: Invite, new_expires_at: datetime) -> Invite:
         """
         Resend an invite by updating its expiration date.
 
         Args:
-            user: User resending the invite (must be the inviter)
+            user: User resending the invite (must have ROOM_MANAGE_PARTICIPANTS permission)
             invite: The invite to resend
             new_expires_at: New expiration datetime
 
@@ -223,12 +224,16 @@ class InviteService:
             The updated Invite instance
 
         Raises:
-            PermissionException: If user is not the inviter
+            PermissionException: If user does not have ROOM_MANAGE_PARTICIPANTS permission
             ValidationException: If invite is already resolved (accepted or declined)
         """
 
-        if invite.inviter != user:
-            raise PermissionException("Only the inviter can resend an invite.")
+        if not RoleService.has_permission(
+            user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
+        ):
+            raise PermissionException(
+                "You don't have permission to resend invites for this room."
+            )
 
         if invite.is_resolved:
             raise ValidationException("Cannot resend a resolved invite.")

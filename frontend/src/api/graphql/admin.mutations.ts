@@ -10,8 +10,18 @@ export const UPDATE_USER_STAFF_STATUS = gql`
 `;
 
 export const UPDATE_USER_ACTIVE_STATUS = gql`
-  mutation UpdateUserActiveStatus($userIds: [UUID!]!, $isActive: Boolean!) {
-    updateUserActiveStatus(userIds: $userIds, isActive: $isActive) {
+  mutation UpdateUserActiveStatus(
+    $userIds: [UUID!]!
+    $isActive: Boolean!
+    $reason: String
+    $expiresAt: DateTime
+  ) {
+    updateUserActiveStatus(
+      userIds: $userIds
+      isActive: $isActive
+      reason: $reason
+      expiresAt: $expiresAt
+    ) {
       success
       updatedCount
     }

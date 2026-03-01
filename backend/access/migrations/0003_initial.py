@@ -8,9 +8,8 @@ def create_permissions(apps, schema_editor):
         "room.delete": "Delete room",
         "room.update": "Update room settings",
         "room.manage_visibility": "Manage room visibility settings",
-        "room.invite": "Send and manage room invitations",
-        "room.kick": "Remove users from the room",
-        "room.role_manage": "Manage room roles and permissions",
+        "room.manage_participants": "Invite or remove participants",
+        "room.manage_roles": "Manage room roles and permissions",
         "room.delete_message": "Delete messages from the room",
         "room.upload_file": "Allow file uploads",
     }
@@ -30,9 +29,8 @@ def remove_permissions(apps, schema_editor):
             "room.delete",
             "room.update",
             "room.manage_visibility",
-            "room.invite",
-            "room.kick",
-            "room.role_manage",
+            "room.manage_participants",
+            "room.manage_roles",
             "room.delete_message",
             "room.upload_file",
         ]

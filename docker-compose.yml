@@ -1,3 +1,15 @@
+x-backend-env: &backend-env
+  - SECRET_KEY=${SECRET_KEY}
+  - DJANGO_SETTINGS_MODULE=backend.config.settings
+  - DATABASE_URL=${DATABASE_URL}
+  - POSTGRES_DB=${POSTGRES_DB}
+  - POSTGRES_USER=${POSTGRES_USER}
+  - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  - POSTGRES_HOST=${POSTGRES_HOST}
+  - POSTGRES_PORT=${POSTGRES_PORT}
+  - REDIS_HOST=${REDIS_HOST}
+  - REDIS_PORT=${REDIS_PORT}
+
 services:
   # Database service
   postgres:
@@ -33,17 +45,7 @@ services:
     volumes:
       - ./media:/app/media
       - static_volume:/app/staticfiles
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - DJANGO_SETTINGS_MODULE=backend.config.settings
-      - DATABASE_URL=${DATABASE_URL}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+    environment: *backend-env
     expose:
       - "8000"
     depends_on:
@@ -63,10 +65,7 @@ services:
     command: celery -A backend.config worker -l info
     volumes:
       - ./media:/app/media
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - DJANGO_SETTINGS_MODULE=backend.config.settings
-      - DATABASE_URL=${DATABASE_URL}
+    environment: *backend-env
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,10 +81,7 @@ services:
     command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - ./media:/app/media
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - DJANGO_SETTINGS_MODULE=backend.config.settings
-      - DATABASE_URL=${DATABASE_URL}
+    environment: *backend-env
     depends_on:
       postgres:
         condition: service_healthy

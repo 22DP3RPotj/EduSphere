@@ -136,10 +136,32 @@ LOGGING = {
             "utc": True,
             "formatter": "verbose",
         },
+        "jobs_file": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": LOG_DIR / "jobs.log",
+            "when": "midnight",
+            "backupCount": LOG_THRESHOLD,
+            "encoding": "utf-8",
+            "delay": True,
+            "utc": True,
+            "formatter": "verbose",
+        },
     },
     "root": {
         "handlers": ["root_file"],
         "level": "WARNING",
+    },
+    "loggers": {
+        "backend.account.tasks": {
+            "handlers": ["jobs_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "backend.core.tasks": {
+            "handlers": ["jobs_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
 
@@ -222,7 +244,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "backend.core.tasks.cleanup_old_audit_logs",
         "schedule": crontab(hour=3, minute=0),
     },
+    "expire_user_bans": {
+        "task": "backend.account.tasks.expire_user_bans",
+        "schedule": crontab(minute=0),
+    },
 }
+
+SERVER_PORT = env.int("SERVER_PORT", default=8000)
+SERVER_HOST = env("SERVER_HOST", default="127.0.0.1")
 
 AUDIT_LOG_RETENTION_DAYS = env.int("AUDIT_LOG_RETENTION_DAYS", default=90)
 AUDIT_LOG_BATCH_SIZE = env.int("AUDIT_LOG_BATCH_SIZE", default=2000)

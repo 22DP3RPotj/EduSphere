@@ -21,12 +21,15 @@ class RoomService:
 
     @staticmethod
     def can_view(user: User, room: Room) -> bool:
-        is_participant = Participant.objects.filter(user=user, room=room).exists()
+        if room.visibility == Room.Visibility.PUBLIC:
+            return True
 
-        is_public = room.visibility == RoomVisibility.PUBLIC
+        if not user.is_authenticated:
+            return False
 
-        return is_participant or is_public
+        return Participant.objects.filter(user=user, room=room).exists()
 
+    # TODO: assert authentication where necessary
     @staticmethod
     def create_room(
         *,

@@ -5,7 +5,8 @@ from django.conf import settings
 def main():
     uvicorn.run(
         "backend.config.asgi:application",
-        port=8000,
+        host=settings.SERVER_HOST,
+        port=settings.SERVER_PORT,
         reload=settings.DEBUG,
         lifespan="off",
     )

@@ -43,7 +43,7 @@ export function useAdminReports(statusFilter: Ref<string>, reasonFilter: Ref<str
     }
   );
 
-  const reports = computed<Report[]>(() => result.value?.allReports || []);
+  const reports = computed<Report[]>(() => result.value?.reports || []);
 
   return {
     reports,
@@ -93,10 +93,19 @@ export function useUpdateUserStaffStatus() {
 export function useUpdateUserActiveStatus() {
   const { mutate, loading, error } = useMutation(UPDATE_USER_ACTIVE_STATUS);
 
-  const updateActiveStatus = async (userIds: string[], isActive: boolean) => {
+  const updateActiveStatus = async (
+    ids: string | string[],
+    isActive: boolean,
+    reason?: string,
+    expiresAt?: string
+  ) => {
+    const userIds = Array.isArray(ids) ? ids : [ids];
+    
     return await mutate({
       userIds,
       isActive,
+      reason,
+      expiresAt,
     });
   };
 

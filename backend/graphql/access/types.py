@@ -1,8 +1,10 @@
 import graphene
 from graphene_django.types import DjangoObjectType
+from graphene_pydantic import PydanticObjectType
 
 from backend.access.models import Participant, Role, Permission
 from backend.graphql.account.types import UserType
+from backend.access.dtos import RoleDeleteResult
 
 
 class PermissionType(DjangoObjectType):
@@ -45,3 +47,8 @@ class ParticipantType(DjangoObjectType):
 
     def resolve_avatar(self, info):
         return self.user.avatar
+
+
+class RoleDeleteType(PydanticObjectType):
+    class Meta:
+        model = RoleDeleteResult

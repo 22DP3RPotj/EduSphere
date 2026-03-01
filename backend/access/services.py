@@ -7,20 +7,64 @@ from django.db.models import QuerySet
 from backend.account.models import User
 from backend.invite.models import Invite
 from backend.room.models import Room
-from backend.access.models import Participant, Role, Permission
-from backend.access.enums import PermissionCode
-from backend.core.forms import RoleForm
+
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,
     ConflictException,
     ValidationException,
 )
+from backend.access.models import Participant, Role, Permission
+from backend.access.enums import PermissionCode
+from backend.access.dtos import RoleDeleteResult
+from backend.access.forms import RoleForm
 from backend.access.templates import DEFAULT_ROLE_TEMPLATES
 
 
 class RoleService:
     """Service for role-related operations."""
+
+    # @staticmethod
+    # def _ensure_can_manage_roles(user: User, room: Room) -> Participant:
+    #     """Centralized authorization check."""
+    #     participant = RoleService.get_participant(user, room)
+
+    #     if not participant:
+    #         raise PermissionException("User is not a member of this room.")
+
+    #     if not participant.role or not RoleService.has_permission(
+    #         user, room, PermissionCode.ROOM_MANAGE_ROLES
+    #     ):
+    #         raise PermissionException("Missing ROOM_MANAGE_ROLES permission.")
+
+    #     return participant
+
+    # @staticmethod
+    # def _validate_hierarchy(actor: Participant, target_priority: int):
+    #     """Ensures the actor has a higher priority than the role they are creating/modifying."""
+    #     if actor.role is None:
+    #         raise PermissionException(
+    #             "You do not have a role and cannot manage others."
+    #         )
+
+    #     if target_priority >= actor.role.priority:
+    #         raise PermissionException(
+    #             f"Priority {target_priority} exceeds your capacity."
+    #         )
+
+    # @staticmethod
+    # def _validate_permissions_subset(
+    #     actor: Participant, requested_ids: list[uuid.UUID]
+    # ):
+    #     """Ensures user isn't granting permissions they don't have (Escalation prevention)."""
+    #     if actor.role is None:
+    #         raise PermissionException(
+    #             "You do not have a role and cannot manage others."
+    #         )
+
+    #     user_perms = {p.id for p in actor.role.permissions.all()}
+    #     if not set(requested_ids).issubset(user_perms):
+    #         raise PermissionException("Cannot grant permissions you do not possess.")
 
     @staticmethod
     def _is_valid_permission_set(
@@ -333,9 +377,10 @@ class RoleService:
         return role
 
     @staticmethod
+    @transaction.atomic
     def delete_role(
         user: User, role: Role, substitution_role: Optional[Role] = None
-    ) -> dict:
+    ) -> RoleDeleteResult:
         """
         Delete a role.
 
@@ -356,7 +401,6 @@ class RoleService:
             PermissionException: If user doesn't have permission or priority hierarchy violation
             ValidationException: If role has participants/invites but no substitution role provided
         """
-
         participant = RoleService.get_participant(user, role.room)
 
         if participant is None:
@@ -376,39 +420,18 @@ class RoleService:
                 "Cannot affect roles with equal or higher priority."
             )
 
-        # Check if any participants or invites have this role
-        participant_count = Participant.objects.filter(role=role).count()
-        invite_count = Invite.objects.filter(role=role).count()
+        participants_count = Participant.objects.filter(role=role).update(
+            role=substitution_role
+        )
+        invites_count = Invite.objects.filter(role=role).update(role=substitution_role)
 
-        if (participant_count > 0 or invite_count > 0) and substitution_role is None:
-            raise ValidationException(
-                "Cannot delete a role with active participants or invites. "
-                "Provide a substitution_role to reassign them."
-            )
+        role.delete()
 
-        with transaction.atomic():
-            participants_reassigned = 0
-            invites_reassigned = 0
-
-            # Reassign participants to substitution role
-            if substitution_role and participant_count > 0:
-                participants_reassigned = Participant.objects.filter(role=role).update(
-                    role=substitution_role
-                )
-
-            # Reassign invites to substitution role
-            if substitution_role and invite_count > 0:
-                invites_reassigned = Invite.objects.filter(role=role).update(
-                    role=substitution_role
-                )
-
-            role.delete()
-
-        return {
-            "success": True,
-            "participants_reassigned": participants_reassigned,
-            "invites_reassigned": invites_reassigned,
-        }
+        return RoleDeleteResult(
+            success=True,
+            participants_reassigned=participants_count,
+            invites_reassigned=invites_count,
+        )
 
     @staticmethod
     def assign_permissions_to_role(

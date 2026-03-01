@@ -8,7 +8,6 @@ from backend.messaging.models import Message
 from backend.invite.models import Invite
 from backend.moderation.models import Report
 from backend.room.models import Room
-from backend.access.models import Role
 
 
 class RegisterForm(UserCreationForm):
@@ -85,9 +84,3 @@ class InviteForm(ModelForm):
     class Meta:
         model = Invite
         fields = ("expires_at",)
-
-
-class RoleForm(ModelForm):
-    class Meta:
-        model = Role
-        fields = ("name", "description", "priority")

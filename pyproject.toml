@@ -31,6 +31,8 @@ uvicorn = "^0.41.0"
 uvloop = "^0.22.1"
 watchfiles = "^1.1.1"
 websockets = "^16.0"
+pydantic = "^2.12.5"
+graphene-pydantic = "^0.6.1"
 
 [tool.poetry.group.typecheck]
 optional = true
@@ -41,6 +43,8 @@ mypy = "^1.19.1"
 
 [tool.django-stubs]
 django_settings_module = "backend.config.settings"
+
+
 
 
 
@@ -108,6 +112,8 @@ omit = [
   "*/urls.py",
   "*/apps.py",
 ]
+
+
 
 
 

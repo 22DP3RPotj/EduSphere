@@ -12,9 +12,7 @@ from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant, Role
 from backend.access.services import RoleService
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
-    ValidationException,
 )
 from backend.invite.services import InviteService
 from backend.core.tests.service_base import ServiceTestBase
@@ -182,7 +180,7 @@ class RoleServiceTest(ServiceTestBase):
             user=self.owner, role=custom_role, substitution_role=self.member_role
         )
 
-        self.assertTrue(result["success"])
+        self.assertTrue(result.success)
         self.assertFalse(Role.objects.filter(id=custom_role.id).exists())
 
     def test_delete_role_with_participants(self):
@@ -197,15 +195,15 @@ class RoleServiceTest(ServiceTestBase):
 
         Participant.objects.create(user=self.member, room=self.room, role=custom_role)
 
-        with self.assertRaises((ValidationException, FormValidationException)):
-            RoleService.delete_role(user=self.owner, role=custom_role)
+        # Should NOT raise an error anymore. Participants role should be set to None (0)
+        result = RoleService.delete_role(user=self.owner, role=custom_role)
 
-        result = RoleService.delete_role(
-            user=self.owner, role=custom_role, substitution_role=self.member_role
-        )
+        self.assertTrue(result.success)
+        self.assertEqual(result.participants_reassigned, 1)
 
-        self.assertTrue(result["success"])
-        self.assertEqual(result["participants_reassigned"], 1)
+        # Verify participant now has no role
+        participant = Participant.objects.get(user=self.member, room=self.room)
+        self.assertIsNone(participant.role)
 
     def test_delete_role_no_permission(self):
         custom_role = (
@@ -359,6 +357,7 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             permission_ids=[],
         )
 
+        users = []
         for i in range(3):
             user = User.objects.create_user(
                 name=f"Doomed User {i}",
@@ -366,44 +365,19 @@ class RoleServiceAdvancedTests(ServiceTestBase):
                 email=f"doomed_user{i}@test.com",
                 password="testpass123",
             )
-            Participant.objects.create(user=user, room=self.room, role=custom_role)
-
-        with self.assertRaises(ValidationException):
-            RoleService.delete_role(
-                user=self.owner, role=custom_role, substitution_role=None
-            )
-
-    def test_delete_role_reassigns_participants(self):
-        custom_role = RoleService.create_role(
-            user=self.owner,
-            room=self.room,
-            name="Doomed Role",
-            description="",
-            priority=self.owner_role.priority - 10,
-            permission_ids=[],
-        )
-
-        users = []
-        for i in range(3):
-            user = User.objects.create_user(
-                name=f"Reassign User {i}",
-                username=f"reassign_user{i}",
-                email=f"reassign_user{i}@test.com",
-                password="testpass123",
-            )
             users.append(user)
             Participant.objects.create(user=user, room=self.room, role=custom_role)
 
         result = RoleService.delete_role(
-            user=self.owner, role=custom_role, substitution_role=self.member_role
+            user=self.owner, role=custom_role, substitution_role=None
         )
 
-        self.assertTrue(result["success"])
-        self.assertEqual(result["participants_reassigned"], 3)
+        self.assertTrue(result.success)
+        self.assertEqual(result.participants_reassigned, 3)
 
         for user in users:
             participant = Participant.objects.get(user=user, room=self.room)
-            self.assertEqual(participant.role, self.member_role)
+            self.assertIsNone(participant.role)
 
     def test_delete_role_reassigns_invites(self):
         custom_role = RoleService.create_role(
@@ -437,7 +411,7 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             user=self.owner, role=custom_role, substitution_role=self.member_role
         )
 
-        self.assertEqual(result["invites_reassigned"], 2)
+        self.assertEqual(result.invites_reassigned, 2)
 
         for invitee in invitees:
             from backend.invite.models import Invite
@@ -463,14 +437,14 @@ class RoleServiceAdvancedTests(ServiceTestBase):
         )
         Participant.objects.create(user=user, room=self.room, role=custom_role)
 
-        with self.assertRaises(ValidationException):
-            RoleService.delete_role(
-                user=self.owner, role=custom_role, substitution_role=None
-            )
+        result = RoleService.delete_role(
+            user=self.owner, role=custom_role, substitution_role=None
+        )
 
-        self.assertTrue(Role.objects.filter(id=custom_role.id).exists())
+        self.assertTrue(result.success)
+        self.assertFalse(Role.objects.filter(id=custom_role.id).exists())
         participant = Participant.objects.get(user=user, room=self.room)
-        self.assertEqual(participant.role, custom_role)
+        self.assertIsNone(participant.role)
 
     def test_can_affect_role_priority_lower(self):
         self._add_member(self.member, self.owner_role)

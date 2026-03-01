@@ -466,30 +466,40 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
             email="user2@email.com",
         )
 
-    # TODO: rework
-    # def test_update_user_active_status(self):
-    #     self.client.authenticate(self.admin)
-    #     mutation = """
-    #         mutation UpdateUserActiveStatus($userIds: [UUID!]!, $isActive: Boolean!) {
-    #             updateUserActiveStatus(userIds: $userIds, isActive: $isActive) {
-    #                 success
-    #                 updatedCount
-    #             }
-    #         }
-    #     """
-    #     variables = {
-    #         "userIds": [str(self.user1.id), str(self.user2.id)],
-    #         "isActive": False,
-    #     }
-    #     result: ExecutionResult = self.client.execute(mutation, variables)
-    #     self.assertIsNone(result.errors)
-    #     self.assertTrue(result.data["updateUserActiveStatus"]["success"])
-    #     self.assertEqual(result.data["updateUserActiveStatus"]["updatedCount"], 2)
+    def test_update_user_active_status(self):
+        self.client.authenticate(self.admin)
+        mutation = """
+            mutation UpdateUserActiveStatus($userIds: [UUID!]!, $isActive: Boolean!, $reason: String) {
+                updateUserActiveStatus(userIds: $userIds, isActive: $isActive, reason: $reason) {
+                    success
+                    updatedCount
+                }
+            }
+        """
+        variables = {
+            "userIds": [str(self.user1.id), str(self.user2.id)],
+            "isActive": False,
+            "reason": "Test ban",
+        }
+        result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
+        self.assertTrue(result.data["updateUserActiveStatus"]["success"])
+        self.assertEqual(result.data["updateUserActiveStatus"]["updatedCount"], 2)
 
-    #     self.user1.refresh_from_db()
-    #     self.user2.refresh_from_db()
-    #     self.assertFalse(self.user1.is_active)
-    #     self.assertFalse(self.user2.is_active)
+        self.user1.refresh_from_db()
+        self.user2.refresh_from_db()
+        self.assertFalse(self.user1.is_active)
+        self.assertFalse(self.user2.is_active)
+
+        # Test unban
+        variables = {
+            "userIds": [str(self.user1.id)],
+            "isActive": True,
+        }
+        result = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
+        self.user1.refresh_from_db()
+        self.assertTrue(self.user1.is_active)
 
     def test_update_user_staff_status(self):
         self.client.authenticate(self.admin)

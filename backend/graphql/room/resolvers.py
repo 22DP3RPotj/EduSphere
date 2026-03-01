@@ -1,9 +1,9 @@
 import uuid
 import graphene
-from typing import Optional, Any
+from typing import Optional
 from graphql import GraphQLError
 
-from django.db.models import Q, Count, QuerySet, Prefetch, Exists, OuterRef
+from django.db.models import Q, Count, QuerySet, Prefetch
 
 from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
@@ -61,12 +61,10 @@ class RoomQuery(graphene.ObjectType):
         search: Optional[str] = None,
         topics: Optional[list[str]] = None,
     ) -> QuerySet[Room]:
-        filters: Any = Q(visibility=Room.Visibility.PUBLIC)
+        filters: Q = Q(visibility=Room.Visibility.PUBLIC)
 
         if info.context.user.is_authenticated:
-            filters |= Exists(
-                Participant.objects.filter(user=info.context.user, room=OuterRef("pk"))
-            )
+            filters |= Q(memberships__user=info.context.user)
 
         queryset = (
             Room.objects.annotate(participants_count=Count("participants"))

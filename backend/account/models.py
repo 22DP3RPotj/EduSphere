@@ -79,7 +79,7 @@ class UserBan(models.Model):
         blank=True,
         related_name="issued_bans",
     )
-    reason = models.TextField()
+    reason = models.TextField(max_length=8192, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

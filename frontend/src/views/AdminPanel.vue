@@ -597,6 +597,8 @@ function closeTerminationModal() {
 }
 
 function calculateExpiresAt(duration: string): string | undefined {
+  // TODO: REWORK
+  // Use a library like date-fns for more robust date handling and to avoid timezone issues
   if (duration === 'permanent') return undefined;
 
   const now = new Date();

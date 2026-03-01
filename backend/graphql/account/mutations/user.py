@@ -96,7 +96,7 @@ class UpdateUserActiveStatus(graphene.Mutation):
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
         is_active: bool,
-        reason: str,
+        reason: Optional[str] = None,
         expires_at: Optional[datetime] = None,
     ):
         users = User.objects.filter(id__in=user_ids)

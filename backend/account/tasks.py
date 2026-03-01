@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def run_expire_user_bans():
     """
-    Core logic for expring user bans.
+    Core logic for expiring user bans.
     Separated from the task for easier testing and manual execution.
     """
     now = timezone.now()

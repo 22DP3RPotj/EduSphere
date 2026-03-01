@@ -22,7 +22,9 @@ class Invite(models.Model):
         on_delete=models.CASCADE,
         related_name="received_invites",
     )
-    role = models.ForeignKey("access.Role", on_delete=models.PROTECT)
+    role = models.ForeignKey(
+        "access.Role", on_delete=models.SET_NULL, null=True, blank=True
+    )
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     status = models.CharField(
         max_length=16, choices=Status.choices, default=Status.PENDING

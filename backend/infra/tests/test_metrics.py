@@ -1,3 +1,4 @@
+import json
 import pytest
 from prometheus_client import REGISTRY
 
@@ -50,7 +51,9 @@ def test_graphql_middleware_updates_metrics(client):
     )
 
     response = client.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        data=json.dumps({"query": query}),
+        content_type="application/json",
     )
     assert response.status_code == 200
     assert "errors" not in response.json()

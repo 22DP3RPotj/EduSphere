@@ -1,7 +1,8 @@
 import inspect
 import graphene
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from prometheus_client import Counter, Histogram
+
 
 GRAPHQL_RESOLVER_LATENCY_SECONDS = Histogram(
     "graphql_resolver_latency_seconds",
@@ -25,39 +26,39 @@ GRAPHQL_RESOLVER_COMPLETED_TOTAL = Counter(
 class PrometheusMiddleware:
     def resolve(
         self,
-        next: Callable,
-        root: Optional[graphene.Schema],
+        next_: Callable,
+        root: Any,
         info: graphene.ResolveInfo,
         **kwargs: Any,
     ) -> Any:
-        operation_type = info.operation.operation.value
-        field = f"{info.parent_type.name}.{info.field_name}"
+        labels = {
+            "operation_type": info.operation.operation.value,
+            "field": f"{info.parent_type.name}.{info.field_name}",
+        }
 
-        with GRAPHQL_RESOLVER_LATENCY_SECONDS.labels(
-            operation_type=operation_type,
-            field=field,
-        ).time():
-            with GRAPHQL_RESOLVER_EXCEPTIONS_TOTAL.labels(
-                operation_type=operation_type,
-                field=field,
-            ).count_exceptions():
-                result = next(root, info, **kwargs)
+        try:
+            # If the resolver is SYNC, this times the actual work.
+            # If the resolver is ASYNC, this times only the creation of the coroutine (near 0s).
+            with GRAPHQL_RESOLVER_EXCEPTIONS_TOTAL.labels(**labels).count_exceptions():
+                with GRAPHQL_RESOLVER_LATENCY_SECONDS.labels(**labels).time():
+                    result = next_(root, info, **kwargs)
+        except Exception:
+            GRAPHQL_RESOLVER_COMPLETED_TOTAL.labels(**labels).inc()
+            raise
 
         if inspect.isawaitable(result):
 
-            async def _await():
-                try:
-                    return await result
-                finally:
-                    GRAPHQL_RESOLVER_COMPLETED_TOTAL.labels(
-                        operation_type=operation_type,
-                        field=field,
-                    ).inc()
+            async def wrapper():
+                with GRAPHQL_RESOLVER_EXCEPTIONS_TOTAL.labels(
+                    **labels
+                ).count_exceptions():
+                    with GRAPHQL_RESOLVER_LATENCY_SECONDS.labels(**labels).time():
+                        try:
+                            return await result
+                        finally:
+                            GRAPHQL_RESOLVER_COMPLETED_TOTAL.labels(**labels).inc()
 
-            return _await()
+            return wrapper()
 
-        GRAPHQL_RESOLVER_COMPLETED_TOTAL.labels(
-            operation_type=operation_type,
-            field=field,
-        ).inc()
+        GRAPHQL_RESOLVER_COMPLETED_TOTAL.labels(**labels).inc()
         return result

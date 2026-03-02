@@ -66,8 +66,14 @@ INSTALLED_APPS = [
     "django_cleanup.apps.CleanupConfig",
     "django_celery_beat",
     "django_prometheus",
-    "django_extensions",
 ]
+
+try:
+    import django_extensions as _  # noqa
+
+    INSTALLED_APPS += ["django_extensions"]
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

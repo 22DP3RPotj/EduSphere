@@ -107,7 +107,7 @@ services:
 
   # Prometheus service
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.51.2
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus

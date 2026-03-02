@@ -1,7 +1,6 @@
 import json
-import graphene
 from graphene.validation import DisableIntrospection, depth_limit_validator
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from graphql import parse, validate, GraphQLError
 from graphql import GraphQLResolveInfo
 
@@ -10,7 +9,7 @@ class ValidationMiddleware:
     def resolve(
         self,
         next_: Callable,
-        root: Optional[graphene.Schema],
+        root: Any,
         info: GraphQLResolveInfo,
         **kwargs: Any,
     ) -> Any:

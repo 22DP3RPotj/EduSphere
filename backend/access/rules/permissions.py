@@ -1,10 +1,19 @@
 import rules
 from enum import StrEnum
-from backend.access.rules.predicates import is_self, can_manage_roles
+from backend.core.rules.predicates import is_authenticated
+from backend.room.rules.predicates import is_participant, is_room_public, can_delete_room, can_update_room, is_invited
+from backend.access.rules.predicates import can_manage_roles, has_higher_hierarchy
+
+class AccessPermission(StrEnum):
+    CREATE = "room.create"
+    READ = "room.read"
+    UPDATE = "room.update"
+    DELETE = "room.delete"
 
 
-class RoomPermission(StrEnum):
-    CHANGE_ROLE = "access.change_role"
-
-
-rules.add_perm(RoomPermission.CHANGE_ROLE, is_self | can_manage_roles)
+rules.add_perm(AccessPermission.CREATE, can_manage_roles & has_higher_hierarchy)
+rules.add_perm(AccessPermission.READ, is_room_public | is_participant)
+rules.add_perm(AccessPermission.UPDATE, can_update_room)
+rules.add_perm(AccessPermission.DELETE, can_delete_room)
+rules.add_perm(AccessPermission.JOIN, is_authenticated & is_room_public)
+rules.add_perm(AccessPermission.LEAVE, is_participant)

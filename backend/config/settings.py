@@ -234,7 +234,7 @@ CORS_ALLOWED_ORIGINS = [
 
 AUTHENTICATION_BACKENDS = [
     "graphql_jwt.backends.JSONWebTokenBackend",
-    "rules.permissions.ObjectPermissionBackend",
+    "backend.access.backends.SecureRulesBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 

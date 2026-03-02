@@ -30,6 +30,8 @@ APP_VERSION = env("APP_VERSION", default="unknown")
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
+    # Docker internal hostname
+    "backend",
 ]
 
 # User Authentication
@@ -63,10 +65,13 @@ INSTALLED_APPS = [
     "pghistory",
     "django_cleanup.apps.CleanupConfig",
     "django_celery_beat",
+    "django_prometheus",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -75,6 +80,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
+MIDDLEWARE += ["django_prometheus.middleware.PrometheusAfterMiddleware"]
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED", default=True)
 
@@ -173,6 +179,7 @@ GRAPHENE = {
     "SCHEMA": "backend.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "backend.infra.middleware.PrometheusMiddleware",
         # TODO: Proper validation
         # "backend.graphql.middleware.ValidationMiddleware",
     ],

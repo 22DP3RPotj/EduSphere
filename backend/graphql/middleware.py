@@ -1,11 +1,18 @@
 import json
-from graphql import parse, validate, GraphQLError
 from graphene.validation import DisableIntrospection, depth_limit_validator
+from typing import Any, Callable
+from graphql import parse, validate, GraphQLError
 from graphql import GraphQLResolveInfo
 
 
 class ValidationMiddleware:
-    def resolve(self, next_, root, info: GraphQLResolveInfo, **kwargs):
+    def resolve(
+        self,
+        next_: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        **kwargs: Any,
+    ) -> Any:
         try:
             body = getattr(info.context, "body", None)
             if not body:

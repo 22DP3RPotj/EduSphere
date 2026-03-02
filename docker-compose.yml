@@ -105,6 +105,18 @@ services:
       backend:
         condition: service_healthy
 
+  # Prometheus service
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   static_volume:
+  prometheus_data:

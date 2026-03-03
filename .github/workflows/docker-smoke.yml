@@ -29,27 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    env:
-      SECRET_KEY: test_secret_key
-      DEBUG: 'False'
-      POSTGRES_DB: test_db
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_pass
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: '5432'
-      DATABASE_URL: postgresql://test_user:test_pass@postgres:5432/test_db
-      REDIS_HOST: redis
-      REDIS_PORT: '6379'
-      GRAFANA_PASSWORD: admin
-      SERVER_HOST: '0.0.0.0'
-      SERVER_PORT: '8000'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create dummy .env file
-        run: touch docker.env
+      - name: Create test .env file
+        run: cp .env.example docker.env
 
       - name: Show Docker versions
         run: |
@@ -62,7 +47,7 @@ jobs:
       - name: Start stack (wait for readiness)
         run: |
           set -euo pipefail
-          docker compose up -d --wait --wait-timeout 120
+          docker compose --env-file docker.env up -d --wait --wait-timeout 120
 
       - name: Assert backend is healthy
         run: |

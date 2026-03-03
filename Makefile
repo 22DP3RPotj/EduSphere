@@ -1,11 +1,16 @@
-.PHONY: help setup run unit-test integration-test test coverage report clean clean-migrations typecheck check fix format format-check docker-compose-build docker-compose-remove
+.PHONY: all help setup run unit-test integration-test test coverage report clean clean-migrations typecheck check fix format format-check docker-compose-build docker-compose-remove
 
-PY = poetry run python
-PX = poetry run
-DJANGO = $(PY) manage.py
-DC = docker compose --env-file docker.env
+PY := poetry run python
+PX := poetry run
+DC := docker compose --env-file docker.env
+
+# Environment variables for development
+GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+APP_VERSION := $(shell git describe --tags --dirty --always 2>/dev/null || echo unknown)
 
 export DJANGO_SETTINGS_MODULE=backend.config.settings
+export GIT_SHA
+export APP_VERSION
 
 all: help
 
@@ -81,8 +86,6 @@ clean-migrations:
 	find backend -path "*/migrations/*.py" -not -name "__init__.py" -delete
 
 docker-compose-build:
-	GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null || echo unknown) \
-	APP_VERSION=$$(git describe --tags --dirty --always 2>/dev/null || echo unknown) \
 	$(DC) up -d --build
 
 docker-compose-remove:

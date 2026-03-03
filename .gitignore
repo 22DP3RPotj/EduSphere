@@ -4,7 +4,11 @@ media/
 
 #Environment
 env/
+env.*
 *.env
+
+# Environment examples
+!.env.example
 
 # IDE
 .vscode/
@@ -28,3 +32,10 @@ TODO
 
 # Tests
 .coverage
+
+# Passwords
+.htpasswd
+.htpasswd.*
+
+# Password examples
+!.htpasswd.*.example

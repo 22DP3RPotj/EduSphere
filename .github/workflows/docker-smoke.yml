@@ -42,7 +42,7 @@ jobs:
           docker compose version
 
       - name: Build images
-        run: docker compose build --pull
+        run: docker compose --env-file docker.env build --pull
 
       - name: Start stack (wait for readiness)
         run: |
@@ -103,9 +103,9 @@ jobs:
       - name: Show logs
         if: always()
         run: |
-          docker compose ps
-          docker compose logs --no-color --tail=200
+          docker compose --env-file docker.env ps
+          docker compose --env-file docker.env logs --no-color --tail=200
 
       - name: Teardown
         if: always()
-        run: docker compose down -v
+        run: docker compose --env-file docker.env down -v

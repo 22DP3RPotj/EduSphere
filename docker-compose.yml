@@ -111,6 +111,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_data:/app/media:ro
+      - ./docker/nginx/.htpasswd.prometheus:/etc/nginx/.htpasswd.prometheus:ro
     ports:
       - "80:80"
     networks:
@@ -145,7 +146,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/prometheus/-/healthy/"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/prometheus/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -163,8 +164,10 @@ services:
       - GF_USER_ALLOW_SIGN_UP=false
       # Server configuration for subpath
       - GF_SERVER_DOMAIN=localhost
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    env_file:
+      - ./docker.env
     expose:
       - "3000"
     networks:
@@ -173,7 +176,7 @@ services:
       prometheus:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --spider --tries=1 http://localhost:3000/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --spider --tries=1 http://localhost:3000/grafana/healthz || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

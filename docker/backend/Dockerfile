@@ -30,9 +30,13 @@ RUN poetry config virtualenvs.create false && \
 
 COPY . .
 
-# Create runtime directories
+# Create runtime directories, user and set permissions
 RUN mkdir -p /app/staticfiles /app/media/avatars && \
+    useradd -m appuser && \
+    chown -R appuser:appuser /app && \
     chmod -R 775 /app/media
+
+USER appuser
 
 ENTRYPOINT ["/app/docker/backend/entrypoint.sh"]
 CMD ["python", "-m", "backend"]

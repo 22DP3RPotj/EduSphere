@@ -8,6 +8,8 @@ services:
       - ./docker.env
     expose:
       - "5432"
+    networks:
+      - db_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -19,6 +21,13 @@ services:
     image: redis:alpine
     expose:
       - "6379"
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Django backend service
   backend:
@@ -28,8 +37,9 @@ services:
       args:
         - GIT_SHA=${GIT_SHA:-unknown}
         - APP_VERSION=${APP_VERSION:-unknown}
+    image: edusphere-backend
     volumes:
-      - ./media:/app/media
+      - media_data:/app/media
       - static_volume:/app/staticfiles
     environment:
       - DJANGO_SETTINGS_MODULE=backend.config.settings
@@ -37,30 +47,39 @@ services:
       - ./docker.env
     expose:
       - "8000"
+    networks:
+      - app_network
+      - db_network
+      - cache_network
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/infra/ready"]
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   # Celery Worker
   celery_worker:
     image: edusphere-backend
     command: celery -A backend.config worker -l info
     volumes:
-      - ./media:/app/media
+      - media_data:/app/media
     env_file:
       - ./docker.env
+    networks:
+      - app_network
+      - db_network
+      - cache_network
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       backend:
         condition: service_healthy
     restart: on-failure:5
@@ -70,14 +89,16 @@ services:
     image: edusphere-backend
     command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
-      - ./media:/app/media
+      - media_data:/app/media
     env_file:
       - ./docker.env
+    networks:
+      - db_network
+      - app_network
+      - cache_network
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_started
       backend:
         condition: service_healthy
     restart: on-failure:5
@@ -89,12 +110,15 @@ services:
       dockerfile: ./docker/nginx/Dockerfile
     volumes:
       - static_volume:/app/staticfiles:ro
-      - ./media:/app/media:ro
+      - media_data:/app/media:ro
     ports:
       - "80:80"
+    networks:
+      - app_network
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
 
   # Prometheus service
   prometheus:
@@ -104,8 +128,17 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    networks:
+      - app_network
+      - monitor_network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Grafana service
   grafana:
@@ -117,11 +150,21 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     ports:
       - "3000:3000"
+    networks:
+      - monitor_network
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
+
+networks:
+  app_network:
+  db_network:
+  cache_network:
+  monitor_network:
 
 volumes:
   postgres_data:
   static_volume:
+  media_data:
   prometheus_data:
   grafana_data:

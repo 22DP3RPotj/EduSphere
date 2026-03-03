@@ -41,4 +41,5 @@ RUN mkdir -p staticfiles media/avatars
 
 # Entrypoint + default command
 ENTRYPOINT ["/app/docker/backend/entrypoint.sh"]
-CMD ["uvicorn", "backend.config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--lifespan", "off"]
+# CMD ["uvicorn", "backend.config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--lifespan", "off"]
+CMD ["python", "-m", "backend"]

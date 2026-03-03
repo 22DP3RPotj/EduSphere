@@ -115,19 +115,29 @@ services:
       - "80:80"
     networks:
       - app_network
+      - monitor_network
     depends_on:
       backend:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      grafana:
         condition: service_healthy
     restart: unless-stopped
 
   # Prometheus service
   prometheus:
     image: prom/prometheus:v2.51.2
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.external-url=http://localhost/prometheus/'
+      - '--web.route-prefix=/prometheus'
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
     networks:
       - app_network
       - monitor_network
@@ -135,7 +145,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy/"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/prometheus/-/healthy/"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -147,14 +157,26 @@ services:
       - grafana_data:/var/lib/grafana
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
     environment:
+      # Authentication
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-    ports:
-      - "3000:3000"
+      - GF_USER_ALLOW_SIGN_UP=false
+      # Server configuration for subpath
+      - GF_SERVER_DOMAIN=localhost
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    expose:
+      - "3000"
     networks:
       - monitor_network
     depends_on:
       prometheus:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --spider --tries=1 http://localhost:3000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   app_network:

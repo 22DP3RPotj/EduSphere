@@ -30,11 +30,14 @@ RUN poetry config virtualenvs.create false && \
 
 COPY . .
 
-# Create runtime directories, user and set permissions
-RUN mkdir -p /app/staticfiles /app/media/avatars && \
-    useradd -m appuser && \
-    chown -R appuser:appuser /app && \
-    chmod -R 775 /app/media
+# Create runtime directories
+RUN mkdir -p /app/staticfiles /app/media/avatars
+
+# Create user and set permissions
+RUN useradd -m -s /usr/sbin/nologin appuser && \
+    chown -R appuser:appuser /app
+
+RUN chmod +x /app/docker/backend/entrypoint.sh
 
 USER appuser
 

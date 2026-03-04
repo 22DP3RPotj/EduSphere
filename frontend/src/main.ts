@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import App from "@/App.vue";
 import router from "@/router";
 import { provideApollo } from "./api/apollo.client";
+import i18n from "./i18n";
 
 library.add(fas);
 
@@ -26,6 +27,7 @@ const app = createApp(App);
 
 app.use(pinia);
 app.use(router);
+app.use(i18n);
 
 provideApollo(app);
 

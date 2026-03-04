@@ -28,6 +28,7 @@ export interface UpdateUserInput {
   name?: string;
   bio?: string;
   avatar?: File | null;
+  language?: string;
 }
 
 export interface CreateRoomInput {

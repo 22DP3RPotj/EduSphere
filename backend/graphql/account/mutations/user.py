@@ -44,6 +44,7 @@ class UpdateUser(graphene.Mutation):
         name = graphene.String(required=False)
         username = graphene.String(required=False)
         bio = graphene.String(required=False)
+        language = graphene.String(required=False)
         avatar = Upload(required=False)
 
     user = graphene.Field(UserType)
@@ -55,6 +56,7 @@ class UpdateUser(graphene.Mutation):
         name: Optional[str] = None,
         username: Optional[str] = None,
         bio: Optional[str] = None,
+        language: Optional[str] = None,
         avatar: Optional[Upload] = None,
     ):
         user = info.context.user
@@ -63,6 +65,7 @@ class UpdateUser(graphene.Mutation):
             "username": username or user.username,
             "name": name or user.name,
             "bio": bio or user.bio,
+            "language": language or user.language,
         }
 
         files = None

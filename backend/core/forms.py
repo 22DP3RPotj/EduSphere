@@ -50,7 +50,7 @@ class UserForm(ModelForm):
 
     class Meta:
         model = User
-        fields = ("username", "name", "avatar", "bio")
+        fields = ("username", "name", "avatar", "bio", "language")
 
     def clean_username(self) -> str:
         username = self.cleaned_data["username"]

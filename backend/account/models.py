@@ -18,6 +18,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.SlugField(max_length=32, unique=True)
     name = models.CharField(max_length=32)
     bio = models.TextField(blank=True, default="", max_length=4096)
+    language = models.CharField(max_length=2, default="en", blank=True)
     avatar = models.ImageField(
         upload_to=avatar_upload_path,
         blank=True,

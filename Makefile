@@ -1,26 +1,38 @@
-.PHONY: help setup run unit-test report clean clean-logs clean-migrations typecheck lint format docker-compose-up docker-compose-down
+.PHONY: all help setup run unit-test integration-test test coverage report clean clean-migrations typecheck check fix format format-check docker-compose-build docker-compose-remove
 
-PY = poetry run python
-PX = poetry run
+PY := poetry run python
+PX := poetry run
+DC := docker compose --env-file docker.env
+
+# Environment variables for development
+GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+APP_VERSION := $(shell git describe --tags --dirty --always 2>/dev/null || echo unknown)
 
 export DJANGO_SETTINGS_MODULE=backend.config.settings
+export GIT_SHA
+export APP_VERSION
 
 all: help
 
 help:
 	@echo "EduSphere Development Commands"
-	@echo "================================"
-	@echo "make setup      - Initialize environment and services"
-	@echo "make run        - Build frontend and run development server"
-	@echo "make test       - Run all tests (pytest)"
-	@echo "make report     - Run tests with coverage report"
-	@echo "make clean      - Clean generated files and caches"
-	@echo "make clean-logs - Clear log files"
-	@echo "make clean-migrations - Remove Django migration files"
-	@echo "make typecheck  - Run mypy type checks"
-	@echo "make lint       - Run ruff linter checks"
-	@echo "make docker-compose-up   - Start services with Docker Compose"
-	@echo "make docker-compose-down - Stop services with Docker Compose"
+	@echo "====================================================================="
+	@echo "setup                  - Initialize environment and services"
+	@echo "run                    - Build frontend and run development server"
+	@echo "test                   - Run all tests (pytest)"
+	@echo "unit-test              - Run unit tests only"
+	@echo "integration-test       - Run integration tests only"
+	@echo "coverage               - Run tests with coverage measurement"
+	@echo "report                 - Run tests with coverage report"
+	@echo "clean                  - Clean generated files and caches"
+	@echo "clean-migrations       - Remove Django migration files"
+	@echo "typecheck              - Run mypy type checks"
+	@echo "check                  - Run ruff linter checks"
+	@echo "fix                    - Run ruff to fix issues"
+	@echo "format-check           - Check code formatting with ruff"
+	@echo "format                 - Format code with ruff"
+	@echo "docker-compose-build   - Build and start services with Docker Compose"
+	@echo "docker-compose-remove  - Stop and remove services with Docker Compose"
 
 setup:
 	sudo service postgresql start; \
@@ -54,26 +66,27 @@ report:
 typecheck:
 	$(PX) mypy backend
 
-lint:
+check:
 	$(PX) ruff check backend
 
-format:
+fix:
+	$(PX) ruff check --fix backend
+
+format-check:
 	$(PX) ruff format --check backend
+
+format:
+	$(PX) ruff format backend
 
 clean:
 	find . -type f -name '*.pyc' -delete
 	rm -rf .coverage
 
-clean-logs:
-	rm -rf logs/*
-
 clean-migrations:
 	find backend -path "*/migrations/*.py" -not -name "__init__.py" -delete
 
-docker-compose-up:
-	GIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null || echo unknown) \
-	APP_VERSION=$$(git describe --tags --dirty --always 2>/dev/null || echo unknown) \
-	docker-compose --env-file ./docker.env up -d --build
+docker-compose-build:
+	$(DC) up -d --build
 
-docker-compose-down:
-	docker-compose --env-file ./docker.env down -v
+docker-compose-remove:
+	$(DC) down -v

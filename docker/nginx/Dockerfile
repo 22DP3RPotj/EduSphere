@@ -1,33 +1,29 @@
-# docker/nginx/Dockerfile
 # Build stage - Build the Vue.js frontend
-FROM node:slim AS builder
+FROM node:alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy the package.json and install dependencies
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install
 
-# Copy the frontend source code and build
 COPY frontend/ ./
 RUN pnpm build
 
 # Production stage - Nginx with built frontend
-FROM nginx:alpine
+FROM nginx:stable-alpine
 
-# Copy the built frontend files from builder stage
+RUN apk add --no-cache apache2-utils
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
 COPY docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/entrypoint.sh /entrypoint.sh
 
-# Create directories for static and media files (for Django)
-RUN mkdir -p /app/staticfiles /app/media
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-ENTRYPOINT ["nginx"]
-CMD ["-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

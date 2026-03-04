@@ -8,7 +8,8 @@ def main():
         host=settings.SERVER_HOST,
         port=settings.SERVER_PORT,
         reload=settings.DEBUG,
-        lifespan="off",
+        lifespan="auto",
+        log_level="warning",
     )
 
 

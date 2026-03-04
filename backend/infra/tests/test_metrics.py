@@ -6,10 +6,8 @@ from prometheus_client import REGISTRY
 @pytest.mark.django_db
 def test_prometheus_metrics_endpoint_accessible(client):
     """Verify that the metrics endpoint is reachable and returns 200."""
-    # The endpoint is mapped under /infra/metrics/ in backend/config/urls.py
-    # or directly in backend/infra/urls.py depending on final setup.
-    # Currently it's /infra/metrics
-    url = "/infra/metrics"
+
+    url = "/infra/metrics/"
     response = client.get(url)
 
     assert response.status_code == 200

@@ -58,5 +58,5 @@ jobs:
 
       - name: Run ruff
         run: |
-          make lint
-          make format
+          make check
+          make format-check

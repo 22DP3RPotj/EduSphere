@@ -1,27 +1,15 @@
-x-backend-env: &backend-env
-  - SECRET_KEY=${SECRET_KEY}
-  - DJANGO_SETTINGS_MODULE=backend.config.settings
-  - DATABASE_URL=${DATABASE_URL}
-  - POSTGRES_DB=${POSTGRES_DB}
-  - POSTGRES_USER=${POSTGRES_USER}
-  - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  - POSTGRES_HOST=${POSTGRES_HOST}
-  - POSTGRES_PORT=${POSTGRES_PORT}
-  - REDIS_HOST=${REDIS_HOST}
-  - REDIS_PORT=${REDIS_PORT}
-
 services:
   # Database service
   postgres:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    env_file:
+      - ./docker.env
     expose:
       - "5432"
+    networks:
+      - db_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -33,6 +21,13 @@ services:
     image: redis:alpine
     expose:
       - "6379"
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Django backend service
   backend:
@@ -42,35 +37,67 @@ services:
       args:
         - GIT_SHA=${GIT_SHA:-unknown}
         - APP_VERSION=${APP_VERSION:-unknown}
+    image: edusphere-backend
     volumes:
-      - ./media:/app/media
+      - media_data:/app/media
       - static_volume:/app/staticfiles
-    environment: *backend-env
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.config.settings
+    env_file:
+      - ./docker.env
     expose:
       - "8000"
+    networks:
+      - app_network
+      - db_network
+      - cache_network
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/infra/ready"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/infra/ready/"]
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+  
+  # Database migration service
+  migrate:
+    image: edusphere-backend
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput"
+    env_file:
+      - ./docker.env
+    networks:
+      - db_network
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    volumes:
+      - static_volume:/app/staticfiles
 
   # Celery Worker
   celery_worker:
     image: edusphere-backend
     command: celery -A backend.config worker -l info
     volumes:
-      - ./media:/app/media
-    environment: *backend-env
+      - media_data:/app/media
+    env_file:
+      - ./docker.env
+    networks:
+      - app_network
+      - db_network
+      - cache_network
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       backend:
         condition: service_healthy
     restart: on-failure:5
@@ -80,13 +107,18 @@ services:
     image: edusphere-backend
     command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
-      - ./media:/app/media
-    environment: *backend-env
+      - media_data:/app/media
+    env_file:
+      - ./docker.env
+    networks:
+      - db_network
+      - app_network
+      - cache_network
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_started
       backend:
         condition: service_healthy
     restart: on-failure:5
@@ -94,27 +126,53 @@ services:
   # Nginx service with built-in frontend
   nginx:
     build:
-      context: .  # Changed from ./docker/nginx to . for access to frontend/
+      context: .
       dockerfile: ./docker/nginx/Dockerfile
     volumes:
       - static_volume:/app/staticfiles:ro
-      - ./media:/app/media:ro
+      - media_data:/app/media:ro
+    env_file:
+      - ./docker.env
     ports:
       - "80:80"
+    networks:
+      - app_network
+      - monitor_network
     depends_on:
       backend:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    restart: unless-stopped
 
   # Prometheus service
   prometheus:
     image: prom/prometheus:v2.51.2
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.external-url=http://localhost/prometheus/'
+      - '--web.route-prefix=/prometheus'
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
+    networks:
+      - app_network
+      - monitor_network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/prometheus/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Grafana service
   grafana:
@@ -123,14 +181,38 @@ services:
       - grafana_data:/var/lib/grafana
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
     environment:
+      # Authentication
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-    ports:
-      - "3000:3000"
+      - GF_USER_ALLOW_SIGN_UP=false
+      # Server configuration for subpath
+      - GF_SERVER_DOMAIN=localhost
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    env_file:
+      - ./docker.env
+    expose:
+      - "3000"
+    networks:
+      - monitor_network
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --spider --tries=1 http://localhost:3000/grafana/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app_network:
+  db_network:
+  cache_network:
+  monitor_network:
 
 volumes:
   postgres_data:
   static_volume:
+  media_data:
   prometheus_data:
   grafana_data:

@@ -14,6 +14,8 @@ A full-stack real-time messaging platform built with Django (backend) and Vue.js
 - [Contributing](#contributing)
 - [License](#license)
 
+> **Note**: This application is designed to run via Docker. Manual local setup is not covered here.
+
 ## Features
 - **Real-Time Chat**: WebSocket-based messaging system with instant message delivery
 - **Chat Rooms**: Create and join topic-based chat rooms
@@ -48,75 +50,10 @@ A full-stack real-time messaging platform built with Django (backend) and Vue.js
 
 ## Installation Guide
 
-### Manual Setup
-
-#### Prerequisites
-  - Python 3.9+
-  - Node.js 16+
-  - PostgreSQL 14+
-  - Redis 6+
-
-#### Setup
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/22DP3RPotj/EduSphere.git
-   cd EduSphere
-   ```
-2. Configure environment variables (create `.env` file):
-   ```env
-   SECRET_KEY=secret_key
-   DATABASE_URL=postgresql://coreuser:your-db-password@postgres:5432/coredb
-
-   REDIS_HOST=localhost
-   REDIS_PORT=6379
-   ```
-
-#### Backend Setup
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt # Windows: add '--no-binary uvloop'
-   ```
-4. Create database
-   ```bash
-   psql -U <db_user> -d postgres -c "CREATE DATABASE coredb;"
-   ```
-5. Run migrations:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-#### Frontend Setup
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-#### Running the Application
-```bash
-./scripts/run.sh
-```
-Access the application at [http://localhost](http://localhost)
-
-### Docker Setup
-
-#### Prerequisites
+### Prerequisites
 - Docker and Docker Compose
 
-#### Setup
+### Setup
 
 1. Clone the repository:
    ```bash
@@ -124,59 +61,42 @@ Access the application at [http://localhost](http://localhost)
    cd EduSphere
    ```
 
-2. Configure environment variables (create `docker.env` file in project root):
-   ```env
-   SECRET_KEY=secret-key
-
-   POSTGRES_NAME=coredb
-   POSTGRES_USER=coreuser
-   POSTGRES_PASSWORD=your-db-password
-   POSTGRES_HOST=postgres
-   POSTGRES_PORT=5432
-
-   DATABASE_URL=postgresql://coreuser:your-db-password@postgres:5432/coredb
-
-   REDIS_HOST=redis
-   REDIS_PORT=6379
-   ```
-
-3. Build and start the Docker containers:
+2. Configure environment variables by copying the example file:
    ```bash
-   docker-compose --env-file ./docker.env up --build
+   cp .env.example docker.env
    ```
-   
-   **Note**: The `--env-file` flag is important to load environment variables from `docker.env`.
+   Edit `docker.env` and fill in your values.
+
+3. Build and start the containers:
+   ```bash
+   make docker-compose-build
+   ```
 
 4. Access the application (migrations run automatically on container startup):
    - Frontend: http://localhost
    - Backend API: http://localhost/api
    - GraphQL: http://localhost/graphql
 
-#### Manual Migration and Setup
+### Manual Migration and Setup
 
 If you need to manually run migrations or create a superuser:
 
 ```bash
 # Run migrations
-docker-compose exec backend python manage.py migrate
+docker compose exec backend python manage.py migrate
 
 # Create a superuser
-docker-compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py createsuperuser
 
 # Collect static files (if needed)
-docker-compose exec backend python manage.py collectstatic --noinput
+docker compose exec backend python manage.py collectstatic --noinput
 ```
 
-#### Stopping and Cleaning Up
+### Stopping and Cleaning Up
 
 To stop the containers:
 ```bash
-docker-compose --env-file ./docker.env down
-```
-
-To completely reset the database and volumes:
-```bash
-docker-compose --env-file ./docker.env down -v
+make docker-compose-remove
 ```
 
 ## PostgreSQL Backup & Restore
@@ -184,13 +104,13 @@ docker-compose --env-file ./docker.env down -v
 ### Backup PostgreSQL Database
 
 ```bash
-pg_dump -U <db_user> -d coredb > backup.sql
+docker compose exec postgres pg_dump -U <POSTGRES_USER> -d <POSTGRES_DB> > backup.sql
 ```
 
 ### Restore PostgreSQL Backup
 
 ```bash
-psql -U <db_user> -d coredb < backup.sql
+docker compose exec -T postgres psql -U <POSTGRES_USER> -d <POSTGRES_DB> < backup.sql
 ```
 
 ## Testing
@@ -198,7 +118,16 @@ psql -U <db_user> -d coredb < backup.sql
 ### Running the tests
 
 ```bash
-python manage.py test backend/core
+make test
+```
+
+For targeted runs:
+```bash
+# Unit tests only
+make unit-test
+
+# With coverage report
+make report
 ```
 
 ## Project Structure
@@ -206,29 +135,25 @@ python manage.py test backend/core
 .
 ├── backend/
 │   ├── config/          # Django settings and routing
-│   ├── core/            # Main application logic
-│   │   ├── chat/        # WebSocket consumers for real-time chat
-│   │   ├── graphql/     # GraphQL schema and resolvers
-│   │   └── models.py    # Room and Message models
-│   ├── requirements.txt
-│   └── README.md        # Technical backend documentation
+│   ├── core/            # Shared models, middleware, tasks
+│   ├── account/         # User accounts and authentication
+│   ├── room/            # Chat room logic
+│   ├── messaging/       # Messages and chat consumers
+│   ├── access/          # Permissions and access control
+│   ├── invite/          # Room invitations
+│   ├── moderation/      # Moderation tools
+│   ├── graphql/         # GraphQL schema and resolvers
+│   └── infra/           # Infrastructure views and middleware
 ├── frontend/
 │   ├── public/
 │   ├── src/             # Vue components and stores
-│   │   ├── api/         # WebSocket and API integration
-│   │   ├── components/  # Chat and UI components
-│   │   ├── views/       # Room and authentication views
-│   │   └── stores/      # Pinia state management
-│   ├── package.json
 │   └── README.md        # Frontend development guide
-├── docker/              # Docker configuration files
-│   ├── backend/         # Backend Docker setup
-│   ├── frontend/        # Frontend Docker setup
-│   └── nginx/           # Nginx configuration
-├── scripts/
-│   ├── run.sh           # Combined server startup
-│   └── test.sh          # Test runner
+├── docker/
+│   ├── backend/         # Backend Dockerfile and entrypoint
+│   └── nginx/           # Nginx Dockerfile, config, and entrypoint
 ├── docker-compose.yml   # Docker Compose configuration
+├── .env.example         # Environment variable template
+├── Makefile             # Development and Docker commands
 ├── README.md            # Main documentation (you are here)
 └── LICENSE
 ```

@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     postgresql-client \
     curl \
+    gosu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -40,8 +41,6 @@ RUN useradd -m -s /usr/sbin/nologin appuser && \
 COPY docker/backend/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
-
-USER appuser
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "-m", "backend"]

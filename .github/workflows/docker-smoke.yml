@@ -39,7 +39,7 @@ jobs:
       - name: Show Docker versions
         run: |
           docker --version
-          docker compose version
+          docker compose --env-file docker.env version
 
       - name: Build images
         run: docker compose --env-file docker.env build --pull
@@ -53,18 +53,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          backend_id=$(docker compose ps -q backend)
+          backend_id=$(docker compose --env-file docker.env ps -q backend)
           
           if [ -z "$backend_id" ]; then
             echo "Error: Backend container not found."
-            docker compose ps
+            docker compose --env-file docker.env ps
             exit 1
           fi
 
           state=$(docker inspect --format '{{.State.Status}}' "$backend_id")
           if [ "$state" == "exited" ]; then
             echo "Backend container crashed!"
-            docker compose logs --no-color backend
+            docker compose --env-file docker.env logs --no-color backend
             exit 1
           fi
 
@@ -74,7 +74,7 @@ jobs:
           if [ "$status" != "healthy" ] && [ "$status" != "none" ]; then
             # 'none' is acceptable if you haven't defined a HEALTHCHECK in your Dockerfile
             docker inspect --format '{{json .State.Health}}' "$backend_id" || true
-            docker compose logs --no-color --tail=300 backend
+            docker compose --env-file docker.env logs --no-color --tail=300 backend
             exit 1
           fi
 
@@ -86,8 +86,8 @@ jobs:
           echo "GET / -> $root_code"
           if [ "$root_code" -ge 500 ] || [ "$root_code" = "000" ]; then
             echo "Unexpected root status: $root_code"
-            docker compose logs --no-color --tail=300 nginx
-            docker compose logs --no-color --tail=300 backend
+            docker compose --env-file docker.env logs --no-color --tail=300 nginx
+            docker compose --env-file docker.env logs --no-color --tail=300 backend
             exit 1
           fi
 
@@ -95,8 +95,8 @@ jobs:
           echo "GET /graphql/ -> ${graphql_code:-unknown}"
           if [ -n "$graphql_code" ] && [ "$graphql_code" != "000" ] && [ "$graphql_code" -ge 500 ]; then
             echo "Unexpected graphql status: $graphql_code"
-            docker compose logs --no-color --tail=300 nginx
-            docker compose logs --no-color --tail=300 backend
+            docker compose --env-file docker.env logs --no-color --tail=300 nginx
+            docker compose --env-file docker.env logs --no-color --tail=300 backend
             exit 1
           fi
 

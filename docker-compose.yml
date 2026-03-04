@@ -151,7 +151,7 @@ services:
 
   # Node Exporter - host metrics for Prometheus
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.8.2
     pid: "host"
     volumes:
       - /proc:/host/proc:ro
@@ -169,7 +169,7 @@ services:
     networks:
       - monitor_network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/"]
+      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:9100/metrics"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -197,7 +197,7 @@ services:
       node-exporter:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/prometheus/-/healthy"]
+      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:9090/prometheus/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -227,7 +227,7 @@ services:
       prometheus:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --spider --tries=1 http://localhost:3000/grafana/healthz"]
+      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:3000/grafana/healthz"]
       interval: 10s
       timeout: 5s
       retries: 5

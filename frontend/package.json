@@ -18,7 +18,7 @@
     "@vue/apollo-composable": "^4.2.2",
     "@vueuse/core": "^14.2.1",
     "apollo-upload-client": "^18.0.1",
-    "graphql": "^16.13.0",
+    "graphql": "^16.13.1",
     "js-cookie": "^3.0.5",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate-2": "^2.0.32",

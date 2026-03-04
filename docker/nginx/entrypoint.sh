@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+# Prometheus authentication setup
 HTPASSWD_FILE="/etc/nginx/.htpasswd.prometheus"
 
 if [ ! -f "$HTPASSWD_FILE" ]; then

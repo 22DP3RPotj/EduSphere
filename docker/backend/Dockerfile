@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     python3-dev \
     libpq-dev \
-    postgresql-client \
     curl \
     gosu \
     && apt-get clean \

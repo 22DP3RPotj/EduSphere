@@ -106,12 +106,13 @@ services:
   # Nginx service with built-in frontend
   nginx:
     build:
-      context: .  # Changed from ./docker/nginx to . for access to frontend/
+      context: .
       dockerfile: ./docker/nginx/Dockerfile
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_data:/app/media:ro
-      - ./docker/nginx/.htpasswd.prometheus:/etc/nginx/.htpasswd.prometheus:ro
+    env_file:
+      - ./docker.env
     ports:
       - "80:80"
     networks:

@@ -37,9 +37,11 @@ RUN mkdir -p /app/staticfiles /app/media/avatars
 RUN useradd -m -s /usr/sbin/nologin appuser && \
     chown -R appuser:appuser /app
 
-RUN chmod +x /app/docker/backend/entrypoint.sh
+COPY docker/backend/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
 
 USER appuser
 
-ENTRYPOINT ["/app/docker/backend/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "-m", "backend"]

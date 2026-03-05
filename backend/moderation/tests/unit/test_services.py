@@ -26,7 +26,6 @@ class ReportServiceTest(ServiceTestBase):
         self.reason_harassment, _ = ReportReason.objects.get_or_create(
             slug="harassment", defaults={"label": "Harassment"}
         )
-        self.room_ct = ContentType.objects.get_for_model(self.room)
 
     # --- Room target tests ---
 

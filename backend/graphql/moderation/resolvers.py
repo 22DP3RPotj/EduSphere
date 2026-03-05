@@ -51,7 +51,7 @@ class ReportQuery(graphene.ObjectType):
     ) -> Report:
         try:
             report = Report.objects.select_related(
-                "reason", "moderator", "content_type"
+                "user", "reason", "moderator", "content_type"
             ).get(id=report_id)
         except Report.DoesNotExist:
             raise GraphQLError(

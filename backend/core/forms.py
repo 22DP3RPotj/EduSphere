@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
+from django.utils import timezone
 from django.utils.text import slugify
 from backend.account.models import User
 from backend.messaging.models import Message
@@ -13,7 +14,7 @@ from backend.room.models import Room
 class RegisterForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ["username", "name", "email", "password1", "password2"]
+        fields = ("username", "name", "email", "password1", "password2")
 
 
 class RoomForm(ModelForm):
@@ -79,8 +80,15 @@ class ReportForm(ModelForm):
         fields = ("body",)
 
 
-# TODO: validate datetime
 class InviteForm(ModelForm):
     class Meta:
         model = Invite
         fields = ("expires_at",)
+        
+    def clean_expires_at(self) -> timezone.datetime:
+        expires_at = self.cleaned_data.get("expires_at")
+        
+        if expires_at and expires_at <= timezone.now():
+            raise forms.ValidationError("Expiration time must be in the future.")
+        
+        return expires_at

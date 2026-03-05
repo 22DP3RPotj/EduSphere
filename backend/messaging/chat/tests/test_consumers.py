@@ -118,7 +118,7 @@ def room_and_participant(users):
     room = Room.objects.create(host=host, name="Test Room")
     room.topics.add(topic)
 
-    role = Role.objects.create(name="Member", room=room)
+    role = Role.objects.create(name="Member", room=room, priority=0)
     Participant.objects.create(user=member, room=room, role=role)
 
     return room, member

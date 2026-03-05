@@ -38,7 +38,7 @@ class Role(models.Model):
     )
     description = models.TextField(max_length=512, blank=True, default="")
     priority = models.PositiveIntegerField(
-        default=0, validators=[MaxValueValidator(100)]
+        validators=[MaxValueValidator(100)]
     )
     permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
 
@@ -89,3 +89,27 @@ class Participant(models.Model):
 
     def __str__(self):
         return f"{self.user.username} in {self.room.name}"
+
+
+# class RoomBan(models.Model):
+#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="room_bans")
+#     room = models.ForeignKey("room.Room", on_delete=models.CASCADE, related_name="bans")
+#     banned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="issued_bans")
+#     reason = models.TextField(max_length=512, blank=True, default="")
+#     expires_at = models.DateTimeField(null=True, blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         app_label = "access"
+#         constraints = [
+#             models.UniqueConstraint(fields=["user", "room"], name="unique_ban_per_user_room")
+#         ]
+#         indexes = [
+#             models.Index(fields=["room", "user"]),
+#             models.Index(fields=["expires_at"]),
+#         ]
+    
+    
+#     def __str__(self):
+#         return f"Ban of {self.user.username} from {self.room.name}"

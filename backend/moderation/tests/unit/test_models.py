@@ -15,13 +15,17 @@ User = get_user_model()
 
 class ReportReasonModelTest(TestCase):
     def test_reason_creation(self):
-        reason = ReportReason.objects.create(slug="spam", label="Spam")
+        reason, _ = ReportReason.objects.get_or_create(
+            slug="spam", defaults={"label": "Spam"}
+        )
         self.assertTrue(reason.is_active)
         self.assertEqual(str(reason), "Spam")
 
     def test_reason_with_content_type_restriction(self):
         ct = ContentType.objects.get_for_model(Room)
-        reason = ReportReason.objects.create(slug="room-only", label="Room Only")
+        reason, _ = ReportReason.objects.get_or_create(
+            slug="room-only", defaults={"label": "Room Only"}
+        )
         reason.allowed_content_types.add(ct)
         self.assertIn(ct, reason.allowed_content_types.all())
 
@@ -46,7 +50,9 @@ class ReportModelTest(TestCase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        self.reason = ReportReason.objects.create(slug="spam", label="Spam")
+        self.reason, _ = ReportReason.objects.get_or_create(
+            slug="spam", defaults={"label": "Spam"}
+        )
         self.ct_room = ContentType.objects.get_for_model(Room)
 
     def _make_report(self, **kwargs):
@@ -69,7 +75,9 @@ class ReportModelTest(TestCase):
 
     def test_report_active_reports(self):
         self._make_report()
-        reason2 = ReportReason.objects.create(slug="harassment", label="Harassment")
+        reason2, _ = ReportReason.objects.get_or_create(
+            slug="harassment", defaults={"label": "Harassment"}
+        )
         # Create a resolved report with a unique user so unique constraint is not hit
         other_user = User.objects.create_user(
             name="Other", username="other", email="other@email.com"

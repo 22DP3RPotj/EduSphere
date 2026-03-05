@@ -63,9 +63,11 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         self.topic = Topic.objects.create(name="TestTopic")
         self.room.topics.add(self.topic)
 
-        self.reason_spam = ReportReason.objects.create(slug="spam", label="Spam")
-        self.reason_harassment = ReportReason.objects.create(
-            slug="harassment", label="Harassment"
+        self.reason_spam, _ = ReportReason.objects.get_or_create(
+            slug="spam", defaults={"label": "Spam"}
+        )
+        self.reason_harassment, _ = ReportReason.objects.get_or_create(
+            slug="harassment", defaults={"label": "Harassment"}
         )
 
     _create_mutation = """
@@ -246,9 +248,11 @@ class ReportQueryTests(JSONWebTokenTestCase):
             description="Test Description",
         )
 
-        self.reason_spam = ReportReason.objects.create(slug="spam", label="Spam")
-        self.reason_harassment = ReportReason.objects.create(
-            slug="harassment", label="Harassment"
+        self.reason_spam, _ = ReportReason.objects.get_or_create(
+            slug="spam", defaults={"label": "Spam"}
+        )
+        self.reason_harassment, _ = ReportReason.objects.get_or_create(
+            slug="harassment", defaults={"label": "Harassment"}
         )
 
         self.report1 = make_report(
@@ -328,8 +332,8 @@ class ReportQueryTests(JSONWebTokenTestCase):
         from backend.account.models import User as UserModel
 
         user_ct = ContentType.objects.get_for_model(UserModel)
-        user_only = ReportReason.objects.create(
-            slug="impersonation", label="Impersonation"
+        user_only, _ = ReportReason.objects.get_or_create(
+            slug="impersonation", defaults={"label": "Impersonation"}
         )
         user_only.allowed_content_types.add(user_ct)
 
@@ -350,7 +354,9 @@ class ReportQueryTests(JSONWebTokenTestCase):
         from backend.room.models import Room as RoomModel
 
         room_ct = ContentType.objects.get_for_model(RoomModel)
-        room_only = ReportReason.objects.create(slug="room-spam", label="Room Spam")
+        room_only, _ = ReportReason.objects.get_or_create(
+            slug="room-spam", defaults={"label": "Room Spam"}
+        )
         room_only.allowed_content_types.add(room_ct)
 
         result2: ExecutionResult = self.client.execute(query)

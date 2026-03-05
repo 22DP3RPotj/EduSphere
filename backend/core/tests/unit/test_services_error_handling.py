@@ -24,7 +24,9 @@ class ErrorHandlingTests(ServiceTestBase):
 
     def test_update_report_non_moderator_fails(self):
         self._add_member(self.member, self.member_role)
-        reason = ReportReason.objects.create(slug="spam", label="Spam")
+        reason, _ = ReportReason.objects.get_or_create(
+            slug="spam", defaults={"label": "Spam"}
+        )
         report = ReportService.create_report(
             reporter=self.member,
             target=self.room,

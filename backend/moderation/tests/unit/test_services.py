@@ -20,9 +20,11 @@ class ReportServiceTest(ServiceTestBase):
 
     def setUp(self):
         super().setUp()
-        self.reason_spam = ReportReason.objects.create(slug="spam", label="Spam")
-        self.reason_harassment = ReportReason.objects.create(
-            slug="harassment", label="Harassment"
+        self.reason_spam, _ = ReportReason.objects.get_or_create(
+            slug="spam", defaults={"label": "Spam"}
+        )
+        self.reason_harassment, _ = ReportReason.objects.get_or_create(
+            slug="harassment", defaults={"label": "Harassment"}
         )
         self.room_ct = ContentType.objects.get_for_model(self.room)
 
@@ -126,8 +128,8 @@ class ReportServiceTest(ServiceTestBase):
         from backend.account.models import User as UserModel
 
         user_ct = ContentType.objects.get_for_model(UserModel)
-        user_only_reason = ReportReason.objects.create(
-            slug="impersonation", label="Impersonation"
+        user_only_reason, _ = ReportReason.objects.get_or_create(
+            slug="impersonation", defaults={"label": "Impersonation"}
         )
         user_only_reason.allowed_content_types.add(user_ct)
 

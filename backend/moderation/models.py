@@ -1,15 +1,37 @@
 import uuid
 import pghistory
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
 
 from backend.account.models import User
-from backend.moderation.choices import ReportReason, ReportStatus, ACTIVE_STATUSES
+from backend.core.constants import DELETED_USER
+from backend.moderation.choices import ReportStatus, ACTIVE_STATUSES
+
+
+class ReportReason(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    slug = models.SlugField(max_length=64, unique=True)
+    label = models.CharField(max_length=128)
+    allowed_content_types = models.ManyToManyField(
+        ContentType,
+        blank=True,
+        related_name="report_reasons",
+        help_text="Content types this reason applies to. Leave empty to allow for all targets.",
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        app_label = "moderation"
+        ordering = ["label"]
+
+    def __str__(self):
+        return self.label
 
 
 class Report(models.Model):
-    Reason = ReportReason
     Status = ReportStatus
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -19,11 +41,19 @@ class Report(models.Model):
         null=True,
         related_name="reports",
     )
-    room = models.ForeignKey(
-        "room.Room", on_delete=models.CASCADE, related_name="reports"
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name="reports",
     )
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey("content_type", "object_id")
     body = models.TextField(max_length=2048)
-    reason = models.CharField(max_length=32, choices=Reason.choices)
+    reason = models.ForeignKey(
+        ReportReason,
+        on_delete=models.PROTECT,
+        related_name="reports",
+    )
     status = models.CharField(
         max_length=32, choices=Status.choices, default=Status.PENDING
     )
@@ -42,22 +72,27 @@ class Report(models.Model):
         app_label = "moderation"
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "room"],
+                fields=["user", "content_type", "object_id"],
                 condition=Q(status__in=ACTIVE_STATUSES),
-                name="unique_active_report_per_user_room",
-                violation_error_message="You already have an active report targeting this room.",
+                name="unique_active_report_per_user_target",
+                violation_error_message="You already have an active report targeting this content.",
             )
         ]
         indexes = [
             models.Index(fields=["status", "created_at"]),
             models.Index(fields=["user", "created_at"]),
-            models.Index(fields=["room", "created_at"]),
+            models.Index(fields=["content_type", "object_id", "created_at"]),
         ]
         ordering = ["-created_at"]
 
     def __str__(self):
-        username = self.user.username if self.user else "<Deleted user>"
-        return f"Report by {username} on {self.room.name}"
+        username = self.user.username if self.user else DELETED_USER
+        target = (
+            str(self.content_object)
+            if self.content_object
+            else f"<{self.content_type}:{self.object_id}>"
+        )
+        return f"Report by {username} on {target}"
 
     def save(self, *args, **kwargs):
         self.full_clean()

@@ -76,7 +76,7 @@ class MessageForm(ModelForm):
 class ReportForm(ModelForm):
     class Meta:
         model = Report
-        fields = ("reason", "body")
+        fields = ("body",)
 
 
 # TODO: validate datetime

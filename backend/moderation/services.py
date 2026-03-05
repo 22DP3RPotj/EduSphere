@@ -1,10 +1,12 @@
-from typing import Optional
+from typing import Optional, Union
 
+from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
+from django.db.models import Model
 
 from backend.account.models import User
-from backend.moderation.choices import ReportReason, ReportStatus
-from backend.moderation.models import Report
+from backend.moderation.choices import ReportStatus
+from backend.moderation.models import Report, ReportReason
 from backend.room.models import Room
 from backend.access.models import Participant
 from backend.core.forms import ReportForm
@@ -19,45 +21,61 @@ class ReportService:
     """Service for report mutation operations."""
 
     @staticmethod
+    def _check_report_permission(reporter: User, target: Model) -> None:
+        """Raise PermissionException if reporter is not allowed to report target."""
+        if isinstance(target, Room):
+            if not Participant.objects.filter(user=reporter, room=target).exists():
+                raise PermissionException(
+                    "You must be a participant of the room to report it."
+                )
+        # For User targets (and any future model) any authenticated reporter is allowed.
+
+    @staticmethod
     def create_report(
         reporter: User,
-        room: Room,
+        target: Model,
         reason: ReportReason,
         body: str,
     ) -> Report:
         """
-        Create a report for a room.
+        Create a report for any reportable target (Room, User, …).
 
         Args:
-            reporter: User creating the report (must be a participant)
-            room: The room being reported
-            reason: The reason for the report
+            reporter: User creating the report
+            target: The object being reported
+            reason: The ReportReason instance
             body: Detailed description of the report
 
         Returns:
             The created Report instance
 
         Raises:
-            PermissionException: If user is not a participant
-            ConflictException: If an active report already exists
+            PermissionException: If the reporter is not allowed to report this target,
+                or if the reason is inactive / not valid for this content type
+            ConflictException: If an active report already exists for this target
             FormValidationException: If form validation fails
         """
-        if not Participant.objects.filter(user=reporter, room=room).exists():
+        ReportService._check_report_permission(reporter, target)
+
+        content_type = ContentType.objects.get_for_model(target)
+
+        if not reason.is_active:
+            raise PermissionException("This report reason is no longer available.")
+
+        allowed_cts = reason.allowed_content_types.all()
+        if allowed_cts.exists() and not allowed_cts.filter(pk=content_type.pk).exists():
             raise PermissionException(
-                "You must be a participant of the room to report it."
+                "This report reason is not valid for the selected target type."
             )
 
-        if Report.active_reports(user=reporter, room=room).exists():
+        if Report.active_reports(
+            user=reporter, content_type=content_type, object_id=target.pk
+        ).exists():
             raise ConflictException(
-                "You already have an active report targeting this room."
+                "You already have an active report targeting this content."
             )
 
-        data = {
-            "reason": reason,
-            "body": body,
-        }
-
-        form = ReportForm(data=data)
+        form = ReportForm(data={"body": body})
 
         if not form.is_valid():
             raise FormValidationException("Invalid report data", errors=form.errors)
@@ -65,7 +83,9 @@ class ReportService:
         try:
             report = form.save(commit=False)
             report.user = reporter
-            report.room = room
+            report.content_type = content_type
+            report.object_id = target.pk
+            report.reason = reason
             report.save()
         except IntegrityError as e:
             raise ConflictException("Could not create report due to a conflict.") from e

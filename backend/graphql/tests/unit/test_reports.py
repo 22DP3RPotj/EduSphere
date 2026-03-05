@@ -2,15 +2,28 @@ from graphql import ExecutionResult
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 import pytest
 
 pytestmark = pytest.mark.unit
 
 from backend.access.models import Participant, Role
-from backend.moderation.models import Report
+from backend.moderation.models import Report, ReportReason
 from backend.room.models import Room, Topic
 
 User = get_user_model()
+
+
+def make_report(user, target, reason, body="Test report body", status=Report.Status.PENDING):
+    ct = ContentType.objects.get_for_model(target)
+    return Report.objects.create(
+        user=user,
+        content_type=ct,
+        object_id=target.pk,
+        reason=reason,
+        body=body,
+        status=status,
+    )
 
 
 class ReportMutationsTests(JSONWebTokenTestCase):
@@ -48,30 +61,64 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         self.topic = Topic.objects.create(name="TestTopic")
         self.room.topics.add(self.topic)
 
-    def test_create_report_success(self):
-        self.client.authenticate(self.user)
-        mutation = """
-            mutation CreateReport($roomId: UUID!, $reason: ReportReason!, $body: String!) {
-                createReport(roomId: $roomId, reason: $reason, body: $body) {
-                    report {
-                        id
-                        reason
-                        status
-                        body
-                    }
+        self.reason_spam = ReportReason.objects.create(slug="spam", label="Spam")
+        self.reason_harassment = ReportReason.objects.create(
+            slug="harassment", label="Harassment"
+        )
+
+    _create_mutation = """
+        mutation CreateReport(
+            $targetType: ReportTargetTypeEnum!
+            $targetId: UUID!
+            $reasonId: UUID!
+            $body: String!
+        ) {
+            createReport(
+                targetType: $targetType
+                targetId: $targetId
+                reasonId: $reasonId
+                body: $body
+            ) {
+                report {
+                    id
+                    reason { slug }
+                    status
+                    body
                 }
             }
-        """
-        variables = {
-            "roomId": str(self.room.id),
-            "reason": "SPAM",
-            "body": "This room contains spam",
         }
-        result: ExecutionResult = self.client.execute(mutation, variables)
+    """
+
+    def test_create_report_room_success(self):
+        self.client.authenticate(self.user)
+        result: ExecutionResult = self.client.execute(
+            self._create_mutation,
+            {
+                "targetType": "ROOM",
+                "targetId": str(self.room.id),
+                "reasonId": str(self.reason_spam.id),
+                "body": "This room contains spam",
+            },
+        )
         self.assertIsNone(result.errors)
-        self.assertEqual(result.data["createReport"]["report"]["reason"], "SPAM")
-        self.assertEqual(result.data["createReport"]["report"]["status"], "PENDING")
-        self.assertTrue(Report.objects.filter(room=self.room, user=self.user).exists())
+        data = result.data["createReport"]["report"]
+        self.assertEqual(data["reason"]["slug"], "spam")
+        self.assertEqual(data["status"], "PENDING")
+
+    def test_create_report_user_success(self):
+        self.client.authenticate(self.user)
+        result: ExecutionResult = self.client.execute(
+            self._create_mutation,
+            {
+                "targetType": "USER",
+                "targetId": str(self.host.id),
+                "reasonId": str(self.reason_harassment.id),
+                "body": "Harassment by this user",
+            },
+        )
+        self.assertIsNone(result.errors)
+        data = result.data["createReport"]["report"]
+        self.assertEqual(data["reason"]["slug"], "harassment")
 
     def test_create_report_not_participant(self):
         non_participant = User.objects.create_user(
@@ -80,49 +127,51 @@ class ReportMutationsTests(JSONWebTokenTestCase):
             email="non@email.com",
         )
         self.client.authenticate(non_participant)
-
-        mutation = """
-            mutation CreateReport($roomId: UUID!, $reason: ReportReason!, $body: String!) {
-                createReport(roomId: $roomId, reason: $reason, body: $body) {
-                    report { id }
-                }
-            }
-        """
-        variables = {
-            "roomId": str(self.room.id),
-            "reason": "SPAM",
-            "body": "Test report",
-        }
-        result: ExecutionResult = self.client.execute(mutation, variables)
+        result: ExecutionResult = self.client.execute(
+            self._create_mutation,
+            {
+                "targetType": "ROOM",
+                "targetId": str(self.room.id),
+                "reasonId": str(self.reason_spam.id),
+                "body": "Test report",
+            },
+        )
         self.assertIsNotNone(result.errors)
         self.assertEqual(result.errors[0].extensions["code"], "PERMISSION_DENIED")
 
     def test_create_report_already_reported(self):
-        Report.objects.create(
-            user=self.user, room=self.room, reason="SPAM", body="Existing report"
-        )
+        make_report(self.user, self.room, self.reason_spam, "Existing report")
 
         self.client.authenticate(self.user)
-        mutation = """
-            mutation CreateReport($roomId: UUID!, $reason: ReportReason!, $body: String!) {
-                createReport(roomId: $roomId, reason: $reason, body: $body) {
-                    report { id }
-                }
-            }
-        """
-        variables = {
-            "roomId": str(self.room.id),
-            "reason": "HARASSMENT",
-            "body": "Another report",
-        }
-        result: ExecutionResult = self.client.execute(mutation, variables)
+        result: ExecutionResult = self.client.execute(
+            self._create_mutation,
+            {
+                "targetType": "ROOM",
+                "targetId": str(self.room.id),
+                "reasonId": str(self.reason_harassment.id),
+                "body": "Another report",
+            },
+        )
         self.assertIsNotNone(result.errors)
         self.assertEqual(result.errors[0].extensions["code"], "CONFLICT")
 
-    def test_update_report_as_moderator(self):
-        report = Report.objects.create(
-            user=self.user, room=self.room, reason="SPAM", body="Test report"
+    def test_create_report_invalid_reason(self):
+        self.client.authenticate(self.user)
+        import uuid
+        result: ExecutionResult = self.client.execute(
+            self._create_mutation,
+            {
+                "targetType": "ROOM",
+                "targetId": str(self.room.id),
+                "reasonId": str(uuid.uuid4()),
+                "body": "Test",
+            },
         )
+        self.assertIsNotNone(result.errors)
+        self.assertEqual(result.errors[0].extensions["code"], "NOT_FOUND")
+
+    def test_update_report_as_moderator(self):
+        report = make_report(self.user, self.room, self.reason_spam)
 
         self.client.authenticate(self.moderator)
         mutation = """
@@ -136,25 +185,22 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {
-            "reportId": str(report.id),
-            "status": "RESOLVED",
-            "moderatorNote": "Issue resolved",
-        }
-        result: ExecutionResult = self.client.execute(mutation, variables)
+        result: ExecutionResult = self.client.execute(
+            mutation,
+            {
+                "reportId": str(report.id),
+                "status": "RESOLVED",
+                "moderatorNote": "Issue resolved",
+            },
+        )
         self.assertIsNone(result.errors)
-        self.assertEqual(result.data["updateReport"]["report"]["status"], "RESOLVED")
-        self.assertEqual(
-            result.data["updateReport"]["report"]["moderatorNote"], "Issue resolved"
-        )
-        self.assertEqual(
-            result.data["updateReport"]["report"]["moderator"]["username"], "moderator"
-        )
+        data = result.data["updateReport"]["report"]
+        self.assertEqual(data["status"], "RESOLVED")
+        self.assertEqual(data["moderatorNote"], "Issue resolved")
+        self.assertEqual(data["moderator"]["username"], "moderator")
 
     def test_delete_report_as_moderator(self):
-        report = Report.objects.create(
-            user=self.user, room=self.room, reason="SPAM", body="Test report"
-        )
+        report = make_report(self.user, self.room, self.reason_spam)
 
         self.client.authenticate(self.moderator)
         mutation = """
@@ -164,8 +210,9 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 }
             }
         """
-        variables = {"reportId": str(report.id)}
-        result: ExecutionResult = self.client.execute(mutation, variables)
+        result: ExecutionResult = self.client.execute(
+            mutation, {"reportId": str(report.id)}
+        )
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["deleteReport"]["success"])
         self.assertFalse(Report.objects.filter(id=report.id).exists())
@@ -185,25 +232,29 @@ class ReportQueryTests(JSONWebTokenTestCase):
             is_staff=True,
             is_superuser=True,
         )
+        self.host = User.objects.create_user(
+            name="HostUser",
+            username="hostuser",
+            email="host@email.com",
+        )
         self.room = Room.objects.create(
-            host=User.objects.create_user(
-                name="HostUser",
-                username="hostuser",
-                email="host@email.com",
-            ),
+            host=self.host,
             name="Test Room",
             description="Test Description",
         )
 
-        self.report1 = Report.objects.create(
-            user=self.user, room=self.room, reason="SPAM", body="First report"
+        self.reason_spam = ReportReason.objects.create(slug="spam", label="Spam")
+        self.reason_harassment = ReportReason.objects.create(
+            slug="harassment", label="Harassment"
         )
-        self.report2 = Report.objects.create(
-            user=self.user,
-            room=self.room,
-            reason="HARASSMENT",
-            body="Second report",
-            status="RESOLVED",
+
+        self.report1 = make_report(self.user, self.room, self.reason_spam, "First report")
+        self.report2 = make_report(
+            self.user,
+            self.host,
+            self.reason_harassment,
+            "Second report",
+            status=Report.Status.RESOLVED,
         )
 
     def test_submitted_reports(self):
@@ -211,7 +262,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
         query = """
             query {
                 submittedReports {
-                    reason
+                    reason { slug }
                     body
                     status
                 }
@@ -226,22 +277,23 @@ class ReportQueryTests(JSONWebTokenTestCase):
         query = """
             query GetReport($reportId: UUID!) {
                 report(reportId: $reportId) {
-                    reason
+                    reason { slug }
                     body
                 }
             }
         """
-        variables = {"reportId": str(self.report1.id)}
-        result: ExecutionResult = self.client.execute(query, variables)
+        result: ExecutionResult = self.client.execute(
+            query, {"reportId": str(self.report1.id)}
+        )
         self.assertIsNone(result.errors)
-        self.assertEqual(result.data["report"]["reason"], "SPAM")
+        self.assertEqual(result.data["report"]["reason"]["slug"], "spam")
 
     def test_reports_as_moderator(self):
         self.client.authenticate(self.moderator)
         query = """
             query {
                 reports {
-                    reason
+                    reason { slug }
                     status
                 }
             }
@@ -249,3 +301,50 @@ class ReportQueryTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(query)
         self.assertIsNone(result.errors)
         self.assertEqual(len(result.data["reports"]), 2)
+
+    def test_report_reasons_all(self):
+        self.client.authenticate(self.user)
+        query = """
+            query {
+                reportReasons {
+                    slug
+                    label
+                    isActive
+                }
+            }
+        """
+        result: ExecutionResult = self.client.execute(query)
+        self.assertIsNone(result.errors)
+        slugs = {r["slug"] for r in result.data["reportReasons"]}
+        self.assertIn("spam", slugs)
+        self.assertIn("harassment", slugs)
+
+    def test_report_reasons_by_target_type(self):
+        from backend.account.models import User as UserModel
+        user_ct = ContentType.objects.get_for_model(UserModel)
+        user_only = ReportReason.objects.create(slug="impersonation", label="Impersonation")
+        user_only.allowed_content_types.add(user_ct)
+
+        self.client.authenticate(self.user)
+        query = """
+            query {
+                reportReasons(targetType: USER) {
+                    slug
+                }
+            }
+        """
+        result: ExecutionResult = self.client.execute(query)
+        self.assertIsNone(result.errors)
+        slugs = {r["slug"] for r in result.data["reportReasons"]}
+        # "spam" and "harassment" have no restrictions so they appear; "impersonation" too
+        self.assertIn("impersonation", slugs)
+        # Room-only reason should NOT appear
+        from backend.room.models import Room as RoomModel
+        room_ct = ContentType.objects.get_for_model(RoomModel)
+        room_only = ReportReason.objects.create(slug="room-spam", label="Room Spam")
+        room_only.allowed_content_types.add(room_ct)
+
+        result2: ExecutionResult = self.client.execute(query)
+        self.assertIsNone(result2.errors)
+        slugs2 = {r["slug"] for r in result2.data["reportReasons"]}
+        self.assertNotIn("room-spam", slugs2)

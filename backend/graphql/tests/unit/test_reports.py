@@ -14,7 +14,9 @@ from backend.room.models import Room, Topic
 User = get_user_model()
 
 
-def make_report(user, target, reason, body="Test report body", status=Report.Status.PENDING):
+def make_report(
+    user, target, reason, body="Test report body", status=Report.Status.PENDING
+):
     ct = ContentType.objects.get_for_model(target)
     return Report.objects.create(
         user=user,
@@ -158,6 +160,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
     def test_create_report_invalid_reason(self):
         self.client.authenticate(self.user)
         import uuid
+
         result: ExecutionResult = self.client.execute(
             self._create_mutation,
             {
@@ -248,7 +251,9 @@ class ReportQueryTests(JSONWebTokenTestCase):
             slug="harassment", label="Harassment"
         )
 
-        self.report1 = make_report(self.user, self.room, self.reason_spam, "First report")
+        self.report1 = make_report(
+            self.user, self.room, self.reason_spam, "First report"
+        )
         self.report2 = make_report(
             self.user,
             self.host,
@@ -321,8 +326,11 @@ class ReportQueryTests(JSONWebTokenTestCase):
 
     def test_report_reasons_by_target_type(self):
         from backend.account.models import User as UserModel
+
         user_ct = ContentType.objects.get_for_model(UserModel)
-        user_only = ReportReason.objects.create(slug="impersonation", label="Impersonation")
+        user_only = ReportReason.objects.create(
+            slug="impersonation", label="Impersonation"
+        )
         user_only.allowed_content_types.add(user_ct)
 
         self.client.authenticate(self.user)
@@ -340,6 +348,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
         self.assertIn("impersonation", slugs)
         # Room-only reason should NOT appear
         from backend.room.models import Room as RoomModel
+
         room_ct = ContentType.objects.get_for_model(RoomModel)
         room_only = ReportReason.objects.create(slug="room-spam", label="Room Spam")
         room_only.allowed_content_types.add(room_ct)

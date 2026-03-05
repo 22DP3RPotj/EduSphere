@@ -74,7 +74,9 @@ class ReportModelTest(TestCase):
         other_user = User.objects.create_user(
             name="Other", username="other", email="other@email.com"
         )
-        self._make_report(user=other_user, reason=reason2, status=Report.Status.RESOLVED)
+        self._make_report(
+            user=other_user, reason=reason2, status=Report.Status.RESOLVED
+        )
         active = Report.active_reports()
         self.assertEqual(active.count(), 1)
 
@@ -88,4 +90,3 @@ class ReportModelTest(TestCase):
         Report.objects.filter(pk=report.pk).update(user=None)
         report.refresh_from_db()
         self.assertIn(DELETED_USER, str(report))
-

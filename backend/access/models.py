@@ -37,9 +37,7 @@ class Role(models.Model):
         "room.Room", on_delete=models.CASCADE, related_name="roles"
     )
     description = models.TextField(max_length=512, blank=True, default="")
-    priority = models.PositiveIntegerField(
-        validators=[MaxValueValidator(100)]
-    )
+    priority = models.PositiveIntegerField(validators=[MaxValueValidator(100)])
     permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
 
     def __str__(self):
@@ -109,7 +107,7 @@ class Participant(models.Model):
 #             models.Index(fields=["room", "user"]),
 #             models.Index(fields=["expires_at"]),
 #         ]
-    
-    
+
+
 #     def __str__(self):
 #         return f"Ban of {self.user.username} from {self.room.name}"

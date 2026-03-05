@@ -124,6 +124,7 @@ class ReportServiceTest(ServiceTestBase):
     def test_create_report_reason_wrong_content_type(self):
         """A reason scoped only to User targets should be rejected for a Room."""
         from backend.account.models import User as UserModel
+
         user_ct = ContentType.objects.get_for_model(UserModel)
         user_only_reason = ReportReason.objects.create(
             slug="impersonation", label="Impersonation"
@@ -233,4 +234,3 @@ class ReportServiceTest(ServiceTestBase):
         )
 
         self.assertEqual(review.status, Report.Status.UNDER_REVIEW)
-

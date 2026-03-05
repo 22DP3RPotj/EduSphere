@@ -84,11 +84,11 @@ class InviteForm(ModelForm):
     class Meta:
         model = Invite
         fields = ("expires_at",)
-        
+
     def clean_expires_at(self) -> timezone.datetime:
         expires_at = self.cleaned_data.get("expires_at")
-        
+
         if expires_at and expires_at <= timezone.now():
             raise forms.ValidationError("Expiration time must be in the future.")
-        
+
         return expires_at

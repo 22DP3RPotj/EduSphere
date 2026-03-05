@@ -122,8 +122,7 @@ class ReportQuery(graphene.ObjectType):
             if model is not None:
                 ct = ContentType.objects.get_for_model(model)
                 queryset = (
-                    queryset
-                    .annotate(ct_count=Count("allowed_content_types"))
+                    queryset.annotate(ct_count=Count("allowed_content_types"))
                     .filter(Q(ct_count=0) | Q(allowed_content_types=ct))
                     .distinct()
                 )

@@ -1,6 +1,6 @@
 import graphene
 import uuid
-from typing import Optional
+from typing import Optional, Union
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
@@ -40,7 +40,7 @@ class CreateReport(graphene.Mutation):
         reason_id: uuid.UUID,
         body: str,
     ):
-        model_map = {
+        model_map: dict[str, Union[type[Room], type[User]]] = {
             ReportTargetTypeEnum.ROOM: Room,
             ReportTargetTypeEnum.USER: User,
         }

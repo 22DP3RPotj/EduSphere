@@ -34,6 +34,8 @@ def remove_reasons(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ('moderation', '0001_initial'),
+        ('account', '0001_initial'),
+        ('room', '0001_initial'),
     ]
 
     operations = [

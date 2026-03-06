@@ -1,7 +1,12 @@
 import rules
 from enum import StrEnum
 from backend.core.rules.predicates import is_authenticated
-from backend.room.rules.predicates import is_participant, is_room_public, can_delete_room, can_update_room
+from backend.room.rules.predicates import (
+    is_participant,
+    is_room_public,
+    can_delete_room,
+    can_update_room,
+)
 
 
 class RoomPermission(StrEnum):

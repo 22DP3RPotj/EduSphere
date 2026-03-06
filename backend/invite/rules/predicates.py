@@ -9,10 +9,14 @@ from backend.account.models import User
 def is_sender(user: User, invite: Invite) -> bool:
     return invite.inviter == user
 
+
 @predicate
 def is_recipient(user: User, invite: Invite) -> bool:
     return invite.invitee == user
 
+
 @predicate
 def can_manage_invite(user: User, invite: Invite) -> bool:
-    return RoleService.has_permission(user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS)
+    return RoleService.has_permission(
+        user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
+    )

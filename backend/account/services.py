@@ -9,16 +9,6 @@ class RestrictionService:
     """Service class for managing user bans and restrictions."""
 
     @staticmethod
-    def is_user_banned(user: User) -> bool:
-        """
-        Checks if a user is currently banned.
-
-        Returns:
-            bool: True if the user has an active ban, False otherwise.
-        """
-        return UserBan.objects.filter(user=user, is_active=True).exists()
-
-    @staticmethod
     def ban_user(
         user: User,
         banned_by: User,

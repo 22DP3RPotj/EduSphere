@@ -20,7 +20,7 @@ def make_case(target):
     case, _ = ModerationCase.objects.get_or_create(
         content_type=ct,
         object_id=target.pk,
-        status=CaseStatusChoices.PENDING,
+        defaults={"status": CaseStatusChoices.PENDING},
     )
     return case
 

@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
 from django.db.models import Model
 
@@ -24,12 +25,12 @@ _ACTION_TO_STATUS = {
 }
 
 
-def _case_status_for_action(action: ActionChoices) -> CaseStatusChoices:
-    return _ACTION_TO_STATUS.get(action, CaseStatusChoices.RESOLVED)
-
-
 class ReportService:
     """Service for report and moderation case operations."""
+
+    @staticmethod
+    def _case_status_for_action(action: ActionChoices) -> CaseStatusChoices:
+        return _ACTION_TO_STATUS.get(action, CaseStatusChoices.RESOLVED)
 
     @staticmethod
     def _check_report_permission(reporter: User, target: Model) -> None:
@@ -84,7 +85,7 @@ class ReportService:
         form = ReportForm(data={"description": description})
         if not form.is_valid():
             raise FormValidationException("Invalid report data", errors=form.errors)
-        
+
         with transaction.atomic():
             case = (
                 ModerationCase.objects.select_for_update()
@@ -92,26 +93,40 @@ class ReportService:
                     content_type=content_type,
                     object_id=target.pk,
                     status__in=CaseStatusChoices.active(),
-                ).first()
+                )
+                .first()
             )
             if case is None:
-                case = ModerationCase.objects.create(
-                    content_type=content_type,
-                    object_id=target.pk,
-                    status=CaseStatusChoices.PENDING,
+                try:
+                    case = ModerationCase.objects.create(
+                        content_type=content_type,
+                        object_id=target.pk,
+                        status=CaseStatusChoices.PENDING,
+                    )
+                except (IntegrityError, ValidationError):
+                    case = ModerationCase.objects.filter(
+                        content_type=content_type,
+                        object_id=target.pk,
+                        status__in=CaseStatusChoices.active(),
+                    ).first()
+
+            if Report.objects.filter(
+                reporter=reporter,
+                content_type=content_type,
+                object_id=target.pk,
+                case__status__in=CaseStatusChoices.active(),
+            ).exists():
+                raise ConflictException(
+                    "You already have an active report targeting this content."
                 )
 
-            try:
-                report = form.save(commit=False)
-                report.reporter = reporter
-                report.content_type = content_type
-                report.object_id = target.pk
-                report.reason = reason
-                report.case = case
-                report.save()
-            except IntegrityError as e:
-                raise ConflictException("Could not create report due to a conflict.") from e
-
+            report = form.save(commit=False)
+            report.reporter = reporter
+            report.content_type = content_type
+            report.object_id = target.pk
+            report.reason = reason
+            report.case = case
+            report.save()
         return report
 
     @staticmethod
@@ -142,7 +157,7 @@ class ReportService:
                     note=note,
                 )
 
-                case.status = _case_status_for_action(action)
+                case.status = ReportService._case_status_for_action(action)
                 case.save(update_fields=["status", "updated_at"])
         except IntegrityError as e:
             raise ConflictException("Could not take action due to a conflict.") from e

@@ -84,29 +84,33 @@ class ReportService:
         form = ReportForm(data={"description": description})
         if not form.is_valid():
             raise FormValidationException("Invalid report data", errors=form.errors)
-
-        case = ModerationCase.objects.filter(
-            content_type=content_type,
-            object_id=target.pk,
-            status__in=CaseStatusChoices.active(),
-        ).first()
-        if case is None:
-            case = ModerationCase.objects.create(
-                content_type=content_type,
-                object_id=target.pk,
-                status=CaseStatusChoices.PENDING,
+        
+        with transaction.atomic():
+            case = (
+                ModerationCase.objects.select_for_update()
+                .filter(
+                    content_type=content_type,
+                    object_id=target.pk,
+                    status__in=CaseStatusChoices.active(),
+                ).first()
             )
+            if case is None:
+                case = ModerationCase.objects.create(
+                    content_type=content_type,
+                    object_id=target.pk,
+                    status=CaseStatusChoices.PENDING,
+                )
 
-        try:
-            report = form.save(commit=False)
-            report.reporter = reporter
-            report.content_type = content_type
-            report.object_id = target.pk
-            report.reason = reason
-            report.case = case
-            report.save()
-        except IntegrityError as e:
-            raise ConflictException("Could not create report due to a conflict.") from e
+            try:
+                report = form.save(commit=False)
+                report.reporter = reporter
+                report.content_type = content_type
+                report.object_id = target.pk
+                report.reason = reason
+                report.case = case
+                report.save()
+            except IntegrityError as e:
+                raise ConflictException("Could not create report due to a conflict.") from e
 
         return report
 

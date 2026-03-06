@@ -74,13 +74,6 @@ class Report(models.Model):
             models.Index(fields=["reporter", "created_at"]),
             models.Index(fields=["content_type", "object_id"]),
         ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["reporter", "content_type", "object_id"],
-                condition=Q(reporter__isnull=False),
-                name="unique_report_per_reporter_per_target",
-            )
-        ]
         ordering = ["-created_at"]
 
     def __str__(self):

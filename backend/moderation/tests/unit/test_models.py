@@ -112,14 +112,14 @@ class ModerationCaseModelTest(TestCase):
         self.assertEqual(case.status, CaseStatusChoices.PENDING)
 
     def test_unique_active_case_per_target(self):
-        from django.db import IntegrityError
+        from django.core.exceptions import ValidationError
 
         ModerationCase.objects.create(
             content_type=self.ct_room,
             object_id=self.room.pk,
             status=CaseStatusChoices.PENDING,
         )
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValidationError):
             ModerationCase.objects.create(
                 content_type=self.ct_room,
                 object_id=self.room.pk,

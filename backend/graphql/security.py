@@ -1,5 +1,5 @@
 from django.conf import settings
-from graphene.validation import DisableIntrospection, depth_limit_validator
+from graphene.validation import depth_limit_validator
 
 
 def get_validation_rules():
@@ -8,7 +8,8 @@ def get_validation_rules():
     """
     rules = [depth_limit_validator(max_depth=settings.GRAPHQL_MAX_DEPTH)]
 
-    if not settings.DEBUG:
-        rules.append(DisableIntrospection)
+    # TODO: Breaks frontend
+    # if not settings.DEBUG:
+    #     rules.append(DisableIntrospection)
 
     return rules

@@ -28,7 +28,8 @@ def create_reasons(apps, schema_editor):
 def remove_reasons(apps, schema_editor):
     ReportReason = apps.get_model("moderation", "ReportReason")
     all_labels = REASONS_ALL + REASONS_USER_ONLY + REASONS_ROOM_ONLY
-    ReportReason.objects.filter(label__in=all_labels).delete()
+    slugs = [slugify(label) for label in all_labels]
+    ReportReason.objects.filter(slug__in=slugs).delete()
 
 
 class Migration(migrations.Migration):

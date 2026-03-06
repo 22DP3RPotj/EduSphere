@@ -8,12 +8,12 @@ class CaseStatusChoices(models.TextChoices):
     DISMISSED = "DISMISSED", "Dismissed"
 
     @classmethod
-    def active(cls):
-        return {cls.PENDING, cls.UNDER_REVIEW}
+    def active(cls) -> tuple[str, ...]:
+        return (cls.PENDING, cls.UNDER_REVIEW)
 
     @classmethod
-    def finalized(cls):
-        return {cls.RESOLVED, cls.DISMISSED}
+    def finalized(cls) -> tuple[str, ...]:
+        return (cls.RESOLVED, cls.DISMISSED)
 
 
 class ActionChoices(models.TextChoices):

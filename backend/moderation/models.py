@@ -74,6 +74,13 @@ class Report(models.Model):
             models.Index(fields=["reporter", "created_at"]),
             models.Index(fields=["content_type", "object_id"]),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["reporter", "content_type", "object_id"],
+                condition=Q(reporter__isnull=False),
+                name="unique_report_per_reporter_per_target",
+            )
+        ]
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -128,6 +135,18 @@ class ModerationCase(models.Model):
             models.Index(fields=["content_type", "object_id"]),
         ]
 
+    def __str__(self):
+        target = (
+            str(self.content_object)
+            if self.content_object
+            else f"<{self.content_type}:{self.object_id}>"
+        )
+        return f"Case for {target} - Status: {self.status}"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class ModerationAction(models.Model):
     Action = ActionChoices
@@ -152,6 +171,14 @@ class ModerationAction(models.Model):
     class Meta:
         app_label = "moderation"
         ordering = ["created_at"]
+
+    def __str__(self):
+        moderator_name = self.moderator.username if self.moderator else DELETED_USER
+        return f"Action: {self.action} by {moderator_name} on case {self.case_id}"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class ReportHistory(

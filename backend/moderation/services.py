@@ -1,6 +1,5 @@
-
 from django.contrib.contenttypes.models import ContentType
-from django.db import IntegrityError
+from django.db import transaction, IntegrityError
 from django.db.models import Model
 
 from backend.account.models import User
@@ -130,16 +129,19 @@ class ReportService:
         """
         if not (moderator.is_staff or moderator.is_superuser):
             raise PermissionException("Only moderators can take case actions.")
+        try:
+            with transaction.atomic():
+                ModerationAction.objects.create(
+                    case=case,
+                    moderator=moderator,
+                    action=action,
+                    note=note,
+                )
 
-        ModerationAction.objects.create(
-            case=case,
-            moderator=moderator,
-            action=action,
-            note=note,
-        )
-
-        case.status = _case_status_for_action(action)
-        case.save(update_fields=["status", "updated_at"])
+                case.status = _case_status_for_action(action)
+                case.save(update_fields=["status", "updated_at"])
+        except IntegrityError as e:
+            raise ConflictException("Could not take action due to a conflict.") from e
 
         return case
 

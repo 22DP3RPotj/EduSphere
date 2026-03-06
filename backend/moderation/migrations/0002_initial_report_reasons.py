@@ -14,7 +14,8 @@ def create_reasons(apps, schema_editor):
     room_ct, _ = ContentType.objects.get_or_create(app_label="room", model="room")
 
     for label in REASONS_ALL:
-        ReportReason.objects.update_or_create(slug=slugify(label), defaults={"label": label, "is_active": True})
+        reason, _ = ReportReason.objects.update_or_create(slug=slugify(label), defaults={"label": label, "is_active": True})
+        reason.allowed_content_types.clear()
 
     for label in REASONS_USER_ONLY:
         reason, _ = ReportReason.objects.update_or_create(slug=slugify(label), defaults={"label": label, "is_active": True})

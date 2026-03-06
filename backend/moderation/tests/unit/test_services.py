@@ -90,6 +90,7 @@ class ReportServiceTest(ServiceTestBase):
     def test_create_report_reuses_active_case(self):
         """Two reports on the same target share the same ModerationCase."""
         self._add_member(self.member, self.member_role)
+        self._add_member(self.other_user, self.member_role)
 
         report1 = ReportService.create_report(
             reporter=self.member,

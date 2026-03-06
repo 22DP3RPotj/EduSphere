@@ -1,20 +1,19 @@
 import rules
 from enum import StrEnum
-from backend.invite.rules.predicates import is_recipient, is_sender, can_manage_invite
+from backend.moderation.rules.predicates import is_reporter
+from backend.core.rules.predicates import is_authenticated, is_admin, is_staff
 
 
-class InvitePermission(StrEnum):
-    CREATE = "invite.create"
-    READ = "invite.read"
-    UPDATE = "invite.update"
-    DELETE = "invite.delete"
-    ACCEPT = "invite.accept"
-    REJECT = "invite.reject"
+class ModerationPermission(StrEnum):
+    CREATE = "moderation.create"
+    READ = "moderation.read"
+    REVIEW = "moderation.review"
+    ACT = "moderation.act"
+    DELETE = "moderation.delete"
 
 
-rules.add_perm(InvitePermission.CREATE, can_manage_invite)
-rules.add_perm(InvitePermission.READ, is_recipient | is_sender | can_manage_invite)
-rules.add_perm(InvitePermission.UPDATE, can_manage_invite)
-rules.add_perm(InvitePermission.DELETE, can_manage_invite)
-rules.add_perm(InvitePermission.ACCEPT, is_recipient)
-rules.add_perm(InvitePermission.REJECT, is_recipient)
+rules.add_perm(ModerationPermission.CREATE, is_authenticated)
+rules.add_perm(ModerationPermission.READ, is_reporter | is_staff | is_admin)
+rules.add_perm(ModerationPermission.REVIEW, is_staff | is_admin)
+rules.add_perm(ModerationPermission.ACT, is_staff | is_admin)
+rules.add_perm(ModerationPermission.DELETE, is_admin)

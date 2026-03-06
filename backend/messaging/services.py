@@ -3,16 +3,13 @@ from django.db import IntegrityError
 from backend.messaging.models import Message
 from backend.account.models import User
 from backend.room.models import Room
-from backend.access.models import Participant
-
 from backend.core.forms import MessageForm
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,
     ConflictException,
 )
-from backend.access.services import RoleService
-from backend.access.enums import PermissionCode
+from backend.messaging.rules.permissions import MessagingPermission
 
 
 class MessageService:
@@ -40,9 +37,7 @@ class MessageService:
             FormValidationException: If form validation fails
             ConflictException: If message creation conflicts
         """
-        participant = Participant.objects.filter(user=user, room=room).first()
-
-        if participant is None:
+        if not user.has_perm(MessagingPermission.CREATE, room):
             raise PermissionException(
                 "You must be a participant of the room to send messages."
             )
@@ -90,7 +85,7 @@ class MessageService:
             FormValidationException: If form validation fails
             ConflictException: If update conflicts
         """
-        if message.author != user:
+        if not user.has_perm(MessagingPermission.UPDATE, message):
             raise PermissionException("You can only edit your own messages.")
 
         data = {
@@ -132,14 +127,10 @@ class MessageService:
         Raises:
             PermissionException: If user doesn't have permission to delete the message
         """
-        # User can delete their own messages or must have ROOM_DELETE_MESSAGE permission
-        if message.author != user:
-            if not RoleService.has_permission(
-                user, message.room, PermissionCode.ROOM_DELETE_MESSAGE
-            ):
-                raise PermissionException(
-                    "You don't have permission to delete this message."
-                )
+        if not user.has_perm(MessagingPermission.DELETE, message):
+            raise PermissionException(
+                "You don't have permission to delete this message."
+            )
 
         message.delete()
         return True

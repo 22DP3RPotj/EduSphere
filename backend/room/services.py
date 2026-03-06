@@ -13,7 +13,8 @@ from backend.core.exceptions import (
     ConflictException,
 )
 from backend.access.services import RoleService
-from backend.access.enums import RoleCode, PermissionCode
+from backend.access.enums import RoleCode
+from backend.room.rules.permissions import RoomPermission
 
 
 class RoomService:
@@ -125,7 +126,7 @@ class RoomService:
             FormValidationException: If form validation fails
             ConflictException: If update conflicts
         """
-        if not RoleService.has_permission(user, room, PermissionCode.ROOM_UPDATE):
+        if not user.has_perm(RoomPermission.UPDATE, room):
             raise PermissionException(
                 "You don't have the permission to update this room."
             )
@@ -177,7 +178,7 @@ class RoomService:
             PermissionException: If user doesn't have permission
             ConflictException: If deletion conflicts
         """
-        if not RoleService.has_permission(user, room, PermissionCode.ROOM_DELETE):
+        if not user.has_perm(RoomPermission.DELETE, room):
             raise PermissionException(
                 "You don't have the permission to delete this room."
             )

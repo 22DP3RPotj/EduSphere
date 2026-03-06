@@ -20,6 +20,7 @@ from backend.core.exceptions import (
     PermissionException,
     ConflictException,
 )
+from backend.moderation.rules.permissions import ModerationPermission
 
 _ACTION_TO_STATUS = {
     ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,
@@ -156,7 +157,7 @@ class ReportService:
         Raises:
             PermissionException: If user is not staff or superuser
         """
-        if not (moderator.is_staff or moderator.is_superuser):
+        if not moderator.has_perm(ModerationPermission.ACT, case):
             raise PermissionException("Only moderators can take case actions.")
         try:
             with transaction.atomic():
@@ -185,7 +186,7 @@ class ReportService:
         Raises:
             PermissionException: If user is not staff or superuser
         """
-        if not (moderator.is_staff or moderator.is_superuser):
+        if not moderator.has_perm(ModerationPermission.REVIEW, case):
             raise PermissionException("Only moderators can update case status.")
 
         case.status = CaseStatusChoices.UNDER_REVIEW

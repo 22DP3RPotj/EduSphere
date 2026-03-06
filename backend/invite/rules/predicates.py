@@ -2,6 +2,7 @@ from rules.predicates import predicate
 from backend.access.enums import PermissionCode
 from backend.access.services import RoleService
 from backend.invite.models import Invite
+from backend.room.models import Room
 from backend.account.models import User
 
 
@@ -19,4 +20,11 @@ def is_recipient(user: User, invite: Invite) -> bool:
 def can_manage_invite(user: User, invite: Invite) -> bool:
     return RoleService.has_permission(
         user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
+    )
+
+
+@predicate
+def can_manage_participants(user: User, room: Room) -> bool:
+    return RoleService.has_permission(
+        user, room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
     )

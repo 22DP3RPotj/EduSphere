@@ -16,8 +16,7 @@ from backend.core.exceptions import (
     ConflictException,
     ValidationException,
 )
-from backend.access.services import RoleService
-from backend.access.enums import PermissionCode
+from backend.invite.rules.permissions import InvitePermission
 
 
 class InviteService:
@@ -60,14 +59,7 @@ class InviteService:
             ConflictException: If invite creation conflicts
             FormValidationException: If form validation fails
         """
-        if not Participant.objects.filter(user=inviter, room=room).exists():
-            raise PermissionException(
-                "You must be a participant of the room to send invites."
-            )
-
-        if not RoleService.has_permission(
-            inviter, room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
-        ):
+        if not inviter.has_perm(InvitePermission.CREATE, room):
             raise PermissionException(
                 "You don't have permission to invite users to this room."
             )
@@ -126,7 +118,7 @@ class InviteService:
             ValidationException: If invite is not pending
             ConflictException: If user is already a participant
         """
-        if invite.invitee != user:
+        if not user.has_perm(InvitePermission.ACCEPT, invite):
             raise PermissionException("You can only accept invites sent to you.")
 
         if invite.status != Invite.Status.PENDING:
@@ -166,7 +158,7 @@ class InviteService:
             PermissionException: If user is not the invitee
             ValidationException: If invite is not pending
         """
-        if invite.invitee != user:
+        if not user.has_perm(InvitePermission.REJECT, invite):
             raise PermissionException("You can only decline invites sent to you.")
 
         if invite.status != Invite.Status.PENDING:
@@ -195,9 +187,7 @@ class InviteService:
             PermissionException: If user is not the inviter
             ValidationException: If invite is not pending
         """
-        if not RoleService.has_permission(
-            user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
-        ):
+        if not user.has_perm(InvitePermission.DELETE, invite):
             raise PermissionException(
                 "You don't have permission to cancel invites for this room."
             )
@@ -228,9 +218,7 @@ class InviteService:
             ValidationException: If invite is already resolved (accepted or declined)
         """
 
-        if not RoleService.has_permission(
-            user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
-        ):
+        if not user.has_perm(InvitePermission.UPDATE, invite):
             raise PermissionException(
                 "You don't have permission to resend invites for this room."
             )

@@ -8,4 +8,4 @@ class RoomConfig(AppConfig):
     verbose_name = "Room Management"
 
     def ready(self):
-        import backend.access.rules.permissions as _  # noqa
+        import backend.room.rules.permissions as _  # noqa

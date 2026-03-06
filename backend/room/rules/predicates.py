@@ -7,7 +7,7 @@ from backend.access.enums import PermissionCode
 
 @predicate
 def is_participant(user: User, room: Room) -> bool:
-    return room.participants.filter(user=user).exists()
+    return room.memberships.filter(user=user).exists()
 
 
 @predicate

@@ -195,8 +195,6 @@ GRAPHENE = {
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
         "backend.infra.middleware.PrometheusMiddleware",
-        # TODO: Proper validation
-        # "backend.graphql.middleware.ValidationMiddleware",
     ],
 }
 
@@ -211,6 +209,8 @@ GRAPHQL_JWT = {
     "JWT_BLACKLIST_AFTER_ROTATION": True,
     "JWT_CSRF_ROTATION": True,
 }
+
+GRAPHQL_MAX_DEPTH = env.int("GRAPHQL_MAX_DEPTH", default=10)
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"  # TODO: "Strict"
@@ -247,42 +247,16 @@ DATABASES = {
     )
 }
 
-
-REDIS_HOST = env("REDIS_HOST", default="localhost")
-REDIS_PORT = env.int("REDIS_PORT", default=6379)
-REDIS_DB = env.int("REDIS_DB", default=0)
-
-# Celery Configuration
-CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
-CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
-CELERY_TIMEZONE = "UTC"
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-
-
-CELERY_BEAT_SCHEDULE = {
-    "cleanup_old_audit_logs": {
-        "task": "backend.core.tasks.cleanup_old_audit_logs",
-        "schedule": crontab(hour=3, minute=0),
-    },
-    "expire_user_bans": {
-        "task": "backend.account.tasks.expire_user_bans",
-        "schedule": crontab(minute=0),
-    },
-}
-
-SERVER_PORT = env.int("SERVER_PORT", default=8000)
-SERVER_HOST = env("SERVER_HOST", default="127.0.0.1")
-
-AUDIT_LOG_RETENTION_DAYS = env.int("AUDIT_LOG_RETENTION_DAYS", default=90)
-AUDIT_LOG_BATCH_SIZE = env.int("AUDIT_LOG_BATCH_SIZE", default=2000)
-
+# Redis Streams
 REDIS_STREAMS = {
     "MAX_STREAM_LENGTH": 10000,
     "MESSAGE_TTL": 86400,
     "CONSUMER_TIMEOUT": 300,
 }
+
+REDIS_HOST = env("REDIS_HOST", default="localhost")
+REDIS_PORT = env.int("REDIS_PORT", default=6379)
+REDIS_DB = env.int("REDIS_DB", default=0)
 
 CHANNEL_LAYERS = {
     "default": {
@@ -298,9 +272,38 @@ CHANNEL_LAYERS = {
     },
 }
 
-# TODO: group settings
+
+# Celery
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+CELERY_TIMEZONE = "UTC"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+CELERY_BEAT_SCHEDULE = {
+    "cleanup_old_audit_logs": {
+        "task": "backend.core.tasks.cleanup_old_audit_logs",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "expire_user_bans": {
+        "task": "backend.account.tasks.expire_user_bans",
+        "schedule": crontab(minute=0),
+    },
+}
+
+# Server
+SERVER_PORT = env.int("SERVER_PORT", default=8000)
+SERVER_HOST = env("SERVER_HOST", default="127.0.0.1")
+
+# Audit log
+AUDIT_LOG_RETENTION_DAYS = env.int("AUDIT_LOG_RETENTION_DAYS", default=90)
+AUDIT_LOG_BATCH_SIZE = env.int("AUDIT_LOG_BATCH_SIZE", default=2000)
+
+# Messaging
 MAX_MESSAGES_PER_SEC = 0
 
+# File upload
 MAX_FILE_SIZE_MB = 10
 
 # Password validation

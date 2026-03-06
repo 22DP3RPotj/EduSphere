@@ -20,6 +20,7 @@ from backend.moderation.choices import ActionChoices
 from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room
 from backend.account.models import User
+from backend.messaging.models import Message
 from backend.moderation.services import ReportService
 
 
@@ -41,9 +42,10 @@ class CreateReport(graphene.Mutation):
         reason_id: uuid.UUID,
         description: str,
     ):
-        model_map: dict[str, Union[type[Room], type[User]]] = {
+        model_map: dict[str, Union[type[Room], type[User], type[Message]]] = {
             ReportTargetTypeEnum.ROOM: Room,
             ReportTargetTypeEnum.USER: User,
+            ReportTargetTypeEnum.MESSAGE: Message,
         }
         TargetModel = model_map[target_type]
 

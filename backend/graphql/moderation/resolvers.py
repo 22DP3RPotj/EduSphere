@@ -5,7 +5,7 @@ from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Count, Q
 
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
@@ -19,6 +19,7 @@ from backend.graphql.moderation.types import (
 from backend.moderation.choices import CaseStatusChoices
 from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room
+from backend.messaging.models import Message
 
 
 class ReportQuery(graphene.ObjectType):
@@ -108,13 +109,12 @@ class ReportQuery(graphene.ObjectType):
         info: graphene.ResolveInfo,
         target_type: Optional[ReportTargetTypeEnum] = None,
     ) -> QuerySet[ReportReason]:
-        from django.db.models import Count, Q
-
         queryset = ReportReason.objects.filter(is_active=True)
         if target_type is not None:
             model_map = {
                 ReportTargetTypeEnum.ROOM: Room,
                 ReportTargetTypeEnum.USER: User,
+                ReportTargetTypeEnum.MESSAGE: Message,
             }
             model = model_map.get(target_type)
             if model is not None:

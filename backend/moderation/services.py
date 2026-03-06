@@ -12,6 +12,7 @@ from backend.moderation.models import (
     ReportReason,
 )
 from backend.room.models import Room
+from backend.messaging.models import Message
 from backend.access.models import Participant
 from backend.core.forms import ReportForm
 from backend.core.exceptions import (
@@ -39,6 +40,11 @@ class ReportService:
             if not Participant.objects.filter(user=reporter, room=target).exists():
                 raise PermissionException(
                     "You must be a participant of the room to report it."
+                )
+        elif isinstance(target, Message):
+            if not Participant.objects.filter(user=reporter, room=target.room).exists():
+                raise PermissionException(
+                    "You must be a participant of the room to report a message in it."
                 )
         # For User targets (and any future model) any authenticated reporter is allowed.
 

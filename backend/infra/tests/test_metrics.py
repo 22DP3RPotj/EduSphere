@@ -27,10 +27,8 @@ def test_graphql_middleware_updates_metrics(client):
 
     query = """
     query TestQuery {
-        __schema {
-            queryType {
-                name
-            }
+        authStatus {
+            isAuthenticated
         }
     }
     """
@@ -43,7 +41,7 @@ def test_graphql_middleware_updates_metrics(client):
     before = (
         REGISTRY.get_sample_value(
             "graphql_resolver_completed_total",
-            {"operation_type": "query", "field": "Query.__schema"},
+            {"operation_type": "query", "field": "Query.authStatus"},
         )
         or 0.0
     )
@@ -58,7 +56,7 @@ def test_graphql_middleware_updates_metrics(client):
 
     after = REGISTRY.get_sample_value(
         "graphql_resolver_completed_total",
-        {"operation_type": "query", "field": "Query.__schema"},
+        {"operation_type": "query", "field": "Query.authStatus"},
     )
 
     assert after is not None

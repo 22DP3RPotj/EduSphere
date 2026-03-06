@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Q, CheckConstraint
 from django.db.models.functions import Lower
 
-from backend.room.choices import RoomVisibility
+from backend.room.choices import VisibilityChoices
 
 
 class Topic(models.Model):
@@ -35,7 +35,7 @@ class Topic(models.Model):
 
 
 class Room(models.Model):
-    Visibility = RoomVisibility
+    Visibility = VisibilityChoices
 
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     host = models.ForeignKey(

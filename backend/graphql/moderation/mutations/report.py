@@ -15,7 +15,7 @@ from backend.graphql.moderation.types import (
     ReportStatusEnum,
     ReportTargetTypeEnum,
 )
-from backend.moderation.choices import ReportStatus
+from backend.moderation.choices import CaseStatusChoices
 from backend.moderation.models import Report, ReportReason
 from backend.room.models import Room
 from backend.account.models import User
@@ -87,7 +87,7 @@ class UpdateReport(graphene.Mutation):
         self,
         info: graphene.ResolveInfo,
         report_id: uuid.UUID,
-        status: Optional[ReportStatus] = None,
+        status: Optional[CaseStatusChoices] = None,
         moderator_note: Optional[str] = None,
     ):
         try:
@@ -103,7 +103,7 @@ class UpdateReport(graphene.Mutation):
                 report=report,
                 new_status=status
                 if status is not None
-                else ReportStatus(report.status),
+                else CaseStatusChoices(report.status),
                 moderator_note=moderator_note,
             )
         except PermissionException as e:

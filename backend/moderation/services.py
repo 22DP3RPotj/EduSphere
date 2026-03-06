@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from django.db.models import Model
 
 from backend.account.models import User
-from backend.moderation.choices import ReportStatus
+from backend.moderation.choices import CaseStatusChoices
 from backend.moderation.models import Report, ReportReason
 from backend.room.models import Room
 from backend.access.models import Participant
@@ -96,7 +96,7 @@ class ReportService:
     def update_report_status(
         moderator: User,
         report: Report,
-        new_status: ReportStatus,
+        new_status: CaseStatusChoices,
         moderator_note: Optional[str] = None,
     ) -> Report:
         """

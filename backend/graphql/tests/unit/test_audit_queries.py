@@ -7,8 +7,8 @@ from graphql_jwt.testcases import JSONWebTokenTestCase
 from backend.access.models import Role
 from backend.invite.models import Invite
 from backend.room.models import Room
-from backend.room.choices import RoomVisibility
-from backend.invite.choices import InviteStatus
+from backend.room.choices import VisibilityChoices
+from backend.invite.choices import InviteStatusChoices
 
 pytestmark = pytest.mark.unit
 
@@ -61,11 +61,11 @@ class AuditQueryTests(JSONWebTokenTestCase):
                 host=self.user,
                 name="Audit Room",
                 description="Initial",
-                visibility=RoomVisibility.PUBLIC,
+                visibility=VisibilityChoices.PUBLIC,
             )
             # Update to trigger history
             room.name = "Audit Room Updated"
-            room.visibility = RoomVisibility.PRIVATE
+            room.visibility = VisibilityChoices.PRIVATE
             room.save()
 
         query = """
@@ -97,7 +97,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
         # Verify the latest update
         latest = data[-1]["node"]
         self.assertEqual(latest["name"], "Audit Room Updated")
-        self.assertEqual(latest["visibility"], RoomVisibility.PRIVATE)
+        self.assertEqual(latest["visibility"], VisibilityChoices.PRIVATE)
         self.assertEqual(latest["actor"]["username"], self.user.username)
         self.assertEqual(str(latest["pghObjId"]), str(room.id))
 
@@ -173,7 +173,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
             )
 
             # Update status
-            invite.status = InviteStatus.ACCEPTED
+            invite.status = InviteStatusChoices.ACCEPTED
             invite.save()
 
         # Use literal enum value to avoid type issues with variables

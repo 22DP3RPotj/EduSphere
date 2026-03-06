@@ -15,7 +15,7 @@ from backend.graphql.moderation.types import (
     ReportStatusEnum,
     ReportTargetTypeEnum,
 )
-from backend.moderation.choices import ReportStatus
+from backend.moderation.choices import CaseStatusChoices
 from backend.moderation.models import Report, ReportReason
 from backend.room.models import Room
 
@@ -70,7 +70,7 @@ class ReportQuery(graphene.ObjectType):
     def resolve_reports(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[ReportStatus] = None,
+        status: Optional[CaseStatusChoices] = None,
         reason_id: Optional[uuid.UUID] = None,
         user_id: Optional[uuid.UUID] = None,
     ) -> QuerySet[Report]:
@@ -91,7 +91,7 @@ class ReportQuery(graphene.ObjectType):
     def resolve_report_count(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[ReportStatus] = None,
+        status: Optional[CaseStatusChoices] = None,
         reason_id: Optional[uuid.UUID] = None,
         user_id: Optional[uuid.UUID] = None,
     ) -> int:

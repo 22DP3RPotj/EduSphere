@@ -4,11 +4,11 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
-from backend.invite.choices import InviteStatus
+from backend.invite.choices import InviteStatusChoices
 
 
 class Invite(models.Model):
-    Status = InviteStatus
+    Status = InviteStatusChoices
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey(

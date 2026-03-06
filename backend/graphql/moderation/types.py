@@ -1,13 +1,20 @@
 import graphene
 from graphene_django import DjangoObjectType
 
-from backend.core.models import CoreEvent
-from backend.moderation.models import Report, ReportHistory, ReportReason
+from backend.moderation.choices import ActionChoices, CaseStatusChoices
+from backend.moderation.models import (
+    ModerationAction,
+    ModerationCase,
+    Report,
+    ReportHistory,
+    ReportReason,
+)
 from backend.graphql.room.types import RoomType
 from backend.graphql.account.types import UserType
 
 
-ReportStatusEnum = graphene.Enum.from_enum(Report.Status)
+CaseStatusEnum = graphene.Enum.from_enum(CaseStatusChoices)
+ActionEnum = graphene.Enum.from_enum(ActionChoices)
 
 
 class ReportTargetTypeEnum(graphene.Enum):
@@ -39,24 +46,47 @@ class ReportTargetType(graphene.Union):
 
 class ReportType(DjangoObjectType):
     reason = graphene.Field(ReportReasonType, required=True)
-    status = graphene.Field(ReportStatusEnum, required=True)
+    reporter = graphene.Field("backend.graphql.account.types.UserType")
     target = graphene.Field(ReportTargetType)
-
-    user = graphene.Field("backend.graphql.account.types.UserType", required=True)
-    moderator = graphene.Field("backend.graphql.account.types.UserType")
 
     class Meta:
         model = Report
         fields = (
             "id",
-            "user",
-            "body",
+            "reporter",
+            "description",
             "reason",
+            "case",
+            "created_at",
+        )
+
+    def resolve_target(self, info: graphene.ResolveInfo):
+        return self.content_object
+
+
+class ModerationActionType(DjangoObjectType):
+    action = graphene.Field(ActionEnum, required=True)
+    moderator = graphene.Field("backend.graphql.account.types.UserType")
+
+    class Meta:
+        model = ModerationAction
+        fields = ("id", "action", "note", "moderator", "created_at")
+
+
+class ModerationCaseType(DjangoObjectType):
+    status = graphene.Field(CaseStatusEnum, required=True)
+    target = graphene.Field(ReportTargetType)
+
+    class Meta:
+        model = ModerationCase
+        fields = (
+            "id",
             "status",
-            "moderator_note",
-            "moderator",
+            "priority",
             "created_at",
             "updated_at",
+            "reports",
+            "actions",
         )
 
     def resolve_target(self, info: graphene.ResolveInfo):
@@ -70,22 +100,10 @@ class ReportHistoryType(DjangoObjectType):
         model = ReportHistory
         fields = (
             "actor_id",
-            "body",
+            "description",
             "reason",
-            "status",
-            "moderator_note",
-            "moderator",
+            "case",
         )
 
     def resolve_actor_id(self, info: graphene.ResolveInfo):
         return self.pgh_context.metadata.get("user", None)
-
-
-class CoreEventType(DjangoObjectType):
-    class Meta:
-        model = CoreEvent
-        fields = (
-            "user",
-            "url",
-            "remote_addr",
-        )

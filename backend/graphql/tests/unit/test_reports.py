@@ -8,23 +8,34 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from backend.access.models import Participant, Role
-from backend.moderation.models import Report, ReportReason
+from backend.moderation.choices import CaseStatusChoices
+from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room, Topic
 
 User = get_user_model()
 
 
-def make_report(
-    user, target, reason, body="Test report body", status=Report.Status.PENDING
-):
+def make_case(target):
     ct = ContentType.objects.get_for_model(target)
+    case, _ = ModerationCase.objects.get_or_create(
+        content_type=ct,
+        object_id=target.pk,
+        status=CaseStatusChoices.PENDING,
+    )
+    return case
+
+
+def make_report(user, target, reason, description="Test report description", case=None):
+    ct = ContentType.objects.get_for_model(target)
+    if case is None:
+        case = make_case(target)
     return Report.objects.create(
-        user=user,
+        reporter=user,
         content_type=ct,
         object_id=target.pk,
         reason=reason,
-        body=body,
-        status=status,
+        description=description,
+        case=case,
     )
 
 
@@ -75,19 +86,18 @@ class ReportMutationsTests(JSONWebTokenTestCase):
             $targetType: ReportTargetTypeEnum!
             $targetId: UUID!
             $reasonId: UUID!
-            $body: String!
+            $description: String!
         ) {
             createReport(
                 targetType: $targetType
                 targetId: $targetId
                 reasonId: $reasonId
-                body: $body
+                description: $description
             ) {
                 report {
                     id
                     reason { slug }
-                    status
-                    body
+                    description
                 }
             }
         }
@@ -101,13 +111,13 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "targetType": "ROOM",
                 "targetId": str(self.room.id),
                 "reasonId": str(self.reason_spam.id),
-                "body": "This room contains spam",
+                "description": "This room contains spam",
             },
         )
         self.assertIsNone(result.errors)
         data = result.data["createReport"]["report"]
         self.assertEqual(data["reason"]["slug"], "spam")
-        self.assertEqual(data["status"], "PENDING")
+        self.assertEqual(data["description"], "This room contains spam")
 
     def test_create_report_user_success(self):
         self.client.authenticate(self.user)
@@ -117,7 +127,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "targetType": "USER",
                 "targetId": str(self.host.id),
                 "reasonId": str(self.reason_harassment.id),
-                "body": "Harassment by this user",
+                "description": "Harassment by this user",
             },
         )
         self.assertIsNone(result.errors)
@@ -137,14 +147,15 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "targetType": "ROOM",
                 "targetId": str(self.room.id),
                 "reasonId": str(self.reason_spam.id),
-                "body": "Test report",
+                "description": "Test report",
             },
         )
         self.assertIsNotNone(result.errors)
         self.assertEqual(result.errors[0].extensions["code"], "PERMISSION_DENIED")
 
     def test_create_report_already_reported(self):
-        make_report(self.user, self.room, self.reason_spam, "Existing report")
+        case = make_case(self.room)
+        make_report(self.user, self.room, self.reason_spam, case=case)
 
         self.client.authenticate(self.user)
         result: ExecutionResult = self.client.execute(
@@ -153,7 +164,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "targetType": "ROOM",
                 "targetId": str(self.room.id),
                 "reasonId": str(self.reason_harassment.id),
-                "body": "Another report",
+                "description": "Another report",
             },
         )
         self.assertIsNotNone(result.errors)
@@ -169,23 +180,27 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "targetType": "ROOM",
                 "targetId": str(self.room.id),
                 "reasonId": str(uuid.uuid4()),
-                "body": "Test",
+                "description": "Test",
             },
         )
         self.assertIsNotNone(result.errors)
         self.assertEqual(result.errors[0].extensions["code"], "NOT_FOUND")
 
-    def test_update_report_as_moderator(self):
-        report = make_report(self.user, self.room, self.reason_spam)
+    def test_take_case_action_as_moderator(self):
+        case = make_case(self.room)
+        make_report(self.user, self.room, self.reason_spam, case=case)
 
         self.client.authenticate(self.moderator)
         mutation = """
-            mutation UpdateReport($reportId: UUID!, $status: ReportStatus, $moderatorNote: String) {
-                updateReport(reportId: $reportId, status: $status, moderatorNote: $moderatorNote) {
-                    report {
+            mutation TakeCaseAction($caseId: UUID!, $action: ActionChoices!, $note: String) {
+                takeCaseAction(caseId: $caseId, action: $action, note: $note) {
+                    case {
                         status
-                        moderatorNote
-                        moderator { username }
+                        actions {
+                            action
+                            note
+                            moderator { username }
+                        }
                     }
                 }
             }
@@ -193,16 +208,39 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(
             mutation,
             {
-                "reportId": str(report.id),
-                "status": "RESOLVED",
-                "moderatorNote": "Issue resolved",
+                "caseId": str(case.id),
+                "action": "WARNING",
+                "note": "First warning issued",
             },
         )
         self.assertIsNone(result.errors)
-        data = result.data["updateReport"]["report"]
+        data = result.data["takeCaseAction"]["case"]
         self.assertEqual(data["status"], "RESOLVED")
-        self.assertEqual(data["moderatorNote"], "Issue resolved")
-        self.assertEqual(data["moderator"]["username"], "moderator")
+        self.assertEqual(len(data["actions"]), 1)
+        self.assertEqual(data["actions"][0]["action"], "WARNING")
+        self.assertEqual(data["actions"][0]["note"], "First warning issued")
+        self.assertEqual(data["actions"][0]["moderator"]["username"], "moderator")
+
+    def test_set_case_under_review_as_moderator(self):
+        case = make_case(self.room)
+
+        self.client.authenticate(self.moderator)
+        mutation = """
+            mutation SetCaseUnderReview($caseId: UUID!) {
+                setCaseUnderReview(caseId: $caseId) {
+                    case {
+                        status
+                    }
+                }
+            }
+        """
+        result: ExecutionResult = self.client.execute(
+            mutation, {"caseId": str(case.id)}
+        )
+        self.assertIsNone(result.errors)
+        self.assertEqual(
+            result.data["setCaseUnderReview"]["case"]["status"], "UNDER_REVIEW"
+        )
 
     def test_delete_report_as_moderator(self):
         report = make_report(self.user, self.room, self.reason_spam)
@@ -218,6 +256,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(
             mutation, {"reportId": str(report.id)}
         )
+
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["deleteReport"]["success"])
         self.assertFalse(Report.objects.filter(id=report.id).exists())
@@ -259,11 +298,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
             self.user, self.room, self.reason_spam, "First report"
         )
         self.report2 = make_report(
-            self.user,
-            self.host,
-            self.reason_harassment,
-            "Second report",
-            status=Report.Status.RESOLVED,
+            self.user, self.host, self.reason_harassment, "Second report"
         )
 
     def test_submitted_reports(self):
@@ -272,8 +307,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
             query {
                 submittedReports {
                     reason { slug }
-                    body
-                    status
+                    description
                 }
             }
         """
@@ -287,7 +321,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
             query GetReport($reportId: UUID!) {
                 report(reportId: $reportId) {
                     reason { slug }
-                    body
+                    description
                 }
             }
         """
@@ -303,7 +337,7 @@ class ReportQueryTests(JSONWebTokenTestCase):
             query {
                 reports {
                     reason { slug }
-                    status
+                    description
                 }
             }
         """

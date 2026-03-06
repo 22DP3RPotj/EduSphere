@@ -76,9 +76,11 @@ class MessageForm(ModelForm):
 
 
 class ReportForm(ModelForm):
+    description = forms.CharField(min_length=10)
+
     class Meta:
         model = Report
-        fields = ("body",)
+        fields = ("description",)
 
 
 class InviteForm(ModelForm):

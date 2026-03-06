@@ -6,7 +6,8 @@ pytestmark = [pytest.mark.unit, pytest.mark.services, pytest.mark.error_handling
 
 from backend.core.exceptions import PermissionException
 from backend.invite.services import InviteService
-from backend.moderation.models import Report, ReportReason
+from backend.moderation.choices import ActionChoices
+from backend.moderation.models import ReportReason
 from backend.moderation.services import ReportService
 from backend.core.tests.service_base import ServiceTestBase
 
@@ -22,7 +23,7 @@ class ErrorHandlingTests(ServiceTestBase):
         result = InviteService.get_invite_by_token(uuid.uuid4())
         self.assertIsNone(result)
 
-    def test_update_report_non_moderator_fails(self):
+    def test_take_case_action_non_moderator_fails(self):
         self._add_member(self.member, self.member_role)
         reason, _ = ReportReason.objects.get_or_create(
             slug="spam", defaults={"label": "Spam"}
@@ -31,12 +32,12 @@ class ErrorHandlingTests(ServiceTestBase):
             reporter=self.member,
             target=self.room,
             reason=reason,
-            body="Test",
+            description="Test report content",
         )
 
         with self.assertRaises(PermissionException):
-            ReportService.update_report_status(
+            ReportService.take_case_action(
                 moderator=self.other_user,
-                report=report,
-                new_status=Report.Status.UNDER_REVIEW,
+                case=report.case,
+                action=ActionChoices.WARNING,
             )

@@ -166,7 +166,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_create_room_success(self):
         self.client.authenticate(self.user)
         mutation = """
-            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: RoomVisibility!) {
+            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: VisibilityChoices!) {
                 createRoom(name: $name, topicNames: $topicNames, description: $description, visibility: $visibility) {
                     room {
                         id
@@ -194,7 +194,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_create_room_private(self):
         self.client.authenticate(self.user)
         mutation = """
-            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: RoomVisibility!) {
+            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: VisibilityChoices!) {
                 createRoom(name: $name, topicNames: $topicNames, description: $description, visibility: $visibility) {
                     room {
                         visibility
@@ -237,7 +237,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
 
         self.client.authenticate(self.user)
         mutation = """
-            mutation UpdateRoom($roomId: UUID!, $name: String, $description: String, $visibility: RoomVisibility) {
+            mutation UpdateRoom($roomId: UUID!, $name: String, $description: String, $visibility: VisibilityChoices) {
                 updateRoom(roomId: $roomId, name: $name, description: $description, visibility: $visibility) {
                     room {
                         name

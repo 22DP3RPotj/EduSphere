@@ -10,7 +10,11 @@ from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
-from backend.moderation.models import Report, ReportReason
+from backend.moderation.choices import ActionChoices, CaseStatusChoices
+from backend.moderation.models import (
+    ModerationAction,
+    ReportReason,
+)
 from backend.moderation.services import ReportService
 from backend.core.tests.service_base import ServiceTestBase
 
@@ -36,13 +40,14 @@ class ReportServiceTest(ServiceTestBase):
             reporter=self.member,
             target=self.room,
             reason=self.reason_spam,
-            body="This room contains inappropriate content",
+            description="This room contains inappropriate content",
         )
 
-        self.assertEqual(report.user, self.member)
+        self.assertEqual(report.reporter, self.member)
         self.assertEqual(report.content_object, self.room)
         self.assertEqual(report.reason, self.reason_spam)
-        self.assertEqual(report.status, Report.Status.PENDING)
+        self.assertIsNotNone(report.case)
+        self.assertEqual(report.case.status, CaseStatusChoices.PENDING)
 
     def test_create_report_not_participant(self):
         with self.assertRaises(PermissionException):
@@ -50,10 +55,10 @@ class ReportServiceTest(ServiceTestBase):
                 reporter=self.other_user,
                 target=self.room,
                 reason=self.reason_spam,
-                body="Spam",
+                description="Spam",
             )
 
-    def test_create_report_invalid_body(self):
+    def test_create_report_invalid_description(self):
         self._add_member(self.member, self.member_role)
 
         with self.assertRaises((ValidationException, FormValidationException)):
@@ -61,7 +66,7 @@ class ReportServiceTest(ServiceTestBase):
                 reporter=self.member,
                 target=self.room,
                 reason=self.reason_spam,
-                body="",
+                description="",
             )
 
     def test_create_report_active_exists(self):
@@ -71,7 +76,7 @@ class ReportServiceTest(ServiceTestBase):
             reporter=self.member,
             target=self.room,
             reason=self.reason_spam,
-            body="First report",
+            description="First report",
         )
 
         with self.assertRaises(ConflictException):
@@ -79,8 +84,27 @@ class ReportServiceTest(ServiceTestBase):
                 reporter=self.member,
                 target=self.room,
                 reason=self.reason_spam,
-                body="Second report",
+                description="Second report",
             )
+
+    def test_create_report_reuses_active_case(self):
+        """Two reports on the same target share the same ModerationCase."""
+        self._add_member(self.member, self.member_role)
+
+        report1 = ReportService.create_report(
+            reporter=self.member,
+            target=self.room,
+            reason=self.reason_spam,
+            description="First reporter",
+        )
+        report2 = ReportService.create_report(
+            reporter=self.other_user,
+            target=self.room,
+            reason=self.reason_harassment,
+            description="Second reporter",
+        )
+
+        self.assertEqual(report1.case, report2.case)
 
     # --- User target tests ---
 
@@ -89,10 +113,10 @@ class ReportServiceTest(ServiceTestBase):
             reporter=self.member,
             target=self.other_user,
             reason=self.reason_harassment,
-            body="Harassing other users",
+            description="Harassing other users",
         )
 
-        self.assertEqual(report.user, self.member)
+        self.assertEqual(report.reporter, self.member)
         self.assertEqual(report.content_object, self.other_user)
         self.assertEqual(report.reason, self.reason_harassment)
 
@@ -102,7 +126,7 @@ class ReportServiceTest(ServiceTestBase):
             reporter=self.other_user,
             target=self.member,
             reason=self.reason_spam,
-            body="Suspicious user",
+            description="Suspicious user",
         )
         self.assertIsNotNone(report.pk)
 
@@ -119,7 +143,7 @@ class ReportServiceTest(ServiceTestBase):
                 reporter=self.member,
                 target=self.room,
                 reason=inactive,
-                body="Test",
+                description="Test",
             )
 
     def test_create_report_reason_wrong_content_type(self):
@@ -139,99 +163,100 @@ class ReportServiceTest(ServiceTestBase):
                 reporter=self.member,
                 target=self.room,
                 reason=user_only_reason,
-                body="Impersonation in room?",
+                description="Impersonation in room?",
             )
 
     # --- Moderator action tests ---
 
-    def test_update_report_status_success(self):
+    def test_take_case_action_resolves_case(self):
         self._add_member(self.member, self.member_role)
 
         report = ReportService.create_report(
             reporter=self.member,
             target=self.room,
             reason=self.reason_spam,
-            body="Test report",
+            description="Test report",
         )
+        case = report.case
 
-        updated = ReportService.update_report_status(
+        updated_case = ReportService.take_case_action(
             moderator=self.moderator,
-            report=report,
-            new_status=Report.Status.UNDER_REVIEW,
-            moderator_note="Reviewing this",
+            case=case,
+            action=ActionChoices.WARNING,
+            note="Warning issued",
         )
 
-        self.assertEqual(updated.status, Report.Status.UNDER_REVIEW)
-        self.assertEqual(updated.moderator, self.moderator)
-        self.assertEqual(updated.moderator_note, "Reviewing this")
+        self.assertEqual(updated_case.status, CaseStatusChoices.RESOLVED)
+        action = ModerationAction.objects.get(case=case)
+        self.assertEqual(action.action, ActionChoices.WARNING)
+        self.assertEqual(action.moderator, self.moderator)
+        self.assertEqual(action.note, "Warning issued")
 
-    def test_update_report_status_not_moderator(self):
+    def test_take_case_action_no_violation_dismisses(self):
         self._add_member(self.member, self.member_role)
 
         report = ReportService.create_report(
             reporter=self.member,
             target=self.room,
             reason=self.reason_spam,
-            body="Test report",
+            description="Test report",
+        )
+
+        updated_case = ReportService.take_case_action(
+            moderator=self.moderator,
+            case=report.case,
+            action=ActionChoices.NO_VIOLATION,
+        )
+
+        self.assertEqual(updated_case.status, CaseStatusChoices.DISMISSED)
+
+    def test_take_case_action_not_moderator(self):
+        self._add_member(self.member, self.member_role)
+
+        report = ReportService.create_report(
+            reporter=self.member,
+            target=self.room,
+            reason=self.reason_spam,
+            description="Test report",
         )
 
         with self.assertRaises(PermissionException):
-            ReportService.update_report_status(
+            ReportService.take_case_action(
                 moderator=self.other_user,
-                report=report,
-                new_status=Report.Status.RESOLVED,
+                case=report.case,
+                action=ActionChoices.WARNING,
             )
 
-    def test_resolve_report_success(self):
+    def test_set_case_under_review_success(self):
         self._add_member(self.member, self.member_role)
 
         report = ReportService.create_report(
             reporter=self.member,
             target=self.room,
             reason=self.reason_spam,
-            body="Test report",
+            description="Test report",
         )
 
-        resolved = ReportService.resolve_report(
+        updated_case = ReportService.set_case_under_review(
             moderator=self.moderator,
-            report=report,
-            moderator_note="Action taken",
+            case=report.case,
         )
 
-        self.assertEqual(resolved.status, Report.Status.RESOLVED)
+        self.assertEqual(updated_case.status, CaseStatusChoices.UNDER_REVIEW)
+        self.assertEqual(ModerationAction.objects.filter(case=report.case).count(), 0)
 
-    def test_dismiss_report_success(self):
+    def test_set_case_under_review_not_moderator(self):
         self._add_member(self.member, self.member_role)
 
         report = ReportService.create_report(
             reporter=self.member,
             target=self.room,
             reason=self.reason_spam,
-            body="Test report",
+            description="Test report",
         )
 
-        dismissed = ReportService.dismiss_report(
-            moderator=self.moderator,
-            report=report,
-            moderator_note="No action needed",
-        )
-
-        self.assertEqual(dismissed.status, Report.Status.DISMISSED)
-
-    def test_mark_under_review_success(self):
-        self._add_member(self.member, self.member_role)
-
-        report = ReportService.create_report(
-            reporter=self.member,
-            target=self.room,
-            reason=self.reason_spam,
-            body="Test report",
-        )
-
-        review = ReportService.mark_under_review(
-            moderator=self.moderator,
-            report=report,
-            moderator_note="Checking this",
-        )
-
-        self.assertEqual(review.status, Report.Status.UNDER_REVIEW)
+        with self.assertRaises(PermissionException):
+            ReportService.set_case_under_review(
+                moderator=self.other_user,
+                case=report.case,
+            )

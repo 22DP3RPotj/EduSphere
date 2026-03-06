@@ -7,7 +7,13 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from backend.core.constants import DELETED_USER
-from backend.moderation.models import Report, ReportReason
+from backend.moderation.choices import ActionChoices, CaseStatusChoices
+from backend.moderation.models import (
+    ModerationAction,
+    ModerationCase,
+    Report,
+    ReportReason,
+)
 from backend.room.models import Room
 
 User = get_user_model()
@@ -37,13 +43,6 @@ class ReportModelTest(TestCase):
             username="user",
             email="user@email.com",
         )
-        self.moderator = User.objects.create_user(
-            name="Moderator",
-            username="moderator",
-            email="moderator@email.com",
-            is_staff=True,
-            is_superuser=True,
-        )
         self.room = Room.objects.create(
             host=self.user,
             name="Test Room",
@@ -54,39 +53,28 @@ class ReportModelTest(TestCase):
             slug="spam", defaults={"label": "Spam"}
         )
         self.ct_room = ContentType.objects.get_for_model(Room)
+        self.case = ModerationCase.objects.create(
+            content_type=self.ct_room,
+            object_id=self.room.pk,
+            status=CaseStatusChoices.PENDING,
+        )
 
     def _make_report(self, **kwargs):
         defaults = dict(
-            user=self.user,
+            reporter=self.user,
             content_type=self.ct_room,
             object_id=self.room.pk,
             reason=self.reason,
-            body="Test report body",
-            status=Report.Status.PENDING,
+            description="Test report description",
+            case=self.case,
         )
         defaults.update(kwargs)
         return Report.objects.create(**defaults)
 
     def test_report_creation(self):
         report = self._make_report()
-        self.assertEqual(report.status, Report.Status.PENDING)
-        self.assertTrue(report.is_active_report)
         self.assertEqual(report.content_object, self.room)
-
-    def test_report_active_reports(self):
-        self._make_report()
-        reason2, _ = ReportReason.objects.get_or_create(
-            slug="harassment", defaults={"label": "Harassment"}
-        )
-        # Create a resolved report with a unique user so unique constraint is not hit
-        other_user = User.objects.create_user(
-            name="Other", username="other", email="other@email.com"
-        )
-        self._make_report(
-            user=other_user, reason=reason2, status=Report.Status.RESOLVED
-        )
-        active = Report.active_reports()
-        self.assertEqual(active.count(), 1)
+        self.assertEqual(report.case, self.case)
 
     def test_report_str(self):
         report = self._make_report()
@@ -95,6 +83,111 @@ class ReportModelTest(TestCase):
     def test_report_str_deleted_user(self):
         report = self._make_report()
         # Simulate on_delete=SET_NULL by bypassing full_clean via update()
-        Report.objects.filter(pk=report.pk).update(user=None)
+        Report.objects.filter(pk=report.pk).update(reporter=None)
         report.refresh_from_db()
         self.assertIn(DELETED_USER, str(report))
+
+
+class ModerationCaseModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            name="User",
+            username="user",
+            email="user@email.com",
+        )
+        self.room = Room.objects.create(
+            host=self.user,
+            name="Test Room",
+            description="",
+            visibility=Room.Visibility.PUBLIC,
+        )
+        self.ct_room = ContentType.objects.get_for_model(Room)
+
+    def test_case_creation(self):
+        case = ModerationCase.objects.create(
+            content_type=self.ct_room,
+            object_id=self.room.pk,
+            status=CaseStatusChoices.PENDING,
+        )
+        self.assertEqual(case.status, CaseStatusChoices.PENDING)
+
+    def test_unique_active_case_per_target(self):
+        from django.db import IntegrityError
+
+        ModerationCase.objects.create(
+            content_type=self.ct_room,
+            object_id=self.room.pk,
+            status=CaseStatusChoices.PENDING,
+        )
+        with self.assertRaises(IntegrityError):
+            ModerationCase.objects.create(
+                content_type=self.ct_room,
+                object_id=self.room.pk,
+                status=CaseStatusChoices.UNDER_REVIEW,
+            )
+
+    def test_resolved_case_allows_new_pending(self):
+        case = ModerationCase.objects.create(
+            content_type=self.ct_room,
+            object_id=self.room.pk,
+            status=CaseStatusChoices.PENDING,
+        )
+        case.status = CaseStatusChoices.RESOLVED
+        case.save()
+        # A new active case for the same target should now be allowed
+        new_case = ModerationCase.objects.create(
+            content_type=self.ct_room,
+            object_id=self.room.pk,
+            status=CaseStatusChoices.PENDING,
+        )
+        self.assertIsNotNone(new_case.pk)
+
+
+class ModerationActionModelTest(TestCase):
+    def setUp(self):
+        self.moderator = User.objects.create_user(
+            name="Moderator",
+            username="moderator",
+            email="moderator@email.com",
+            is_staff=True,
+        )
+        self.user = User.objects.create_user(
+            name="User",
+            username="user",
+            email="user@email.com",
+        )
+        self.room = Room.objects.create(
+            host=self.user,
+            name="Test Room",
+            description="",
+            visibility=Room.Visibility.PUBLIC,
+        )
+        self.ct_room = ContentType.objects.get_for_model(Room)
+        self.case = ModerationCase.objects.create(
+            content_type=self.ct_room,
+            object_id=self.room.pk,
+        )
+
+    def test_action_creation(self):
+        action = ModerationAction.objects.create(
+            case=self.case,
+            moderator=self.moderator,
+            action=ActionChoices.WARNING,
+            note="First warning issued",
+        )
+        self.assertEqual(action.action, ActionChoices.WARNING)
+        self.assertEqual(action.moderator, self.moderator)
+
+    def test_actions_ordered_by_created_at(self):
+        ModerationAction.objects.create(
+            case=self.case, moderator=self.moderator, action=ActionChoices.WARNING
+        )
+        ModerationAction.objects.create(
+            case=self.case,
+            moderator=self.moderator,
+            action=ActionChoices.CONTENT_REMOVED,
+        )
+        actions = list(self.case.actions.values_list("action", flat=True))
+        self.assertEqual(
+            actions, [ActionChoices.WARNING, ActionChoices.CONTENT_REMOVED]
+        )

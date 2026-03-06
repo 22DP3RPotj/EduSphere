@@ -1,12 +1,16 @@
-from typing import Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db.models import Model
 
 from backend.account.models import User
-from backend.moderation.choices import CaseStatusChoices
-from backend.moderation.models import Report, ReportReason
+from backend.moderation.choices import ActionChoices, CaseStatusChoices
+from backend.moderation.models import (
+    ModerationAction,
+    ModerationCase,
+    Report,
+    ReportReason,
+)
 from backend.room.models import Room
 from backend.access.models import Participant
 from backend.core.forms import ReportForm
@@ -16,9 +20,17 @@ from backend.core.exceptions import (
     ConflictException,
 )
 
+_ACTION_TO_STATUS = {
+    ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,
+}
+
+
+def _case_status_for_action(action: ActionChoices) -> CaseStatusChoices:
+    return _ACTION_TO_STATUS.get(action, CaseStatusChoices.RESOLVED)
+
 
 class ReportService:
-    """Service for report mutation operations."""
+    """Service for report and moderation case operations."""
 
     @staticmethod
     def _check_report_permission(reporter: User, target: Model) -> None:
@@ -35,25 +47,16 @@ class ReportService:
         reporter: User,
         target: Model,
         reason: ReportReason,
-        body: str,
+        description: str,
     ) -> Report:
         """
         Create a report for any reportable target (Room, User, …).
-
-        Args:
-            reporter: User creating the report
-            target: The object being reported
-            reason: The ReportReason instance
-            body: Detailed description of the report
-
-        Returns:
-            The created Report instance
+        Automatically gets or creates an active ModerationCase for the target.
 
         Raises:
-            PermissionException: If the reporter is not allowed to report this target,
-                or if the reason is inactive / not valid for this content type
-            ConflictException: If an active report already exists for this target
-            FormValidationException: If form validation fails
+            PermissionException: Reporter not allowed, or reason invalid for target
+            ConflictException: Reporter already has an active report on this target
+            FormValidationException: description failed form validation
         """
         ReportService._check_report_permission(reporter, target)
 
@@ -68,24 +71,40 @@ class ReportService:
                 "This report reason is not valid for the selected target type."
             )
 
-        if Report.active_reports(
-            user=reporter, content_type=content_type, object_id=target.pk
-        ).exists():
+        active_duplicate = Report.objects.filter(
+            reporter=reporter,
+            content_type=content_type,
+            object_id=target.pk,
+            case__status__in=CaseStatusChoices.active(),
+        ).exists()
+        if active_duplicate:
             raise ConflictException(
                 "You already have an active report targeting this content."
             )
 
-        form = ReportForm(data={"body": body})
-
+        form = ReportForm(data={"description": description})
         if not form.is_valid():
             raise FormValidationException("Invalid report data", errors=form.errors)
 
+        case = ModerationCase.objects.filter(
+            content_type=content_type,
+            object_id=target.pk,
+            status__in=CaseStatusChoices.active(),
+        ).first()
+        if case is None:
+            case = ModerationCase.objects.create(
+                content_type=content_type,
+                object_id=target.pk,
+                status=CaseStatusChoices.PENDING,
+            )
+
         try:
             report = form.save(commit=False)
-            report.user = reporter
+            report.reporter = reporter
             report.content_type = content_type
             report.object_id = target.pk
             report.reason = reason
+            report.case = case
             report.save()
         except IntegrityError as e:
             raise ConflictException("Could not create report due to a conflict.") from e
@@ -93,110 +112,52 @@ class ReportService:
         return report
 
     @staticmethod
-    def update_report_status(
+    def take_case_action(
         moderator: User,
-        report: Report,
-        new_status: CaseStatusChoices,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
+        case: ModerationCase,
+        action: ActionChoices,
+        note: str = "",
+    ) -> ModerationCase:
         """
-        Update a report's status (moderator action).
+        Record a moderation action against a case and transition its status.
 
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to update
-            new_status: The new status
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The updated Report instance
+        The case status is derived from the action:
+          - NO_VIOLATION  → DISMISSED
+          - All others    → RESOLVED
 
         Raises:
-            PermissionException: If user is not a moderator
+            PermissionException: If user is not staff or superuser
         """
-        # Defense-in-depth: Even though API layer checks staff/superuser status,
-        # we enforce it here as well to prevent accidental service layer misuse.
         if not (moderator.is_staff or moderator.is_superuser):
-            raise PermissionException("Only moderators can update report status.")
+            raise PermissionException("Only moderators can take case actions.")
 
-        report.status = new_status
-        report.moderator = moderator
-
-        if moderator_note is not None:
-            report.moderator_note = moderator_note
-
-        report.save()
-
-        return report
-
-    @staticmethod
-    def resolve_report(
-        moderator: User,
-        report: Report,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
-        """
-        Resolve a report.
-
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to resolve
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The resolved Report instance
-
-        Raises:
-            PermissionException: If user is not a moderator
-        """
-        return ReportService.update_report_status(
-            moderator, report, Report.Status.RESOLVED, moderator_note
+        ModerationAction.objects.create(
+            case=case,
+            moderator=moderator,
+            action=action,
+            note=note,
         )
 
-    @staticmethod
-    def dismiss_report(
-        moderator: User,
-        report: Report,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
-        """
-        Dismiss a report.
+        case.status = _case_status_for_action(action)
+        case.save(update_fields=["status", "updated_at"])
 
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to dismiss
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The dismissed Report instance
-
-        Raises:
-            PermissionException: If user is not a moderator
-        """
-        return ReportService.update_report_status(
-            moderator, report, Report.Status.DISMISSED, moderator_note
-        )
+        return case
 
     @staticmethod
-    def mark_under_review(
+    def set_case_under_review(
         moderator: User,
-        report: Report,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
+        case: ModerationCase,
+    ) -> ModerationCase:
         """
-        Mark a report as under review.
-
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to mark
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The report marked as under review
+        Transition a case to UNDER_REVIEW without creating a ModerationAction.
 
         Raises:
-            PermissionException: If user is not a moderator
+            PermissionException: If user is not staff or superuser
         """
-        return ReportService.update_report_status(
-            moderator, report, Report.Status.UNDER_REVIEW, moderator_note
-        )
+        if not (moderator.is_staff or moderator.is_superuser):
+            raise PermissionException("Only moderators can update case status.")
+
+        case.status = CaseStatusChoices.UNDER_REVIEW
+        case.save(update_fields=["status", "updated_at"])
+
+        return case

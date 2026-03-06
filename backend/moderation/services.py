@@ -110,11 +110,15 @@ class ReportService:
                         status=CaseStatusChoices.PENDING,
                     )
                 except (IntegrityError, ValidationError):
-                    case = ModerationCase.objects.filter(
-                        content_type=content_type,
-                        object_id=target.pk,
-                        status__in=CaseStatusChoices.active(),
-                    ).first()
+                    case = (
+                        ModerationCase.objects.select_for_update()
+                        .filter(
+                            content_type=content_type,
+                            object_id=target.pk,
+                            status__in=CaseStatusChoices.active(),
+                        )
+                        .get()
+                    )
 
             if Report.objects.filter(
                 reporter=reporter,

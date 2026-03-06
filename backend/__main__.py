@@ -9,7 +9,6 @@ def main():
         port=settings.SERVER_PORT,
         reload=settings.DEBUG,
         lifespan="auto",
-        log_level="warning",
     )
 
 

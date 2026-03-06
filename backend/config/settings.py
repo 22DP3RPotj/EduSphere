@@ -138,6 +138,10 @@ LOGGING = {
         },
     },
     "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
         "root_file": {
             "class": "logging.handlers.TimedRotatingFileHandler",
             "filename": LOG_DIR / "general.log",
@@ -164,6 +168,11 @@ LOGGING = {
         "level": "WARNING",
     },
     "loggers": {
+        "uvicorn.access": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
         "backend.account.tasks": {
             "handlers": ["jobs_file"],
             "level": "INFO",

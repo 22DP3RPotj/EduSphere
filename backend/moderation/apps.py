@@ -6,6 +6,3 @@ class ModerationConfig(AppConfig):
     name = "backend.moderation"
     label = "moderation"
     verbose_name = "Moderation"
-
-    def ready(self):
-        import backend.moderation.rules.permissions as _  # noqa

@@ -6,6 +6,3 @@ class MessagingConfig(AppConfig):
     name = "backend.messaging"
     label = "messaging"
     verbose_name = "Messaging"
-
-    def ready(self):
-        import backend.messaging.rules.permissions as _  # noqa

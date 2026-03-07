@@ -6,6 +6,3 @@ class InviteConfig(AppConfig):
     name = "backend.invite"
     label = "invite"
     verbose_name = "Invite Management"
-
-    def ready(self):
-        import backend.invite.rules.permissions as _  # noqa

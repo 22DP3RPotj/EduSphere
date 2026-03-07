@@ -10,7 +10,7 @@ def can_manage_roles(user: User, role: Role) -> bool:
     return RoleService.has_permission(user, role.room, PermissionCode.ROOM_MANAGE_ROLES)
 
 
-# TODO: Role may not yet be created yet to check
+# TODO: Role may not yet be created to check
 @predicate
 def has_higher_hierarchy(user: User, role: Role) -> bool:
     participant = RoleService.get_participant(user, role.room)

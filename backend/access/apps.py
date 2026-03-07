@@ -6,6 +6,3 @@ class AccessConfig(AppConfig):
     name = "backend.access"
     label = "access"
     verbose_name = "Access Control"
-
-    def ready(self):
-        import backend.access.rules.permissions as _  # noqa

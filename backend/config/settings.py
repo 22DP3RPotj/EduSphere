@@ -63,7 +63,7 @@ INSTALLED_APPS = [
     "graphene_django",
     "pgtrigger",
     "pghistory",
-    "rules",
+    "rules.apps.AutodiscoverRulesConfig",
     "django_cleanup.apps.CleanupConfig",
     "django_celery_beat",
     "django_prometheus",

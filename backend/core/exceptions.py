@@ -72,3 +72,30 @@ class ConflictException(DomainException):
 
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class AlreadyExistsException(DomainException):
+    """Exception raised when trying to create an entity that already exists."""
+
+    code = ErrorCode.ALREADY_EXISTS
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class InternalErrorException(DomainException):
+    """Exception raised for unexpected internal errors."""
+
+    code = ErrorCode.INTERNAL_ERROR
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class BadRequestException(DomainException):
+    """Exception raised for bad requests."""
+
+    code = ErrorCode.BAD_REQUEST
+
+    def __init__(self, message: str):
+        super().__init__(message)

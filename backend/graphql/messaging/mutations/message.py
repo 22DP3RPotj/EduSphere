@@ -1,29 +1,33 @@
 import graphene
 import uuid
+from typing import Any, Optional, Self
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
+from backend.graphql.base import BaseMutation
 from backend.graphql.messaging.types import MessageType
 from backend.messaging.models import Message
 from backend.room.models import Room
 from backend.messaging.services import MessageService
-from backend.core.exceptions import (
-    PermissionException,
-    FormValidationException,
-    ConflictException,
-    ErrorCode,
-)
+from backend.core.exceptions import ErrorCode
 
 
-class CreateMessage(graphene.Mutation):
+class CreateMessage(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
         body = graphene.String(required=True)
 
     message = graphene.Field(MessageType)
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID, body: str):
+    def resolve(
+        cls,
+        root: Optional[Any],
+        info: graphene.ResolveInfo,
+        room_id: uuid.UUID,
+        body: str,
+    ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
@@ -31,29 +35,24 @@ class CreateMessage(graphene.Mutation):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            message = MessageService.create_message(
-                user=info.context.user, room=room, body=body
-            )
-        except PermissionException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
-        except (FormValidationException, ConflictException) as e:
-            raise GraphQLError(
-                str(e),
-                extensions={"code": e.code, "errors": getattr(e, "errors", None)},
-            )
+        message = MessageService.create_message(
+            user=info.context.user, room=room, body=body
+        )
 
-        return CreateMessage(message=message)
+        return cls(message=message)
 
 
-class DeleteMessage(graphene.Mutation):
+class DeleteMessage(BaseMutation):
     class Arguments:
         message_id = graphene.UUID(required=True)
 
     success = graphene.Boolean()
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, message_id: uuid.UUID):
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, message_id: uuid.UUID
+    ) -> Self:
         try:
             message = Message.objects.get(id=message_id)
         except Message.DoesNotExist:
@@ -61,25 +60,27 @@ class DeleteMessage(graphene.Mutation):
                 "Message not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            success = MessageService.delete_message(
-                user=info.context.user, message=message
-            )
-        except PermissionException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        success = MessageService.delete_message(user=info.context.user, message=message)
 
-        return DeleteMessage(success=success)
+        return cls(success=success)
 
 
-class UpdateMessage(graphene.Mutation):
+class UpdateMessage(BaseMutation):
     class Arguments:
         message_id = graphene.UUID(required=True)
         body = graphene.String(required=True)
 
     message = graphene.Field(MessageType)
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, message_id: uuid.UUID, body: str):
+    def resolve(
+        cls,
+        root: Optional[Any],
+        info: graphene.ResolveInfo,
+        message_id: uuid.UUID,
+        body: str,
+    ) -> Self:
         try:
             message = Message.objects.get(id=message_id)
         except Message.DoesNotExist:
@@ -87,13 +88,8 @@ class UpdateMessage(graphene.Mutation):
                 "Message not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            message = MessageService.update_message(
-                user=info.context.user, message=message, body=body
-            )
-        except (PermissionException, ConflictException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
-        except FormValidationException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+        message = MessageService.update_message(
+            user=info.context.user, message=message, body=body
+        )
 
-        return UpdateMessage(message=message)
+        return cls(message=message)

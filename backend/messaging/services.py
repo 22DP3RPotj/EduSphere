@@ -33,13 +33,13 @@ class MessageService:
             The created Message instance
 
         Raises:
-            PermissionException: If user is not a participant of the room
+            PermissionException: If user doesn't have permission to send messages
             FormValidationException: If form validation fails
             ConflictException: If message creation conflicts
         """
         if not user.has_perm(MessagingPermission.CREATE, room):
             raise PermissionException(
-                "You must be a participant of the room to send messages."
+                "You don't have permission to send messages in this room."
             )
 
         data = {

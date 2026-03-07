@@ -1,15 +1,7 @@
 import rules
-from enum import StrEnum
+from backend.moderation.rules.labels import ModerationPermission
 from backend.moderation.rules.predicates import is_reporter
 from backend.core.rules.predicates import is_authenticated, is_admin, is_staff
-
-
-class ModerationPermission(StrEnum):
-    CREATE = "moderation.create"
-    READ = "moderation.read"
-    REVIEW = "moderation.review"
-    ACT = "moderation.act"
-    DELETE = "moderation.delete"
 
 
 rules.add_perm(ModerationPermission.CREATE, is_authenticated)

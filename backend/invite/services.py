@@ -16,7 +16,7 @@ from backend.core.exceptions import (
     ConflictException,
     ValidationException,
 )
-from backend.invite.rules.permissions import InvitePermission
+from backend.invite.rules.labels import InvitePermission
 
 
 class InviteService:

@@ -20,7 +20,7 @@ from backend.core.exceptions import (
     PermissionException,
     ConflictException,
 )
-from backend.moderation.rules.permissions import ModerationPermission
+from backend.moderation.rules.labels import ModerationPermission
 
 _ACTION_TO_STATUS = {
     ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,

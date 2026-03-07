@@ -1,5 +1,5 @@
 import rules
-from enum import StrEnum
+from backend.room.rules.labels import RoomPermission
 from backend.core.rules.predicates import is_authenticated
 from backend.room.rules.predicates import (
     is_participant,
@@ -7,15 +7,6 @@ from backend.room.rules.predicates import (
     can_delete_room,
     can_update_room,
 )
-
-
-class RoomPermission(StrEnum):
-    CREATE = "room.create"
-    READ = "room.read"
-    UPDATE = "room.update"
-    DELETE = "room.delete"
-    JOIN = "room.join"
-    LEAVE = "room.leave"
 
 
 rules.add_perm(RoomPermission.CREATE, is_authenticated)

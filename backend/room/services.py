@@ -14,7 +14,7 @@ from backend.core.exceptions import (
 )
 from backend.access.services import RoleService
 from backend.access.enums import RoleCode
-from backend.room.rules.permissions import RoomPermission
+from backend.room.rules.labels import RoomPermission
 
 
 class RoomService:

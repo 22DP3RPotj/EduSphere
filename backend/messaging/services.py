@@ -9,7 +9,7 @@ from backend.core.exceptions import (
     PermissionException,
     ConflictException,
 )
-from backend.messaging.rules.permissions import MessagingPermission
+from backend.messaging.rules.labels import MessagingPermission
 
 
 class MessageService:

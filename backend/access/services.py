@@ -15,7 +15,7 @@ from backend.core.exceptions import (
     ValidationException,
 )
 from backend.access.models import Participant, Role, Permission
-from backend.access.rules.permissions import AccessPermission
+from backend.access.rules.labels import AccessPermission
 from backend.access.enums import PermissionCode
 from backend.access.dtos import RoleDeleteResult
 from backend.access.forms import RoleForm

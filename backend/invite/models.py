@@ -54,8 +54,9 @@ class Invite(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    # TODO: Move to manager
     @classmethod
-    def active_invites(cls, **filters):
+    def active_invites(cls, **filters) -> models.QuerySet["Invite"]:
         return cls.objects.filter(status=cls.Status.PENDING, **filters)
 
     @property
@@ -65,11 +66,13 @@ class Invite(models.Model):
 
     @property
     def is_resolved(self) -> bool:
-        """Check if invite has been resolved (accepted or declined)"""
-        return self.status in [
-            self.Status.ACCEPTED,
-            self.Status.DECLINED,
-        ]
+        """Check if invite has been resolved."""
+        return self.status in self.Status.resolved()
+
+    @property
+    def is_active(self) -> bool:
+        """Check if invite is still active (pending and not expired)."""
+        return self.status == self.Status.PENDING and not self.is_expired
 
 
 class InviteHistory(

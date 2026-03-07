@@ -1,41 +1,39 @@
 import graphene
 import uuid
+from typing import Optional, Any, Self
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
+from backend.graphql.base import BaseMutation
 from backend.graphql.invite.types import InviteType
 from backend.graphql.access.types import ParticipantType
 from backend.account.models import User
 from backend.room.models import Room
 from backend.access.models import Role
 from backend.invite.services import InviteService
-from backend.core.exceptions import (
-    PermissionException,
-    FormValidationException,
-    ConflictException,
-    ValidationException,
-    ErrorCode,
-)
+from backend.core.exceptions import ErrorCode
 
 
-class SendInvite(graphene.Mutation):
+class SendInvite(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
-        role_id = graphene.UUID(required=True)
         invitee_id = graphene.UUID(required=True)
         expires_at = graphene.DateTime(required=True)
+        role_id = graphene.UUID(required=False)
 
     invite = graphene.Field(InviteType)
 
+    @classmethod
     @login_required
-    def mutate(
-        self,
+    def resolve(
+        cls,
+        root: Optional[Any],
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
-        role_id: uuid.UUID,
         invitee_id: uuid.UUID,
         expires_at: graphene.DateTime,
-    ):
+        role_id: Optional[uuid.UUID] = None,
+    ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
@@ -50,38 +48,38 @@ class SendInvite(graphene.Mutation):
                 "Invitee not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            role = Role.objects.get(id=role_id)
-        except Role.DoesNotExist:
-            raise GraphQLError(
-                "Role not found in the specified room",
-                extensions={"code": ErrorCode.NOT_FOUND},
-            )
+        role = None
+        if role_id is not None:
+            try:
+                role = Role.objects.get(id=role_id, room=room)
+            except Role.DoesNotExist:
+                raise GraphQLError(
+                    "Role not found in the specified room",
+                    extensions={"code": ErrorCode.NOT_FOUND},
+                )
 
-        try:
-            invite = InviteService.send_invite(
-                inviter=info.context.user,
-                room=room,
-                invitee=invitee,
-                role=role,
-                expires_at=expires_at,
-            )
-        except (PermissionException, ValidationException, ConflictException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
-        except FormValidationException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+        invite = InviteService.send_invite(
+            inviter=info.context.user,
+            room=room,
+            invitee=invitee,
+            role=role,
+            expires_at=expires_at,
+        )
 
-        return SendInvite(invite=invite)
+        return cls(invite=invite)
 
 
-class AcceptInvite(graphene.Mutation):
+class AcceptInvite(BaseMutation):
     class Arguments:
         token = graphene.UUID(required=True)
 
     participant = graphene.Field(ParticipantType)
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, token: uuid.UUID):
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+    ) -> Self:
         invite = InviteService.get_invite_by_token(token=token)
 
         if invite is None:
@@ -90,24 +88,22 @@ class AcceptInvite(graphene.Mutation):
                 extensions={"code": ErrorCode.NOT_FOUND},
             )
 
-        try:
-            participant = InviteService.accept_invite(
-                user=info.context.user, invite=invite
-            )
-        except (PermissionException, ValidationException, ConflictException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        participant = InviteService.accept_invite(user=info.context.user, invite=invite)
 
-        return AcceptInvite(participant=participant)
+        return cls(participant=participant)
 
 
-class DeclineInvite(graphene.Mutation):
+class DeclineInvite(BaseMutation):
     class Arguments:
         token = graphene.UUID(required=True)
 
     success = graphene.Boolean()
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, token: uuid.UUID):
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+    ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
         if invite is None:
@@ -122,24 +118,22 @@ class DeclineInvite(graphene.Mutation):
                 extensions={"code": ErrorCode.PERMISSION_DENIED},
             )
 
-        try:
-            success = InviteService.decline_invite(
-                user=info.context.user, invite=invite
-            )
-        except (PermissionException, ValidationException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        success = InviteService.decline_invite(user=info.context.user, invite=invite)
 
-        return DeclineInvite(success=success)
+        return cls(success=success)
 
 
-class CancelInvite(graphene.Mutation):
+class CancelInvite(BaseMutation):
     class Arguments:
         token = graphene.UUID(required=True)
 
     success = graphene.Boolean()
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, token: uuid.UUID):
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+    ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
         if invite is None:
@@ -148,24 +142,23 @@ class CancelInvite(graphene.Mutation):
                 extensions={"code": ErrorCode.NOT_FOUND},
             )
 
-        try:
-            success = InviteService.cancel_invite(user=info.context.user, invite=invite)
-        except (PermissionException, ValidationException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        success = InviteService.cancel_invite(user=info.context.user, invite=invite)
 
-        return CancelInvite(success=success)
+        return cls(success=success)
 
 
-class ResendInvite(graphene.Mutation):
+class ResendInvite(BaseMutation):
     class Arguments:
         token = graphene.UUID(required=True)
-        expires_at = graphene.DateTime()
+        expires_at = graphene.DateTime(required=False)
 
     invite = graphene.Field(InviteType)
 
+    @classmethod
     @login_required
-    def mutate(
-        self,
+    def resolve(
+        cls,
+        root: Optional[Any],
         info: graphene.ResolveInfo,
         token: uuid.UUID,
         expires_at: graphene.DateTime,
@@ -178,11 +171,8 @@ class ResendInvite(graphene.Mutation):
                 extensions={"code": ErrorCode.NOT_FOUND},
             )
 
-        try:
-            invite = InviteService.resend_invite(
-                user=info.context.user, invite=invite, new_expires_at=expires_at
-            )
-        except (PermissionException, ValidationException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        invite = InviteService.resend_invite(
+            user=info.context.user, invite=invite, new_expires_at=expires_at
+        )
 
-        return ResendInvite(invite=invite)
+        return cls(invite=invite)

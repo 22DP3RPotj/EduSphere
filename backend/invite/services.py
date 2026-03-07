@@ -22,6 +22,7 @@ from backend.invite.rules.labels import InvitePermission
 class InviteService:
     """Service for invite mutation operations."""
 
+    # TODO: Move to manager
     @staticmethod
     def _update_expired_invites() -> None:
         """
@@ -37,8 +38,8 @@ class InviteService:
         inviter: User,
         room: Room,
         invitee: User,
-        role: Role,
-        expires_at: datetime,
+        role: Optional[Role] = None,
+        expires_at: Optional[datetime] = None,
     ) -> Invite:
         """
         Send an invite to a user for a room.
@@ -67,17 +68,13 @@ class InviteService:
         if Participant.objects.filter(user=invitee, room=room).exists():
             raise ValidationException("The user is already a participant of this room.")
 
-        if role.room != room:
+        if role and role.room != room:
             raise ValidationException("Role must belong to the same room.")
 
         if Invite.active_invites(invitee=invitee, room=room).exists():
             raise ConflictException(
                 "This user already has an active invite to this room."
             )
-
-        # TODO: move to forms
-        if expires_at <= timezone.now():
-            raise ValidationException("Expiration date must be in the future.")
 
         data = {
             "expires_at": expires_at,
@@ -159,9 +156,11 @@ class InviteService:
             ValidationException: If invite is not pending
         """
         if not user.has_perm(InvitePermission.REJECT, invite):
-            raise PermissionException("You can only decline invites sent to you.")
+            raise PermissionException(
+                "You don't have permission to reject this invite."
+            )
 
-        if invite.status != Invite.Status.PENDING:
+        if not invite.is_active:
             raise ValidationException(
                 f"Invite is {invite.status.lower()} and cannot be declined."
             )
@@ -189,10 +188,10 @@ class InviteService:
         """
         if not user.has_perm(InvitePermission.DELETE, invite):
             raise PermissionException(
-                "You don't have permission to cancel invites for this room."
+                "You don't have permission to cancel this invite."
             )
 
-        if invite.status != Invite.Status.PENDING:
+        if not invite.is_active:
             raise ValidationException(
                 f"Invite is {invite.status.lower()} and cannot be canceled."
             )
@@ -220,17 +219,22 @@ class InviteService:
 
         if not user.has_perm(InvitePermission.UPDATE, invite):
             raise PermissionException(
-                "You don't have permission to resend invites for this room."
+                "You don't have permission to resend this invite."
             )
 
         if invite.is_resolved:
             raise ValidationException("Cannot resend a resolved invite.")
 
-        if new_expires_at <= timezone.now():
-            raise ValidationException("Expiration date must be in the future.")
+        data = {
+            "expires_at": new_expires_at,
+        }
 
-        invite.expires_at = new_expires_at
-        invite.save(update_fields=["expires_at"])
+        form = InviteForm(data=data, instance=invite)
+
+        if not form.is_valid():
+            raise FormValidationException("Invalid invite data", errors=form.errors)
+
+        form.save()
 
         return invite
 

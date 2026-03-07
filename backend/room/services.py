@@ -21,17 +21,6 @@ class RoomService:
     """Service for room mutation operations."""
 
     @staticmethod
-    def can_view(user: User, room: Room) -> bool:
-        if room.visibility == Room.Visibility.PUBLIC:
-            return True
-
-        if not user.is_authenticated:
-            return False
-
-        return Participant.objects.filter(user=user, room=room).exists()
-
-    # TODO: assert authentication where necessary
-    @staticmethod
     def create_room(
         *,
         user: User,

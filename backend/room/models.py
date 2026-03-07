@@ -12,9 +12,6 @@ class Topic(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=32, unique=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         app_label = "room"
         ordering = [Lower("name").asc()]
@@ -28,6 +25,9 @@ class Topic(models.Model):
                 violation_error_message="Topic name must consist of letters only.",
             ),
         ]
+
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -63,9 +63,6 @@ class Room(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         app_label = "room"
         ordering = ["-updated_at", "-created_at"]
@@ -79,6 +76,9 @@ class Room(models.Model):
         indexes = [
             models.Index(fields=["updated_at"]),
         ]
+
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         self.full_clean()

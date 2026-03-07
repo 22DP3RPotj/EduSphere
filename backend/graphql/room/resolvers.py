@@ -10,7 +10,7 @@ from backend.core.exceptions import ErrorCode
 from backend.account.models import User
 from backend.graphql.room.filters import RoomFilter
 from backend.room.models import Room, Topic
-from backend.room.services import RoomService
+from backend.room.rules.labels import RoomPermission
 from backend.graphql.room.types import RoomType, TopicType
 
 
@@ -47,7 +47,7 @@ class RoomQuery(graphene.ObjectType):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if not RoomService.can_view(info.context.user, room):
+        if not info.context.user.has_perm(RoomPermission.READ, room):
             raise GraphQLError(
                 "Permission denied", extensions={"code": ErrorCode.PERMISSION_DENIED}
             )

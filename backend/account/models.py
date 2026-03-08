@@ -55,16 +55,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         ]
 
 
-class UserHistory(
-    pghistory.create_event_model(
-        User,
-        fields=["username", "email", "is_active", "is_staff", "is_superuser"],
-    )
-):
-    class Meta:
-        app_label = "account"
-
-
 class UserBan(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -93,6 +83,16 @@ class UserBan(models.Model):
 
     def __str__(self):
         return f"Ban for {self.user.username}"
+
+
+class UserHistory(
+    pghistory.create_event_model(
+        User,
+        fields=["username", "email", "is_active", "is_staff", "is_superuser"],
+    )
+):
+    class Meta:
+        app_label = "account"
 
 
 class UserBanHistory(

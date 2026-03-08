@@ -6,6 +6,7 @@ from django.db.models import Q, CheckConstraint
 from django.db.models.functions import Lower
 
 from backend.room.choices import VisibilityChoices
+from backend.room.querysets import RoomQuerySet
 
 
 class Topic(models.Model):
@@ -62,6 +63,8 @@ class Room(models.Model):
     )
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    objects = RoomQuerySet.as_manager()
 
     class Meta:
         app_label = "room"

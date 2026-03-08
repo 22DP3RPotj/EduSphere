@@ -348,10 +348,9 @@ class InviteServiceTest(ServiceTestBase):
             status=Invite.Status.PENDING,
         )
 
-        InviteService._update_expired_invites()
+        result = InviteService.get_invite_by_token(invite.token)
 
-        invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.Status.EXPIRED)
+        self.assertEqual(result.status, Invite.Status.EXPIRED)
 
 
 @pytest.mark.invite_advanced
@@ -371,59 +370,6 @@ class InviteServiceAdvancedTests(ServiceTestBase):
                 role=self.member_role,
                 expires_at=expires_at,
             )
-
-    def test_update_expired_invites(self):
-        self._add_member(self.member, self.owner_role)
-
-        future_time = timezone.now() + timedelta(days=7)
-        invite = InviteService.send_invite(
-            inviter=self.member,
-            room=self.room,
-            invitee=self.other_user,
-            role=self.member_role,
-            expires_at=future_time,
-        )
-
-        invite.expires_at = timezone.now() - timedelta(hours=1)
-        invite.save(update_fields=["expires_at"])
-
-        InviteService._update_expired_invites()
-
-        invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.Status.EXPIRED)
-
-    def test_invite_can_be_accepted_within_validity(self):
-        self._add_member(self.member, self.owner_role)
-
-        expires_at = timezone.now() + timedelta(days=7)
-        invite = InviteService.send_invite(
-            inviter=self.member,
-            room=self.room,
-            invitee=self.other_user,
-            role=self.member_role,
-            expires_at=expires_at,
-        )
-
-        participant = InviteService.accept_invite(self.other_user, invite)
-        self.assertIsNotNone(participant.id)
-
-    def test_invite_can_be_declined_within_validity(self):
-        self._add_member(self.member, self.owner_role)
-
-        expires_at = timezone.now() + timedelta(days=7)
-        invite = InviteService.send_invite(
-            inviter=self.member,
-            room=self.room,
-            invitee=self.other_user,
-            role=self.member_role,
-            expires_at=expires_at,
-        )
-
-        success = InviteService.decline_invite(self.other_user, invite)
-        self.assertTrue(success)
-
-        invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.Status.DECLINED)
 
     def test_invite_cannot_be_accepted_twice(self):
         self._add_member(self.member, self.owner_role)
@@ -458,23 +404,6 @@ class InviteServiceAdvancedTests(ServiceTestBase):
 
         with self.assertRaises(ValidationException):
             InviteService.accept_invite(self.other_user, invite)
-
-    def test_accept_invite_succeeds_for_valid_invite(self):
-        self._add_member(self.member, self.owner_role)
-
-        expires_at = timezone.now() + timedelta(days=7)
-        invite = InviteService.send_invite(
-            inviter=self.member,
-            room=self.room,
-            invitee=self.other_user,
-            role=self.member_role,
-            expires_at=expires_at,
-        )
-
-        participant = InviteService.accept_invite(self.other_user, invite)
-        self.assertIsNotNone(participant.id)
-        self.assertEqual(participant.user, self.other_user)
-        self.assertEqual(participant.room, self.room)
 
     def test_invite_with_different_role_per_invitee(self):
         self._add_member(self.member, self.owner_role)

@@ -61,22 +61,11 @@ class RoomQuery(graphene.ObjectType):
         search: Optional[str] = None,
         topics: Optional[list[str]] = None,
     ) -> QuerySet[Room]:
-        filters: Q = Q(visibility=Room.Visibility.PUBLIC)
-
-        if info.context.user.is_authenticated:
-            filters |= Q(memberships__user=info.context.user)
-
         queryset = (
-            Room.objects.annotate(participants_count=Count("participants"))
-            .select_related("host")
-            .prefetch_related(
-                "topics",
-                Prefetch(
-                    "memberships",
-                    queryset=Participant.objects.select_related("user", "role"),
-                ),
-            )
-            .filter(filters)
+            Room.objects
+            .with_participants_count()
+            .with_details()
+            .visible_to(info.context.user)
         )
 
         return (
@@ -89,7 +78,7 @@ class RoomQuery(graphene.ObjectType):
                 queryset=queryset,
             )
             .qs.distinct()
-            .order_by("-participants_count", "-created_at")
+            .ordered_by_popularity()
         )
 
     def resolve_rooms_participated_by_user(
@@ -103,17 +92,10 @@ class RoomQuery(graphene.ObjectType):
             )
 
         queryset = (
-            Room.objects.filter(participants=user)
-            .annotate(participants_count=Count("participants"))
-            .select_related("host")
-            .prefetch_related(
-                "topics",
-                Prefetch(
-                    "memberships",
-                    queryset=Participant.objects.select_related("user", "role"),
-                ),
-            )
-            .order_by("-participants_count", "-created_at")
+            Room.objects.participated_by(user)
+            .with_participants_count()
+            .with_details()
+            .ordered_by_popularity()
         )
 
         return queryset
@@ -129,17 +111,10 @@ class RoomQuery(graphene.ObjectType):
             )
 
         queryset = (
-            Room.objects.exclude(participants=user)
-            .annotate(participants_count=Count("participants"))
-            .select_related("host")
-            .prefetch_related(
-                "topics",
-                Prefetch(
-                    "memberships",
-                    queryset=Participant.objects.select_related("user", "role"),
-                ),
-            )
-            .order_by("-participants_count", "-created_at")
+            Room.objects.not_participated_by(user)
+            .with_participants_count()
+            .with_details()
+            .ordered_by_popularity()
         )
 
         return queryset

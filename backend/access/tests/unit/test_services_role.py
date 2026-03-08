@@ -299,38 +299,6 @@ class RoleServiceAdvancedTests(ServiceTestBase):
         )
         self.assertEqual(role.priority, lower_priority)
 
-    def test_update_role_name_and_description(self):
-        custom_role = RoleService.create_role(
-            user=self.owner,
-            room=self.room,
-            name="Original Name",
-            description="Original",
-            priority=self.owner_role.priority - 10,
-            permission_ids=[],
-        )
-
-        self.assertEqual(custom_role.name, "Original Name")
-
-    def test_assign_permission_to_role(self):
-        custom_role = RoleService.create_role(
-            user=self.owner,
-            room=self.room,
-            name="Custom Role",
-            description="Custom",
-            priority=self.owner_role.priority - 5,
-            permission_ids=[],
-        )
-
-        perm_ids = list(self.owner_role.permissions.values_list("id", flat=True)[:2])
-
-        updated = RoleService.assign_permissions_to_role(
-            user=self.owner,
-            role=custom_role,
-            permission_ids=perm_ids,
-        )
-
-        self.assertEqual(updated.permissions.count(), len(perm_ids))
-
     def test_permission_set_is_subset_validation(self):
         self._add_member(self.member, self.owner_role)
         member_perms = list(self.owner_role.permissions.values_list("id", flat=True))

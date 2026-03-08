@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from backend.invite.choices import InviteStatusChoices
+from backend.invite.querysets import InviteQuerySet
 
 
 class Invite(models.Model):
@@ -47,17 +48,14 @@ class Invite(models.Model):
         ]
         ordering = ["-created_at"]
 
+    objects = InviteQuerySet.as_manager()
+
     def __str__(self):
         return f"Invite of {self.invitee.username} to {self.room.name} by {self.inviter.username}"
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-    # TODO: Move to manager
-    @classmethod
-    def active_invites(cls, **filters) -> models.QuerySet["Invite"]:
-        return cls.objects.filter(status=cls.Status.PENDING, **filters)
 
     @property
     def is_expired(self) -> bool:

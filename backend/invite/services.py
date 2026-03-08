@@ -22,17 +22,6 @@ from backend.invite.rules.labels import InvitePermission
 class InviteService:
     """Service for invite mutation operations."""
 
-    # TODO: Move to manager
-    @staticmethod
-    def _update_expired_invites() -> None:
-        """
-        Lazy update: Mark all expired pending invites as EXPIRED.
-        Should be called whenever an invite is fetched.
-        """
-        Invite.objects.filter(
-            status=Invite.Status.PENDING, expires_at__lt=timezone.now()
-        ).update(status=Invite.Status.EXPIRED)
-
     @staticmethod
     def send_invite(
         inviter: User,
@@ -71,7 +60,7 @@ class InviteService:
         if role and role.room != room:
             raise ValidationException("Role must belong to the same room.")
 
-        if Invite.active_invites(invitee=invitee, room=room).exists():
+        if Invite.objects.filter(invitee=invitee, room=room).active().exists():
             raise ConflictException(
                 "This user already has an active invite to this room."
             )
@@ -238,17 +227,6 @@ class InviteService:
 
         return invite
 
-    @staticmethod
-    def _update_if_expired(invite: Invite) -> None:
-        """
-        Check if invite has expired and update status if needed.
-
-        Args:
-            invite: The invite to check
-        """
-        if invite.is_expired and invite.status != Invite.Status.EXPIRED:
-            invite.status = Invite.Status.EXPIRED
-            invite.save(update_fields=["status"])
 
     @staticmethod
     def get_invite_by_token(token: uuid.UUID) -> Optional[Invite]:
@@ -274,3 +252,15 @@ class InviteService:
         invite.refresh_from_db(fields=["status"])
 
         return invite
+
+    @staticmethod
+    def _update_if_expired(invite: Invite) -> None:
+        """
+        Check if invite has expired and update status if needed.
+
+        Args:
+            invite: The invite to check
+        """
+        if invite.is_expired and invite.status != Invite.Status.EXPIRED:
+            invite.status = Invite.Status.EXPIRED
+            invite.save(update_fields=["status"])

@@ -1,10 +1,9 @@
 import logging
+import graphene
 from functools import wraps
-from typing import Callable, Self, TypeVar, ParamSpec
-from graphene import Mutation
+from typing import Any, Callable, Optional, Self, TypeVar, ParamSpec
 from graphql import GraphQLError
 from backend.core.exceptions import ErrorCode, FormValidationException, DomainException
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ def resolve_errors(f: Callable[P, T]) -> Callable[P, T]:
     return wrapper
 
 
-class BaseMutation(Mutation):
+class BaseMutation(graphene.Mutation):
     """Base class for all mutations, providing common functionality such as error handling."""
 
     class Meta:
@@ -39,9 +38,9 @@ class BaseMutation(Mutation):
 
     @classmethod
     @resolve_errors
-    def mutate(cls, root, info, **kwargs) -> Self:
+    def mutate(cls, root: Optional[Any], info: graphene.ResolveInfo, **kwargs) -> Self:
         return cls.resolve(root, info, **kwargs)
 
     @classmethod
-    def resolve(cls, root, info, **kwargs) -> Self:
+    def resolve(cls, root: Optional[Any], info: graphene.ResolveInfo, **kwargs) -> Self:
         raise NotImplementedError(f"{cls.__name__}.resolve() must be implemented.")

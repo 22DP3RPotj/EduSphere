@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
@@ -145,7 +147,7 @@ class ReportService:
         moderator: User,
         case: ModerationCase,
         action: ActionChoices,
-        note: str = "",
+        note: Optional[str] = None,
     ) -> ModerationCase:
         """
         Record a moderation action against a case and transition its status.
@@ -159,13 +161,14 @@ class ReportService:
         """
         if not moderator.has_perm(ModerationPermission.ACT, case):
             raise PermissionException("Only moderators can take case actions.")
+
         try:
             with transaction.atomic():
                 ModerationAction.objects.create(
                     case=case,
                     moderator=moderator,
                     action=action,
-                    note=note,
+                    note=note or "",
                 )
 
                 case.status = ReportService._case_status_for_action(action)

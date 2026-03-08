@@ -12,12 +12,13 @@ class RegisterForm(UserCreationForm):
 
 
 class UserForm(ModelForm):
-    avatar = forms.ImageField(widget=forms.FileInput, required=False)
+    avatar = forms.ImageField(required=False)
 
     username = forms.SlugField(
         error_messages={
             "invalid": "Username can only contain letters, numbers, underscores, and hyphens."
-        }
+        },
+        required=True,
     )
 
     class Meta:
@@ -26,4 +27,4 @@ class UserForm(ModelForm):
 
     def clean_username(self) -> str:
         username = self.cleaned_data["username"]
-        return slugify(username.strip())
+        return username.strip()

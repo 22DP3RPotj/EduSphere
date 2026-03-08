@@ -4,9 +4,9 @@ from django.db import IntegrityError, transaction
 
 from backend.account.models import User
 from backend.room.choices import VisibilityChoices
+from backend.room.forms import RoomForm
 from backend.room.models import Room, Topic
 from backend.access.models import Participant
-from backend.core.forms import RoomForm
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,

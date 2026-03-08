@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from backend.messaging.models import Message
 from backend.account.models import User
 from backend.room.models import Room
-from backend.core.forms import MessageForm
+from backend.messaging.forms import MessageForm
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,

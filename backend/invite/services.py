@@ -8,7 +8,7 @@ from backend.account.models import User
 from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.access.models import Role, Participant
-from backend.core.forms import InviteForm
+from backend.invite.forms import InviteForm
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,

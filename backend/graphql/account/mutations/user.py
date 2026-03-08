@@ -15,7 +15,7 @@ from backend.graphql.base import BaseMutation
 from backend.graphql.utils import format_form_errors
 from backend.account.models import User
 from backend.account.services import RestrictionService
-from backend.core.forms import UserForm, RegisterForm
+from backend.account.forms import UserForm, RegisterForm
 
 
 class RegisterUser(BaseMutation):

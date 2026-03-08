@@ -16,7 +16,7 @@ from backend.moderation.models import (
 from backend.room.models import Room
 from backend.messaging.models import Message
 from backend.access.models import Participant
-from backend.core.forms import ReportForm
+from backend.moderation.forms import ReportForm
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,

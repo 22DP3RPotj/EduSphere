@@ -16,6 +16,8 @@ def resolve_errors(f: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return f(*args, **kwargs)
+        except GraphQLError:
+            raise  # Re-raise GraphQLError without modification
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
         except DomainException as e:

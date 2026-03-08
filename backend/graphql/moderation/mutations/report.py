@@ -27,7 +27,7 @@ class CreateReport(BaseMutation):
         target_type = ReportTargetTypeEnum(required=True)
         target_id = graphene.UUID(required=True)
         reason_id = graphene.UUID(required=True)
-        description = graphene.String(required=True)
+        description = graphene.String(required=False)
 
     report = graphene.Field(ReportType)
 
@@ -40,7 +40,7 @@ class CreateReport(BaseMutation):
         target_type: ReportTargetTypeEnum,
         target_id: uuid.UUID,
         reason_id: uuid.UUID,
-        description: str,
+        description: Optional[str] = None,
     ) -> Self:
         model_map: dict[str, Union[type[Room], type[User], type[Message]]] = {
             ReportTargetTypeEnum.ROOM: Room,

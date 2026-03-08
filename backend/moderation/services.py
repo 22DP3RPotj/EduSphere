@@ -8,7 +8,6 @@ from django.db.models import Model
 from backend.account.models import User
 from backend.moderation.choices import ActionChoices, CaseStatusChoices
 from backend.moderation.models import (
-    ModerationAction,
     ModerationCase,
     Report,
     ReportReason,
@@ -16,7 +15,7 @@ from backend.moderation.models import (
 from backend.room.models import Room
 from backend.messaging.models import Message
 from backend.access.models import Participant
-from backend.moderation.forms import ReportForm
+from backend.moderation.forms import ModerationActionForm, ReportForm
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,
@@ -56,7 +55,7 @@ class ReportService:
         reporter: User,
         target: Model,
         reason: ReportReason,
-        description: str,
+        description: Optional[str] = None,
     ) -> Report:
         """
         Create a report for any reportable target (Room, User, …).
@@ -92,6 +91,7 @@ class ReportService:
             )
 
         form = ReportForm(data={"description": description})
+
         if not form.is_valid():
             raise FormValidationException("Invalid report data", errors=form.errors)
 
@@ -164,12 +164,17 @@ class ReportService:
 
         try:
             with transaction.atomic():
-                ModerationAction.objects.create(
-                    case=case,
-                    moderator=moderator,
-                    action=action,
-                    note=note or "",
-                )
+                form = ModerationActionForm(data={"note": note})
+                if not form.is_valid():
+                    raise FormValidationException(
+                        "Invalid moderation action data", errors=form.errors
+                    )
+
+                moderation_action = form.save(commit=False)
+                moderation_action.case = case
+                moderation_action.moderator = moderator
+                moderation_action.action = action
+                moderation_action.save()
 
                 case.status = ReportService._case_status_for_action(action)
                 case.save(update_fields=["status", "updated_at"])

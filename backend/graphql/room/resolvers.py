@@ -3,12 +3,12 @@ import graphene
 from typing import Optional
 from graphql import GraphQLError
 
-from django.db.models import Q, Count, QuerySet, Prefetch
+from django.db.models import QuerySet, Prefetch
 
 from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
 from backend.account.models import User
-from backend.graphql.room.filters import RoomFilter
+from backend.graphql.room.filters import RoomFilter, TopicFilter
 from backend.room.models import Room, Topic
 from backend.room.rules.labels import RoomPermission
 from backend.graphql.room.types import RoomType, TopicType
@@ -62,8 +62,7 @@ class RoomQuery(graphene.ObjectType):
         topics: Optional[list[str]] = None,
     ) -> QuerySet[Room]:
         queryset = (
-            Room.objects
-            .with_participants_count()
+            Room.objects.with_participants_count()
             .with_details()
             .visible_to(info.context.user)
         )
@@ -131,12 +130,9 @@ class TopicQuery(graphene.ObjectType):
         search: Optional[str] = None,
         min_rooms: Optional[int] = None,
     ) -> QuerySet[Topic]:
-        queryset = Topic.objects.annotate(room_count=Count("rooms"))
+        queryset = Topic.objects.all()
 
-        if search:
-            queryset = queryset.filter(name__icontains=search)
-
-        if min_rooms:
-            queryset = queryset.filter(room_count__gte=min_rooms)
-
-        return queryset.order_by("-room_count")
+        return TopicFilter(
+            data={"search": search, "min_rooms": min_rooms},
+            queryset=queryset,
+        ).qs.ordered_by_popularity()

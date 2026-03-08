@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Optional
 
 from django.db import IntegrityError, transaction
-from django.utils import timezone
 
 from backend.account.models import User
 from backend.invite.models import Invite
@@ -226,7 +225,6 @@ class InviteService:
         form.save()
 
         return invite
-
 
     @staticmethod
     def get_invite_by_token(token: uuid.UUID) -> Optional[Invite]:

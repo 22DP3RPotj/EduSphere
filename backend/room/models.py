@@ -6,7 +6,7 @@ from django.db.models import Q, CheckConstraint
 from django.db.models.functions import Lower
 
 from backend.room.choices import VisibilityChoices
-from backend.room.querysets import RoomQuerySet
+from backend.room.querysets import RoomQuerySet, TopicQuerySet
 
 
 class Topic(models.Model):
@@ -15,10 +15,6 @@ class Topic(models.Model):
 
     class Meta:
         app_label = "room"
-        ordering = [Lower("name").asc()]
-        indexes = [
-            models.Index(fields=["name"]),
-        ]
         constraints = [
             CheckConstraint(
                 condition=Q(name__regex=r"^[A-Za-z]+$"),
@@ -26,6 +22,12 @@ class Topic(models.Model):
                 violation_error_message="Topic name must consist of letters only.",
             ),
         ]
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
+        ordering = [Lower("name").asc()]
+
+    objects = TopicQuerySet.as_manager()
 
     def __str__(self):
         return self.name
@@ -63,7 +65,7 @@ class Room(models.Model):
     )
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     objects = RoomQuerySet.as_manager()
 
     class Meta:

@@ -1,19 +1,12 @@
 from typing import Optional
 
-from django.db import IntegrityError, transaction
-
 from backend.account.models import User
 from backend.room.choices import VisibilityChoices
-from backend.room.forms import RoomForm
-from backend.room.models import Room, Topic
-from backend.access.models import Participant
+from backend.room.models import Room
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
-    ConflictException,
 )
-from backend.access.services import RoleService
-from backend.access.enums import RoleCode
+from backend.room import actions
 from backend.room.rules.labels import RoomPermission
 
 
@@ -46,45 +39,13 @@ class RoomService:
             FormValidationException: If form validation fails
             ConflictException: If room creation conflicts
         """
-        data = {
-            "name": name,
-            "description": description,
-        }
-
-        form = RoomForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid room data", errors=form.errors)
-
-        with transaction.atomic():
-            room: Room = form.save(commit=False)
-            room.host = user
-            if visibility is not None:
-                room.visibility = visibility
-            room.save()
-
-            topics = [
-                Topic.objects.get_or_create(name=topic_name)[0]
-                for topic_name in topic_names
-            ]
-            room.topics.set(topics)
-
-            RoleService.create_default_roles(room)
-
-            member_role = room.roles.get(name=RoleCode.MEMBER.label)
-            room.default_role = member_role
-            room.save(update_fields=["default_role"])
-
-            owner_role = room.roles.get(name=RoleCode.OWNER.label)
-
-            try:
-                Participant.objects.create(user=user, room=room, role=owner_role)
-            except IntegrityError as e:
-                raise ConflictException(
-                    "Could not create room due to a conflict."
-                ) from e
-
-        return room
+        return actions.create_room(
+            user=user,
+            name=name,
+            description=description,
+            topic_names=topic_names,
+            visibility=visibility,
+        )
 
     @staticmethod
     def update_room(
@@ -120,36 +81,13 @@ class RoomService:
                 "You don't have the permission to update this room."
             )
 
-        data = {
-            "name": name if name is not None else room.name,
-            "description": description if description is not None else room.description,
-        }
-
-        try:
-            with transaction.atomic():
-                form = RoomForm(data=data, instance=room)
-
-                if not form.is_valid():
-                    raise FormValidationException(
-                        "Invalid room data", errors=form.errors
-                    )
-
-                form.save()
-
-                if topic_names is not None:
-                    topics = [
-                        Topic.objects.get_or_create(name=topic_name)[0]
-                        for topic_name in topic_names
-                    ]
-                    room.topics.set(topics)
-
-                if visibility is not None:
-                    room.visibility = visibility
-                    room.save(update_fields=["visibility"])
-        except IntegrityError as e:
-            raise ConflictException("Could not update room due to a conflict.") from e
-
-        return room
+        return actions.update_room(
+            room=room,
+            name=name,
+            description=description,
+            visibility=visibility,
+            topic_names=topic_names,
+        )
 
     @staticmethod
     def delete_room(user: User, room: Room) -> bool:
@@ -172,5 +110,4 @@ class RoomService:
                 "You don't have the permission to delete this room."
             )
 
-        room.delete()
-        return True
+        return actions.delete_room(room=room)

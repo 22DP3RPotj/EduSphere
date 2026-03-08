@@ -1,27 +1,17 @@
 from typing import Optional
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
-from django.db import transaction, IntegrityError
 from django.db.models import Model
 
 from backend.account.models import User
 from backend.moderation.choices import ActionChoices, CaseStatusChoices
-from backend.moderation.models import (
-    ModerationCase,
-    Report,
-    ReportReason,
-)
+from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room
 from backend.messaging.models import Message
 from backend.access.models import Participant
-from backend.moderation.forms import ModerationActionForm, ReportForm
-from backend.core.exceptions import (
-    FormValidationException,
-    PermissionException,
-    ConflictException,
-)
+from backend.core.exceptions import PermissionException, ConflictException
 from backend.moderation.rules.labels import ModerationPermission
+from backend.moderation import actions
 
 _ACTION_TO_STATUS = {
     ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,
@@ -58,7 +48,7 @@ class ReportService:
         description: Optional[str] = None,
     ) -> Report:
         """
-        Create a report for any reportable target (Room, User, …).
+        Create a report for any reportable target (Room, User, ...).
         Automatically gets or creates an active ModerationCase for the target.
 
         Raises:
@@ -90,57 +80,12 @@ class ReportService:
                 "You already have an active report targeting this content."
             )
 
-        form = ReportForm(data={"description": description})
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid report data", errors=form.errors)
-
-        with transaction.atomic():
-            case = (
-                ModerationCase.objects.select_for_update()
-                .filter(
-                    content_type=content_type,
-                    object_id=target.pk,
-                    status__in=CaseStatusChoices.active(),
-                )
-                .first()
-            )
-            if case is None:
-                try:
-                    case = ModerationCase.objects.create(
-                        content_type=content_type,
-                        object_id=target.pk,
-                        status=CaseStatusChoices.PENDING,
-                    )
-                except (IntegrityError, ValidationError):
-                    case = (
-                        ModerationCase.objects.select_for_update()
-                        .filter(
-                            content_type=content_type,
-                            object_id=target.pk,
-                            status__in=CaseStatusChoices.active(),
-                        )
-                        .get()
-                    )
-
-            if Report.objects.filter(
-                reporter=reporter,
-                content_type=content_type,
-                object_id=target.pk,
-                case__status__in=CaseStatusChoices.active(),
-            ).exists():
-                raise ConflictException(
-                    "You already have an active report targeting this content."
-                )
-
-            report = form.save(commit=False)
-            report.reporter = reporter
-            report.content_type = content_type
-            report.object_id = target.pk
-            report.reason = reason
-            report.case = case
-            report.save()
-        return report
+        return actions.create_report(
+            reporter=reporter,
+            target=target,
+            reason=reason,
+            description=description,
+        )
 
     @staticmethod
     def take_case_action(
@@ -153,8 +98,8 @@ class ReportService:
         Record a moderation action against a case and transition its status.
 
         The case status is derived from the action:
-          - NO_VIOLATION  → DISMISSED
-          - All others    → RESOLVED
+          - NO_VIOLATION  -> DISMISSED
+          - All others    -> RESOLVED
 
         Raises:
             PermissionException: If user is not staff or superuser
@@ -162,26 +107,14 @@ class ReportService:
         if not moderator.has_perm(ModerationPermission.ACT, case):
             raise PermissionException("Only moderators can take case actions.")
 
-        try:
-            with transaction.atomic():
-                form = ModerationActionForm(data={"note": note})
-                if not form.is_valid():
-                    raise FormValidationException(
-                        "Invalid moderation action data", errors=form.errors
-                    )
-
-                moderation_action = form.save(commit=False)
-                moderation_action.case = case
-                moderation_action.moderator = moderator
-                moderation_action.action = action
-                moderation_action.save()
-
-                case.status = ReportService._case_status_for_action(action)
-                case.save(update_fields=["status", "updated_at"])
-        except IntegrityError as e:
-            raise ConflictException("Could not take action due to a conflict.") from e
-
-        return case
+        status = ReportService._case_status_for_action(action)
+        return actions.take_case_action(
+            moderator=moderator,
+            case=case,
+            action=action,
+            status=status,
+            note=note,
+        )
 
     @staticmethod
     def set_case_under_review(
@@ -197,7 +130,4 @@ class ReportService:
         if not moderator.has_perm(ModerationPermission.REVIEW, case):
             raise PermissionException("Only moderators can update case status.")
 
-        case.status = CaseStatusChoices.UNDER_REVIEW
-        case.save(update_fields=["status", "updated_at"])
-
-        return case
+        return actions.set_case_under_review(case=case)

@@ -1,15 +1,11 @@
-from django.db import IntegrityError
-
 from backend.messaging.models import Message
 from backend.account.models import User
 from backend.room.models import Room
-from backend.messaging.forms import MessageForm
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
-    ConflictException,
 )
 from backend.messaging.rules.labels import MessagingPermission
+from backend.messaging import actions
 
 
 class MessageService:
@@ -42,26 +38,7 @@ class MessageService:
                 "You don't have permission to send messages in this room."
             )
 
-        data = {
-            "body": body,
-        }
-
-        form = MessageForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid message data", errors=form.errors)
-
-        try:
-            message = form.save(commit=False)
-            message.author = user
-            message.room = room
-            message.save()
-        except IntegrityError as e:
-            raise ConflictException(
-                "Could not create message due to a conflict."
-            ) from e
-
-        return message
+        return actions.create_message(user=user, room=room, body=body)
 
     @staticmethod
     def update_message(
@@ -88,26 +65,7 @@ class MessageService:
         if not user.has_perm(MessagingPermission.UPDATE, message):
             raise PermissionException("You can only edit your own messages.")
 
-        data = {
-            "body": body,
-        }
-
-        form = MessageForm(data=data, instance=message)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid message data", errors=form.errors)
-
-        try:
-            message = form.save(commit=False)
-            if not message.is_edited:
-                message.is_edited = True
-            message.save()
-        except IntegrityError as e:
-            raise ConflictException(
-                "Could not update message due to a conflict."
-            ) from e
-
-        return message
+        return actions.update_message(message=message, body=body)
 
     @staticmethod
     def delete_message(
@@ -132,8 +90,7 @@ class MessageService:
                 "You don't have permission to delete this message."
             )
 
-        message.delete()
-        return True
+        return actions.delete_message(message=message)
 
     @staticmethod
     def serialize(message: Message) -> dict:

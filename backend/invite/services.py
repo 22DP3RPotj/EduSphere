@@ -2,20 +2,17 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from django.db import IntegrityError, transaction
-
 from backend.account.models import User
 from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.access.models import Role, Participant
-from backend.invite.forms import InviteForm
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
     ConflictException,
     ValidationException,
 )
 from backend.invite.rules.labels import InvitePermission
+from backend.invite import actions
 
 
 class InviteService:
@@ -64,27 +61,13 @@ class InviteService:
                 "This user already has an active invite to this room."
             )
 
-        data = {
-            "expires_at": expires_at,
-        }
-
-        form = InviteForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid invite data", errors=form.errors)
-
-        try:
-            invite = form.save(commit=False)
-            invite.inviter = inviter
-            invite.invitee = invitee
-            invite.role = role
-            invite.room = room
-            invite.save()
-
-        except IntegrityError as e:
-            raise ConflictException("Could not send invite due to a conflict.") from e
-
-        return invite
+        return actions.send_invite(
+            inviter=inviter,
+            room=room,
+            invitee=invitee,
+            role=role,
+            expires_at=expires_at,
+        )
 
     @staticmethod
     def accept_invite(user: User, invite: Invite) -> Participant:
@@ -111,21 +94,7 @@ class InviteService:
                 f"Invite is '{invite.status.lower()}' and cannot be accepted."
             )
 
-        try:
-            with transaction.atomic():
-                participant = Participant.objects.create(
-                    user=user, room=invite.room, role=invite.role
-                )
-
-                invite.status = Invite.Status.ACCEPTED
-                invite.save(update_fields=["status"])
-
-        except IntegrityError as e:
-            raise ConflictException(
-                "User is already a participant of this room."
-            ) from e
-
-        return participant
+        return actions.accept_invite(user=user, invite=invite)
 
     @staticmethod
     def decline_invite(user: User, invite: Invite) -> bool:
@@ -153,10 +122,7 @@ class InviteService:
                 f"Invite is {invite.status.lower()} and cannot be declined."
             )
 
-        invite.status = Invite.Status.DECLINED
-        invite.save(update_fields=["status"])
-
-        return True
+        return actions.decline_invite(invite=invite)
 
     @staticmethod
     def cancel_invite(user: User, invite: Invite) -> bool:
@@ -184,8 +150,7 @@ class InviteService:
                 f"Invite is {invite.status.lower()} and cannot be canceled."
             )
 
-        invite.delete()
-        return True
+        return actions.cancel_invite(invite=invite)
 
     @staticmethod
     def resend_invite(user: User, invite: Invite, new_expires_at: datetime) -> Invite:
@@ -213,18 +178,7 @@ class InviteService:
         if invite.is_resolved:
             raise ValidationException("Cannot resend a resolved invite.")
 
-        data = {
-            "expires_at": new_expires_at,
-        }
-
-        form = InviteForm(data=data, instance=invite)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid invite data", errors=form.errors)
-
-        form.save()
-
-        return invite
+        return actions.resend_invite(invite=invite, new_expires_at=new_expires_at)
 
     @staticmethod
     def get_invite_by_token(token: uuid.UUID) -> Optional[Invite]:
@@ -246,19 +200,7 @@ class InviteService:
         except Invite.DoesNotExist:
             return None
 
-        InviteService._update_if_expired(invite)
+        actions.update_if_expired(invite=invite)
         invite.refresh_from_db(fields=["status"])
 
         return invite
-
-    @staticmethod
-    def _update_if_expired(invite: Invite) -> None:
-        """
-        Check if invite has expired and update status if needed.
-
-        Args:
-            invite: The invite to check
-        """
-        if invite.is_expired and invite.status != Invite.Status.EXPIRED:
-            invite.status = Invite.Status.EXPIRED
-            invite.save(update_fields=["status"])

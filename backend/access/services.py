@@ -1,25 +1,20 @@
 import uuid
-from typing import Any, Optional
+from typing import Optional
 
-from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 
 from backend.account.models import User
-from backend.invite.models import Invite
 from backend.room.models import Room
 
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
-    ConflictException,
     ValidationException,
 )
-from backend.access.models import Participant, Role, Permission
+from backend.access.models import Participant, Role
 from backend.access.rules.labels import AccessPermission
 from backend.access.enums import PermissionCode
 from backend.access.dtos import RoleDeleteResult
-from backend.access.forms import RoleForm
-from backend.access.templates import DEFAULT_ROLE_TEMPLATES
+from backend.access import actions
 
 
 class RoleService:
@@ -199,15 +194,7 @@ class RoleService:
         Args:
             room: The room
         """
-        for role_code, data in DEFAULT_ROLE_TEMPLATES.items():
-            role = Role.objects.create(
-                room=room,
-                name=role_code.label,
-                priority=data["priority"],
-                description=data["description"],
-            )
-            perms = Permission.objects.filter(code__in=data["permission_codes"])
-            role.permissions.set(perms)
+        actions.create_default_roles(room=room)
 
     @staticmethod
     def create_role(
@@ -267,30 +254,13 @@ class RoleService:
                     "You can only grant permissions your role already possesses."
                 )
 
-        data: dict[str, Any] = {
-            "name": name,
-            "description": description,
-            "priority": priority,
-        }
-
-        form = RoleForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid role data", errors=form.errors)
-
-        try:
-            role = form.save(commit=False)
-            role.room = room
-            role.save()
-
-            if permission_ids:
-                permissions = Permission.objects.filter(id__in=permission_ids)
-                role.permissions.set(permissions)
-
-        except IntegrityError as e:
-            raise ConflictException("Could not create role due to a conflict.") from e
-
-        return role
+        return actions.create_role(
+            room=room,
+            name=name,
+            description=description,
+            priority=priority,
+            permission_ids=permission_ids,
+        )
 
     @staticmethod
     def update_role(
@@ -323,50 +293,25 @@ class RoleService:
         if not user.has_perm(AccessPermission.UPDATE, role):
             raise PermissionException("You don't have permission to update this role.")
 
-        data: dict[str, Any] = {}
+        if permission_ids is not None:
+            participant = RoleService.get_participant(user, role.room)
+            if participant is not None and not RoleService._is_valid_permission_set(
+                participant, permission_ids
+            ):
+                raise PermissionException(
+                    "Cannot assign permissions you don't have. "
+                    "You can only grant permissions your role already possesses."
+                )
 
-        if name is not None:
-            data["name"] = name
-        if description is not None:
-            data["description"] = description
-        if priority is not None:
-            data["priority"] = priority
-
-        try:
-            with transaction.atomic():
-                if data:
-                    form = RoleForm(data=data, instance=role)
-
-                    if not form.is_valid():
-                        raise FormValidationException(
-                            "Invalid role data", errors=form.errors
-                        )
-
-                    form.save()
-
-                if permission_ids is not None:
-                    participant = RoleService.get_participant(user, role.room)
-                    if (
-                        participant is not None
-                        and not RoleService._is_valid_permission_set(
-                            participant, permission_ids
-                        )
-                    ):
-                        raise PermissionException(
-                            "Cannot assign permissions you don't have. "
-                            "You can only grant permissions your role already possesses."
-                        )
-
-                    permissions = Permission.objects.filter(id__in=permission_ids)
-                    role.permissions.set(permissions)
-
-        except IntegrityError as e:
-            raise ConflictException("Could not update role due to a conflict.") from e
-
-        return role
+        return actions.update_role(
+            role=role,
+            name=name,
+            description=description,
+            priority=priority,
+            permission_ids=permission_ids,
+        )
 
     @staticmethod
-    @transaction.atomic
     def delete_role(
         user: User, role: Role, substitution_role: Optional[Role] = None
     ) -> RoleDeleteResult:
@@ -393,18 +338,7 @@ class RoleService:
         if not user.has_perm(AccessPermission.DELETE, role):
             raise PermissionException("You don't have permission to delete this role.")
 
-        participants_count = Participant.objects.filter(role=role).update(
-            role=substitution_role
-        )
-        invites_count = Invite.objects.filter(role=role).update(role=substitution_role)
-
-        role.delete()
-
-        return RoleDeleteResult(
-            success=True,
-            participants_reassigned=participants_count,
-            invites_reassigned=invites_count,
-        )
+        return actions.delete_role(role=role, substitution_role=substitution_role)
 
     @staticmethod
     def assign_permissions_to_role(
@@ -440,9 +374,10 @@ class RoleService:
                 "You can only grant permissions your role already possesses."
             )
 
-        permissions = Permission.objects.filter(id__in=permission_ids)
-        role.permissions.set(permissions)
-        return role
+        return actions.assign_permissions_to_role(
+            role=role,
+            permission_ids=permission_ids,
+        )
 
     @staticmethod
     def remove_permissions_from_role(
@@ -469,10 +404,10 @@ class RoleService:
                 "You don't have permission to remove permissions from this role."
             )
 
-        if permission_ids:
-            permissions = list(Permission.objects.filter(id__in=permission_ids))
-            role.permissions.remove(*permissions)
-        return role
+        return actions.remove_permissions_from_role(
+            role=role,
+            permission_ids=permission_ids,
+        )
 
 
 class ParticipantService:
@@ -522,20 +457,7 @@ class ParticipantService:
             ValidationException: If role doesn't belong to the room
             ConflictException: If user is already a participant
         """
-        if role is not None and role.room != room:
-            raise ValidationException("Role must belong to the same room.")
-
-        if Participant.objects.filter(user=user, room=room).exists():
-            raise ConflictException("User is already a participant of this room.")
-
-        try:
-            participant = Participant.objects.create(user=user, room=room, role=role)
-        except IntegrityError as e:
-            raise ConflictException(
-                "User is already a participant of this room."
-            ) from e
-
-        return participant
+        return actions.add_participant(room=room, user=user, role=role)
 
     @staticmethod
     def change_participant_role(
@@ -564,10 +486,9 @@ class ParticipantService:
         if not user.has_perm(AccessPermission.UPDATE, new_role):
             raise PermissionException("You don't have permission to assign this role.")
 
-        participant.role = new_role
-        participant.save()
-
-        return participant
+        return actions.change_participant_role(
+            participant=participant, new_role=new_role
+        )
 
     @staticmethod
     def remove_participant(
@@ -597,8 +518,7 @@ class ParticipantService:
                     "You don't have permission to remove this participant."
                 )
 
-        participant.delete()
-        return True
+        return actions.remove_participant(participant=participant)
 
     @staticmethod
     def get_user_rooms(user: User):

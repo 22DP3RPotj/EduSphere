@@ -100,3 +100,14 @@ def update_room(
 def delete_room(room: Room) -> bool:
     room.delete()
     return True
+
+
+def join_room(user: User, room: Room) -> Room:
+    Participant.objects.create(user=user, room=room, role=room.default_role)
+
+    return room
+
+
+def leave_room(participant: Participant) -> bool:
+    participant.delete()
+    return True

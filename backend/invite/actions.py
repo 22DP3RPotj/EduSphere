@@ -9,17 +9,10 @@ from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
 )
-from backend.invite.choices import InviteStatusChoices
 from backend.invite.forms import InviteForm
 from backend.invite.models import Invite
 from backend.access.models import Participant
 from backend.room.models import Room
-
-
-def _update_status(invite: Invite, new_status: InviteStatusChoices) -> Invite:
-    invite.status = new_status
-    invite.save(update_fields=["status"])
-    return invite
 
 
 def send_invite(
@@ -57,7 +50,7 @@ def accept_invite(user: User, invite: Invite) -> Participant:
                 role=invite.role,
             )
 
-            _update_status(invite, Invite.Status.ACCEPTED)
+            invite.update_status(Invite.Status.ACCEPTED)
     except IntegrityError as e:
         raise ConflictException("User is already a participant of this room.") from e
 
@@ -65,11 +58,13 @@ def accept_invite(user: User, invite: Invite) -> Participant:
 
 
 def decline_invite(invite: Invite) -> Invite:
-    return _update_status(invite, Invite.Status.DECLINED)
+    invite.update_status(Invite.Status.DECLINED)
+    return invite
 
 
 def cancel_invite(invite: Invite) -> Invite:
-    return _update_status(invite, Invite.Status.REVOKED)
+    invite.update_status(Invite.Status.REVOKED)
+    return invite
 
 
 def resend_invite(invite: Invite, new_expires_at: datetime.datetime) -> Invite:
@@ -80,10 +75,4 @@ def resend_invite(invite: Invite, new_expires_at: datetime.datetime) -> Invite:
         raise FormValidationException("Invalid invite data", errors=form.errors)
 
     form.save()
-    return invite
-
-
-def update_if_expired(invite: Invite) -> Invite:
-    if invite.is_expired and invite.status == Invite.Status.PENDING:
-        return _update_status(invite, Invite.Status.EXPIRED)
     return invite

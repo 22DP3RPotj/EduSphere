@@ -1,11 +1,10 @@
 from typing import Optional
 
+from backend.access.services import RoleService
 from backend.account.models import User
 from backend.room.choices import VisibilityChoices
 from backend.room.models import Room
-from backend.core.exceptions import (
-    PermissionException,
-)
+from backend.core.exceptions import PermissionException, ConflictException
 from backend.room import actions
 from backend.room.rules.labels import RoomPermission
 
@@ -111,3 +110,57 @@ class RoomService:
             )
 
         return actions.delete_room(room=room)
+
+    @staticmethod
+    def join_room(user: User, room: Room) -> Room:
+        """
+        Join a room.
+
+        Args:
+            user: User joining the room
+            room: The room to join (must be PUBLIC or user must have access)
+
+        Returns:
+            The joined Room instance
+
+        Raises:
+            PermissionException: If user doesn't have permission to join
+            ConflictException: If join conflicts
+        """
+        if not user.has_perm(RoomPermission.JOIN, room):
+            raise PermissionException("You don't have permission to join this room.")
+
+        if room.memberships.filter(user=user).exists():
+            raise ConflictException(
+                "Already a participant of this room",
+            )
+
+        return actions.join_room(user=user, room=room)
+
+    @staticmethod
+    def leave_room(user: User, room: Room) -> bool:
+        """
+        Leave a room.
+
+        Args:
+            user: User leaving the room
+            room: The room to leave (must be a participant)
+
+        Returns:
+            True if leave was successful
+
+        Raises:
+            PermissionException: If user doesn't have permission to leave
+            ConflictException: If leave conflicts
+        """
+        if not user.has_perm(RoomPermission.LEAVE, room):
+            raise PermissionException("You don't have permission to leave this room.")
+
+        participant = RoleService.get_participant(user, room)
+
+        if participant is None:
+            raise ConflictException(
+                "Not a participant of this room",
+            )
+
+        return actions.leave_room(participant=participant)

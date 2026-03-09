@@ -10,7 +10,7 @@ class RoomForm(ModelForm):
         validators=[
             RegexValidator(
                 regex="^[a-zA-Z0-9 ]+$",
-                message="Room name can only contain letters and numbers.",
+                message="Room name can only contain letters, numbers and spaces.",
                 code="invalid_room_name",
             )
         ],

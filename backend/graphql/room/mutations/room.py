@@ -8,7 +8,6 @@ from backend.core.exceptions import ErrorCode
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
 from backend.room.choices import VisibilityChoices
 from backend.room.models import Room
-from backend.access.models import Participant
 from backend.room.services import RoomService
 from backend.graphql.base import BaseMutation
 
@@ -129,20 +128,31 @@ class JoinRoom(BaseMutation):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if Participant.objects.filter(user=info.context.user, room=room).exists():
-            raise GraphQLError(
-                "Already a participant of this room",
-                extensions={"code": ErrorCode.PERMISSION_DENIED},
-            )
-
-        if room.visibility == Room.Visibility.PRIVATE:
-            raise GraphQLError(
-                "Cannot join a private room",
-                extensions={"code": ErrorCode.PERMISSION_DENIED},
-            )
-
-        Participant.objects.create(
-            user=info.context.user, room=room, role=room.default_role
-        )
+        RoomService.join_room(user=info.context.user, room=room)
 
         return cls(room=room)
+
+
+class LeaveRoom(BaseMutation):
+    class Arguments:
+        room_id = graphene.UUID(required=True)
+
+    success = graphene.Boolean()
+
+    @classmethod
+    @login_required
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+    ) -> Self:
+        try:
+            room = Room.objects.get(
+                id=room_id,
+            )
+        except Room.DoesNotExist:
+            raise GraphQLError(
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
+        success = RoomService.leave_room(user=info.context.user, room=room)
+
+        return cls(success=success)

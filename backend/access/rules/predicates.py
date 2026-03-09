@@ -2,6 +2,7 @@ from rules.predicates import predicate
 from backend.access.enums import PermissionCode
 from backend.access.models import Role
 from backend.account.models import User
+from backend.room.models import Room
 
 
 @predicate
@@ -11,14 +12,11 @@ def can_manage_roles(user: User, role: Role) -> bool:
     return RoleService.has_permission(user, role.room, PermissionCode.ROOM_MANAGE_ROLES)
 
 
-# TODO: Role may not yet be created to check
 @predicate
-def has_higher_hierarchy(user: User, role: Role) -> bool:
-    from backend.access.services import RoleService
+def is_room_public(user: User, role: Role) -> bool:
+    return role.room.visibility == Room.Visibility.PUBLIC
 
-    participant = RoleService.get_participant(user, role.room)
 
-    if not participant or not participant.role:
-        return False
-
-    return participant.role.priority > role.priority
+@predicate
+def is_participant(user: User, role: Role) -> bool:
+    return role.room.memberships.filter(user=user).exists()

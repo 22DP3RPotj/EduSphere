@@ -83,6 +83,16 @@ class Invite(models.Model):
         """Check if invite is still active (pending and not expired)."""
         return self.status == self.Status.PENDING and not self.is_expired
 
+    def update_status(self, new_status: InviteStatusChoices) -> None:
+        """Update the status of the invite."""
+        self.status = new_status
+        self.save(update_fields=["status"])
+
+    def refresh(self) -> None:
+        """Refresh the invite instance from the database."""
+        if self.is_expired and self.status == self.Status.PENDING:
+            self.update_status(self.Status.EXPIRED)
+
 
 class InviteLink(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -103,7 +113,7 @@ class InviteLink(models.Model):
     max_uses = models.PositiveIntegerField(blank=True, null=True)
     uses = models.PositiveIntegerField(default=0)
 
-    token = models.UUIDField(
+    token = models.CharField(
         default=generate_token,
         max_length=INVITE_TOKEN_LENGTH,
         unique=True,

@@ -8,3 +8,4 @@ class RoomPermission(StrEnum):
     DELETE = "room.delete"
     JOIN = "room.join"
     LEAVE = "room.leave"
+    MANAGE_PARTICIPANTS = "room.manage_participants"

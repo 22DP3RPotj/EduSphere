@@ -2,6 +2,7 @@ import logging
 import graphene
 from functools import wraps
 from typing import Any, Callable, Optional, Self, TypeVar, ParamSpec
+from graphql_jwt.exceptions import JSONWebTokenError
 from graphql import GraphQLError
 from backend.core.exceptions import ErrorCode, FormValidationException, DomainException
 
@@ -16,8 +17,8 @@ def resolve_errors(f: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return f(*args, **kwargs)
-        except GraphQLError:
-            raise  # Re-raise GraphQLError without modification
+        except (GraphQLError, JSONWebTokenError):
+            raise  # Re-raise GraphQLError and JSONWebTokenError without modification
         except FormValidationException as e:
             raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
         except DomainException as e:

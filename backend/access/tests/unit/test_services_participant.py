@@ -103,7 +103,7 @@ class ParticipantServiceTest(ServiceTestBase):
         RoleService.create_default_roles(other_room)
         other_role = other_room.roles.first()
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with self.assertRaises(PermissionException):
             ParticipantService.change_participant_role(
                 user=self.owner,
                 participant=participant,
@@ -114,10 +114,10 @@ class ParticipantServiceTest(ServiceTestBase):
         self._add_member(self.member, self.member_role)
         participant = Participant.objects.get(user=self.member, room=self.room)
 
-        result = ParticipantService.remove_participant(self.member, participant)
+        with self.assertRaises(PermissionException):
+            ParticipantService.remove_participant(self.member, participant)
 
-        self.assertTrue(result)
-        self.assertFalse(Participant.objects.filter(id=participant.id).exists())
+        self.assertTrue(Participant.objects.filter(id=participant.id).exists())
 
     def test_remove_participant_with_permission(self):
         participant = self._add_member(self.other_user, self.member_role)

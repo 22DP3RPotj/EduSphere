@@ -5,6 +5,11 @@ from backend.access.enums import PermissionCode
 
 
 @predicate
+def is_host(user: User, room: Room) -> bool:
+    return room.host == user
+
+
+@predicate
 def is_participant(user: User, room: Room) -> bool:
     return room.memberships.filter(user=user).exists()
 
@@ -26,3 +31,12 @@ def can_update_room(user: User, room: Room) -> bool:
     from backend.access.services import RoleService
 
     return RoleService.has_permission(user, room, PermissionCode.ROOM_UPDATE)
+
+
+@predicate
+def can_manage_participants(user: User, room: Room) -> bool:
+    from backend.access.services import RoleService
+
+    return RoleService.has_permission(
+        user, room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
+    )

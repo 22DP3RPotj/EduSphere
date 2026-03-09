@@ -205,4 +205,5 @@ class InviteService:
         except Invite.DoesNotExist:
             return None
 
-        return actions.update_if_expired(invite=invite)
+        invite.refresh()
+        return invite

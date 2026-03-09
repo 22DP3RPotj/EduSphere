@@ -2,7 +2,7 @@ import uuid
 import pghistory
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, CheckConstraint
+from django.db.models import Q
 from django.db.models.functions import Lower
 
 from backend.room.choices import VisibilityChoices
@@ -16,7 +16,7 @@ class Topic(models.Model):
     class Meta:
         app_label = "room"
         constraints = [
-            CheckConstraint(
+            models.CheckConstraint(
                 condition=Q(name__regex=r"^[A-Za-z]+$"),
                 name="letters_only_in_topic_name",
                 violation_error_message="Topic name must consist of letters only.",
@@ -76,7 +76,12 @@ class Room(models.Model):
                 fields=["host", "name"],
                 name="unique_room_per_host",
                 violation_error_message="You already have a room with this name.",
-            )
+            ),
+            models.CheckConstraint(
+                condition=Q(name__regex=r"^[a-zA-Z0-9 ]+$"),
+                name="valid_characters_in_room_name",
+                violation_error_message="Room name can only contain letters, numbers and spaces.",
+            ),
         ]
         indexes = [
             models.Index(fields=["updated_at"]),

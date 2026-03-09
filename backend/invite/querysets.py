@@ -15,14 +15,12 @@ class InviteQuerySet(models.QuerySet):
     def active(self) -> Self:
         now = timezone.now()
 
-        return self.filter(status=self.model.Status.PENDING, expires_at__gte=now)
+        return self.filter(status=self.model.Status.PENDING).exclude(expires_at__lt=now)
 
     def refresh(self) -> Self:
         """Refresh invite statuses based on current time."""
         now = timezone.now()
-
         self.filter(status=self.model.Status.PENDING, expires_at__lt=now).update(
             status=self.model.Status.EXPIRED
         )
-
-        return self.filter(status=self.model.Status.PENDING, expires_at__gte=now)
+        return self.filter(status=self.model.Status.PENDING).exclude(expires_at__lt=now)

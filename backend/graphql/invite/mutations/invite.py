@@ -97,7 +97,7 @@ class DeclineInvite(BaseMutation):
     class Arguments:
         token = graphene.UUID(required=True)
 
-    success = graphene.Boolean()
+    invite = graphene.Field(InviteType)
 
     @classmethod
     @login_required
@@ -112,22 +112,16 @@ class DeclineInvite(BaseMutation):
                 extensions={"code": ErrorCode.NOT_FOUND},
             )
 
-        if invite.invitee != info.context.user:
-            raise GraphQLError(
-                "You are not the invitee for this invite.",
-                extensions={"code": ErrorCode.PERMISSION_DENIED},
-            )
+        invite = InviteService.decline_invite(user=info.context.user, invite=invite)
 
-        success = InviteService.decline_invite(user=info.context.user, invite=invite)
-
-        return cls(success=success)
+        return cls(invite=invite)
 
 
 class CancelInvite(BaseMutation):
     class Arguments:
         token = graphene.UUID(required=True)
 
-    success = graphene.Boolean()
+    invite = graphene.Field(InviteType)
 
     @classmethod
     @login_required
@@ -142,9 +136,9 @@ class CancelInvite(BaseMutation):
                 extensions={"code": ErrorCode.NOT_FOUND},
             )
 
-        success = InviteService.cancel_invite(user=info.context.user, invite=invite)
+        invite = InviteService.cancel_invite(user=info.context.user, invite=invite)
 
-        return cls(success=success)
+        return cls(invite=invite)
 
 
 class ResendInvite(BaseMutation):

@@ -9,10 +9,17 @@ from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
 )
+from backend.invite.choices import InviteStatusChoices
 from backend.invite.forms import InviteForm
 from backend.invite.models import Invite
 from backend.access.models import Participant
 from backend.room.models import Room
+
+
+def _update_status(invite: Invite, new_status: InviteStatusChoices) -> Invite:
+    invite.status = new_status
+    invite.save(update_fields=["status"])
+    return invite
 
 
 def send_invite(
@@ -50,23 +57,19 @@ def accept_invite(user: User, invite: Invite) -> Participant:
                 role=invite.role,
             )
 
-            invite.status = Invite.Status.ACCEPTED
-            invite.save(update_fields=["status"])
+            _update_status(invite, Invite.Status.ACCEPTED)
     except IntegrityError as e:
         raise ConflictException("User is already a participant of this room.") from e
 
     return participant
 
 
-def decline_invite(invite: Invite) -> bool:
-    invite.status = Invite.Status.DECLINED
-    invite.save(update_fields=["status"])
-    return True
+def decline_invite(invite: Invite) -> Invite:
+    return _update_status(invite, Invite.Status.DECLINED)
 
 
-def cancel_invite(invite: Invite) -> bool:
-    invite.delete()
-    return True
+def cancel_invite(invite: Invite) -> Invite:
+    return _update_status(invite, Invite.Status.REVOKED)
 
 
 def resend_invite(invite: Invite, new_expires_at: datetime.datetime) -> Invite:
@@ -80,7 +83,7 @@ def resend_invite(invite: Invite, new_expires_at: datetime.datetime) -> Invite:
     return invite
 
 
-def update_if_expired(invite: Invite) -> None:
-    if invite.is_expired and invite.status != Invite.Status.EXPIRED:
-        invite.status = Invite.Status.EXPIRED
-        invite.save(update_fields=["status"])
+def update_if_expired(invite: Invite) -> Invite:
+    if invite.is_expired and invite.status == Invite.Status.PENDING:
+        return _update_status(invite, Invite.Status.EXPIRED)
+    return invite

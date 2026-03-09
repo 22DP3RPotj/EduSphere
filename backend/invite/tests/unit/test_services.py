@@ -278,8 +278,7 @@ class InviteServiceTest(ServiceTestBase):
 
         result = InviteService.cancel_invite(self.member, invite)
 
-        self.assertTrue(result)
-        self.assertFalse(Invite.objects.filter(id=invite.id).exists())
+        self.assertEqual(result.status, Invite.Status.REVOKED)
 
     def test_cancel_invite_not_inviter(self):
         self._add_member(self.member, self.owner_role)

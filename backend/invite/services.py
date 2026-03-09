@@ -87,7 +87,9 @@ class InviteService:
             ConflictException: If user is already a participant
         """
         if not user.has_perm(InvitePermission.ACCEPT, invite):
-            raise PermissionException("You can only accept invites sent to you.")
+            raise PermissionException(
+                "You don't have permission to accept this invite."
+            )
 
         if invite.status != Invite.Status.PENDING:
             raise ValidationException(
@@ -97,7 +99,7 @@ class InviteService:
         return actions.accept_invite(user=user, invite=invite)
 
     @staticmethod
-    def decline_invite(user: User, invite: Invite) -> bool:
+    def decline_invite(user: User, invite: Invite) -> Invite:
         """
         Decline an invite.
 
@@ -106,12 +108,15 @@ class InviteService:
             invite: The invite to decline
 
         Returns:
-            True if decline was successful
+            The updated Invite instance
 
         Raises:
             PermissionException: If user is not the invitee
             ValidationException: If invite is not pending
         """
+        if invite.invitee != user:
+            raise PermissionException("You are not the invitee for this invite.")
+
         if not user.has_perm(InvitePermission.REJECT, invite):
             raise PermissionException(
                 "You don't have permission to reject this invite."
@@ -125,7 +130,7 @@ class InviteService:
         return actions.decline_invite(invite=invite)
 
     @staticmethod
-    def cancel_invite(user: User, invite: Invite) -> bool:
+    def cancel_invite(user: User, invite: Invite) -> Invite:
         """
         Cancel a pending invite (inviter only).
 
@@ -134,7 +139,7 @@ class InviteService:
             invite: The invite to cancel
 
         Returns:
-            True if cancel was successful
+            The updated Invite instance
 
         Raises:
             PermissionException: If user is not the inviter
@@ -200,7 +205,4 @@ class InviteService:
         except Invite.DoesNotExist:
             return None
 
-        actions.update_if_expired(invite=invite)
-        invite.refresh_from_db(fields=["status"])
-
-        return invite
+        return actions.update_if_expired(invite=invite)

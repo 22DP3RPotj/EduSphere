@@ -9,7 +9,7 @@ from backend.moderation.models import (
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory
+from backend.invite.models import InviteHistory, InviteLinkHistory
 
 from backend.graphql.audit.types import (
     ModerationActionAuditType,
@@ -18,9 +18,11 @@ from backend.graphql.audit.types import (
     UserAuditType,
     RoomAuditType,
     InviteAuditType,
+    InviteLinkAuditType,
     UserBanAuditType,
 )
 from backend.graphql.audit.filters import (
+    InviteLinkAuditFilter,
     ModerationActionAuditFilter,
     ModerationCaseAuditFilter,
     ReportAuditFilter,
@@ -50,6 +52,11 @@ class AuditQuery(graphene.ObjectType):
     invite_audits = DjangoFilterConnectionField(
         InviteAuditType,
         filterset_class=InviteAuditFilter,
+    )
+
+    invite_link_audits = DjangoFilterConnectionField(
+        InviteLinkAuditType,
+        filterset_class=InviteLinkAuditFilter,
     )
 
     report_audits = DjangoFilterConnectionField(
@@ -82,6 +89,10 @@ class AuditQuery(graphene.ObjectType):
     @superuser_required
     def resolve_invite_audits(self, info, **kwargs):
         return InviteHistory.objects.all().order_by("-pgh_created_at")
+
+    @superuser_required
+    def resolve_invite_link_audits(self, info, **kwargs):
+        return InviteLinkHistory.objects.all().order_by("-pgh_created_at")
 
     @superuser_required
     def resolve_report_audits(self, info, **kwargs):

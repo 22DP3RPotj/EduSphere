@@ -6,7 +6,7 @@ from backend.moderation.models import (
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory
+from backend.invite.models import InviteHistory, InviteLinkHistory
 
 
 class BaseAuditFilter(django_filters.FilterSet):
@@ -49,6 +49,14 @@ class InviteAuditFilter(BaseAuditFilter):
     class Meta:
         model = InviteHistory
         fields = ["status"]
+
+
+class InviteLinkAuditFilter(BaseAuditFilter):
+    is_active = django_filters.BooleanFilter(field_name="is_active")
+
+    class Meta:
+        model = InviteLinkHistory
+        fields = ["is_active"]
 
 
 class ReportAuditFilter(BaseAuditFilter):

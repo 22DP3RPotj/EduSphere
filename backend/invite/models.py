@@ -1,36 +1,48 @@
 import uuid
+
 import pghistory
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
 from backend.invite.choices import InviteStatusChoices
+from backend.invite.querysets import InviteQuerySet
+from backend.invite.utils import generate_token, INVITE_TOKEN_LENGTH
 
 
 class Invite(models.Model):
     Status = InviteStatusChoices
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     room = models.ForeignKey(
         "room.Room", on_delete=models.CASCADE, related_name="invites"
     )
+
     inviter = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_invites"
     )
+
     invitee = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="received_invites",
     )
+
     role = models.ForeignKey(
         "access.Role", on_delete=models.SET_NULL, null=True, blank=True
     )
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
     status = models.CharField(
         max_length=16, choices=Status.choices, default=Status.PENDING
     )
+    expires_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
 
     class Meta:
         app_label = "invite"
@@ -47,6 +59,8 @@ class Invite(models.Model):
         ]
         ordering = ["-created_at"]
 
+    objects = InviteQuerySet.as_manager()
+
     def __str__(self):
         return f"Invite of {self.invitee.username} to {self.room.name} by {self.inviter.username}"
 
@@ -54,22 +68,70 @@ class Invite(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
-    @classmethod
-    def active_invites(cls, **filters):
-        return cls.objects.filter(status=cls.Status.PENDING, **filters)
-
     @property
     def is_expired(self) -> bool:
         """Check if invite has expired based on expires_at timestamp."""
-        return timezone.now() > self.expires_at
+        return self.expires_at is not None and self.expires_at < timezone.now()
 
     @property
     def is_resolved(self) -> bool:
-        """Check if invite has been resolved (accepted or declined)"""
-        return self.status in [
-            self.Status.ACCEPTED,
-            self.Status.DECLINED,
+        """Check if invite has been resolved."""
+        return self.status in self.Status.resolved()
+
+    @property
+    def is_active(self) -> bool:
+        """Check if invite is still active (pending and not expired)."""
+        return self.status == self.Status.PENDING and not self.is_expired
+
+    def update_status(self, new_status: InviteStatusChoices) -> None:
+        """Update the status of the invite."""
+        self.status = new_status
+        self.save(update_fields=["status"])
+
+    def refresh(self) -> None:
+        """Refresh the invite instance from the database."""
+        if self.is_expired and self.status == self.Status.PENDING:
+            self.update_status(self.Status.EXPIRED)
+
+
+class InviteLink(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    room = models.ForeignKey(
+        "room.Room", on_delete=models.CASCADE, related_name="invite_links"
+    )
+    role = models.ForeignKey(
+        "access.Role", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_invite_links",
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    max_uses = models.PositiveIntegerField(blank=True, null=True)
+    uses = models.PositiveIntegerField(default=0)
+
+    token = models.CharField(
+        default=generate_token,
+        max_length=INVITE_TOKEN_LENGTH,
+        unique=True,
+        editable=False,
+    )
+    expires_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "invite"
+        indexes = [
+            models.Index(fields=["room"]),
+            models.Index(fields=["expires_at"]),
         ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Invite link to {self.room.name} with role {self.role.name if self.role else 'None'}"
 
 
 class InviteHistory(

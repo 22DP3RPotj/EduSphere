@@ -3,14 +3,14 @@ import graphene
 from typing import Optional
 from graphql import GraphQLError
 
-from django.db.models import Q, Count, QuerySet, Prefetch
+from django.db.models import QuerySet, Prefetch
 
 from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
 from backend.account.models import User
-from backend.graphql.room.filters import RoomFilter
+from backend.graphql.room.filters import RoomFilter, TopicFilter
 from backend.room.models import Room, Topic
-from backend.room.services import RoomService
+from backend.room.rules.labels import RoomPermission
 from backend.graphql.room.types import RoomType, TopicType
 
 
@@ -23,10 +23,10 @@ class RoomQuery(graphene.ObjectType):
         topics=graphene.List(graphene.String),
     )
     rooms_participated_by_user = graphene.List(
-        RoomType, user_slug=graphene.String(required=True)
+        RoomType, user_id=graphene.UUID(required=True)
     )
     rooms_not_participated_by_user = graphene.List(
-        RoomType, user_slug=graphene.String(required=True)
+        RoomType, user_id=graphene.UUID(required=True)
     )
 
     def resolve_room(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> Room:
@@ -47,7 +47,7 @@ class RoomQuery(graphene.ObjectType):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if not RoomService.can_view(info.context.user, room):
+        if not info.context.user.has_perm(RoomPermission.READ, room):
             raise GraphQLError(
                 "Permission denied", extensions={"code": ErrorCode.PERMISSION_DENIED}
             )
@@ -61,22 +61,10 @@ class RoomQuery(graphene.ObjectType):
         search: Optional[str] = None,
         topics: Optional[list[str]] = None,
     ) -> QuerySet[Room]:
-        filters: Q = Q(visibility=Room.Visibility.PUBLIC)
-
-        if info.context.user.is_authenticated:
-            filters |= Q(memberships__user=info.context.user)
-
         queryset = (
-            Room.objects.annotate(participants_count=Count("participants"))
-            .select_related("host")
-            .prefetch_related(
-                "topics",
-                Prefetch(
-                    "memberships",
-                    queryset=Participant.objects.select_related("user", "role"),
-                ),
-            )
-            .filter(filters)
+            Room.objects.with_participants_count()
+            .with_details()
+            .visible_to(info.context.user)
         )
 
         return (
@@ -89,57 +77,43 @@ class RoomQuery(graphene.ObjectType):
                 queryset=queryset,
             )
             .qs.distinct()
-            .order_by("-participants_count", "-created_at")
+            .ordered_by_popularity()
         )
 
     def resolve_rooms_participated_by_user(
-        self, info: graphene.ResolveInfo, user_slug: str
+        self, info: graphene.ResolveInfo, user_id: uuid.UUID
     ) -> QuerySet[Room]:
         try:
-            user = User.objects.get(username=user_slug)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
         queryset = (
-            Room.objects.filter(participants=user)
-            .annotate(participants_count=Count("participants"))
-            .select_related("host")
-            .prefetch_related(
-                "topics",
-                Prefetch(
-                    "memberships",
-                    queryset=Participant.objects.select_related("user", "role"),
-                ),
-            )
-            .order_by("-participants_count", "-created_at")
+            Room.objects.participated_by(user)
+            .with_participants_count()
+            .with_details()
+            .ordered_by_popularity()
         )
 
         return queryset
 
     def resolve_rooms_not_participated_by_user(
-        self, info: graphene.ResolveInfo, user_slug: str
+        self, info: graphene.ResolveInfo, user_id: uuid.UUID
     ) -> QuerySet[Room]:
         try:
-            user = User.objects.get(username=user_slug)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
         queryset = (
-            Room.objects.exclude(participants=user)
-            .annotate(participants_count=Count("participants"))
-            .select_related("host")
-            .prefetch_related(
-                "topics",
-                Prefetch(
-                    "memberships",
-                    queryset=Participant.objects.select_related("user", "role"),
-                ),
-            )
-            .order_by("-participants_count", "-created_at")
+            Room.objects.not_participated_by(user)
+            .with_participants_count()
+            .with_details()
+            .ordered_by_popularity()
         )
 
         return queryset
@@ -156,12 +130,9 @@ class TopicQuery(graphene.ObjectType):
         search: Optional[str] = None,
         min_rooms: Optional[int] = None,
     ) -> QuerySet[Topic]:
-        queryset = Topic.objects.annotate(room_count=Count("rooms"))
+        queryset = Topic.objects.all()
 
-        if search:
-            queryset = queryset.filter(name__icontains=search)
-
-        if min_rooms:
-            queryset = queryset.filter(room_count__gte=min_rooms)
-
-        return queryset.order_by("-room_count")
+        return TopicFilter(
+            data={"search": search, "min_rooms": min_rooms},
+            queryset=queryset,
+        ).qs.ordered_by_popularity()

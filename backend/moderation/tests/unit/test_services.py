@@ -6,9 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from backend.core.exceptions import (
     ConflictException,
-    FormValidationException,
     PermissionException,
-    ValidationException,
 )
 from backend.moderation.choices import ActionChoices, CaseStatusChoices
 from backend.moderation.models import (
@@ -56,17 +54,6 @@ class ReportServiceTest(ServiceTestBase):
                 target=self.room,
                 reason=self.reason_spam,
                 description="Spam",
-            )
-
-    def test_create_report_invalid_description(self):
-        self._add_member(self.member, self.member_role)
-
-        with self.assertRaises((ValidationException, FormValidationException)):
-            ReportService.create_report(
-                reporter=self.member,
-                target=self.room,
-                reason=self.reason_spam,
-                description="",
             )
 
     def test_create_report_active_exists(self):

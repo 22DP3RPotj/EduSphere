@@ -1,23 +1,18 @@
 import graphene
 import uuid
-from typing import Optional
+from typing import Optional, Self, Any
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
+from backend.core.exceptions import ErrorCode
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
 from backend.room.choices import VisibilityChoices
 from backend.room.models import Room
-from backend.access.models import Participant
 from backend.room.services import RoomService
-from backend.core.exceptions import (
-    PermissionException,
-    FormValidationException,
-    ConflictException,
-    ErrorCode,
-)
+from backend.graphql.base import BaseMutation
 
 
-class CreateRoom(graphene.Mutation):
+class CreateRoom(BaseMutation):
     class Arguments:
         name = graphene.String(required=True)
         topic_names = graphene.List(graphene.String, required=True)
@@ -26,32 +21,30 @@ class CreateRoom(graphene.Mutation):
 
     room = graphene.Field(RoomType)
 
+    @classmethod
     @login_required
-    def mutate(
-        self,
+    def resolve(
+        cls,
+        root: Optional[Any],
         info: graphene.ResolveInfo,
         name: str,
         topic_names: list[str],
         description: str,
         visibility: Optional[VisibilityChoices] = None,
-    ):
-        try:
-            room = RoomService.create_room(
-                user=info.context.user,
-                name=name,
-                description=description,
-                visibility=visibility,
-                topic_names=topic_names,
-            )
-        except FormValidationException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
-        except ConflictException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+    ) -> Self:
 
-        return CreateRoom(room=room)
+        room = RoomService.create_room(
+            user=info.context.user,
+            name=name,
+            description=description,
+            visibility=visibility,
+            topic_names=topic_names,
+        )
+
+        return cls(room=room)
 
 
-class UpdateRoom(graphene.Mutation):
+class UpdateRoom(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
         name = graphene.String(required=False)
@@ -61,16 +54,18 @@ class UpdateRoom(graphene.Mutation):
 
     room = graphene.Field(RoomType)
 
+    @classmethod
     @login_required
-    def mutate(
-        self,
+    def resolve(
+        cls,
+        root: Optional[Any],
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
         topic_names: Optional[list[str]] = None,
         visibility: Optional[VisibilityChoices] = None,
-    ):
+    ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
@@ -78,31 +73,29 @@ class UpdateRoom(graphene.Mutation):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            room = RoomService.update_room(
-                user=info.context.user,
-                room=room,
-                name=name,
-                description=description,
-                visibility=visibility,
-                topic_names=topic_names,
-            )
-        except (PermissionException, ConflictException) as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
-        except FormValidationException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+        room = RoomService.update_room(
+            user=info.context.user,
+            room=room,
+            name=name,
+            description=description,
+            visibility=visibility,
+            topic_names=topic_names,
+        )
 
-        return UpdateRoom(room=room)
+        return cls(room=room)
 
 
-class DeleteRoom(graphene.Mutation):
+class DeleteRoom(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
 
     success = graphene.Boolean()
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID):
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+    ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
@@ -110,22 +103,22 @@ class DeleteRoom(graphene.Mutation):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            success = RoomService.delete_room(user=info.context.user, room=room)
-        except PermissionException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        success = RoomService.delete_room(user=info.context.user, room=room)
 
-        return DeleteRoom(success=success)
+        return cls(success=success)
 
 
-class JoinRoom(graphene.Mutation):
+class JoinRoom(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
 
     room = graphene.Field(RoomType)
 
+    @classmethod
     @login_required
-    def mutate(self, info: graphene.ResolveInfo, room_id: uuid.UUID):
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+    ) -> Self:
         try:
             room = Room.objects.get(
                 id=room_id,
@@ -135,20 +128,31 @@ class JoinRoom(graphene.Mutation):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if Participant.objects.filter(user=info.context.user, room=room).exists():
+        RoomService.join_room(user=info.context.user, room=room)
+
+        return cls(room=room)
+
+
+class LeaveRoom(BaseMutation):
+    class Arguments:
+        room_id = graphene.UUID(required=True)
+
+    success = graphene.Boolean()
+
+    @classmethod
+    @login_required
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+    ) -> Self:
+        try:
+            room = Room.objects.get(
+                id=room_id,
+            )
+        except Room.DoesNotExist:
             raise GraphQLError(
-                "Already a participant of this room",
-                extensions={"code": ErrorCode.PERMISSION_DENIED},
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if room.visibility == Room.Visibility.PRIVATE:
-            raise GraphQLError(
-                "Cannot join a private room",
-                extensions={"code": ErrorCode.PERMISSION_DENIED},
-            )
+        success = RoomService.leave_room(user=info.context.user, room=room)
 
-        Participant.objects.create(
-            user=info.context.user, room=room, role=room.default_role
-        )
-
-        return JoinRoom(room=room)
+        return cls(success=success)

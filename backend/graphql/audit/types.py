@@ -1,7 +1,12 @@
 import graphene
 from graphene_django import DjangoObjectType
 
-from backend.account.models import UserHistory, User
+from backend.account.models import UserBanHistory, UserHistory, User
+from backend.moderation.models import (
+    ModerationActionHistory,
+    ModerationCaseHistory,
+    ReportHistory,
+)
 from backend.room.models import RoomHistory
 from backend.invite.models import InviteHistory
 
@@ -19,6 +24,13 @@ class BaseAuditType(graphene.ObjectType):
             if user_id:
                 return User.objects.filter(id=user_id).first()
         return None
+
+
+class UserBanAuditType(BaseAuditType, DjangoObjectType):
+    class Meta:
+        model = UserBanHistory
+        interfaces = (graphene.relay.Node,)
+        fields = ("user", "banned_by", "reason", "expires_at", "is_active")
 
 
 class UserAuditType(BaseAuditType, DjangoObjectType):
@@ -53,4 +65,32 @@ class InviteAuditType(BaseAuditType, DjangoObjectType):
         fields = (
             "status",
             "role",
+        )
+
+
+class ModerationCaseAuditType(BaseAuditType, DjangoObjectType):
+    class Meta:
+        model = ModerationCaseHistory
+        interfaces = (graphene.relay.Node,)
+        fields = (
+            "status",
+            "priority",
+        )
+
+
+class ModerationActionAuditType(BaseAuditType, DjangoObjectType):
+    class Meta:
+        model = ModerationActionHistory
+        interfaces = (graphene.relay.Node,)
+        fields = ("action", "note", "moderator")
+
+
+class ReportAuditType(BaseAuditType, DjangoObjectType):
+    class Meta:
+        model = ReportHistory
+        interfaces = (graphene.relay.Node,)
+        fields = (
+            "description",
+            "reason",
+            "case",
         )

@@ -167,13 +167,13 @@ class QueryTests(JSONWebTokenTestCase):
     def test_rooms_participated_by_user(self):
         self.client.authenticate(self.user)
         query = """
-            query GetParticipatedRooms($userSlug: String!) {
-                roomsParticipatedByUser(userSlug: $userSlug) {
+            query GetParticipatedRooms($userId: UUID!) {
+                roomsParticipatedByUser(userId: $userId) {
                     name
                 }
             }
         """
-        variables = {"userSlug": self.user.username}
+        variables = {"userId": str(self.user.id)}
         result: ExecutionResult = self.client.execute(query, variables)
         self.assertIsNone(result.errors, f"Unexpected errors: {result.errors}")
         self.assertIsNotNone(result.data)

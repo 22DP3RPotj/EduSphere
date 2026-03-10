@@ -18,9 +18,6 @@ class Message(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.body[0:50] + ("..." if len(self.body) > 50 else "")
-
     class Meta:
         app_label = "messaging"
         indexes = [
@@ -31,6 +28,9 @@ class Message(models.Model):
             models.Index(fields=["author"]),
         ]
         ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.body[0:50] + ("..." if len(self.body) > 50 else "")
 
     def clean(self):
         if self.parent and self.parent.room_id != self.room_id:

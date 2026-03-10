@@ -2,32 +2,35 @@ import uuid
 import pghistory
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, CheckConstraint
+from django.db.models import Q
 from django.db.models.functions import Lower
 
 from backend.room.choices import VisibilityChoices
+from backend.room.querysets import RoomQuerySet, TopicQuerySet
 
 
 class Topic(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=32, unique=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         app_label = "room"
-        ordering = [Lower("name").asc()]
-        indexes = [
-            models.Index(fields=["name"]),
-        ]
         constraints = [
-            CheckConstraint(
+            models.CheckConstraint(
                 condition=Q(name__regex=r"^[A-Za-z]+$"),
                 name="letters_only_in_topic_name",
                 violation_error_message="Topic name must consist of letters only.",
             ),
         ]
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
+        ordering = [Lower("name").asc()]
+
+    objects = TopicQuerySet.as_manager()
+
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -63,8 +66,7 @@ class Room(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
+    objects = RoomQuerySet.as_manager()
 
     class Meta:
         app_label = "room"
@@ -74,11 +76,19 @@ class Room(models.Model):
                 fields=["host", "name"],
                 name="unique_room_per_host",
                 violation_error_message="You already have a room with this name.",
-            )
+            ),
+            models.CheckConstraint(
+                condition=Q(name__regex=r"^[a-zA-Z0-9 ]+$"),
+                name="valid_characters_in_room_name",
+                violation_error_message="Room name can only contain letters, numbers and spaces.",
+            ),
         ]
         indexes = [
             models.Index(fields=["updated_at"]),
         ]
+
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         self.full_clean()

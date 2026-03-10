@@ -1,35 +1,17 @@
 from typing import Optional
 
-from django.db import IntegrityError, transaction
-
+from backend.access.services import RoleService
 from backend.account.models import User
 from backend.room.choices import VisibilityChoices
-from backend.room.models import Room, Topic
-from backend.access.models import Participant
-from backend.core.forms import RoomForm
-from backend.core.exceptions import (
-    FormValidationException,
-    PermissionException,
-    ConflictException,
-)
-from backend.access.services import RoleService
-from backend.access.enums import RoleCode, PermissionCode
+from backend.room.models import Room
+from backend.core.exceptions import PermissionException, ConflictException
+from backend.room import actions
+from backend.room.rules.labels import RoomPermission
 
 
 class RoomService:
     """Service for room mutation operations."""
 
-    @staticmethod
-    def can_view(user: User, room: Room) -> bool:
-        if room.visibility == Room.Visibility.PUBLIC:
-            return True
-
-        if not user.is_authenticated:
-            return False
-
-        return Participant.objects.filter(user=user, room=room).exists()
-
-    # TODO: assert authentication where necessary
     @staticmethod
     def create_room(
         *,
@@ -56,45 +38,13 @@ class RoomService:
             FormValidationException: If form validation fails
             ConflictException: If room creation conflicts
         """
-        data = {
-            "name": name,
-            "description": description,
-        }
-
-        form = RoomForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid room data", errors=form.errors)
-
-        with transaction.atomic():
-            room: Room = form.save(commit=False)
-            room.host = user
-            if visibility is not None:
-                room.visibility = visibility
-            room.save()
-
-            topics = [
-                Topic.objects.get_or_create(name=topic_name)[0]
-                for topic_name in topic_names
-            ]
-            room.topics.set(topics)
-
-            RoleService.create_default_roles(room)
-
-            member_role = room.roles.get(name=RoleCode.MEMBER.label)
-            room.default_role = member_role
-            room.save(update_fields=["default_role"])
-
-            owner_role = room.roles.get(name=RoleCode.OWNER.label)
-
-            try:
-                Participant.objects.create(user=user, room=room, role=owner_role)
-            except IntegrityError as e:
-                raise ConflictException(
-                    "Could not create room due to a conflict."
-                ) from e
-
-        return room
+        return actions.create_room(
+            user=user,
+            name=name,
+            description=description,
+            topic_names=topic_names,
+            visibility=visibility,
+        )
 
     @staticmethod
     def update_room(
@@ -125,41 +75,18 @@ class RoomService:
             FormValidationException: If form validation fails
             ConflictException: If update conflicts
         """
-        if not RoleService.has_permission(user, room, PermissionCode.ROOM_UPDATE):
+        if not user.has_perm(RoomPermission.UPDATE, room):
             raise PermissionException(
                 "You don't have the permission to update this room."
             )
 
-        data = {
-            "name": name if name is not None else room.name,
-            "description": description if description is not None else room.description,
-        }
-
-        try:
-            with transaction.atomic():
-                form = RoomForm(data=data, instance=room)
-
-                if not form.is_valid():
-                    raise FormValidationException(
-                        "Invalid room data", errors=form.errors
-                    )
-
-                form.save()
-
-                if topic_names is not None:
-                    topics = [
-                        Topic.objects.get_or_create(name=topic_name)[0]
-                        for topic_name in topic_names
-                    ]
-                    room.topics.set(topics)
-
-                if visibility is not None:
-                    room.visibility = visibility
-                    room.save(update_fields=["visibility"])
-        except IntegrityError as e:
-            raise ConflictException("Could not update room due to a conflict.") from e
-
-        return room
+        return actions.update_room(
+            room=room,
+            name=name,
+            description=description,
+            visibility=visibility,
+            topic_names=topic_names,
+        )
 
     @staticmethod
     def delete_room(user: User, room: Room) -> bool:
@@ -177,10 +104,63 @@ class RoomService:
             PermissionException: If user doesn't have permission
             ConflictException: If deletion conflicts
         """
-        if not RoleService.has_permission(user, room, PermissionCode.ROOM_DELETE):
+        if not user.has_perm(RoomPermission.DELETE, room):
             raise PermissionException(
                 "You don't have the permission to delete this room."
             )
 
-        room.delete()
-        return True
+        return actions.delete_room(room=room)
+
+    @staticmethod
+    def join_room(user: User, room: Room) -> Room:
+        """
+        Join a room.
+
+        Args:
+            user: User joining the room
+            room: The room to join (must be PUBLIC or user must have access)
+
+        Returns:
+            The joined Room instance
+
+        Raises:
+            PermissionException: If user doesn't have permission to join
+            ConflictException: If join conflicts
+        """
+        if not user.has_perm(RoomPermission.JOIN, room):
+            raise PermissionException("You don't have permission to join this room.")
+
+        if room.memberships.filter(user=user).exists():
+            raise ConflictException(
+                "Already a participant of this room",
+            )
+
+        return actions.join_room(user=user, room=room)
+
+    @staticmethod
+    def leave_room(user: User, room: Room) -> bool:
+        """
+        Leave a room.
+
+        Args:
+            user: User leaving the room
+            room: The room to leave (must be a participant)
+
+        Returns:
+            True if leave was successful
+
+        Raises:
+            PermissionException: If user doesn't have permission to leave
+            ConflictException: If leave conflicts
+        """
+        if not user.has_perm(RoomPermission.LEAVE, room):
+            raise PermissionException("You don't have permission to leave this room.")
+
+        participant = RoleService.get_participant(user, room)
+
+        if participant is None:
+            raise ConflictException(
+                "Not a participant of this room",
+            )
+
+        return actions.leave_room(participant=participant)

@@ -6,3 +6,8 @@ class InviteStatusChoices(models.TextChoices):
     ACCEPTED = "ACCEPTED", "Accepted"
     DECLINED = "DECLINED", "Declined"
     EXPIRED = "EXPIRED", "Expired"
+    REVOKED = "REVOKED", "Revoked"
+
+    @classmethod
+    def resolved(cls) -> tuple[str, ...]:
+        return (InviteStatusChoices.ACCEPTED, InviteStatusChoices.DECLINED)

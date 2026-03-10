@@ -18,7 +18,7 @@ class SendInvite(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
         invitee_id = graphene.UUID(required=True)
-        expires_at = graphene.DateTime(required=True)
+        expires_at = graphene.DateTime(required=False)
         role_id = graphene.UUID(required=False)
 
     invite = graphene.Field(InviteType)
@@ -31,7 +31,7 @@ class SendInvite(BaseMutation):
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         invitee_id: uuid.UUID,
-        expires_at: graphene.DateTime,
+        expires_at: Optional[graphene.DateTime] = None,
         role_id: Optional[uuid.UUID] = None,
     ) -> Self:
         try:
@@ -155,8 +155,8 @@ class ResendInvite(BaseMutation):
         root: Optional[Any],
         info: graphene.ResolveInfo,
         token: uuid.UUID,
-        expires_at: graphene.DateTime,
-    ):
+        expires_at: Optional[graphene.DateTime] = None,
+    ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
         if invite is None:

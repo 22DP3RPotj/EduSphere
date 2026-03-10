@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from typing import Optional
 
 from django.db import IntegrityError, transaction
@@ -20,7 +20,7 @@ def send_invite(
     room: Room,
     invitee: User,
     role: Optional[Role],
-    expires_at: Optional[datetime.datetime],
+    expires_at: Optional[datetime],
 ) -> Invite:
     data = {"expires_at": expires_at}
     form = InviteForm(data=data)
@@ -67,7 +67,7 @@ def cancel_invite(invite: Invite) -> Invite:
     return invite
 
 
-def resend_invite(invite: Invite, new_expires_at: datetime.datetime) -> Invite:
+def resend_invite(invite: Invite, new_expires_at: Optional[datetime]) -> Invite:
     data = {"expires_at": new_expires_at}
     form = InviteForm(data=data, instance=invite)
 

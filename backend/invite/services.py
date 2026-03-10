@@ -158,7 +158,9 @@ class InviteService:
         return actions.cancel_invite(invite=invite)
 
     @staticmethod
-    def resend_invite(user: User, invite: Invite, new_expires_at: datetime) -> Invite:
+    def resend_invite(
+        user: User, invite: Invite, new_expires_at: Optional[datetime]
+    ) -> Invite:
         """
         Resend an invite by updating its expiration date.
 

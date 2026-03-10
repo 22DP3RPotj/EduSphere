@@ -57,7 +57,9 @@ class RoomQuerySet(models.QuerySet):
 
     def with_participants_count(self) -> Self:
         """Annotate rooms with the count of participants."""
-        return self.annotate(participants_count=models.Count("participants"))
+        return self.annotate(
+            participants_count=models.Count("participants", distinct=True)
+        )
 
 
 class TopicQuerySet(models.QuerySet):

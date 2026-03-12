@@ -11,9 +11,8 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 from backend.core.exceptions import (
+    DomainException,
     FormValidationException,
-    PermissionException,
-    ConflictException,
 )
 
 
@@ -237,7 +236,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except FormValidationException as e:
             await self.send_error({"message": str(e), "errors": e.errors})
             return
-        except (PermissionException, ConflictException) as e:
+        except DomainException as e:
             await self.send_error(str(e))
             return
 
@@ -256,7 +255,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Handle deletion of a message"""
         from backend.messaging.models import Message
         from backend.messaging.services import MessageService
-        from backend.core.exceptions import PermissionException
 
         @database_sync_to_async
         def get_message():
@@ -274,7 +272,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         try:
             await delete_message(message)
-        except PermissionException as e:
+        except DomainException as e:
             await self.send_error(str(e))
             return
 
@@ -318,7 +316,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except FormValidationException as e:
             await self.send_error({"message": str(e), "errors": e.errors})
             return
-        except (PermissionException, ConflictException) as e:
+        except DomainException as e:
             await self.send_error(str(e))
             return
 

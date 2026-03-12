@@ -30,17 +30,17 @@ class ReportService:
     def _check_report_permission(reporter: User, target: Model) -> None:
         """Raise PermissionException if reporter is not allowed to report target."""
         if isinstance(target, User):
-            if not reporter.has_perm(AccountPermission.READ, target):
+            if not reporter.has_perm(AccountPermission.VIEW, target):
                 raise PermissionException(
                     "You don't have permission to report this user."
                 )
         elif isinstance(target, Room):
-            if not reporter.has_perm(RoomPermission.READ, target):
+            if not reporter.has_perm(RoomPermission.VIEW, target):
                 raise PermissionException(
                     "You don't have permission to report this room."
                 )
         elif isinstance(target, Message):
-            if not reporter.has_perm(RoomPermission.READ, target.room):
+            if not reporter.has_perm(RoomPermission.VIEW, target.room):
                 raise PermissionException(
                     "You don't have permission to report this message."
                 )

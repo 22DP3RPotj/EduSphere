@@ -12,7 +12,7 @@ from backend.room.rules.predicates import (
 
 
 rules.add_perm(RoomPermission.CREATE, is_authenticated)
-rules.add_perm(RoomPermission.READ, is_room_public | is_participant)
+rules.add_perm(RoomPermission.VIEW, is_room_public | is_participant)
 rules.add_perm(RoomPermission.UPDATE, can_update_room)
 rules.add_perm(RoomPermission.DELETE, can_delete_room)
 rules.add_perm(RoomPermission.JOIN, is_authenticated & is_room_public)

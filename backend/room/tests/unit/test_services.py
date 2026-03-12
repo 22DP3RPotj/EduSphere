@@ -16,10 +16,10 @@ class RoomServiceTest(ServiceTestBase):
 
     def test_can_view_participant(self):
         self._add_member(self.member, self.member_role)
-        self.assertTrue(self.member.has_perm(RoomPermission.READ, self.room))
+        self.assertTrue(self.member.has_perm(RoomPermission.VIEW, self.room))
 
     def test_can_view_public_room(self):
-        self.assertTrue(self.other_user.has_perm(RoomPermission.READ, self.room))
+        self.assertTrue(self.other_user.has_perm(RoomPermission.VIEW, self.room))
 
     def test_cannot_view_private_room(self):
         private_room = Room.objects.create(
@@ -28,7 +28,7 @@ class RoomServiceTest(ServiceTestBase):
             description="",
             visibility=Room.Visibility.PRIVATE,
         )
-        self.assertFalse(self.other_user.has_perm(RoomPermission.READ, private_room))
+        self.assertFalse(self.other_user.has_perm(RoomPermission.VIEW, private_room))
 
     def test_create_room_success(self):
         room = RoomService.create_room(

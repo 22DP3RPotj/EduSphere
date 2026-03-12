@@ -47,7 +47,7 @@ class RoomQuery(graphene.ObjectType):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if not info.context.user.has_perm(RoomPermission.READ, room):
+        if not info.context.user.has_perm(RoomPermission.VIEW, room):
             raise GraphQLError(
                 "Permission denied", extensions={"code": ErrorCode.PERMISSION_DENIED}
             )

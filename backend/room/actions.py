@@ -4,8 +4,8 @@ from django.db import IntegrityError, transaction
 
 from backend.account.models import User
 from backend.access.enums import RoleCode
-from backend.access import actions as access_actions
 from backend.access.models import Participant
+from backend.access.services import RoleService
 from backend.core.exceptions import ConflictException, FormValidationException
 from backend.room.choices import VisibilityChoices
 from backend.room.forms import RoomForm
@@ -43,7 +43,7 @@ def create_room(
         ]
         room.topics.set(topics)
 
-        access_actions.create_default_roles(room)
+        RoleService.create_default_roles(room)
 
         member_role = room.roles.get(name=RoleCode.MEMBER.label)
         room.update_default_role(member_role)

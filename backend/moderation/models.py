@@ -128,7 +128,7 @@ class ModerationCase(models.Model):
             models.Index(fields=["content_type", "object_id"]),
         ]
 
-    def update_status(self, new_status: ActionChoices):
+    def update_status(self, new_status: CaseStatusChoices) -> None:
         self.status = new_status
         self.save(update_fields=["status", "updated_at"])
 

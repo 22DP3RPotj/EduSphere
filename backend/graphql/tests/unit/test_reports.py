@@ -140,6 +140,10 @@ class ReportMutationsTests(JSONWebTokenTestCase):
             username="nonparticipant",
             email="non@email.com",
         )
+
+        self.room.visibility = Room.Visibility.PRIVATE
+        self.room.save()
+
         self.client.authenticate(non_participant)
         result: ExecutionResult = self.client.execute(
             self._create_mutation,

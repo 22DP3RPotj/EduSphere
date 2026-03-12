@@ -48,6 +48,7 @@ class ReportServiceTest(ServiceTestBase):
         self.assertEqual(report.case.status, CaseStatusChoices.PENDING)
 
     def test_create_report_not_participant(self):
+        self.room.visibility = self.room.Visibility.PRIVATE
         with self.assertRaises(PermissionException):
             ReportService.create_report(
                 reporter=self.other_user,

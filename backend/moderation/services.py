@@ -4,14 +4,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
 from backend.account.models import User
+from backend.account.rules.labels import AccountPermission
 from backend.moderation.choices import ActionChoices, CaseStatusChoices
 from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room
 from backend.messaging.models import Message
-from backend.access.models import Participant
 from backend.core.exceptions import PermissionException, ConflictException
 from backend.moderation.rules.labels import ModerationPermission
 from backend.moderation import actions
+from backend.room.rules.labels import RoomPermission
 
 _ACTION_TO_STATUS = {
     ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,
@@ -28,17 +29,21 @@ class ReportService:
     @staticmethod
     def _check_report_permission(reporter: User, target: Model) -> None:
         """Raise PermissionException if reporter is not allowed to report target."""
-        if isinstance(target, Room):
-            if not Participant.objects.filter(user=reporter, room=target).exists():
+        if isinstance(target, User):
+            if not reporter.has_perm(AccountPermission.READ, target):
                 raise PermissionException(
-                    "You must be a participant of the room to report it."
+                    "You don't have permission to report this user."
+                )
+        elif isinstance(target, Room):
+            if not reporter.has_perm(RoomPermission.READ, target):
+                raise PermissionException(
+                    "You don't have permission to report this room."
                 )
         elif isinstance(target, Message):
-            if not Participant.objects.filter(user=reporter, room=target.room).exists():
+            if not reporter.has_perm(RoomPermission.READ, target.room):
                 raise PermissionException(
-                    "You must be a participant of the room to report a message in it."
+                    "You don't have permission to report this message."
                 )
-        # For User targets any authenticated reporter is allowed.
 
     @staticmethod
     def create_report(

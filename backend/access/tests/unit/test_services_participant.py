@@ -3,8 +3,9 @@ import pytest
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 from backend.access.enums import RoleCode
+from backend.access import actions as access_actions
 from backend.access.models import Participant
-from backend.access.services import ParticipantService, RoleService
+from backend.access.services import ParticipantService
 from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
@@ -55,7 +56,7 @@ class ParticipantServiceTest(ServiceTestBase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        RoleService.create_default_roles(other_room)
+        access_actions.create_default_roles(other_room)
         other_role = other_room.roles.first()
 
         with self.assertRaises((ValidationException, FormValidationException)):
@@ -100,7 +101,7 @@ class ParticipantServiceTest(ServiceTestBase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        RoleService.create_default_roles(other_room)
+        access_actions.create_default_roles(other_room)
         other_role = other_room.roles.first()
 
         with self.assertRaises(PermissionException):
@@ -143,7 +144,7 @@ class ParticipantServiceTest(ServiceTestBase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        RoleService.create_default_roles(other_room)
+        access_actions.create_default_roles(other_room)
         other_role = other_room.roles.get(name=RoleCode.MEMBER.label)
         Participant.objects.create(user=self.member, room=other_room, role=other_role)
 

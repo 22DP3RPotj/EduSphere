@@ -184,16 +184,6 @@ class RoleService:
         )
 
     @staticmethod
-    def create_default_roles(room: Room) -> None:
-        """
-        Create default roles for a room. Should be called once when the room is created.
-
-        Args:
-            room: The room
-        """
-        actions.create_default_roles(room=room)
-
-    @staticmethod
     def create_role(
         user: User,
         room: Room,

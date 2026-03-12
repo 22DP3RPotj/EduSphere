@@ -2,9 +2,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from backend.account.models import User as BaseUser
+from backend.access import actions as access_actions
 from backend.access.enums import RoleCode
 from backend.access.models import Participant, Role
-from backend.access.services import RoleService
 from backend.room.models import Room
 
 User = get_user_model()
@@ -47,7 +47,7 @@ class ServiceTestBase(TestCase):
             visibility=Room.Visibility.PUBLIC,
         )
 
-        RoleService.create_default_roles(self.room)
+        access_actions.create_default_roles(self.room)
 
         self.owner_role = self.room.roles.get(name=RoleCode.OWNER.label)
         self.member_role = self.room.roles.get(name=RoleCode.MEMBER.label)

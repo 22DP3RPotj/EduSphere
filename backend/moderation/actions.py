@@ -95,8 +95,7 @@ def take_case_action(
             moderation_action.action = action
             moderation_action.save()
 
-            case.status = status
-            case.save(update_fields=["status", "updated_at"])
+            case.update_status(status)
     except IntegrityError as e:
         raise ConflictException("Could not take action due to a conflict.") from e
 
@@ -104,6 +103,5 @@ def take_case_action(
 
 
 def set_case_under_review(case: ModerationCase) -> ModerationCase:
-    case.status = CaseStatusChoices.UNDER_REVIEW
-    case.save(update_fields=["status", "updated_at"])
+    case.update_status(CaseStatusChoices.UNDER_REVIEW)
     return case

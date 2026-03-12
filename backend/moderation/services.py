@@ -38,7 +38,7 @@ class ReportService:
                 raise PermissionException(
                     "You must be a participant of the room to report a message in it."
                 )
-        # For User targets (and any future model) any authenticated reporter is allowed.
+        # For User targets any authenticated reporter is allowed.
 
     @staticmethod
     def create_report(
@@ -105,7 +105,7 @@ class ReportService:
             PermissionException: If user is not staff or superuser
         """
         if not moderator.has_perm(ModerationPermission.ACT, case):
-            raise PermissionException("Only moderators can take case actions.")
+            raise PermissionException("You don't have permission to take case actions.")
 
         status = ReportService._case_status_for_action(action)
         return actions.take_case_action(
@@ -128,6 +128,8 @@ class ReportService:
             PermissionException: If user is not staff or superuser
         """
         if not moderator.has_perm(ModerationPermission.REVIEW, case):
-            raise PermissionException("Only moderators can update case status.")
+            raise PermissionException(
+                "You don't have permission to update case status."
+            )
 
         return actions.set_case_under_review(case=case)

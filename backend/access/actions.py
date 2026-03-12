@@ -1,5 +1,5 @@
-from typing import Any, Optional
 import uuid
+from typing import Any, Optional
 
 from django.db import IntegrityError, transaction
 

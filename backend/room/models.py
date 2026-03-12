@@ -1,5 +1,6 @@
 import uuid
 import pghistory
+from typing import TYPE_CHECKING
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -7,6 +8,9 @@ from django.db.models.functions import Lower
 
 from backend.room.choices import VisibilityChoices
 from backend.room.querysets import RoomQuerySet, TopicQuerySet
+
+if TYPE_CHECKING:
+    from backend.access.models import Role
 
 
 class Topic(models.Model):
@@ -86,6 +90,14 @@ class Room(models.Model):
         indexes = [
             models.Index(fields=["updated_at"]),
         ]
+
+    def update_visibility(self, new_visibility: VisibilityChoices):
+        self.visibility = new_visibility
+        self.save(update_fields=["visibility", "updated_at"])
+
+    def update_default_role(self, new_default_role: "Role"):
+        self.default_role = new_default_role
+        self.save(update_fields=["default_role", "updated_at"])
 
     def __str__(self):
         return self.name

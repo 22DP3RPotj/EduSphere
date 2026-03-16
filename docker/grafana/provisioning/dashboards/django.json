@@ -90,7 +90,7 @@
       ],
       "thresholds": "",
       "title": "Total Requests",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -171,7 +171,7 @@
       ],
       "thresholds": "",
       "title": "2XX Responses",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -252,7 +252,7 @@
       ],
       "thresholds": "",
       "title": "4XX Responses",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -333,7 +333,7 @@
       ],
       "thresholds": "",
       "title": "5XX Responses",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -398,7 +398,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -506,7 +506,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -591,7 +591,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -671,7 +671,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -753,7 +753,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -839,7 +839,7 @@
     ]
   },
   "timezone": "",
-  "title": "Django Prometheus Dashboard",
+  "title": "Django Prometheus",
   "uid": "django-dash",
   "version": 1,
   "weekStart": ""

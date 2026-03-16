@@ -30,9 +30,7 @@ scrape_configs:
         action: keep
 
       - source_labels: ['__meta_docker_container_log_path']
-        regex: '(.+)'
         target_label: __path__
-        replacement: '$1'
 
     pipeline_stages:
       - docker: {}

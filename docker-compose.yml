@@ -222,6 +222,8 @@ services:
     volumes:
       - ./docker/promtail/promtail.yml:/etc/promtail/promtail.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail_positions:/tmp
     networks:
       - monitor_network
     depends_on:
@@ -274,3 +276,4 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
+  promtail_positions:

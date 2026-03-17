@@ -153,34 +153,29 @@ LOGGING = {
             "utc": True,
             "formatter": "verbose",
         },
-        "jobs_file": {
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": LOG_DIR / "jobs.log",
-            "when": "midnight",
-            "backupCount": LOG_THRESHOLD,
-            "encoding": "utf-8",
-            "delay": True,
-            "utc": True,
-            "formatter": "verbose",
-        },
     },
     "root": {
-        "handlers": ["root_file"],
+        "handlers": ["console", "root_file"],
         "level": "WARNING",
     },
     "loggers": {
         "uvicorn.access": {
             "handlers": ["console"],
-            "level": "WARNING",
+            "level": "INFO",
+            "propagate": False,
+        },
+        "backend": {
+            "handlers": ["console", "root_file"],
+            "level": "INFO",
             "propagate": False,
         },
         "backend.account.tasks": {
-            "handlers": ["jobs_file"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
         },
         "backend.core.tasks": {
-            "handlers": ["jobs_file"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
         },

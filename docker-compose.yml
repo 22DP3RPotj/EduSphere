@@ -143,8 +143,6 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-      prometheus:
-        condition: service_healthy
       grafana:
         condition: service_healthy
     restart: unless-stopped
@@ -161,7 +159,8 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.rootfs=/rootfs'
       - '--path.sysfs=/host/sys'
-      - '--no-collector.filesystem'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc|run|mnt)($|/)'
+      - '--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$'
       - '--no-collector.softnet'
       - '--no-collector.netstat'
     expose:
@@ -181,8 +180,6 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.external-url=http://localhost/prometheus/'
-      - '--web.route-prefix=/prometheus'
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -197,10 +194,67 @@ services:
       node-exporter:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:9090/prometheus/-/healthy"]
+      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:9090/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Loki service - log aggregation
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./docker/loki/loki.yml:/etc/loki/loki.yml
+      - loki_data:/loki
+    expose:
+      - "3100"
+    networks:
+      - monitor_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Restricts Docker socket access to read-only container listing
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    environment:
+      - CONTAINERS=1
+      - NETWORKS=1
+      - SERVICES=0
+      - TASKS=0
+      - POST=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    expose:
+      - "2375"
+    networks:
+      - monitor_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:2375/containers/json"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Promtail service - log shipper
+  promtail:
+    image: grafana/promtail:3.0.0
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./docker/promtail/promtail.yml:/etc/promtail/promtail.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail_positions:/tmp
+    networks:
+      - monitor_network
+    depends_on:
+      loki:
+        condition: service_healthy
+      docker-socket-proxy:
+        condition: service_healthy
+    restart: unless-stopped
 
   # Grafana service
   grafana:
@@ -226,6 +280,8 @@ services:
     depends_on:
       prometheus:
         condition: service_healthy
+      loki:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "--tries=1", "http://localhost:3000/grafana/healthz"]
       interval: 10s
@@ -244,3 +300,5 @@ volumes:
   media_data:
   prometheus_data:
   grafana_data:
+  loki_data:
+  promtail_positions:

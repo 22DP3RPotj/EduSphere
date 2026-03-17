@@ -822,6 +822,25 @@ Django = ">=5.2"
 drf = ["djangorestframework"]
 
 [[package]]
+name = "django-graphene-auth"
+version = "1.1.1"
+description = "Graphql and relay authentication with Graphene for Django."
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-graphene-auth-1.1.1.tar.gz", hash = "sha256:15835885c743935c814ea976b38daf41e86716ee6c3e3576a902d78da494d5ab"},
+    {file = "django_graphene_auth-1.1.1-py2.py3-none-any.whl", hash = "sha256:1976e3816dc3e4010fc95dd9b01f57d760bccb10f91da31d6caada14839444e4"},
+]
+
+[package.dependencies]
+Django = ">=3.2"
+django-filter = ">=23.5"
+django-graphql-jwt = "0.4.0"
+graphene = ">=3.3"
+graphene-django = ">=3.1.6"
+PyJWT = ">=2.8.0"
+
+[[package]]
 name = "django-graphql-jwt"
 version = "0.4.0"
 description = "JSON Web Token for Django GraphQL."
@@ -2764,4 +2783,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "323c9099db6bf7dd6ee8e0f17835c708bb6754f6b29a1874d82724aeb72d8f33"
+content-hash = "83ed42bdd4dff05ac28a40238e0045fdb1cf7c03b142c96fa4793f63ab19280f"

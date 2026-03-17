@@ -57,16 +57,18 @@ INSTALLED_APPS = [
     "backend.graphql.apps.GraphQLConfig",
     "backend.infra.apps.InfraConfig",
     # Third-party apps
+    "graphql_auth",
     "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
+    "graphene_django",
     "channels.apps.ChannelsConfig",
     "corsheaders.apps.CorsHeadersAppConfig",
-    "graphene_django",
     "pgtrigger",
     "pghistory",
     "rules.apps.AutodiscoverRulesConfig",
     "django_cleanup.apps.CleanupConfig",
     "django_celery_beat",
     "django_prometheus",
+    "django_filters",
 ]
 
 try:
@@ -206,6 +208,17 @@ GRAPHQL_JWT = {
     "JWT_CSRF_ROTATION": True,
 }
 
+GRAPHQL_AUTH = {
+    "LOGIN_ALLOWED_FIELDS": ["email"],
+    "REGISTER_MUTATION_FIELDS": ["username", "name", "email"],
+    "UPDATE_MUTATION_FIELDS": ["username", "name"],
+    "USER_NODE_FILTER_FIELDS": {
+        "email": ["exact"],
+        "username": ["exact"],
+        "is_active": ["exact"],
+    },
+}
+
 GRAPHQL_MAX_DEPTH = env.int("GRAPHQL_MAX_DEPTH", default=10)
 
 SESSION_COOKIE_HTTPONLY = True
@@ -228,10 +241,14 @@ CORS_ALLOWED_ORIGINS = [
 
 
 AUTHENTICATION_BACKENDS = [
+    "graphql_auth.backends.GraphQLAuthBackend",
     "graphql_jwt.backends.JSONWebTokenBackend",
     "backend.access.backends.SecureRulesBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+# TODO: email support
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

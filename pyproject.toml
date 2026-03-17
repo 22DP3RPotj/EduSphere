@@ -15,6 +15,7 @@ django-celery-beat = "^2.8.1"
 django-cleanup = "^9.0.0"
 django-cors-headers = "^4.9.0"
 django-environ = "^0.13.0"
+django-graphene-auth = "^1.1.1"
 django-graphql-jwt = "^0.4.0"
 django-filter = "^25.2"
 django-pghistory = "^3.9.1"
@@ -47,11 +48,13 @@ mypy = "^1.19.1"
 [tool.django-stubs]
 django_settings_module = "backend.config.settings"
 
+
 [tool.poetry.group.development]
 optional = true
 
 [tool.poetry.group.development.dependencies]
 django-extensions = "^4.1"
+
 
 [tool.poetry.group.testing]
 optional = true
@@ -115,6 +118,7 @@ omit = [
   "*/urls.py",
   "*/apps.py",
 ]
+
 
 
 

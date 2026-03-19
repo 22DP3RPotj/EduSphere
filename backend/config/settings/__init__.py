@@ -11,5 +11,7 @@ match DJANGO_ENV:
         from .staging import *  # noqa F401, F403
     case "development":
         from .development import *  # noqa F401, F403
+    case "testing":
+        from .testing import *  # noqa F401, F403
     case _:
         raise ValueError(f"Invalid DJANGO_ENV: {DJANGO_ENV}")

@@ -1,0 +1,36 @@
+from ..env import env
+from datetime import timedelta
+
+GRAPHENE = {
+    "SCHEMA": "backend.graphql.schema.schema",
+    "MIDDLEWARE": [
+        "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "backend.infra.middleware.PrometheusMiddleware",
+        "backend.graphql.middleware.ErrorTransformingMiddleware",
+    ],
+}
+
+GRAPHQL_JWT = {
+    "JWT_VERIFY_EXPIRATION": True,
+    "JWT_EXPIRATION_DELTA": timedelta(minutes=10),
+    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=7),
+    "JWT_COOKIE_SECURE": False,  # TODO: HTTPS
+    "JWT_COOKIE_HTTPONLY": True,
+    "JWT_COOKIE_SAMESITE": "Lax",
+    "JWT_BLACKLIST_ENABLED": True,
+    "JWT_BLACKLIST_AFTER_ROTATION": True,
+    "JWT_CSRF_ROTATION": True,
+}
+
+GRAPHQL_AUTH = {
+    "LOGIN_ALLOWED_FIELDS": ["email"],
+    "REGISTER_MUTATION_FIELDS": ["username", "name", "email"],
+    "UPDATE_MUTATION_FIELDS": ["username", "name"],
+    "USER_NODE_FILTER_FIELDS": {
+        "email": ["exact"],
+        "username": ["exact"],
+        "is_active": ["exact"],
+    },
+}
+
+GRAPHQL_MAX_DEPTH = env.int("GRAPHQL_MAX_DEPTH", default=10)

@@ -1,6 +1,10 @@
 import type { ApolloError } from "@apollo/client/errors"
 
-export type FormErrors = Record<string, string[] | string>
+type ErrorMessage = string
+  | { message?: string, code?: string }
+  | unknown
+
+export type FormErrors = Record<string, ErrorMessage[] | ErrorMessage>
 
 export interface ParsedError {
   fieldErrors: Record<string, string[]>
@@ -41,7 +45,7 @@ export function parseGraphQLError(error: unknown): ParsedError {
           if (field === "__all__") {
             // General form errors
             if (Array.isArray(messages)) {
-              result.generalErrors.push(...messages)
+              result.generalErrors.push(...normalizeMessages(messages))
             } else if (typeof messages === "string") {
               const str = messages.trim()
 
@@ -80,11 +84,7 @@ export function parseGraphQLError(error: unknown): ParsedError {
             }
           } else {
             // Field-specific errors
-            if (Array.isArray(messages)) {
-              result.fieldErrors[field] = messages
-            } else if (typeof messages === "string") {
-              result.fieldErrors[field] = [messages]
-            }
+            result.fieldErrors[field] = normalizeMessages(messages)
           }
         })
       }
@@ -128,4 +128,27 @@ export function parseGraphQLError(error: unknown): ParsedError {
   }
 
   return result
+}
+
+function normalizeMessages(messages: unknown): string[] {
+  if (Array.isArray(messages)) {
+    return messages.map((m) => {
+      if (typeof m === "string") return m
+      if (typeof m === "object" && m !== null) {
+        if ("message" in m) return String((m as { message: unknown }).message)
+        return JSON.stringify(m)
+      }
+      return String(m)
+    })
+  }
+
+  if (typeof messages === "string") {
+    return [messages]
+  }
+
+  if (typeof messages === "object" && messages !== null && "message" in messages) {
+    return [String((messages as { message: unknown }).message)]
+  }
+
+  return [String(messages)]
 }

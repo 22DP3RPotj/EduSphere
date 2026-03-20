@@ -48,17 +48,15 @@ except ImportError:
     pass
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-MIDDLEWARE += ["django_prometheus.middleware.PrometheusAfterMiddleware"]
 
 # Audit log
 AUDIT_LOG_RETENTION_DAYS = env.int("AUDIT_LOG_RETENTION_DAYS", default=90)
@@ -68,6 +66,10 @@ AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED", default=True)
 
 if AUDIT_LOGGING_ENABLED:
     MIDDLEWARE += ["backend.core.middleware.PgHistoryMiddleware"]
+
+# Should be last in the list
+MIDDLEWARE += ["django_prometheus.middleware.PrometheusAfterMiddleware"]
+
 
 ROOT_URLCONF = "backend.config.urls"
 

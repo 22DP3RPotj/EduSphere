@@ -1,4 +1,4 @@
-from .env import env
+from .environment import env
 
 DEBUG = False
 

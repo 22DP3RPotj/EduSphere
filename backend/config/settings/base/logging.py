@@ -1,4 +1,4 @@
-from ..env import env, BASE_DIR
+from ..environment import env, BASE_DIR
 
 
 LOG_THRESHOLD = env.int("LOG_THRESHOLD", default=30)

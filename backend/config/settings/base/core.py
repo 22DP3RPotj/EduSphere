@@ -1,5 +1,5 @@
 import dj_database_url
-from ..env import env, BASE_DIR
+from ..environment import env, BASE_DIR
 
 SECRET_KEY = env("SECRET_KEY")
 

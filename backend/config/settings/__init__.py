@@ -1,4 +1,4 @@
-from .env import env
+from .environment import env
 
 from .base import *  # noqa F401, F403
 

@@ -1077,6 +1077,20 @@ files = [
 graphql-core = ">=3.2,<3.3"
 
 [[package]]
+name = "graphql-sync-dataloaders"
+version = "0.1.1"
+description = "Use DataLoaders in your Python GraphQL servers that have to run in a sync context (i.e. Django)."
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "graphql-sync-dataloaders-0.1.1.tar.gz", hash = "sha256:67c708e89c46b401188b773af055850278e4e1d5af2f66bf31d9bd0d504d95b9"},
+    {file = "graphql_sync_dataloaders-0.1.1-py3-none-any.whl", hash = "sha256:f003f1184417acf156b2f73c4f0e76487514a455143a22ab796c110db4bc4693"},
+]
+
+[package.dependencies]
+graphql-core = ">=3.2.0,<3.3.0"
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -2783,4 +2797,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "83ed42bdd4dff05ac28a40238e0045fdb1cf7c03b142c96fa4793f63ab19280f"
+content-hash = "43e4e4e4902a447c019ebf7c87a1d872b5f890dcc432bb13788add07937e086f"

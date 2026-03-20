@@ -1,8 +1,7 @@
 import graphene
 from graphene_django import DjangoObjectType
-from django.core.exceptions import ObjectDoesNotExist
 
-from backend.account.models import UserBanHistory, UserHistory, User
+from backend.account.models import UserBanHistory, UserHistory
 from backend.moderation.models import (
     ModerationActionHistory,
     ModerationCaseHistory,
@@ -20,14 +19,14 @@ class BaseAuditType(graphene.ObjectType):
     pgh_obj_id = graphene.UUID()
 
     def resolve_actor(self, info):
-        if self.pgh_context:
-            user_id = self.pgh_context.metadata.get("user")
-            if user_id:
-                try:
-                    return User.objects.get(id=user_id)
-                except ObjectDoesNotExist:
-                    return None
-        return None
+        if not self.pgh_context:
+            return None
+
+        user_id = self.pgh_context.metadata.get("user")
+        if not user_id:
+            return None
+
+        return info.context.loaders.user.load(user_id)
 
 
 class UserBanAuditType(BaseAuditType, DjangoObjectType):

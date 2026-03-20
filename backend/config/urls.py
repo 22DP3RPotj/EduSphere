@@ -1,7 +1,7 @@
 from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 from graphql_jwt.decorators import jwt_cookie
-from backend.graphql.view import GraphqlView
+from backend.graphql.views import GraphqlView
 
 urlpatterns = [
     path(

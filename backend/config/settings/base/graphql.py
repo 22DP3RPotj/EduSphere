@@ -6,7 +6,7 @@ GRAPHENE = {
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
         "backend.infra.middleware.PrometheusMiddleware",
-        "backend.graphql.middleware.ErrorTransformingMiddleware",
+        "backend.graphql.error.middleware.ErrorTransformingMiddleware",
     ],
 }
 

@@ -3,6 +3,7 @@ from graphene_file_upload.django import FileUploadGraphQLView
 from backend.graphql.security import get_validation_rules
 from graphql_sync_dataloaders import DeferredExecutionContext
 
+
 class GraphqlView(FileUploadGraphQLView):
     """Custom GraphQL view to handle multipart/form-data requests"""
 

@@ -6,7 +6,7 @@ from graphql_sync_dataloaders import DeferredExecutionContext
 from graphql_jwt.testcases import JSONWebTokenClient, JSONWebTokenTestCase
 
 from backend.access.models import Role
-from backend.graphql.context import GQLDataLoaderRegistry
+from backend.graphql.context.registry import GQLDataLoaderRegistry
 from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.room.choices import VisibilityChoices

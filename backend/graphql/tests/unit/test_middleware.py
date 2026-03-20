@@ -4,7 +4,7 @@ from django.test import SimpleTestCase
 from graphql import GraphQLError
 
 from backend.core.exceptions import ErrorCode
-from backend.graphql.middleware import ErrorTransformingMiddleware
+from backend.graphql.error.middleware import ErrorTransformingMiddleware
 
 pytestmark = pytest.mark.unit
 

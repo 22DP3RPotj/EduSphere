@@ -6,7 +6,7 @@ from graphql import GraphQLError
 
 from backend.graphql.access.types import ParticipantType
 from backend.account.models import User
-from backend.graphql.base import BaseMutation
+from backend.graphql.mutations import BaseMutation
 from backend.room.models import Room
 from backend.access.models import Participant, Role
 from backend.access.services import ParticipantService

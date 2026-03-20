@@ -80,7 +80,19 @@ class ErrorTransformingMiddleware:
         if result is None:
             return
 
-        errors = getattr(result, "errors", None)
+        try:
+            errors = getattr(result, "errors", None)
+        except GraphQLError:
+            raise
+        except Exception as e:
+            logger.error(
+                "Unexpected error while checking payload errors",
+                exc_info=True,
+            )
+            raise GraphQLError(
+                "Internal error",
+                extensions={"code": ErrorCode.INTERNAL_ERROR},
+            ) from e
 
         if not errors and isinstance(result, dict):
             errors = result.get("errors")

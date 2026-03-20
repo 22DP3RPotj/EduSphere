@@ -87,3 +87,62 @@ class ErrorTransformingMiddlewareTests(SimpleTestCase):
             err.extensions["errors"],
             {"nonFieldErrors": ["Invalid credentials"]},
         )
+
+    def test_check_errors_async_style_payload_raises_validation_error(self):
+        payload = _Payload(
+            _ErrorDictLike(
+                {"username": [{"message": "User with this Username already exists."}]}
+            )
+        )
+
+        with self.assertRaises(GraphQLError) as ctx:
+            self.middleware._check_errors(payload)
+
+        err = ctx.exception
+        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
+        self.assertEqual(
+            err.extensions["errors"],
+            {"username": ["User with this Username already exists."]},
+        )
+
+    def test_check_errors_raises_internal_error_on_unexpected_exception(self):
+        class BadPayload:
+            @property
+            def errors(self):
+                raise RuntimeError("boom")
+
+        with self.assertRaises(GraphQLError) as ctx:
+            self.middleware._check_errors(BadPayload())
+
+        err = ctx.exception
+        self.assertEqual(err.extensions["code"], ErrorCode.INTERNAL_ERROR)
+
+    def test_check_errors_noop_when_errors_is_none(self):
+        self.middleware._check_errors(_Payload(None))
+
+    def test_check_errors_noop_with_empty_dict(self):
+        self.middleware._check_errors({})
+
+    def test_resolve_async_payload_error_raises_validation_error(self):
+        async def next_(root, info, **kwargs):
+            return _Payload(
+                _ErrorDictLike(
+                    {"email": [{"message": "User with this Email already exists."}]}
+                )
+            )
+
+        class Info:
+            field_name = "test"
+            operation = None
+
+        with self.assertRaises(GraphQLError) as ctx:
+            import asyncio
+
+            asyncio.run(self.middleware.resolve(next_, None, Info()))
+
+        err = ctx.exception
+        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
+        self.assertEqual(
+            err.extensions["errors"],
+            {"email": ["User with this Email already exists."]},
+        )

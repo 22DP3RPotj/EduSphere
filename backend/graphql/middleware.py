@@ -2,6 +2,7 @@ import inspect
 import logging
 from typing import Any, NoReturn, Optional
 from graphql import GraphQLError
+from graphql_jwt.exceptions import JSONWebTokenError
 
 from backend.core.exceptions import ErrorCode
 
@@ -26,7 +27,7 @@ class ErrorTransformingMiddleware:
     def resolve(self, next_, root, info, **kwargs):
         try:
             result = next_(root, info, **kwargs)
-        except GraphQLError:
+        except (GraphQLError, JSONWebTokenError):
             raise
         except Exception as e:
             logger.error(
@@ -50,7 +51,7 @@ class ErrorTransformingMiddleware:
             async def handle():
                 try:
                     resolved = await result
-                except GraphQLError:
+                except (GraphQLError, JSONWebTokenError):
                     raise
                 except Exception as e:
                     logger.error(
@@ -82,7 +83,7 @@ class ErrorTransformingMiddleware:
 
         try:
             errors = getattr(result, "errors", None)
-        except GraphQLError:
+        except (GraphQLError, JSONWebTokenError):
             raise
         except Exception as e:
             logger.error(

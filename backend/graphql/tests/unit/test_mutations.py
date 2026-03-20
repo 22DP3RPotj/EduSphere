@@ -47,7 +47,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
                     username: $username
                 ) {
                     success
-                    token
                     errors
                 }
             }
@@ -59,10 +58,10 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "password1": "securepassword123",
             "password2": "securepassword123",
         }
+        #  Login (token generation) is disabled until email is verified
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["register"]["success"])
-        self.assertIsNotNone(result.data["register"]["token"])
         self.assertIsNone(result.data["register"]["errors"])
         self.assertTrue(User.objects.filter(username="newuser").exists())
 

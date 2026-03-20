@@ -1,5 +1,6 @@
-from django.test import SimpleTestCase
 import pytest
+import asyncio
+from django.test import SimpleTestCase
 from graphql import GraphQLError
 
 from backend.core.exceptions import ErrorCode
@@ -136,8 +137,6 @@ class ErrorTransformingMiddlewareTests(SimpleTestCase):
             operation = None
 
         with self.assertRaises(GraphQLError) as ctx:
-            import asyncio
-
             asyncio.run(self.middleware.resolve(next_, None, Info()))
 
         err = ctx.exception

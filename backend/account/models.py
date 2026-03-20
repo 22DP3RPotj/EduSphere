@@ -25,8 +25,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         unique=True,
         validators=[
             RegexValidator(
-                r"^[-a-zA-Z0-9_]+$",
-                "Username may only contain letters, digits, and -/_ characters.",
+                r"^[-a-z0-9_]+$",
+                "Username may only contain lowercase letters, digits, and -/_ characters.",
             ),
             MinLengthValidator(
                 MINIMAL_USERNAME_LENGTH,

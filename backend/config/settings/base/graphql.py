@@ -10,6 +10,8 @@ GRAPHENE = {
     ],
 }
 
+GRAPHQL_MAX_DEPTH = env.int("GRAPHQL_MAX_DEPTH", default=10)
+
 GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
     "JWT_EXPIRATION_DELTA": timedelta(minutes=10),
@@ -26,11 +28,10 @@ GRAPHQL_AUTH = {
     "LOGIN_ALLOWED_FIELDS": ["email"],
     "REGISTER_MUTATION_FIELDS": ["username", "name", "email"],
     "UPDATE_MUTATION_FIELDS": ["username", "name"],
+    "ALLOW_LOGIN_NOT_VERIFIED": False,
     "USER_NODE_FILTER_FIELDS": {
         "email": ["exact"],
         "username": ["exact"],
         "is_active": ["exact"],
     },
 }
-
-GRAPHQL_MAX_DEPTH = env.int("GRAPHQL_MAX_DEPTH", default=10)

@@ -1,10 +1,6 @@
-import logging
-
 from django.conf import settings
 from graphene_file_upload.django import FileUploadGraphQLView
 from backend.graphql.security import get_validation_rules
-
-logger = logging.getLogger(__name__)
 
 
 class GraphqlView(FileUploadGraphQLView):

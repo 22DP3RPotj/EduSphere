@@ -1,1 +1,3 @@
+MINIMAL_USERNAME_LENGTH = 3
+
 DELETED_USER = "<Deleted user>"

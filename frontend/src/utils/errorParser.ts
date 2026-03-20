@@ -59,12 +59,6 @@ export function parseGraphQLError(error: unknown): ParsedError {
                     result.generalErrors.push(...(parsed).__all__)
                   } else if (typeof parsed === "object" && parsed !== null) {
                     // Flatten any nested string/array values found in the parsed object
-                    const flatten = (v: unknown): string[] => {
-                      if (typeof v === "string") return [v]
-                      if (Array.isArray(v)) return v.flatMap(flatten)
-                      if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
-                      return []
-                    }
                     const vals = flatten(parsed)
                     if (vals.length > 0) result.generalErrors.push(...vals)
                     else result.generalErrors.push(messages) // fallback to raw string
@@ -102,12 +96,6 @@ export function parseGraphQLError(error: unknown): ParsedError {
             result.generalErrors.push(...(parsed).__all__)
           } else if (typeof parsed === "object" && parsed !== null) {
             // Flatten any nested string/array values found in the parsed object
-            const flatten = (v: unknown): string[] => {
-              if (typeof v === "string") return [v]
-              if (Array.isArray(v)) return v.flatMap(flatten)
-              if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
-              return []
-            }
             const vals = flatten(parsed)
             if (vals.length > 0) result.generalErrors.push(...vals)
             else result.generalErrors.push(gqlError.message)
@@ -151,4 +139,11 @@ function normalizeMessages(messages: unknown): string[] {
   }
 
   return [String(messages)]
+}
+
+function flatten(v: unknown): string[] {
+  if (typeof v === "string") return [v]
+  if (Array.isArray(v)) return v.flatMap(flatten)
+  if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
+  return []
 }

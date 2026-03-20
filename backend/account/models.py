@@ -5,11 +5,16 @@ from django.conf import settings
 from django.db import models
 from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.core.validators import FileExtensionValidator, RegexValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MinLengthValidator,
+    RegexValidator,
+)
 
 from backend.account.managers import UserManager
 from backend.account.files.paths import avatar_upload_path
 from backend.core.files.validators import FileSizeValidator, ImageValidator
+from backend.core.constants import MINIMAL_USERNAME_LENGTH
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -22,7 +27,11 @@ class User(AbstractBaseUser, PermissionsMixin):
             RegexValidator(
                 r"^[-a-zA-Z0-9_]+$",
                 "Username may only contain letters, digits, and -/_ characters.",
-            )
+            ),
+            MinLengthValidator(
+                MINIMAL_USERNAME_LENGTH,
+                f"Username must be at least {MINIMAL_USERNAME_LENGTH} characters long.",
+            ),
         ],
     )
     name = models.CharField(max_length=32)

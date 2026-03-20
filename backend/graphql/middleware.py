@@ -24,7 +24,25 @@ class ErrorTransformingMiddleware:
     """
 
     def resolve(self, next_, root, info, **kwargs):
-        result = next_(root, info, **kwargs)
+        try:
+            result = next_(root, info, **kwargs)
+        except GraphQLError:
+            raise
+        except Exception as e:
+            logger.error(
+                "Unexpected error in GraphQL resolver",
+                extra={
+                    "field": info.field_name,
+                    "operation": info.operation.name.value
+                    if info.operation and info.operation.name
+                    else None,
+                },
+                exc_info=True,
+            )
+            raise GraphQLError(
+                "Internal error",
+                extensions={"code": ErrorCode.INTERNAL_ERROR},
+            ) from e
 
         # Handle async resolvers if present
         if inspect.isawaitable(result):
@@ -40,7 +58,7 @@ class ErrorTransformingMiddleware:
                         extra={
                             "field": info.field_name,
                             "operation": info.operation.name.value
-                            if info.operation.name
+                            if info.operation and info.operation.name
                             else None,
                         },
                         exc_info=True,

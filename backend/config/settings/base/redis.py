@@ -12,24 +12,22 @@ REDIS_HOST = env("REDIS_HOST", default="localhost")
 REDIS_PORT = env.int("REDIS_PORT", default=6379)
 REDIS_DB = env.int("REDIS_DB", default=0)
 
+CELERY_BROKER_DB = env.int("CELERY_BROKER_DB", default=1)
+CELERY_RESULT_DB = env.int("CELERY_RESULT_DB", default=1)
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [
-                (
-                    REDIS_HOST,
-                    REDIS_PORT,
-                )
-            ],
+            "hosts": [f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"],
         },
     },
 }
 
 
 # Celery
-CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
-CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{CELERY_BROKER_DB}"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/{CELERY_RESULT_DB}"
 CELERY_TIMEZONE = "UTC"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"

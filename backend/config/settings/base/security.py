@@ -16,9 +16,11 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"  # TODO: "Strict"
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
     "http://localhost:80",
     "http://localhost:3000",
     "http://localhost:8000",
+    "http://127.0.0.1",
     "http://127.0.0.1:80",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:8000",
@@ -27,9 +29,11 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost",
     "http://localhost:80",
     "http://localhost:3000",
     "http://localhost:8000",
+    "http://127.0.0.1",
     "http://127.0.0.1:80",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:8000",

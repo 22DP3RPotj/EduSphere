@@ -108,6 +108,8 @@ SERVER_PORT = env.int("SERVER_PORT", default=8000)
 SERVER_HOST = env("SERVER_HOST", default="127.0.0.1")
 
 # Messaging
+
+# Max messages per second per user to prevent abuse (0 means no limit)
 MAX_MESSAGES_PER_SEC = 0
 
 # File upload

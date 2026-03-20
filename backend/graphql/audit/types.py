@@ -1,5 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
+from django.core.exceptions import ObjectDoesNotExist
 
 from backend.account.models import UserBanHistory, UserHistory, User
 from backend.moderation.models import (
@@ -22,7 +23,10 @@ class BaseAuditType(graphene.ObjectType):
         if self.pgh_context:
             user_id = self.pgh_context.metadata.get("user")
             if user_id:
-                return User.objects.filter(id=user_id).first()
+                try:
+                    return User.objects.get(id=user_id)
+                except ObjectDoesNotExist:
+                    return None
         return None
 
 
@@ -38,11 +42,10 @@ class UserAuditType(BaseAuditType, DjangoObjectType):
         model = UserHistory
         interfaces = (graphene.relay.Node,)
         fields = (
-            "username",
-            "email",
             "is_active",
             "is_staff",
             "is_superuser",
+            "is_verified",
         )
 
 

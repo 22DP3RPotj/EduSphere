@@ -129,8 +129,8 @@ class AuditQueryTests(JSONWebTokenTestCase):
             self.user.save()
 
         query = """
-            query GetUserAudits($username: String) {
-                userAudits(username: $username) {
+            query GetUserAudits($actorUsername: String) {
+                userAudits(actorUsername: $actorUsername) {
                     edges {
                         node {
                             pghObjId
@@ -144,7 +144,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """
 
         response = self.client.execute(
-            query, variables={"username": self.user.username}
+            query, variables={"actorUsername": self.superuser.username}
         )
         self.assertIsNone(response.errors)
         data = response.data["userAudits"]["edges"]

@@ -107,7 +107,7 @@ class UserBan(models.Model):
 class UserHistory(
     pghistory.create_event_model(
         User,
-        fields=["username", "email", "is_active", "is_staff", "is_superuser"],
+        fields=["is_active", "is_staff", "is_superuser", "is_verified"],
     )
 ):
     class Meta:

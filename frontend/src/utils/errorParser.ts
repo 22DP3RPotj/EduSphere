@@ -1,10 +1,9 @@
 import type { ApolloError } from "@apollo/client/errors"
 
-type ErrorMessage = string
-  | { message?: string, code?: string }
-  | unknown
+type ErrorMessage = string | { message?: string, code?: string }
+type RawFormError = ErrorMessage | Record<string, unknown> | null | undefined
 
-export type FormErrors = Record<string, ErrorMessage[] | ErrorMessage>
+export type FormErrors = Record<string, RawFormError | RawFormError[]>
 
 export interface ParsedError {
   fieldErrors: Record<string, string[]>
@@ -55,8 +54,9 @@ export function parseGraphQLError(error: unknown): ParsedError {
                   const parsed = JSON.parse(str.replace(/'/g, '"'))
 
                   // If parsed has __all__, use it
-                  if (Array.isArray((parsed).__all__)) {
-                    result.generalErrors.push(...(parsed).__all__)
+                  const parsedAll = (parsed as { __all__?: unknown }).__all__
+                  if (parsedAll !== undefined) {
+                    result.generalErrors.push(...normalizeMessages(parsedAll))
                   } else if (typeof parsed === "object" && parsed !== null) {
                     // Flatten any nested string/array values found in the parsed object
                     const vals = flatten(parsed)
@@ -74,7 +74,7 @@ export function parseGraphQLError(error: unknown): ParsedError {
               }
             } else if (typeof messages === "object" && messages !== null) {
               // message is an object/hashmap directly
-              result.generalErrors.push(...Object.values(messages).map(String))
+              result.generalErrors.push(...flatten(messages))
             }
           } else {
             // Field-specific errors
@@ -92,8 +92,9 @@ export function parseGraphQLError(error: unknown): ParsedError {
       ) {
         try {
           const parsed = JSON.parse(gqlError.message.replace(/'/g, '"'))
-          if (Array.isArray((parsed).__all__)) {
-            result.generalErrors.push(...(parsed).__all__)
+          const parsedAll = (parsed as { __all__?: unknown }).__all__
+          if (parsedAll !== undefined) {
+            result.generalErrors.push(...normalizeMessages(parsedAll))
           } else if (typeof parsed === "object" && parsed !== null) {
             // Flatten any nested string/array values found in the parsed object
             const vals = flatten(parsed)
@@ -123,8 +124,7 @@ function normalizeMessages(messages: unknown): string[] {
     return messages.map((m) => {
       if (typeof m === "string") return m
       if (typeof m === "object" && m !== null) {
-        if ("message" in m) return String((m as { message: unknown }).message)
-        return JSON.stringify(m)
+        return pickMessage(m as { message?: unknown, code?: unknown })
       }
       return String(m)
     })
@@ -134,8 +134,8 @@ function normalizeMessages(messages: unknown): string[] {
     return [messages]
   }
 
-  if (typeof messages === "object" && messages !== null && "message" in messages) {
-    return [String((messages as { message: unknown }).message)]
+  if (typeof messages === "object" && messages !== null) {
+    return [pickMessage(messages as { message?: unknown, code?: unknown })]
   }
 
   return [String(messages)]
@@ -144,6 +144,19 @@ function normalizeMessages(messages: unknown): string[] {
 function flatten(v: unknown): string[] {
   if (typeof v === "string") return [v]
   if (Array.isArray(v)) return v.flatMap(flatten)
-  if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
+  if (typeof v === "object" && v !== null) {
+    if ("message" in v && typeof (v as { message?: unknown }).message === "string") {
+      return [(v as { message: string }).message]
+    }
+    return Object.entries(v)
+      .filter(([key]) => key !== "code")
+      .flatMap(([, value]) => flatten(value))
+  }
   return []
+}
+
+function pickMessage(value: { message?: unknown, code?: unknown }): string {
+  if (typeof value.message === "string" && value.message.trim()) return value.message
+  if (typeof value.code === "string" && value.code.trim()) return value.code
+  return JSON.stringify(value)
 }

@@ -10,10 +10,9 @@ from django.db import transaction
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.datastructures import MultiValueDict
 
-from backend.core.exceptions import ErrorCode
+from backend.core.exceptions import ErrorCode, format_form_errors
 from backend.graphql.account.types import UserType
 from backend.graphql.mutations import BaseMutation
-from backend.graphql.utils import format_form_errors
 from backend.account.models import User
 from backend.account.services import RestrictionService
 from backend.account.forms import UserForm

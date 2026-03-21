@@ -2,6 +2,7 @@ from http.cookies import SimpleCookie
 from graphql_jwt.shortcuts import get_user_by_token
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
+from graphql_jwt.exceptions import JSONWebTokenError
 
 
 def _get_anonymous_user():
@@ -14,7 +15,7 @@ def _get_anonymous_user():
 def _get_user(token: str):
     try:
         return get_user_by_token(token)
-    except Exception:
+    except JSONWebTokenError:
         return None
 
 

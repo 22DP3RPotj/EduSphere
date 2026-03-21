@@ -14,7 +14,6 @@ from django.core.validators import (
 from backend.account.managers import UserManager
 from backend.account.files.paths import avatar_upload_path
 from backend.core.files.validators import FileSizeValidator, ImageValidator
-from backend.core.constants import MINIMAL_USERNAME_LENGTH
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -29,8 +28,8 @@ class User(AbstractBaseUser, PermissionsMixin):
                 "Username may only contain lowercase letters, digits, hyphens (-), and underscores (_).",
             ),
             MinLengthValidator(
-                MINIMAL_USERNAME_LENGTH,
-                f"Username must be at least {MINIMAL_USERNAME_LENGTH} characters long.",
+                settings.MINIMAL_USERNAME_LENGTH,
+                f"Username must be at least {settings.MINIMAL_USERNAME_LENGTH} characters long.",
             ),
         ],
     )

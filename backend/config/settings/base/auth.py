@@ -1,7 +1,8 @@
+from ..environment import env
+
 AUTH_USER_MODEL = "account.User"
 
 # Password validation
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -16,6 +17,8 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+MINIMAL_USERNAME_LENGTH = env.int("MINIMAL_USERNAME_LENGTH", default=3)
 
 AUTHENTICATION_BACKENDS = [
     "graphql_auth.backends.GraphQLAuthBackend",

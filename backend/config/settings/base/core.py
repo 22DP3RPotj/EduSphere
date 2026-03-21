@@ -55,7 +55,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Custom middleware
     "backend.graphql.context.middleware.GQLDataLoaderMiddleware",
+    "backend.account.middleware.LastSeenMiddleware",
 ]
 
 # Audit log
@@ -116,6 +118,11 @@ SERVER_HOST = env("SERVER_HOST", default="127.0.0.1")
 
 # Max messages per second per user to prevent abuse (0 means no limit)
 MAX_MESSAGES_PER_SEC = 0
+
+# Time after which a user is considered inactive in seconds (for last seen updates)
+LAST_SEEN_INACTIVITY_THRESHOLD = env.int(
+    "LAST_SEEN_INACTIVITY_THRESHOLD", default=60 * 5
+)  # 5 minutes
 
 # File upload
 MAX_FILE_SIZE_MB = 10

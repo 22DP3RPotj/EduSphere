@@ -53,7 +53,6 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "backend.graphql.context.middleware.GQLDataLoaderMiddleware",
@@ -93,7 +92,10 @@ ASGI_APPLICATION = "backend.config.asgi.application"
 
 WSGI_APPLICATION = "backend.config.wsgi.application"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend",
+)
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

@@ -1,3 +1,5 @@
+from ..environment import env
+
 # TODO: When moving to production with HTTPS
 # SECURE_SETTINGS = {
 # "SECURE_SSL_REDIRECT": True,  # Redirect all HTTP to HTTPS
@@ -12,10 +14,9 @@
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"  # TODO: "Strict"
 
-CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = "Lax"  # TODO: "Strict"
+CORS_ALLOW_CREDENTIALS = False
 
-CSRF_TRUSTED_ORIGINS = [
+DEFAULT_CORS_ALLOWED_ORIGINS = [
     "http://localhost",
     "http://localhost:80",
     "http://localhost:3000",
@@ -26,22 +27,15 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS", default=DEFAULT_CORS_ALLOWED_ORIGINS
+)
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost",
-    "http://localhost:80",
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1",
-    "http://127.0.0.1:80",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8000",
-]
-
-ALLOWED_HOSTS = [
+DEFAULT_ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     # Docker internal hostname
     "backend",
 ]
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=DEFAULT_ALLOWED_HOSTS)

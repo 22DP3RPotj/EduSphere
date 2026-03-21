@@ -1,3 +1,2 @@
-MINIMAL_USERNAME_LENGTH = 3
-
+# Internal representation of a deleted user.
 DELETED_USER = "<Deleted user>"

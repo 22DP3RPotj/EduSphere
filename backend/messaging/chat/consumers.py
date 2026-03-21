@@ -87,6 +87,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def _maybe_update_last_seen(self) -> None:
         from backend.account.utils import update_last_seen, get_inactivity_threshold
+
         threshold = get_inactivity_threshold()
         if (
             self._last_seen_updated_at is None

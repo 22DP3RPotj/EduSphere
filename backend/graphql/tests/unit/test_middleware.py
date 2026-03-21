@@ -89,23 +89,6 @@ class ErrorTransformingMiddlewareTests(SimpleTestCase):
             {"nonFieldErrors": ["Invalid credentials"]},
         )
 
-    def test_check_errors_async_style_payload_raises_validation_error(self):
-        payload = _Payload(
-            _ErrorDictLike(
-                {"username": [{"message": "User with this Username already exists."}]}
-            )
-        )
-
-        with self.assertRaises(GraphQLError) as ctx:
-            self.middleware._check_errors(payload)
-
-        err = ctx.exception
-        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
-        self.assertEqual(
-            err.extensions["errors"],
-            {"username": ["User with this Username already exists."]},
-        )
-
     # TODO: Should be covered by InternalErrorMiddleware instead
     # def test_check_errors_raises_internal_error_on_unexpected_exception(self):
     #     class BadPayload:

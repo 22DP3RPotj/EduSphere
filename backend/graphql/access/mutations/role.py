@@ -6,7 +6,7 @@ from graphql import GraphQLError
 from backend.graphql.access.types import RoleType, RoleDeleteType
 from backend.core.exceptions import ErrorCode
 
-from backend.graphql.base import BaseMutation
+from backend.graphql.mutations import BaseMutation
 from backend.room.models import Room
 from backend.access.models import Role
 from backend.access.services import RoleService

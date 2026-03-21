@@ -1,6 +1,9 @@
 import type { ApolloError } from "@apollo/client/errors"
 
-export type FormErrors = Record<string, string[] | string>
+type ErrorMessage = string | { message?: string, code?: string }
+type RawFormError = ErrorMessage | Record<string, unknown> | null | undefined
+
+export type FormErrors = Record<string, RawFormError | RawFormError[]>
 
 export interface ParsedError {
   fieldErrors: Record<string, string[]>
@@ -41,7 +44,7 @@ export function parseGraphQLError(error: unknown): ParsedError {
           if (field === "__all__") {
             // General form errors
             if (Array.isArray(messages)) {
-              result.generalErrors.push(...messages)
+              result.generalErrors.push(...normalizeMessages(messages))
             } else if (typeof messages === "string") {
               const str = messages.trim()
 
@@ -51,16 +54,11 @@ export function parseGraphQLError(error: unknown): ParsedError {
                   const parsed = JSON.parse(str.replace(/'/g, '"'))
 
                   // If parsed has __all__, use it
-                  if (Array.isArray((parsed).__all__)) {
-                    result.generalErrors.push(...(parsed).__all__)
+                  const parsedAll = (parsed as { __all__?: unknown }).__all__
+                  if (parsedAll !== undefined) {
+                    result.generalErrors.push(...normalizeMessages(parsedAll))
                   } else if (typeof parsed === "object" && parsed !== null) {
                     // Flatten any nested string/array values found in the parsed object
-                    const flatten = (v: unknown): string[] => {
-                      if (typeof v === "string") return [v]
-                      if (Array.isArray(v)) return v.flatMap(flatten)
-                      if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
-                      return []
-                    }
                     const vals = flatten(parsed)
                     if (vals.length > 0) result.generalErrors.push(...vals)
                     else result.generalErrors.push(messages) // fallback to raw string
@@ -76,15 +74,11 @@ export function parseGraphQLError(error: unknown): ParsedError {
               }
             } else if (typeof messages === "object" && messages !== null) {
               // message is an object/hashmap directly
-              result.generalErrors.push(...Object.values(messages).map(String))
+              result.generalErrors.push(...flatten(messages))
             }
           } else {
             // Field-specific errors
-            if (Array.isArray(messages)) {
-              result.fieldErrors[field] = messages
-            } else if (typeof messages === "string") {
-              result.fieldErrors[field] = [messages]
-            }
+            result.fieldErrors[field] = normalizeMessages(messages)
           }
         })
       }
@@ -98,16 +92,11 @@ export function parseGraphQLError(error: unknown): ParsedError {
       ) {
         try {
           const parsed = JSON.parse(gqlError.message.replace(/'/g, '"'))
-          if (Array.isArray((parsed).__all__)) {
-            result.generalErrors.push(...(parsed).__all__)
+          const parsedAll = (parsed as { __all__?: unknown }).__all__
+          if (parsedAll !== undefined) {
+            result.generalErrors.push(...normalizeMessages(parsedAll))
           } else if (typeof parsed === "object" && parsed !== null) {
             // Flatten any nested string/array values found in the parsed object
-            const flatten = (v: unknown): string[] => {
-              if (typeof v === "string") return [v]
-              if (Array.isArray(v)) return v.flatMap(flatten)
-              if (typeof v === "object" && v !== null) return Object.values(v).flatMap(flatten)
-              return []
-            }
             const vals = flatten(parsed)
             if (vals.length > 0) result.generalErrors.push(...vals)
             else result.generalErrors.push(gqlError.message)
@@ -128,4 +117,46 @@ export function parseGraphQLError(error: unknown): ParsedError {
   }
 
   return result
+}
+
+function normalizeMessages(messages: unknown): string[] {
+  if (Array.isArray(messages)) {
+    return messages.map((m) => {
+      if (typeof m === "string") return m
+      if (typeof m === "object" && m !== null) {
+        return pickMessage(m as { message?: unknown, code?: unknown })
+      }
+      return String(m)
+    })
+  }
+
+  if (typeof messages === "string") {
+    return [messages]
+  }
+
+  if (typeof messages === "object" && messages !== null) {
+    return [pickMessage(messages as { message?: unknown, code?: unknown })]
+  }
+
+  return [String(messages)]
+}
+
+function flatten(v: unknown): string[] {
+  if (typeof v === "string") return [v]
+  if (Array.isArray(v)) return v.flatMap(flatten)
+  if (typeof v === "object" && v !== null) {
+    if ("message" in v && typeof (v as { message?: unknown }).message === "string") {
+      return [(v as { message: string }).message]
+    }
+    return Object.entries(v)
+      .filter(([key]) => key !== "code")
+      .flatMap(([, value]) => flatten(value))
+  }
+  return []
+}
+
+function pickMessage(value: { message?: unknown, code?: unknown }): string {
+  if (typeof value.message === "string" && value.message.trim()) return value.message
+  if (typeof value.code === "string" && value.code.trim()) return value.code
+  return JSON.stringify(value)
 }

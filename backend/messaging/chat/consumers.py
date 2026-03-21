@@ -2,19 +2,20 @@ import uuid
 import json
 import logging
 from datetime import datetime
-from enum import StrEnum
 from typing import Any, Optional
 
-import redis.asyncio as aioredis
-from redis.exceptions import RedisError
+from django.utils.timezone import now
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.conf import settings
+from enum import StrEnum
+from redis.exceptions import RedisError
+
 from backend.core.exceptions import (
     FormValidationException,
     PermissionException,
     ConflictException,
 )
+from backend.core.apps import CoreConfig
 
 
 logger = logging.getLogger(__name__)
@@ -29,22 +30,27 @@ class ClientMessageType(StrEnum):
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Async Redis client (avoids per-call thread executor overhead)
-        self.redis_client = aioredis.Redis(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            db=settings.REDIS_DB,
-            decode_responses=True,
-        )
-        self.stream_key = None
-        self.initialized = False
-        self.room_id = None
+        self.stream_key: Optional[str] = None
+        self.initialized: bool = False
+        self.room_id: Optional[uuid.UUID] = None
         self.room = None
+        self._last_seen_updated_at: Optional[datetime] = None
+
+    @property
+    def redis_client(self):
+        """Shared Redis client — one connection pool for all consumers."""
+        return CoreConfig.get_redis_client()
 
     @property
     def max_messages_per_second(self) -> int:
-        """Set `MAX_MESSAGES_PER_SEC=0` to disable."""
+        """Set `MAX_MESSAGES_PER_SEC=0` to disable rate limiting."""
+        from django.conf import settings
+
         return settings.MAX_MESSAGES_PER_SEC
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
     def _parse_message_type(self, raw: Any) -> Optional[ClientMessageType]:
         if raw is None:
@@ -52,6 +58,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             return ClientMessageType(str(raw))
         except ValueError:
+            return None
+
+    def _parse_uuid(self, value: Any) -> Optional[uuid.UUID]:
+        try:
+            return uuid.UUID(str(value))
+        except (ValueError, AttributeError):
             return None
 
     async def _rate_limited(self) -> bool:
@@ -73,6 +85,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             logger.warning("Rate limit check failed (redis unavailable)", exc_info=True)
             return False
 
+    async def _maybe_update_last_seen(self) -> None:
+        from backend.account.utils import update_last_seen, get_inactivity_threshold
+
+        threshold = get_inactivity_threshold()
+        if (
+            self._last_seen_updated_at is None
+            or (now() - self._last_seen_updated_at) > threshold
+        ):
+            await database_sync_to_async(update_last_seen)(user=self.user)
+            self._last_seen_updated_at = now()
+
     # TODO: standardize error message format
     async def send_error(self, error_message):
         """
@@ -81,6 +104,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         payload = {"error": error_message}
         await self.send(text_data=json.dumps(payload))
+
+    # ------------------------------------------------------------------
+    # Connection lifecycle
+    # ------------------------------------------------------------------
 
     async def connect(self):
         """
@@ -94,6 +121,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         self.user = user
+
         raw_room_id = self.scope.get("url_route", {}).get("kwargs", {}).get("room_id")
         try:
             self.room_id = uuid.UUID(str(raw_room_id))
@@ -104,16 +132,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         room_id_str = str(self.room_id)
         self.room_group_name = f"chat_{room_id_str}"
-
-        # Redis Streams history key
         self.stream_key = f"chat_stream:{room_id_str}"
 
         from backend.room.models import Room
         from backend.access.models import Participant
 
-        try:
-            room = await database_sync_to_async(Room.objects.get)(id=self.room_id)
-        except Room.DoesNotExist:
+        room = await database_sync_to_async(
+            Room.objects.filter(id=self.room_id).first
+        )()
+        if room is None:
             logger.warning(f"Room not found: {self.room_id}")
             await self.close()
             return
@@ -121,7 +148,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         is_participant = await database_sync_to_async(
             Participant.objects.filter(user=self.user, room=room).exists
         )()
-
         if not is_participant:
             await self.close()
             return
@@ -134,18 +160,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        """
-        Leave the room group on disconnect.
-        """
+        """Leave the room group on disconnect."""
         if not self.initialized:
             return
 
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        # Do NOT close the shared Redis client here.
 
-        try:
-            await self.redis_client.aclose()
-        except (RedisError, OSError):
-            logger.warning("Error closing redis client.", exc_info=True)
+    # ------------------------------------------------------------------
+    # Message routing
+    # ------------------------------------------------------------------
 
     async def receive(self, text_data):
         """
@@ -155,6 +179,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if await self._rate_limited():
             await self.send_error("Too many messages. Please slow down.")
             return
+
+        await self._maybe_update_last_seen()
 
         try:
             data = json.loads(text_data)
@@ -182,18 +208,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         if msg_type is ClientMessageType.DELETE:
-            message_id = data.get("messageId")
+            message_id = self._parse_uuid(data.get("messageId"))
             if not message_id:
-                await self.send_error("Missing 'messageId'.")
+                await self.send_error("Invalid or missing 'messageId'.")
                 return
             await self.handle_delete_message(message_id)
             return
 
         if msg_type is ClientMessageType.UPDATE:
-            message_id = data.get("messageId")
+            message_id = self._parse_uuid(data.get("messageId"))
             new_body = data.get("message")
             if not message_id:
-                await self.send_error("Missing 'messageId'.")
+                await self.send_error("Invalid or missing 'messageId'.")
                 return
             if not isinstance(new_body, str):
                 await self.send_error("Missing or invalid 'message'.")
@@ -201,25 +227,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.handle_update_message(message_id, new_body)
             return
 
-    async def publish_to_stream(self, message_data):
-        """Publish message to Redis Streams (history/persistence only)."""
-        try:
-            await self.redis_client.xadd(
-                self.stream_key,
-                {
-                    "data": json.dumps(message_data),
-                    "timestamp": datetime.now().isoformat(),
-                },
-            )
-        except TypeError:
-            logger.error("Message data not JSON-serializable", exc_info=True)
-        except (RedisError, OSError):
-            logger.error(
-                "Error publishing to stream (redis unavailable)", exc_info=True
-            )
+    # ------------------------------------------------------------------
+    # Message handlers
+    # ------------------------------------------------------------------
 
     async def handle_new_message(self, room, message_body):
-        """Handle creation of a new message"""
+        """Handle creation of a new message."""
         from backend.messaging.services import MessageService
 
         @database_sync_to_async
@@ -248,27 +261,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             **serialized,
         }
 
-        # Realtime fanout (single mechanism)
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
-    async def handle_delete_message(self, message_id):
-        """Handle deletion of a message"""
+    async def handle_delete_message(self, message_id: uuid.UUID):
+        """Handle deletion of a message."""
         from backend.messaging.models import Message
         from backend.messaging.services import MessageService
-        from backend.core.exceptions import PermissionException
 
         @database_sync_to_async
         def get_message():
-            return Message.objects.get(id=message_id)
+            return Message.objects.filter(id=message_id).first()
 
         @database_sync_to_async
         def delete_message(message):
             return MessageService.delete_message(self.user, message)
 
-        try:
-            message = await get_message()
-        except Message.DoesNotExist:
+        message = await get_message()
+        if message is None:
             await self.send_error("Message not found.")
             return
 
@@ -281,21 +291,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message_data = {
             "type": "chat_message",
             "action": "delete",
-            "id": message_id,
+            "id": str(message_id),
         }
 
-        # Realtime fanout (single mechanism)
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
-    async def handle_update_message(self, message_id, new_body):
-        """Handle updating a message"""
+    async def handle_update_message(self, message_id: uuid.UUID, new_body: str):
+        """Handle updating a message."""
         from backend.messaging.models import Message
         from backend.messaging.services import MessageService
 
         @database_sync_to_async
         def get_message():
-            return Message.objects.get(id=message_id)
+            return Message.objects.filter(id=message_id).first()
 
         @database_sync_to_async
         def do_update(message):
@@ -307,9 +316,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         def serialize(message):
             return MessageService.serialize(message)
 
-        try:
-            message = await get_message()
-        except Message.DoesNotExist:
+        message = await get_message()
+        if message is None:
             await self.send_error("Message not found.")
             return
 
@@ -329,18 +337,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
             **serialized,
         }
 
-        # Realtime fanout (single mechanism)
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
     async def chat_message(self, event):
-        """
-        Receive messages sent to the group and relay to WebSocket clients.
-        """
+        """Receive messages broadcast to the group and relay to this client."""
         await self.send(text_data=json.dumps(event))
 
+    async def publish_to_stream(self, message_data):
+        """Publish a message to Redis Streams for history/persistence."""
+        try:
+            await self.redis_client.xadd(
+                self.stream_key,
+                {
+                    "data": json.dumps(message_data),
+                    "timestamp": now().isoformat(),
+                },
+            )
+        except TypeError:
+            logger.error("Message data not JSON-serializable", exc_info=True)
+        except (RedisError, OSError):
+            logger.error(
+                "Error publishing to stream (redis unavailable)", exc_info=True
+            )
+
     async def get_message_history(self, start_id="0", count=50):
-        """Retrieve message history from Redis Streams"""
+        """Retrieve message history from Redis Streams."""
         try:
             messages = await self.redis_client.xrange(
                 self.stream_key, start_id, "+", count=count
@@ -359,7 +381,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             try:
                 message_data = json.loads(raw)
             except json.JSONDecodeError:
-                # Corrupt entry in stream: skip but keep going
                 logger.warning(
                     f"Corrupt JSON in redis stream entry {msg_id}", exc_info=True
                 )

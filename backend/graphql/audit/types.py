@@ -1,7 +1,7 @@
 import graphene
 from graphene_django import DjangoObjectType
 
-from backend.account.models import UserBanHistory, UserHistory, User
+from backend.account.models import UserBanHistory, UserHistory
 from backend.moderation.models import (
     ModerationActionHistory,
     ModerationCaseHistory,
@@ -19,11 +19,14 @@ class BaseAuditType(graphene.ObjectType):
     pgh_obj_id = graphene.UUID()
 
     def resolve_actor(self, info):
-        if self.pgh_context:
-            user_id = self.pgh_context.metadata.get("user")
-            if user_id:
-                return User.objects.filter(id=user_id).first()
-        return None
+        if not self.pgh_context:
+            return None
+
+        user_id = self.pgh_context.metadata.get("user")
+        if not user_id:
+            return None
+
+        return info.context.loaders.user.load(user_id)
 
 
 class UserBanAuditType(BaseAuditType, DjangoObjectType):
@@ -38,8 +41,6 @@ class UserAuditType(BaseAuditType, DjangoObjectType):
         model = UserHistory
         interfaces = (graphene.relay.Node,)
         fields = (
-            "username",
-            "email",
             "is_active",
             "is_staff",
             "is_superuser",

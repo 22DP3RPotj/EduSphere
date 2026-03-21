@@ -5,7 +5,9 @@ GRAPHENE = {
     "SCHEMA": "backend.graphql.schema.schema",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        "backend.infra.middleware.PrometheusMiddleware",
+        # Custom middleware
+        "backend.infra.middleware.GQLPrometheusMiddleware",
+        "backend.graphql.error.middleware.InternalErrorMiddleware",
         "backend.graphql.error.middleware.ErrorTransformingMiddleware",
     ],
 }

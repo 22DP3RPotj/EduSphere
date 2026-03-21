@@ -69,28 +69,56 @@ class AuditQuery(graphene.ObjectType):
 
     @superuser_required
     def resolve_user_audits(self, info, **kwargs):
-        return UserHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            UserHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )
 
     @superuser_required
     def resolve_user_ban_audits(self, info, **kwargs):
-        return UserBanHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            UserBanHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )
 
     @superuser_required
     def resolve_room_audits(self, info, **kwargs):
-        return RoomHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            RoomHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )
 
     @superuser_required
     def resolve_invite_audits(self, info, **kwargs):
-        return InviteHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            InviteHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )
 
     @superuser_required
     def resolve_report_audits(self, info, **kwargs):
-        return ReportHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            ReportHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )
 
     @superuser_required
     def resolve_moderation_action_audits(self, info, **kwargs):
-        return ModerationActionHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            ModerationActionHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )
 
     @superuser_required
     def resolve_moderation_case_audits(self, info, **kwargs):
-        return ModerationCaseHistory.objects.all().order_by("-pgh_created_at")
+        return (
+            ModerationCaseHistory.objects.select_related("pgh_context")
+            .all()
+            .order_by("-pgh_created_at")
+        )

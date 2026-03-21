@@ -10,55 +10,12 @@ from django.db import transaction
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.datastructures import MultiValueDict
 
+from backend.core.exceptions import ErrorCode, format_form_errors
 from backend.graphql.account.types import UserType
-from backend.graphql.base import BaseMutation
-from backend.graphql.utils import format_form_errors
+from backend.graphql.mutations import BaseMutation
 from backend.account.models import User
 from backend.account.services import RestrictionService
-from backend.account.forms import UserForm, RegisterForm
-
-
-class RegisterUser(BaseMutation):
-    class Arguments:
-        username = graphene.String(required=True)
-        name = graphene.String(required=True)
-        email = graphene.String(required=True)
-        password1 = graphene.String(required=True)
-        password2 = graphene.String(required=True)
-
-    user = graphene.Field(UserType)
-    success = graphene.Boolean()
-
-    # TODO: django-graphql-auth
-
-    @classmethod
-    def resolve(  # type: ignore[override]
-        cls,
-        root: Optional[Any],
-        info: graphene.ResolveInfo,
-        username: str,
-        name: str,
-        email: str,
-        password1: str,
-        password2: str,
-    ) -> Self:
-        form = RegisterForm(
-            {
-                "username": username,
-                "name": name,
-                "email": email,
-                "password1": password1,
-                "password2": password2,
-            }
-        )
-
-        if not form.is_valid():
-            raise GraphQLError(
-                "Invalid data", extensions={"errors": format_form_errors(form.errors)}
-            )
-
-        user = form.save()
-        return cls(user=user, success=True)
+from backend.account.forms import UserForm
 
 
 class UpdateUser(BaseMutation):
@@ -97,7 +54,11 @@ class UpdateUser(BaseMutation):
 
         if not form.is_valid():
             raise GraphQLError(
-                "Invalid data", extensions={"errors": format_form_errors(form.errors)}
+                "Invalid data",
+                extensions={
+                    "code": ErrorCode.VALIDATION_ERROR,
+                    "errors": format_form_errors(form.errors),
+                },
             )
 
         form.save()
@@ -126,7 +87,7 @@ class UpdateUserActiveStatus(BaseMutation):
         reason: Optional[str] = None,
         expires_at: Optional[datetime] = None,
     ) -> Self:
-        users = User.objects.filter(id__in=user_ids)
+        users = list(User.objects.filter(id__in=user_ids))
 
         with transaction.atomic():
             for user in users:

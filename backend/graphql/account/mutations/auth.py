@@ -1,21 +1,19 @@
 import graphene
-import graphql_jwt
-
-from backend.graphql.account.types import UserType
-
-
-class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
-    user = graphene.Field(UserType)
-    success = graphene.Boolean()
-
-    @classmethod
-    def resolve(cls, root, info, **kwargs):
-        return cls(user=info.context.user, success=True)
+from graphql_auth import mutations
 
 
 class AuthMutation(graphene.ObjectType):
-    token_auth = ObtainJSONWebToken.Field()
-    verify_token = graphql_jwt.Verify.Field()
-    refresh_token = graphql_jwt.Refresh.Field()
-    delete_token = graphql_jwt.DeleteJSONWebTokenCookie.Field()
-    delete_refresh_token = graphql_jwt.DeleteRefreshTokenCookie.Field()
+    register = mutations.Register.Field()
+    verify_account = mutations.VerifyAccount.Field()
+    resend_activation_email = mutations.ResendActivationEmail.Field()
+    send_password_reset_email = mutations.SendPasswordResetEmail.Field()
+    password_reset = mutations.PasswordReset.Field()
+    password_change = mutations.PasswordChange.Field()
+    archive_account = mutations.ArchiveAccount.Field()
+    delete_account = mutations.DeleteAccount.Field()
+    update_account = mutations.UpdateAccount.Field()
+
+    token_auth = mutations.ObtainJSONWebToken.Field()
+    verify_token = mutations.VerifyToken.Field()
+    refresh_token = mutations.RefreshToken.Field()
+    revoke_token = mutations.RevokeToken.Field()

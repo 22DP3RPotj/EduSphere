@@ -41,7 +41,7 @@ INSTALLED_APPS = [
 ]
 
 try:
-    import django_extensions as _  # noqa
+    import django_extensions  # noqa
 
     INSTALLED_APPS += ["django_extensions"]
 except ImportError:
@@ -107,7 +107,7 @@ DATABASES = {
         default=env("DATABASE_URL"),
         conn_max_age=60,
         conn_health_checks=True,
-    )
+    ),
 }
 
 # Server

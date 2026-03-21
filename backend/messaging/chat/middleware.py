@@ -16,7 +16,7 @@ def _get_user(token: str):
     try:
         return get_user_by_token(token)
     except JSONWebTokenError:
-        return None
+        return _get_anonymous_user()
 
 
 class JwtAuthMiddleware(BaseMiddleware):

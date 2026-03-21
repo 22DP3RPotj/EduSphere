@@ -41,9 +41,9 @@ class UpdateUser(BaseMutation):
         user = info.context.user
 
         data = {
-            "username": username or user.username,
-            "name": name or user.name,
-            "bio": bio or user.bio,
+            "username": username if username is not None else user.username,
+            "name": name if name is not None else user.name,
+            "bio": bio if bio is not None else user.bio,
         }
 
         files = None

@@ -24,5 +24,6 @@ class CoreConfig(AppConfig):
                 decode_responses=True,
                 max_connections=20,
                 socket_timeout=5.0,
+                socket_connect_timeout=5.0,
             )
         return cls._redis_client

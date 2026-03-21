@@ -43,7 +43,7 @@ class BaseAuditFilter(django_filters.FilterSet):
 class UserAuditFilter(BaseAuditFilter):
     class Meta:
         model = UserHistory
-        fields = ["is_staff", "is_superuser", "is_active", "is_verified"]
+        fields = ["is_staff", "is_superuser", "is_active"]
 
 
 class UserBanAuditFilter(BaseAuditFilter):

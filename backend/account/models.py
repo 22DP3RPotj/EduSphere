@@ -26,7 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         validators=[
             RegexValidator(
                 r"^[-a-z0-9_]+$",
-                "Username may only contain lowercase letters, digits, and -/_ characters.",
+                "Username may only contain lowercase letters, digits, hyphens (-), and underscores (_).",
             ),
             MinLengthValidator(
                 MINIMAL_USERNAME_LENGTH,
@@ -48,8 +48,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    is_verified = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 
@@ -107,7 +107,7 @@ class UserBan(models.Model):
 class UserHistory(
     pghistory.create_event_model(
         User,
-        fields=["is_active", "is_staff", "is_superuser", "is_verified"],
+        fields=["is_active", "is_staff", "is_superuser"],
     )
 ):
     class Meta:

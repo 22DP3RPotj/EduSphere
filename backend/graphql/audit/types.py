@@ -44,7 +44,6 @@ class UserAuditType(BaseAuditType, DjangoObjectType):
             "is_active",
             "is_staff",
             "is_superuser",
-            "is_verified",
         )
 
 

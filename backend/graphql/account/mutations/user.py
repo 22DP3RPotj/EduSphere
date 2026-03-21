@@ -88,7 +88,7 @@ class UpdateUserActiveStatus(BaseMutation):
         reason: Optional[str] = None,
         expires_at: Optional[datetime] = None,
     ) -> Self:
-        users = User.objects.filter(id__in=user_ids)
+        users = list(User.objects.filter(id__in=user_ids))
 
         with transaction.atomic():
             for user in users:

@@ -23,7 +23,7 @@ def test_prometheus_metrics_endpoint_accessible(client):
 def test_graphql_middleware_updates_metrics(client):
     """Verify that GraphQL queries increment our custom prometheus metrics."""
     # Note: GraphQL queries hit the /graphql/ endpoint.
-    # The middleware is in backend.infra.middleware.PrometheusMiddleware
+    # The middleware is in backend.infra.middleware.GQLPrometheusMiddleware
 
     query = """
     query TestQuery {

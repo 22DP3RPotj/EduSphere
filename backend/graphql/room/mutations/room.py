@@ -9,7 +9,7 @@ from backend.graphql.room.types import RoomType, RoomVisibilityEnum
 from backend.room.choices import VisibilityChoices
 from backend.room.models import Room
 from backend.room.services import RoomService
-from backend.graphql.base import BaseMutation
+from backend.graphql.mutations import BaseMutation
 
 
 class CreateRoom(BaseMutation):

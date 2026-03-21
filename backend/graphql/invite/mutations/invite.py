@@ -4,7 +4,7 @@ from typing import Optional, Any, Self
 from graphql_jwt.decorators import login_required
 from graphql import GraphQLError
 
-from backend.graphql.base import BaseMutation
+from backend.graphql.mutations import BaseMutation
 from backend.graphql.invite.types import InviteType
 from backend.graphql.access.types import ParticipantType
 from backend.account.models import User

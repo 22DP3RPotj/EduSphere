@@ -1,7 +1,8 @@
 import graphene
 from typing import Optional
-from graphql_jwt.decorators import login_required, superuser_required
+from graphql_jwt.decorators import superuser_required
 from graphql import GraphQLError
+from graphql_auth.queries import MeQuery
 
 from django.db.models import Q, QuerySet
 
@@ -10,13 +11,8 @@ from backend.account.models import User
 from backend.core.exceptions import ErrorCode
 
 
-class AuthQuery(graphene.ObjectType):
+class AuthQuery(MeQuery, graphene.ObjectType):
     auth_status = graphene.Field(AuthStatusType)
-    me = graphene.Field(UserType)
-
-    @login_required
-    def resolve_me(self, info: graphene.ResolveInfo) -> User:
-        return info.context.user
 
     def resolve_auth_status(self, info: graphene.ResolveInfo) -> AuthStatusType:
         user = info.context.user

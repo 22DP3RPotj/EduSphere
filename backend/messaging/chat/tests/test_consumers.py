@@ -5,10 +5,11 @@ from channels.testing import WebsocketCommunicator
 from django.contrib.auth.models import AnonymousUser
 
 from backend.messaging.chat.routing import websocket_urlpatterns
+from backend.core.apps import CoreConfig
 
 
 class FakeRedis:
-    """Minimal async Redis fake for incr/expire/expire/xadd/xrange/aclose used by ChatConsumer.
+    """Minimal async Redis fake for incr/expire/xadd/xrange/aclose used by ChatConsumer.
 
     Includes a lightweight pipeline implementation to mirror redis.asyncio.Redis.pipeline().
     """
@@ -26,7 +27,6 @@ class FakeRedis:
         return self._kv[key]
 
     async def expire(self, key: str, seconds: int) -> bool:
-        # TTL isn't simulated; good enough for functional tests.
         return True
 
     class _Pipeline:
@@ -62,7 +62,6 @@ class FakeRedis:
         return msg_id
 
     async def xrange(self, stream: str, start: str, end: str, count: int = 50):
-        # Very small subset: return up to `count` entries.
         return list(self._streams.get(stream, []))[:count]
 
     async def aclose(self, *args, **kwargs) -> None:
@@ -71,17 +70,14 @@ class FakeRedis:
 
 @pytest.fixture(autouse=True)
 def _patch_redis(monkeypatch):
-    # Ensure ChatConsumer uses FakeRedis instead of real redis.
-    import backend.messaging.chat.consumers as consumers
-
+    """Patch CoreConfig.get_redis_client to return a fresh FakeRedis instance."""
     FakeRedis.last_instance = None
-
-    monkeypatch.setattr(consumers.aioredis, "Redis", FakeRedis)
+    fake = FakeRedis()
+    monkeypatch.setattr(CoreConfig, "get_redis_client", classmethod(lambda cls: fake))
 
 
 @pytest.fixture(autouse=True)
 def _in_memory_channel_layer(settings):
-    # Keep this active for the entire test, not just while building the ASGI app.
     settings.CHANNEL_LAYERS = {
         "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
@@ -89,7 +85,6 @@ def _in_memory_channel_layer(settings):
 
 @pytest.fixture
 def asgi_app():
-    # URLRouter is needed so `scope["url_route"]["kwargs"]["room_id"]` is populated.
     return URLRouter(websocket_urlpatterns)
 
 
@@ -221,7 +216,6 @@ def test_text_message_broadcasts_and_persists_history(asgi_app, room_and_partici
 
     async_to_sync(run)()
 
-    # Ensure redis stream received a history entry
     fake = FakeRedis.last_instance
     assert fake is not None
     stream_key = f"chat_stream:{room.id}"
@@ -241,12 +235,10 @@ def test_rate_limit_blocks_excess_messages(settings, asgi_app, room_and_particip
         connected, _ = await communicator.connect()
         assert connected is True
 
-        # First message should go through
         await communicator.send_json_to({"type": "text", "message": "one"})
         payload1 = await communicator.receive_json_from()
         assert payload1["action"] == "new"
 
-        # Second message should be rate-limited
         await communicator.send_json_to({"type": "text", "message": "two"})
         payload2 = await communicator.receive_json_from()
         assert payload2 == {"error": "Too many messages. Please slow down."}

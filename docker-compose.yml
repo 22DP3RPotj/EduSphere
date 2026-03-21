@@ -264,8 +264,6 @@ services:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
     environment:
       # Authentication
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_USER_ALLOW_SIGN_UP=false
       # Server configuration for subpath
       - GF_SERVER_DOMAIN=localhost

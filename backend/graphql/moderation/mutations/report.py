@@ -7,7 +7,7 @@ from graphql import GraphQLError
 from backend.core.exceptions import (
     ErrorCode,
 )
-from backend.graphql.base import BaseMutation
+from backend.graphql.mutations import BaseMutation
 from backend.graphql.moderation.types import (
     ActionEnum,
     ModerationCaseType,

@@ -23,7 +23,7 @@ GRAPHQL_RESOLVER_COMPLETED_TOTAL = Counter(
 )
 
 
-class PrometheusMiddleware:
+class GQLPrometheusMiddleware:
     def resolve(
         self,
         next_: Callable,

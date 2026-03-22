@@ -1,7 +1,6 @@
 import uuid
 from typing import Optional
 
-from django.db.models import QuerySet
 
 from backend.account.models import User
 from backend.room.models import Room
@@ -130,19 +129,6 @@ class RoleService:
         ).exists()
 
     @staticmethod
-    def get_room_roles(room: Room) -> QuerySet[Role]:
-        """
-        Get all roles in a room.
-
-        Args:
-            room: The room to get roles from
-
-        Returns:
-            QuerySet of roles
-        """
-        return Role.objects.filter(room=room).prefetch_related("permissions")
-
-    @staticmethod
     def get_role_by_id(role_id: uuid.UUID) -> Optional[Role]:
         """
         Get a role with optimized prefetch_related queries.
@@ -154,11 +140,7 @@ class RoleService:
             The Role instance or None if not found
         """
         try:
-            role = (
-                Role.objects.select_related("room")
-                .prefetch_related("permissions")
-                .get(id=role_id)
-            )
+            role = Role.objects.with_room().with_permissions().get(id=role_id)
         except Role.DoesNotExist:
             return None
 

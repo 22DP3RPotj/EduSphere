@@ -69,10 +69,6 @@ class RoleServiceTest(ServiceTestBase):
 
         self.assertFalse(RoleService.can_affect_role(owner_participant, owner_role))
 
-    def test_get_room_roles(self):
-        roles = RoleService.get_room_roles(self.room)
-        self.assertGreaterEqual(roles.count(), 2)
-
     def test_get_role_by_id_success(self):
         role = RoleService.get_role_by_id(self.owner_role.id)
         self.assertEqual(role.id, self.owner_role.id)

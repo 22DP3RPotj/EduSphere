@@ -41,4 +41,4 @@ class RoleQuery(graphene.ObjectType):
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        return RoleService.get_room_roles(room)
+        return Role.objects.by_room(room).with_permissions()

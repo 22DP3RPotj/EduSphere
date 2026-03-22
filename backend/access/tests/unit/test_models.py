@@ -53,6 +53,9 @@ class RoleModelTest(TestCase):
         self.assertEqual(role.name, "Admin")
         self.assertEqual(role.priority, 100)
 
+        roles = Role.objects.by_room(self.room)
+        self.assertEqual(roles.count(), 1)
+
     def test_role_unique_constraint(self):
         Role.objects.create(
             room=self.room,

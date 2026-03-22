@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
 
 from backend.access.enums import PermissionCode
+from backend.access.querysets import RoleQuerySet
 
 
 class Permission(models.Model):
@@ -40,9 +41,6 @@ class Role(models.Model):
     priority = models.PositiveIntegerField(validators=[MaxValueValidator(100)])
     permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         app_label = "access"
         constraints = [
@@ -50,6 +48,11 @@ class Role(models.Model):
                 fields=["room", "name"], name="unique_role_name_per_room"
             ),
         ]
+
+    objects = RoleQuerySet.as_manager()
+
+    def __str__(self):
+        return self.name
 
 
 class Participant(models.Model):
@@ -75,6 +78,9 @@ class Participant(models.Model):
         ]
         ordering = ["-joined_at"]
 
+    def __str__(self):
+        return f"{self.user.username} in {self.room.name}"
+
     def clean(self):
         if self.role.room_id != self.room_id:
             raise ValidationError(
@@ -84,9 +90,6 @@ class Participant(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.username} in {self.room.name}"
 
 
 # class RoomBan(models.Model):

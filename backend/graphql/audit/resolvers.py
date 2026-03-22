@@ -113,11 +113,11 @@ class AuditQuery(graphene.ObjectType):
     @superuser_required
     def resolve_moderation_action_audits(self, info, **kwargs):
         return ModerationActionHistory.objects.select_related(
-            "pgh_context", "moderator", "case"
+            "pgh_context", "moderator"
         ).order_by("-pgh_created_at")
 
     @superuser_required
     def resolve_moderation_case_audits(self, info, **kwargs):
         return ModerationCaseHistory.objects.select_related(
-            "pgh_context", "moderator"
+            "pgh_context",
         ).order_by("-pgh_created_at")

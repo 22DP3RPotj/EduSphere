@@ -69,6 +69,12 @@ class Report(models.Model):
 
     class Meta:
         app_label = "moderation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["reporter", "case"],
+                name="unique_report_per_reporter_per_case",
+            )
+        ]
         indexes = [
             models.Index(fields=["case", "created_at"]),
             models.Index(fields=["reporter", "created_at"]),

@@ -37,10 +37,6 @@ class Topic(models.Model):
     def __str__(self):
         return self.name
 
-    def clean(self):
-        if self.default_role_id and self.default_role.room_id != self.id:
-            raise ValidationError("Default role must belong to the same room.")
-
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
@@ -110,6 +106,10 @@ class Room(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.default_role_id and self.default_role.room_id != self.id:
+            raise ValidationError("Default role must belong to the same room.")
 
     def save(self, *args, **kwargs):
         self.full_clean()

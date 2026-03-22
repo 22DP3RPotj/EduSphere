@@ -72,11 +72,11 @@ class ReportService:
         Create a report for any reportable target (Room, User, Message).
         Automatically gets or creates an active ModerationCase for the target.
 
-        The duplicate check is intentionally kept only here (not inside actions.create_report)
-        as a fast-path guard before entering the transaction. The atomic block in
-        actions.create_report handles the race condition on case creation via
-        select_for_update, but duplicate report detection does not need to be repeated
-        inside the transaction since the case lock is already held at that point.
+        The service-level duplicate check is a fast-path guard that gives a clean
+        ConflictException before entering the transaction. The DB constraint on
+        (reporter, case) is the authoritative guarantee under concurrency — the
+        IntegrityError it raises is caught in actions.create_report and converted
+        to a ConflictException.
 
         Raises:
             PermissionException: Reporter lacks access, or reason is invalid for target

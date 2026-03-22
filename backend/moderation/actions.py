@@ -64,7 +64,12 @@ def create_report(
         report.object_id = target.pk
         report.reason = reason
         report.case = case
-        report.save()
+        try:
+            report.save()
+        except IntegrityError:
+            raise ConflictException(
+                "You already have an active report targeting this content."
+            )
 
     return report
 

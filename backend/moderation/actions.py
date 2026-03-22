@@ -7,7 +7,11 @@ from django.db.models import Model
 
 from backend.account.models import User
 from backend.core.exceptions import ConflictException, FormValidationException
-from backend.moderation.choices import ActionChoices, CaseStatusChoices
+from backend.moderation.choices import (
+    ActionChoices,
+    ActionPriorityChoices,
+    CaseStatusChoices,
+)
 from backend.moderation.forms import ModerationActionForm, ReportForm
 from backend.moderation.models import ModerationCase, Report, ReportReason
 
@@ -21,7 +25,6 @@ def create_report(
     content_type = ContentType.objects.get_for_model(target)
 
     form = ReportForm(data={"description": description})
-
     if not form.is_valid():
         raise FormValidationException("Invalid report data", errors=form.errors)
 
@@ -43,6 +46,8 @@ def create_report(
                     status=CaseStatusChoices.PENDING,
                 )
             except (IntegrityError, ValidationError):
+                # Race condition: another request created the case between our
+                # check and insert — fetch the winner under a lock.
                 case = (
                     ModerationCase.objects.select_for_update()
                     .filter(
@@ -52,16 +57,6 @@ def create_report(
                     )
                     .get()
                 )
-
-        if Report.objects.filter(
-            reporter=reporter,
-            content_type=content_type,
-            object_id=target.pk,
-            case__status__in=CaseStatusChoices.active(),
-        ).exists():
-            raise ConflictException(
-                "You already have an active report targeting this content."
-            )
 
         report = form.save(commit=False)
         report.reporter = reporter
@@ -102,6 +97,19 @@ def take_case_action(
     return case
 
 
+def set_case_priority(
+    case: ModerationCase,
+    priority: ActionPriorityChoices,
+) -> ModerationCase:
+    case.update_priority(priority)
+    return case
+
+
 def set_case_under_review(case: ModerationCase) -> ModerationCase:
     case.update_status(CaseStatusChoices.UNDER_REVIEW)
+    return case
+
+
+def reopen_case(case: ModerationCase) -> ModerationCase:
+    case.update_status(CaseStatusChoices.PENDING)
     return case

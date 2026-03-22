@@ -132,6 +132,10 @@ class ModerationCase(models.Model):
         self.status = new_status
         self.save(update_fields=["status", "updated_at"])
 
+    def update_priority(self, new_priority: ActionPriorityChoices) -> None:
+        self.priority = new_priority
+        self.save(update_fields=["priority", "updated_at"])
+
     def __str__(self):
         target = (
             str(self.content_object)

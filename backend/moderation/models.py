@@ -129,10 +129,14 @@ class ModerationCase(models.Model):
         ]
 
     def update_status(self, new_status: CaseStatusChoices) -> None:
+        if self.status == new_status:
+            return
         self.status = new_status
         self.save(update_fields=["status", "updated_at"])
 
     def update_priority(self, new_priority: ActionPriorityChoices) -> None:
+        if self.priority == new_priority:
+            return
         self.priority = new_priority
         self.save(update_fields=["priority", "updated_at"])
 

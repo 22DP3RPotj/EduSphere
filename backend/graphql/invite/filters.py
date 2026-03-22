@@ -1,5 +1,6 @@
 import django_filters
 from django.utils import timezone
+from django.db.models import Q
 
 from backend.invite.models import Invite
 from backend.invite.choices import InviteStatusChoices
@@ -39,18 +40,13 @@ class InviteFilter(django_filters.FilterSet):
     def filter_is_expired(self, queryset, name, value):
         """Filter on expires_at directly — avoids relying on status being up to date."""
         now = timezone.now()
-        if value:
-            return queryset.filter(expires_at__lt=now)
-        return queryset.filter(expires_at__gte=now)
+        expired_q = Q(expires_at__lt=now)
+        return queryset.filter(expired_q) if value else queryset.exclude(expired_q)
 
     def filter_is_active(self, queryset, name, value):
         """Pending and not expired — mirrors the is_active property on the model."""
         now = timezone.now()
-        if value:
-            return queryset.filter(
-                status=Invite.Status.PENDING,
-            ).filter(expires_at__gt=now)
-        return queryset.exclude(
-            status=Invite.Status.PENDING,
-            expires_at__gt=now,
+        active_q = Q(status=Invite.Status.PENDING) & (
+            Q(expires_at__isnull=True) | Q(expires_at__gte=now)
         )
+        return queryset.filter(active_q) if value else queryset.exclude(active_q)

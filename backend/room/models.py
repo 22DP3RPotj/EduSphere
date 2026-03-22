@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
+from django.core.exceptions import ValidationError
 
 from backend.room.choices import VisibilityChoices
 from backend.room.querysets import RoomQuerySet, TopicQuerySet
@@ -35,6 +36,10 @@ class Topic(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.default_role_id and self.default_role.room_id != self.id:
+            raise ValidationError("Default role must belong to the same room.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -92,10 +97,14 @@ class Room(models.Model):
         ]
 
     def update_visibility(self, new_visibility: VisibilityChoices):
+        if self.visibility == new_visibility:
+            return
         self.visibility = new_visibility
         self.save(update_fields=["visibility", "updated_at"])
 
     def update_default_role(self, new_default_role: "Role"):
+        if self.default_role == new_default_role:
+            return
         self.default_role = new_default_role
         self.save(update_fields=["default_role", "updated_at"])
 

@@ -67,8 +67,6 @@ class InviteAuditFilter(BaseAuditFilter):
 
 
 class InviteLinkAuditFilter(BaseAuditFilter):
-    is_active = django_filters.BooleanFilter(field_name="is_active")
-
     class Meta:
         model = InviteLinkHistory
         fields = ["is_active"]

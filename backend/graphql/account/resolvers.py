@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import graphene
 import uuid
 from typing import Optional
@@ -55,10 +57,10 @@ class UserQuery(graphene.ObjectType):
         is_superuser: Optional[bool] = None,
         has_avatar: Optional[bool] = None,
         has_active_ban: Optional[bool] = None,
-        date_joined_after: Optional[str] = None,
-        date_joined_before: Optional[str] = None,
-        last_seen_after: Optional[str] = None,
-        last_seen_before: Optional[str] = None,
+        date_joined_after: Optional[datetime] = None,
+        date_joined_before: Optional[datetime] = None,
+        last_seen_after: Optional[datetime] = None,
+        last_seen_before: Optional[datetime] = None,
     ) -> QuerySet[User]:
         queryset = User.objects.all().prefetch_related("hosted_rooms")
         filter_data = {

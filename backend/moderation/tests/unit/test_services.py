@@ -49,6 +49,8 @@ class ReportServiceTest(ServiceTestBase):
 
     def test_create_report_not_participant(self):
         self.room.visibility = self.room.Visibility.PRIVATE
+        self.room.save(update_fields=["visibility"])
+
         with self.assertRaises(PermissionException):
             ReportService.create_report(
                 reporter=self.other_user,

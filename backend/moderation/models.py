@@ -69,6 +69,12 @@ class Report(models.Model):
 
     class Meta:
         app_label = "moderation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["reporter", "case"],
+                name="unique_report_per_reporter_per_case",
+            )
+        ]
         indexes = [
             models.Index(fields=["case", "created_at"]),
             models.Index(fields=["reporter", "created_at"]),
@@ -127,6 +133,18 @@ class ModerationCase(models.Model):
             models.Index(fields=["status", "priority", "created_at"]),
             models.Index(fields=["content_type", "object_id"]),
         ]
+
+    def update_status(self, new_status: CaseStatusChoices) -> None:
+        if self.status == new_status:
+            return
+        self.status = new_status
+        self.save(update_fields=["status", "updated_at"])
+
+    def update_priority(self, new_priority: ActionPriorityChoices) -> None:
+        if self.priority == new_priority:
+            return
+        self.priority = new_priority
+        self.save(update_fields=["priority", "updated_at"])
 
     def __str__(self):
         target = (

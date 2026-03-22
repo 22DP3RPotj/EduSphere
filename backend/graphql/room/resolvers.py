@@ -3,9 +3,8 @@ import graphene
 from typing import Optional
 from graphql import GraphQLError
 
-from django.db.models import QuerySet, Prefetch
+from django.db.models import QuerySet
 
-from backend.access.models import Participant
 from backend.core.exceptions import ErrorCode
 from backend.account.models import User
 from backend.graphql.room.filters import RoomFilter, TopicFilter
@@ -31,23 +30,13 @@ class RoomQuery(graphene.ObjectType):
 
     def resolve_room(self, info: graphene.ResolveInfo, room_id: uuid.UUID) -> Room:
         try:
-            room = (
-                Room.objects.select_related("host")
-                .prefetch_related(
-                    "topics",
-                    Prefetch(
-                        "memberships",
-                        queryset=Participant.objects.select_related("user", "role"),
-                    ),
-                )
-                .get(id=room_id)
-            )
+            room = Room.objects.with_details().get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        if not info.context.user.has_perm(RoomPermission.READ, room):
+        if not info.context.user.has_perm(RoomPermission.VIEW, room):
             raise GraphQLError(
                 "Permission denied", extensions={"code": ErrorCode.PERMISSION_DENIED}
             )

@@ -1,18 +1,15 @@
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.access.services import ParticipantService, RoleService
 from backend.core.exceptions import (
-    ConflictException,
-    FormValidationException,
     PermissionException,
-    ValidationException,
 )
 from backend.room.models import Room
 from backend.core.tests.service_base import ServiceTestBase
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 
 class ParticipantServiceTest(ServiceTestBase):
@@ -30,38 +27,6 @@ class ParticipantServiceTest(ServiceTestBase):
     def test_get_participant_not_found(self):
         participant = ParticipantService.get_participant(self.other_user, self.room)
         self.assertIsNone(participant)
-
-    def test_add_participant_success(self):
-        participant = ParticipantService.add_participant(
-            room=self.room, user=self.other_user, role=self.member_role
-        )
-
-        self.assertEqual(participant.user, self.other_user)
-        self.assertEqual(participant.room, self.room)
-        self.assertEqual(participant.role, self.member_role)
-
-    def test_add_participant_already_exists(self):
-        self._add_member(self.member, self.member_role)
-
-        with self.assertRaises(ConflictException):
-            ParticipantService.add_participant(
-                room=self.room, user=self.member, role=self.member_role
-            )
-
-    def test_add_participant_role_wrong_room(self):
-        other_room = Room.objects.create(
-            host=self.owner,
-            name="Other Room",
-            description="",
-            visibility=Room.Visibility.PUBLIC,
-        )
-        RoleService.create_default_roles(other_room)
-        other_role = other_room.roles.first()
-
-        with self.assertRaises((ValidationException, FormValidationException)):
-            ParticipantService.add_participant(
-                room=self.room, user=self.other_user, role=other_role
-            )
 
     def test_change_participant_role_success(self):
         participant = self._add_member(self.other_user, self.member_role)

@@ -11,9 +11,8 @@ from enum import StrEnum
 from redis.exceptions import RedisError
 
 from backend.core.exceptions import (
+    DomainException,
     FormValidationException,
-    PermissionException,
-    ConflictException,
 )
 from backend.core.apps import CoreConfig
 
@@ -250,7 +249,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except FormValidationException as e:
             await self.send_error({"message": str(e), "errors": e.errors})
             return
-        except (PermissionException, ConflictException) as e:
+        except DomainException as e:
             await self.send_error(str(e))
             return
 
@@ -284,7 +283,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         try:
             await delete_message(message)
-        except PermissionException as e:
+        except DomainException as e:
             await self.send_error(str(e))
             return
 
@@ -326,7 +325,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except FormValidationException as e:
             await self.send_error({"message": str(e), "errors": e.errors})
             return
-        except (PermissionException, ConflictException) as e:
+        except DomainException as e:
             await self.send_error(str(e))
             return
 

@@ -8,7 +8,7 @@ from backend.moderation.models import (
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory
+from backend.invite.models import InviteHistory, InviteLinkHistory
 
 
 class BaseAuditType(graphene.ObjectType):
@@ -66,6 +66,18 @@ class InviteAuditType(BaseAuditType, DjangoObjectType):
         fields = (
             "status",
             "role",
+        )
+
+
+class InviteLinkAuditType(BaseAuditType, DjangoObjectType):
+    class Meta:
+        model = InviteLinkHistory
+        interfaces = (graphene.relay.Node,)
+        fields = (
+            "is_active",
+            "role",
+            "max_uses",
+            "expires_at",
         )
 
 

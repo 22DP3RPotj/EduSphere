@@ -3,6 +3,6 @@ from enum import StrEnum
 
 class MessagingPermission(StrEnum):
     CREATE = "messaging.create"
-    READ = "messaging.read"
+    VIEW = "messaging.view"
     UPDATE = "messaging.update"
     DELETE = "messaging.delete"

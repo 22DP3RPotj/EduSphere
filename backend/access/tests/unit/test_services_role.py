@@ -6,8 +6,6 @@ from django.utils import timezone
 
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant, Role
 from backend.access.services import RoleService
@@ -16,6 +14,8 @@ from backend.core.exceptions import (
 )
 from backend.invite.services import InviteService
 from backend.core.tests.service_base import ServiceTestBase
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 User = get_user_model()
 
@@ -68,10 +68,6 @@ class RoleServiceTest(ServiceTestBase):
         owner_role = owner_participant.role
 
         self.assertFalse(RoleService.can_affect_role(owner_participant, owner_role))
-
-    def test_get_room_roles(self):
-        roles = RoleService.get_room_roles(self.room)
-        self.assertGreaterEqual(roles.count(), 2)
 
     def test_get_role_by_id_success(self):
         role = RoleService.get_role_by_id(self.owner_role.id)

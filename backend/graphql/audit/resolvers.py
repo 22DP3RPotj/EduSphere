@@ -9,7 +9,7 @@ from backend.moderation.models import (
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory
+from backend.invite.models import InviteHistory, InviteLinkHistory
 
 from backend.graphql.audit.types import (
     ModerationActionAuditType,
@@ -18,9 +18,11 @@ from backend.graphql.audit.types import (
     UserAuditType,
     RoomAuditType,
     InviteAuditType,
+    InviteLinkAuditType,
     UserBanAuditType,
 )
 from backend.graphql.audit.filters import (
+    InviteLinkAuditFilter,
     ModerationActionAuditFilter,
     ModerationCaseAuditFilter,
     ReportAuditFilter,
@@ -52,6 +54,11 @@ class AuditQuery(graphene.ObjectType):
         filterset_class=InviteAuditFilter,
     )
 
+    invite_link_audits = DjangoFilterConnectionField(
+        InviteLinkAuditType,
+        filterset_class=InviteLinkAuditFilter,
+    )
+
     report_audits = DjangoFilterConnectionField(
         ReportAuditType,
         filterset_class=ReportAuditFilter,
@@ -75,36 +82,42 @@ class AuditQuery(graphene.ObjectType):
 
     @superuser_required
     def resolve_user_ban_audits(self, info, **kwargs):
-        return UserBanHistory.objects.select_related("pgh_context").order_by(
-            "-pgh_created_at"
-        )
+        return UserBanHistory.objects.select_related(
+            "pgh_context", "user", "banned_by"
+        ).order_by("-pgh_created_at")
 
     @superuser_required
     def resolve_room_audits(self, info, **kwargs):
-        return RoomHistory.objects.select_related("pgh_context").order_by(
+        return RoomHistory.objects.select_related(
+            "pgh_context", "default_role"
+        ).order_by("-pgh_created_at")
+
+    @superuser_required
+    def resolve_invite_audits(self, info, **kwargs):
+        return InviteHistory.objects.select_related("pgh_context", "role").order_by(
             "-pgh_created_at"
         )
 
     @superuser_required
-    def resolve_invite_audits(self, info, **kwargs):
-        return InviteHistory.objects.select_related("pgh_context").order_by(
+    def resolve_invite_link_audits(self, info, **kwargs):
+        return InviteLinkHistory.objects.select_related("pgh_context", "role").order_by(
             "-pgh_created_at"
         )
 
     @superuser_required
     def resolve_report_audits(self, info, **kwargs):
-        return ReportHistory.objects.select_related("pgh_context").order_by(
-            "-pgh_created_at"
-        )
+        return ReportHistory.objects.select_related(
+            "pgh_context", "reason", "case"
+        ).order_by("-pgh_created_at")
 
     @superuser_required
     def resolve_moderation_action_audits(self, info, **kwargs):
-        return ModerationActionHistory.objects.select_related("pgh_context").order_by(
-            "-pgh_created_at"
-        )
+        return ModerationActionHistory.objects.select_related(
+            "pgh_context", "moderator"
+        ).order_by("-pgh_created_at")
 
     @superuser_required
     def resolve_moderation_case_audits(self, info, **kwargs):
-        return ModerationCaseHistory.objects.select_related("pgh_context").order_by(
-            "-pgh_created_at"
-        )
+        return ModerationCaseHistory.objects.select_related(
+            "pgh_context",
+        ).order_by("-pgh_created_at")

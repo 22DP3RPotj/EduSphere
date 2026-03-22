@@ -209,3 +209,39 @@ class InviteService:
 
         invite.refresh()
         return invite
+
+
+# class InviteLinkService:
+#     """Service for invite link operations."""
+
+#     @staticmethod
+#     def create_invite_link(
+#         creator: User,
+#         room: Room,
+#         role: Optional[Role] = None,
+#         expires_at: Optional[datetime] = None,
+#     ) -> InviteLink:
+#         """
+#         Create an invite link for a room.
+
+#         Args:
+#             creator: User creating the invite link (must have ROOM_MANAGE_ROLES permission)
+#             room: The room to create the invite link for
+#             role: The role to assign to users who join via this link
+#             expires_at: The expiration datetime for the invite link
+#         Returns:
+#             The created InviteLink instance
+
+#         Raises:
+#             PermissionException: If creator doesn't have permission
+#             ValidationException: If role doesn't belong to room
+#         """
+#         if not creator.has_perm(InvitePermission.CREATE, room):
+#             raise PermissionException(
+#                 "You don't have permission to create invite links for this room."
+#             )
+
+#         if role and role.room != room:
+#             raise ValidationException("Role must belong to the same room.")
+
+#         return actions.create_invite_link(creator=creator, room=room, role=role)

@@ -46,8 +46,7 @@ def create_room(
         RoleService.create_default_roles(room)
 
         member_role = room.roles.get(name=RoleCode.MEMBER.label)
-        room.default_role = member_role
-        room.save(update_fields=["default_role"])
+        room.update_default_role(member_role)
 
         owner_role = room.roles.get(name=RoleCode.OWNER.label)
 
@@ -89,8 +88,7 @@ def update_room(
                 room.topics.set(topics)
 
             if visibility is not None:
-                room.visibility = visibility
-                room.save(update_fields=["visibility"])
+                room.update_visibility(visibility)
     except IntegrityError as e:
         raise ConflictException("Could not update room due to a conflict.") from e
 

@@ -4,10 +4,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Model
+from django.utils import timezone
 
 from backend.account.models import User
 from backend.core.exceptions import ConflictException, FormValidationException
-from backend.moderation.choices import ActionChoices, CaseStatusChoices
+from backend.moderation.choices import (
+    ActionChoices,
+    ActionPriorityChoices,
+    CaseStatusChoices,
+)
 from backend.moderation.forms import ModerationActionForm, ReportForm
 from backend.moderation.models import ModerationCase, Report, ReportReason
 
@@ -21,7 +26,6 @@ def create_report(
     content_type = ContentType.objects.get_for_model(target)
 
     form = ReportForm(data={"description": description})
-
     if not form.is_valid():
         raise FormValidationException("Invalid report data", errors=form.errors)
 
@@ -43,6 +47,8 @@ def create_report(
                     status=CaseStatusChoices.PENDING,
                 )
             except (IntegrityError, ValidationError):
+                # Race condition: another request created the case between our
+                # check and insert — fetch the winner under a lock.
                 case = (
                     ModerationCase.objects.select_for_update()
                     .filter(
@@ -53,23 +59,18 @@ def create_report(
                     .get()
                 )
 
-        if Report.objects.filter(
-            reporter=reporter,
-            content_type=content_type,
-            object_id=target.pk,
-            case__status__in=CaseStatusChoices.active(),
-        ).exists():
-            raise ConflictException(
-                "You already have an active report targeting this content."
-            )
-
         report = form.save(commit=False)
         report.reporter = reporter
         report.content_type = content_type
         report.object_id = target.pk
         report.reason = reason
         report.case = case
-        report.save()
+        try:
+            report.save()
+        except IntegrityError:
+            raise ConflictException(
+                "You already have an active report targeting this content."
+            )
 
     return report
 
@@ -89,21 +90,61 @@ def take_case_action(
                     "Invalid moderation action data", errors=form.errors
                 )
 
+            current_case = (
+                ModerationCase.objects.select_for_update()
+                .filter(pk=case.pk, status__in=CaseStatusChoices.active())
+                .first()
+            )
+            if current_case is None:
+                raise ConflictException("Case can no longer be acted on.")
+
             moderation_action = form.save(commit=False)
-            moderation_action.case = case
+            moderation_action.case = current_case
             moderation_action.moderator = moderator
             moderation_action.action = action
             moderation_action.save()
 
-            case.status = status
-            case.save(update_fields=["status", "updated_at"])
+            current_case.update_status(status)
     except IntegrityError as e:
         raise ConflictException("Could not take action due to a conflict.") from e
 
+    return current_case
+
+
+def set_case_priority(
+    case: ModerationCase,
+    priority: ActionPriorityChoices,
+) -> ModerationCase:
+    case.update_priority(priority)
     return case
 
 
 def set_case_under_review(case: ModerationCase) -> ModerationCase:
-    case.status = CaseStatusChoices.UNDER_REVIEW
-    case.save(update_fields=["status", "updated_at"])
+    updated = ModerationCase.objects.filter(
+        pk=case.pk,
+        status=CaseStatusChoices.PENDING,
+    ).update(
+        status=CaseStatusChoices.UNDER_REVIEW,
+        updated_at=timezone.now(),
+    )
+
+    if not updated:
+        case.refresh_from_db()
+        raise ConflictException("Case is no longer pending.")
+
+    case.refresh_from_db()
+    return case
+
+
+def reopen_case(case: ModerationCase) -> ModerationCase:
+    updated = ModerationCase.objects.filter(
+        pk=case.pk,
+        status__in=CaseStatusChoices.finalized(),
+    ).update(status=CaseStatusChoices.PENDING, updated_at=timezone.now())
+
+    if not updated:
+        case.refresh_from_db()
+        raise ConflictException("Case is no longer in a terminal state.")
+
+    case.refresh_from_db()
     return case

@@ -2,7 +2,6 @@ import graphene
 
 from .resolvers import RoleQuery
 from .mutations.participant import (
-    AddParticipant,
     ChangeParticipantRole,
     RemoveParticipant,
 )
@@ -20,7 +19,6 @@ class AccessQueries(RoleQuery, graphene.ObjectType):
 
 
 class AccessMutations(graphene.ObjectType):
-    add_participant = AddParticipant.Field()
     change_participant_role = ChangeParticipantRole.Field()
     remove_participant = RemoveParticipant.Field()
 

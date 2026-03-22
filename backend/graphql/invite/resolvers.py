@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import graphene
 import uuid
 from typing import Optional
@@ -9,6 +11,7 @@ from django.utils import timezone
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.invite.types import InviteType, InviteStatusEnum
+from backend.graphql.invite.filters import InviteFilter
 from backend.invite.choices import InviteStatusChoices
 from backend.invite.models import Invite
 from backend.invite.services import InviteService
@@ -20,14 +23,28 @@ class InviteQuery(graphene.ObjectType):
     invite = graphene.Field(InviteType, token=graphene.UUID(required=True))
     invites = graphene.List(
         InviteType,
-        status=InviteStatusEnum(required=False),
-        inviter=graphene.UUID(required=False),
-        invitee=graphene.UUID(required=False),
+        room=graphene.UUID(),
+        inviter=graphene.UUID(),
+        invitee=graphene.UUID(),
+        status=InviteStatusEnum(),
+        is_expired=graphene.Boolean(),
+        is_active=graphene.Boolean(),
+        created_after=graphene.DateTime(),
+        created_before=graphene.DateTime(),
+        expires_after=graphene.DateTime(),
+        expires_before=graphene.DateTime(),
     )
     invite_count = graphene.Int(
-        status=InviteStatusEnum(required=False),
-        inviter=graphene.UUID(required=False),
-        invitee=graphene.UUID(required=False),
+        room=graphene.UUID(),
+        inviter=graphene.UUID(),
+        invitee=graphene.UUID(),
+        status=InviteStatusEnum(),
+        is_expired=graphene.Boolean(),
+        is_active=graphene.Boolean(),
+        created_after=graphene.DateTime(),
+        created_before=graphene.DateTime(),
+        expires_after=graphene.DateTime(),
+        expires_before=graphene.DateTime(),
     )
 
     @login_required
@@ -43,7 +60,7 @@ class InviteQuery(graphene.ObjectType):
         return queryset
 
     @login_required
-    def resolved_sent_invites(self, info: graphene.ResolveInfo) -> QuerySet[Invite]:
+    def resolve_sent_invites(self, info: graphene.ResolveInfo) -> QuerySet[Invite]:
         queryset = Invite.objects.filter(inviter=info.context.user).select_related(
             "inviter", "invitee", "role"
         )
@@ -72,36 +89,64 @@ class InviteQuery(graphene.ObjectType):
 
     # TODO: Add pagination
     @superuser_required
-    def resolve_all_invites(
+    def resolve_invites(
         self,
         info: graphene.ResolveInfo,
+        room: Optional[uuid.UUID] = None,
+        inviter: Optional[uuid.UUID] = None,
+        invitee: Optional[uuid.UUID] = None,
         status: Optional[InviteStatusChoices] = None,
-        invitee_id: Optional[uuid.UUID] = None,
-        inviter_id: Optional[uuid.UUID] = None,
+        is_expired: Optional[bool] = None,
+        is_active: Optional[bool] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+        expires_after: Optional[datetime] = None,
+        expires_before: Optional[datetime] = None,
     ) -> QuerySet[Invite]:
         queryset = Invite.objects.select_related("inviter", "invitee", "role")
-
-        if status:
-            queryset = queryset.filter(status=status)
-        if invitee_id:
-            queryset = queryset.filter(invitee_id=invitee_id)
-        if inviter_id:
-            queryset = queryset.filter(inviter_id=inviter_id)
-
-        queryset.filter(
-            status=Invite.Status.PENDING, expires_at__lt=timezone.now()
-        ).update(status=Invite.Status.EXPIRED)
-
-        return queryset
+        filter_data = {
+            k: v
+            for k, v in {
+                "room": room,
+                "inviter": inviter,
+                "invitee": invitee,
+                "status": status,
+                "is_expired": is_expired,
+                "is_active": is_active,
+                "created_after": created_after,
+                "created_before": created_before,
+                "expires_after": expires_after,
+                "expires_before": expires_before,
+            }.items()
+            if v is not None
+        }
+        return InviteFilter(filter_data, queryset=queryset).qs
 
     @superuser_required
     def resolve_invite_count(
         self,
         info: graphene.ResolveInfo,
+        room: Optional[uuid.UUID] = None,
+        inviter: Optional[uuid.UUID] = None,
+        invitee: Optional[uuid.UUID] = None,
         status: Optional[InviteStatusChoices] = None,
-        invitee_id: Optional[uuid.UUID] = None,
-        inviter_id: Optional[uuid.UUID] = None,
+        is_expired: Optional[bool] = None,
+        is_active: Optional[bool] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+        expires_after: Optional[datetime] = None,
+        expires_before: Optional[datetime] = None,
     ) -> int:
-        return self.resolve_all_invites(
-            info, status=status, invitee_id=invitee_id, inviter_id=inviter_id
+        return self.resolve_invites(
+            info,
+            room=room,
+            inviter=inviter,
+            invitee=invitee,
+            status=status,
+            is_expired=is_expired,
+            is_active=is_active,
+            created_after=created_after,
+            created_before=created_before,
+            expires_after=expires_after,
+            expires_before=expires_before,
         ).count()

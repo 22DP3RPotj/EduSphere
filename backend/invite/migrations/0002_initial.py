@@ -55,6 +55,21 @@ class Migration(migrations.Migration):
             name='room',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='invite_links', to='room.room'),
         ),
+        migrations.AddField(
+            model_name='invitelinkhistory',
+            name='pgh_context',
+            field=models.ForeignKey(db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='pghistory.context'),
+        ),
+        migrations.AddField(
+            model_name='invitelinkhistory',
+            name='pgh_obj',
+            field=models.ForeignKey(db_constraint=False, on_delete=django.db.models.deletion.DO_NOTHING, related_name='is_active_role_max_uses_expires_at_events', to='invite.invitelink'),
+        ),
+        migrations.AddField(
+            model_name='invitelinkhistory',
+            name='role',
+            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', related_query_name='+', to='access.role'),
+        ),
         migrations.AddIndex(
             model_name='invite',
             index=models.Index(fields=['room', 'invitee'], name='invite_invi_room_id_b83e41_idx'),
@@ -82,5 +97,17 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='invitelink',
             index=models.Index(fields=['expires_at'], name='invite_invi_expires_bc09b1_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='invitelink',
+            index=models.Index(fields=['room', 'is_active'], name='invite_invi_room_id_175c90_idx'),
+        ),
+        pgtrigger.migrations.AddTrigger(
+            model_name='invitelink',
+            trigger=pgtrigger.compiler.Trigger(name='insert_insert', sql=pgtrigger.compiler.UpsertTriggerSql(func='INSERT INTO "invite_invitelinkhistory" ("expires_at", "is_active", "max_uses", "pgh_context_id", "pgh_created_at", "pgh_label", "pgh_obj_id", "role_id") VALUES (NEW."expires_at", NEW."is_active", NEW."max_uses", _pgh_attach_context(), NOW(), \'insert\', NEW."id", NEW."role_id"); RETURN NULL;', hash='0220191d558561957fba5626cb21a07bc1cb1ba1', operation='INSERT', pgid='pgtrigger_insert_insert_360ab', table='invite_invitelink', when='AFTER')),
+        ),
+        pgtrigger.migrations.AddTrigger(
+            model_name='invitelink',
+            trigger=pgtrigger.compiler.Trigger(name='update_update', sql=pgtrigger.compiler.UpsertTriggerSql(condition='WHEN (OLD."expires_at" IS DISTINCT FROM (NEW."expires_at") OR OLD."is_active" IS DISTINCT FROM (NEW."is_active") OR OLD."max_uses" IS DISTINCT FROM (NEW."max_uses") OR OLD."role_id" IS DISTINCT FROM (NEW."role_id"))', func='INSERT INTO "invite_invitelinkhistory" ("expires_at", "is_active", "max_uses", "pgh_context_id", "pgh_created_at", "pgh_label", "pgh_obj_id", "role_id") VALUES (NEW."expires_at", NEW."is_active", NEW."max_uses", _pgh_attach_context(), NOW(), \'update\', NEW."id", NEW."role_id"); RETURN NULL;', hash='c20ca1f04add24d56eefdd8d977a6befb330b1fa', operation='UPDATE', pgid='pgtrigger_update_update_062e5', table='invite_invitelink', when='AFTER')),
         ),
     ]

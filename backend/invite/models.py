@@ -127,17 +127,32 @@ class InviteLink(models.Model):
         indexes = [
             models.Index(fields=["room"]),
             models.Index(fields=["expires_at"]),
+            models.Index(fields=["room", "is_active"]),
         ]
         ordering = ["-created_at"]
 
     def __str__(self):
         return f"Invite link to {self.room.name} with role {self.role.name if self.role else 'None'}"
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class InviteHistory(
     pghistory.create_event_model(
         Invite,
         fields=["status", "role"],
+    )
+):
+    class Meta:
+        app_label = "invite"
+
+
+class InviteLinkHistory(
+    pghistory.create_event_model(
+        InviteLink,
+        fields=["is_active", "role", "max_uses", "expires_at"],
     )
 ):
     class Meta:

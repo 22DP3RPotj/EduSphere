@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from django.contrib.contenttypes.models import ContentType
 
 from backend.core.exceptions import (
@@ -15,6 +13,9 @@ from backend.moderation.models import (
 )
 from backend.moderation.services import ReportService
 from backend.core.tests.service_base import ServiceTestBase
+
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 
 class ReportServiceTest(ServiceTestBase):
@@ -48,6 +49,9 @@ class ReportServiceTest(ServiceTestBase):
         self.assertEqual(report.case.status, CaseStatusChoices.PENDING)
 
     def test_create_report_not_participant(self):
+        self.room.visibility = self.room.Visibility.PRIVATE
+        self.room.save(update_fields=["visibility"])
+
         with self.assertRaises(PermissionException):
             ReportService.create_report(
                 reporter=self.other_user,

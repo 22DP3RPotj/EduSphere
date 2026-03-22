@@ -3,7 +3,7 @@ from enum import StrEnum
 
 class InvitePermission(StrEnum):
     CREATE = "invite.create"
-    READ = "invite.read"
+    VIEW = "invite.view"
     UPDATE = "invite.update"
     DELETE = "invite.delete"
     ACCEPT = "invite.accept"

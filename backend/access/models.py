@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
 
 from backend.access.enums import PermissionCode
+from backend.access.querysets import PermissionQuerySet, RoleQuerySet
 
 
 class Permission(models.Model):
@@ -15,15 +16,17 @@ class Permission(models.Model):
     )
     description = models.CharField(max_length=255)
 
-    def __str__(self):
-        return self.code
-
     class Meta:
         app_label = "access"
         ordering = ["code"]
         indexes = [
             models.Index(fields=["code"]),
         ]
+
+    objects = PermissionQuerySet.as_manager()
+
+    def __str__(self):
+        return self.code
 
 
 class Role(models.Model):
@@ -40,9 +43,6 @@ class Role(models.Model):
     priority = models.PositiveIntegerField(validators=[MaxValueValidator(100)])
     permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         app_label = "access"
         constraints = [
@@ -50,6 +50,11 @@ class Role(models.Model):
                 fields=["room", "name"], name="unique_role_name_per_room"
             ),
         ]
+
+    objects = RoleQuerySet.as_manager()
+
+    def __str__(self):
+        return self.name
 
 
 class Participant(models.Model):
@@ -75,18 +80,19 @@ class Participant(models.Model):
         ]
         ordering = ["-joined_at"]
 
+    def __str__(self):
+        return f"{self.user.username} in {self.room.name}"
+
     def clean(self):
-        if self.role.room_id != self.room_id:
+        super().clean()
+        if self.role is not None and self.role.room_id != self.room_id:
             raise ValidationError(
-                "Role must belong to the same room as the participant."
+                {"role": "Role must belong to the same room as the participant."}
             )
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.username} in {self.room.name}"
 
 
 # class RoomBan(models.Model):

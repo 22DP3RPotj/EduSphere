@@ -1,9 +1,8 @@
-from typing import Any, Optional
 import uuid
+from typing import Any, Optional
 
 from django.db import IntegrityError, transaction
 
-from backend.account.models import User
 from backend.access.dtos import RoleDeleteResult
 from backend.access.forms import RoleForm
 from backend.access.models import Participant, Role, Permission
@@ -129,21 +128,6 @@ def remove_permissions_from_role(role: Role, permission_ids: list[uuid.UUID]) ->
         permissions = list(Permission.objects.filter(id__in=permission_ids))
         role.permissions.remove(*permissions)
     return role
-
-
-def add_participant(room: Room, user: User, role: Optional[Role]) -> Participant:
-    if role is not None and role.room != room:
-        raise ValidationException("Role must belong to the same room.")
-
-    if Participant.objects.filter(user=user, room=room).exists():
-        raise ConflictException("User is already a participant of this room.")
-
-    try:
-        participant = Participant.objects.create(user=user, room=room, role=role)
-    except IntegrityError as e:
-        raise ConflictException("User is already a participant of this room.") from e
-
-    return participant
 
 
 def change_participant_role(participant: Participant, new_role: Role) -> Participant:

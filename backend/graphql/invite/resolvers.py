@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import graphene
 import uuid
 from typing import Optional
@@ -96,10 +98,10 @@ class InviteQuery(graphene.ObjectType):
         status: Optional[InviteStatusChoices] = None,
         is_expired: Optional[bool] = None,
         is_active: Optional[bool] = None,
-        created_after: Optional[str] = None,
-        created_before: Optional[str] = None,
-        expires_after: Optional[str] = None,
-        expires_before: Optional[str] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+        expires_after: Optional[datetime] = None,
+        expires_before: Optional[datetime] = None,
     ) -> QuerySet[Invite]:
         queryset = Invite.objects.select_related("inviter", "invitee", "role")
         filter_data = {
@@ -130,10 +132,10 @@ class InviteQuery(graphene.ObjectType):
         status: Optional[InviteStatusChoices] = None,
         is_expired: Optional[bool] = None,
         is_active: Optional[bool] = None,
-        created_after: Optional[str] = None,
-        created_before: Optional[str] = None,
-        expires_after: Optional[str] = None,
-        expires_before: Optional[str] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+        expires_after: Optional[datetime] = None,
+        expires_before: Optional[datetime] = None,
     ) -> int:
         return self.resolve_invites(
             info,

@@ -58,6 +58,8 @@ class ReportService:
                 raise PermissionException(
                     "You don't have permission to report this message."
                 )
+        else:
+            raise ValueError(f"Unsupported target type: {type(target).__name__}. ")
 
     @staticmethod
     def create_report(

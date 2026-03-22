@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import graphene
 import uuid
 from typing import Optional
@@ -98,8 +100,8 @@ class ReportQuery(graphene.ObjectType):
         case: Optional[uuid.UUID] = None,
         has_case: Optional[bool] = None,
         target_type: Optional[str] = None,
-        created_after: Optional[str] = None,
-        created_before: Optional[str] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
     ) -> QuerySet[Report]:
         queryset = Report.objects.select_related(
             "reporter", "reason", "content_type", "case"
@@ -128,8 +130,8 @@ class ReportQuery(graphene.ObjectType):
         case: Optional[uuid.UUID] = None,
         has_case: Optional[bool] = None,
         target_type: Optional[str] = None,
-        created_after: Optional[str] = None,
-        created_before: Optional[str] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
     ) -> int:
         return self.resolve_reports(
             info,
@@ -174,10 +176,10 @@ class ReportQuery(graphene.ObjectType):
         priority: Optional[int] = None,
         has_actions: Optional[bool] = None,
         target_type: Optional[str] = None,
-        created_after: Optional[str] = None,
-        created_before: Optional[str] = None,
-        updated_after: Optional[str] = None,
-        updated_before: Optional[str] = None,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
     ) -> QuerySet[ModerationCase]:
         queryset = ModerationCase.objects.prefetch_related("reports", "actions")
         filter_data = {

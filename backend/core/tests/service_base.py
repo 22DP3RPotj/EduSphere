@@ -1,10 +1,12 @@
+from typing import Optional
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from backend.access.services import RoleService
 from backend.account.models import User as BaseUser
 from backend.access.enums import RoleCode
 from backend.access.models import Participant, Role
-from backend.access.services import RoleService
 from backend.room.models import Room
 
 User = get_user_model()
@@ -56,7 +58,7 @@ class ServiceTestBase(TestCase):
             user=self.owner, room=self.room, role=self.owner_role
         )
 
-    def _add_member(self, user: BaseUser, role: Role | None = None) -> Participant:
+    def _add_member(self, user: BaseUser, role: Optional[Role] = None) -> Participant:
         if role is None:
             role = self.member_role
 

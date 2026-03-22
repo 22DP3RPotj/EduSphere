@@ -24,3 +24,16 @@ class RoomFilter(django_filters.FilterSet):
         return queryset.filter(
             Q(name__icontains=value) | Q(description__icontains=value)
         )
+
+
+class TopicFilter(django_filters.FilterSet):
+    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    min_rooms = django_filters.NumberFilter(method="filter_min_rooms")
+
+    class Meta:
+        model = Topic
+        fields: list[str] = []
+
+    def filter_min_rooms(self, queryset, name, value):
+        """Filter topics with a minimum number of associated rooms."""
+        return queryset.with_rooms_count().filter(room_count__gte=value)

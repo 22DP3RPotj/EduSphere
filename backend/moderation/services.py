@@ -1,182 +1,212 @@
 from typing import Optional
 
-from django.db import IntegrityError
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Model
 
 from backend.account.models import User
-from backend.moderation.choices import ReportReason, ReportStatus
-from backend.moderation.models import Report
-from backend.room.models import Room
-from backend.access.models import Participant
-from backend.core.forms import ReportForm
-from backend.core.exceptions import (
-    FormValidationException,
-    PermissionException,
-    ConflictException,
+from backend.account.rules.labels import AccountPermission
+from backend.moderation.choices import (
+    ActionChoices,
+    ActionPriorityChoices,
+    CaseStatusChoices,
 )
+from backend.moderation.models import ModerationCase, Report, ReportReason
+from backend.room.models import Room
+from backend.messaging.models import Message
+from backend.core.exceptions import PermissionException, ConflictException
+from backend.moderation.rules.labels import ModerationPermission
+from backend.moderation import actions
+from backend.room.rules.labels import RoomPermission
+
+
+_ACTION_TO_STATUS: dict[ActionChoices, CaseStatusChoices] = {
+    ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,
+    ActionChoices.CONTENT_REMOVED: CaseStatusChoices.RESOLVED,
+    ActionChoices.WARNING: CaseStatusChoices.RESOLVED,
+    ActionChoices.TEMP_BAN: CaseStatusChoices.RESOLVED,
+    ActionChoices.PERM_BAN: CaseStatusChoices.RESOLVED,
+}
 
 
 class ReportService:
-    """Service for report mutation operations."""
+    """Service for report and moderation case operations."""
+
+    @staticmethod
+    def _case_status_for_action(action: ActionChoices) -> CaseStatusChoices:
+        if action not in _ACTION_TO_STATUS:
+            raise ValueError(
+                f"No case status mapping defined for action '{action}'. "
+                f"Add it to _ACTION_TO_STATUS in services.py."
+            )
+        return _ACTION_TO_STATUS[action]
+
+    @staticmethod
+    def _check_report_permission(reporter: User, target: Model) -> None:
+        """Raise PermissionException if reporter is not allowed to report target."""
+        if isinstance(target, User):
+            if not reporter.has_perm(AccountPermission.VIEW, target):
+                raise PermissionException(
+                    "You don't have permission to report this user."
+                )
+        elif isinstance(target, Room):
+            if not reporter.has_perm(RoomPermission.VIEW, target):
+                raise PermissionException(
+                    "You don't have permission to report this room."
+                )
+        elif isinstance(target, Message):
+            if not reporter.has_perm(RoomPermission.VIEW, target.room):
+                raise PermissionException(
+                    "You don't have permission to report this message."
+                )
+        else:
+            raise ValueError(f"Unsupported target type: {type(target).__name__}. ")
 
     @staticmethod
     def create_report(
         reporter: User,
-        room: Room,
+        target: Model,
         reason: ReportReason,
-        body: str,
+        description: Optional[str] = None,
     ) -> Report:
         """
-        Create a report for a room.
+        Create a report for any reportable target (Room, User, Message).
+        Automatically gets or creates an active ModerationCase for the target.
 
-        Args:
-            reporter: User creating the report (must be a participant)
-            room: The room being reported
-            reason: The reason for the report
-            body: Detailed description of the report
-
-        Returns:
-            The created Report instance
+        The service-level duplicate check is a fast-path guard that gives a clean
+        ConflictException before entering the transaction. The DB constraint on
+        (reporter, case) is the authoritative guarantee under concurrency — the
+        IntegrityError it raises is caught in actions.create_report and converted
+        to a ConflictException.
 
         Raises:
-            PermissionException: If user is not a participant
-            ConflictException: If an active report already exists
-            FormValidationException: If form validation fails
+            PermissionException: Reporter lacks access, or reason is invalid for target
+            ConflictException: Reporter already has an active report on this target
+            FormValidationException: description failed form validation
         """
-        if not Participant.objects.filter(user=reporter, room=room).exists():
+        ReportService._check_report_permission(reporter, target)
+
+        content_type = ContentType.objects.get_for_model(target)
+
+        if not reason.is_active:
+            raise PermissionException("This report reason is no longer available.")
+
+        allowed_cts = reason.allowed_content_types.all()
+        if allowed_cts.exists() and not allowed_cts.filter(pk=content_type.pk).exists():
             raise PermissionException(
-                "You must be a participant of the room to report it."
+                "This report reason is not valid for the selected target type."
             )
 
-        if Report.active_reports(user=reporter, room=room).exists():
+        if Report.objects.filter(
+            reporter=reporter,
+            content_type=content_type,
+            object_id=target.pk,
+            case__status__in=CaseStatusChoices.active(),
+        ).exists():
             raise ConflictException(
-                "You already have an active report targeting this room."
+                "You already have an active report targeting this content."
             )
 
-        data = {
-            "reason": reason,
-            "body": body,
-        }
-
-        form = ReportForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid report data", errors=form.errors)
-
-        try:
-            report = form.save(commit=False)
-            report.user = reporter
-            report.room = room
-            report.save()
-        except IntegrityError as e:
-            raise ConflictException("Could not create report due to a conflict.") from e
-
-        return report
-
-    @staticmethod
-    def update_report_status(
-        moderator: User,
-        report: Report,
-        new_status: ReportStatus,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
-        """
-        Update a report's status (moderator action).
-
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to update
-            new_status: The new status
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The updated Report instance
-
-        Raises:
-            PermissionException: If user is not a moderator
-        """
-        # Defense-in-depth: Even though API layer checks staff/superuser status,
-        # we enforce it here as well to prevent accidental service layer misuse.
-        if not (moderator.is_staff or moderator.is_superuser):
-            raise PermissionException("Only moderators can update report status.")
-
-        report.status = new_status
-        report.moderator = moderator
-
-        if moderator_note is not None:
-            report.moderator_note = moderator_note
-
-        report.save()
-
-        return report
-
-    @staticmethod
-    def resolve_report(
-        moderator: User,
-        report: Report,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
-        """
-        Resolve a report.
-
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to resolve
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The resolved Report instance
-
-        Raises:
-            PermissionException: If user is not a moderator
-        """
-        return ReportService.update_report_status(
-            moderator, report, Report.Status.RESOLVED, moderator_note
+        return actions.create_report(
+            reporter=reporter,
+            target=target,
+            reason=reason,
+            description=description,
         )
 
     @staticmethod
-    def dismiss_report(
+    def take_case_action(
         moderator: User,
-        report: Report,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
+        case: ModerationCase,
+        action: ActionChoices,
+        note: Optional[str] = None,
+    ) -> ModerationCase:
         """
-        Dismiss a report.
+        Record a moderation action against a case and transition its status.
 
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to dismiss
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The dismissed Report instance
+        The case status is derived from the action via _ACTION_TO_STATUS. Adding a
+        new ActionChoice without a corresponding entry there will raise ValueError.
 
         Raises:
-            PermissionException: If user is not a moderator
+            PermissionException: If moderator lacks ACT permission on the case
+            ConflictException: If the case is not in an actionable state
+            ValueError: If action has no status mapping defined
         """
-        return ReportService.update_report_status(
-            moderator, report, Report.Status.DISMISSED, moderator_note
+        if not moderator.has_perm(ModerationPermission.ACT, case):
+            raise PermissionException("You don't have permission to take case actions.")
+
+        if case.status not in CaseStatusChoices.active():
+            raise ConflictException(
+                "Actions can only be taken on active (pending or under review) cases."
+            )
+
+        status = ReportService._case_status_for_action(action)
+        return actions.take_case_action(
+            moderator=moderator,
+            case=case,
+            action=action,
+            status=status,
+            note=note,
         )
 
     @staticmethod
-    def mark_under_review(
+    def set_case_priority(
         moderator: User,
-        report: Report,
-        moderator_note: Optional[str] = None,
-    ) -> Report:
+        case: ModerationCase,
+        priority: ActionPriorityChoices,
+    ) -> ModerationCase:
         """
-        Mark a report as under review.
-
-        Args:
-            moderator: User performing the action (must be staff/moderator)
-            report: The report to mark
-            moderator_note: Optional note from the moderator
-
-        Returns:
-            The report marked as under review
+        Update the priority of a case without changing its status.
+        Can be called on any case regardless of status.
 
         Raises:
-            PermissionException: If user is not a moderator
+            PermissionException: If moderator lacks ACT permission on the case
         """
-        return ReportService.update_report_status(
-            moderator, report, Report.Status.UNDER_REVIEW, moderator_note
-        )
+        if not moderator.has_perm(ModerationPermission.ACT, case):
+            raise PermissionException(
+                "You don't have permission to update case priority."
+            )
+
+        return actions.set_case_priority(case=case, priority=priority)
+
+    @staticmethod
+    def set_case_under_review(
+        moderator: User,
+        case: ModerationCase,
+    ) -> ModerationCase:
+        """
+        Transition a PENDING case to UNDER_REVIEW without creating a ModerationAction.
+
+        Raises:
+            PermissionException: If moderator lacks REVIEW permission on the case
+            ConflictException: If the case is not in PENDING status
+        """
+        if not moderator.has_perm(ModerationPermission.REVIEW, case):
+            raise PermissionException(
+                "You don't have permission to update case status."
+            )
+
+        if case.status != CaseStatusChoices.PENDING:
+            raise ConflictException("Only pending cases can be moved to under review.")
+
+        return actions.set_case_under_review(case=case)
+
+    @staticmethod
+    def reopen_case(
+        moderator: User,
+        case: ModerationCase,
+    ) -> ModerationCase:
+        """
+        Reopen a resolved or dismissed case, resetting it to PENDING.
+        Useful when new context emerges or a wrong call needs correcting.
+
+        Raises:
+            PermissionException: If moderator lacks ACT permission on the case
+            ConflictException: If the case is not in a terminal state
+        """
+        if not moderator.has_perm(ModerationPermission.ACT, case):
+            raise PermissionException("You don't have permission to reopen cases.")
+
+        if case.status not in CaseStatusChoices.finalized():
+            raise ConflictException("Only resolved or dismissed cases can be reopened.")
+
+        return actions.reopen_case(case=case)

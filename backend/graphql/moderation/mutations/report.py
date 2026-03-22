@@ -1,115 +1,191 @@
 import graphene
 import uuid
-from typing import Optional
+from typing import Any, Optional, Self, Union
 from graphql_jwt.decorators import login_required, superuser_required
 from graphql import GraphQLError
 
-from backend.core.exceptions import (
-    ErrorCode,
-    PermissionException,
-    ConflictException,
-    FormValidationException,
-)
+from backend.core.exceptions import ErrorCode
+from backend.graphql.mutations import BaseMutation
 from backend.graphql.moderation.types import (
+    ActionEnum,
+    ActionPriorityEnum,
+    ModerationCaseType,
     ReportType,
-    ReportReasonEnum,
-    ReportStatusEnum,
+    ReportTargetTypeEnum,
 )
-from backend.moderation.choices import ReportReason, ReportStatus
-from backend.moderation.models import Report
+from backend.moderation.choices import ActionChoices, ActionPriorityChoices
+from backend.moderation.models import ModerationCase, ReportReason
 from backend.room.models import Room
+from backend.account.models import User
+from backend.messaging.models import Message
 from backend.moderation.services import ReportService
 
 
-class CreateReport(graphene.Mutation):
+class CreateReport(BaseMutation):
     class Arguments:
-        room_id = graphene.UUID(required=True)
-        reason = ReportReasonEnum(required=True)
-        body = graphene.String(required=True)
+        target_type = ReportTargetTypeEnum(required=True)
+        target_id = graphene.UUID(required=True)
+        reason_id = graphene.UUID(required=True)
+        description = graphene.String(required=False)
 
     report = graphene.Field(ReportType)
 
+    @classmethod
     @login_required
-    def mutate(
-        self,
+    def resolve(
+        cls,
+        root: Optional[Any],
         info: graphene.ResolveInfo,
-        room_id: uuid.UUID,
-        reason: ReportReason,
-        body: str,
-    ):
+        target_type: ReportTargetTypeEnum,
+        target_id: uuid.UUID,
+        reason_id: uuid.UUID,
+        description: Optional[str] = None,
+    ) -> Self:
+        model_map: dict[str, Union[type[Room], type[User], type[Message]]] = {
+            ReportTargetTypeEnum.ROOM: Room,
+            ReportTargetTypeEnum.USER: User,
+            ReportTargetTypeEnum.MESSAGE: Message,
+        }
+        TargetModel = model_map[target_type]
+
         try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
+            target = TargetModel.objects.get(id=target_id)
+        except TargetModel.DoesNotExist:
             raise GraphQLError(
-                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
+                "Target not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
         try:
-            report = ReportService.create_report(
-                reporter=info.context.user, room=room, reason=reason, body=body
+            reason = ReportReason.objects.get(id=reason_id)
+        except ReportReason.DoesNotExist:
+            raise GraphQLError(
+                "Report reason not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
-        except PermissionException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
-        except ConflictException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
-        except FormValidationException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
 
-        return CreateReport(report=report)
+        report = ReportService.create_report(
+            reporter=info.context.user,
+            target=target,
+            reason=reason,
+            description=description,
+        )
+
+        return cls(report=report)
 
 
-class UpdateReport(graphene.Mutation):
+class TakeCaseAction(BaseMutation):
     class Arguments:
-        report_id = graphene.UUID(required=True)
-        status = ReportStatusEnum(required=False)
-        moderator_note = graphene.String(required=False)
+        case_id = graphene.UUID(required=True)
+        action = ActionEnum(required=True)
+        note = graphene.String(required=False)
 
-    report = graphene.Field(ReportType)
+    case = graphene.Field(ModerationCaseType)
 
+    @classmethod
     @superuser_required
-    def mutate(
-        self,
+    def resolve(
+        cls,
+        root: Optional[Any],
         info: graphene.ResolveInfo,
-        report_id: uuid.UUID,
-        status: Optional[ReportStatus] = None,
-        moderator_note: Optional[str] = None,
-    ):
+        case_id: uuid.UUID,
+        action: ActionChoices,
+        note: Optional[str] = None,
+    ) -> Self:
         try:
-            report = Report.objects.get(id=report_id)
-        except Report.DoesNotExist:
+            case = ModerationCase.objects.get(id=case_id)
+        except ModerationCase.DoesNotExist:
             raise GraphQLError(
-                "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
+                "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        try:
-            report = ReportService.update_report_status(
-                moderator=info.context.user,
-                report=report,
-                new_status=status
-                if status is not None
-                else ReportStatus(report.status),
-                moderator_note=moderator_note,
-            )
-        except PermissionException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+        case = ReportService.take_case_action(
+            moderator=info.context.user,
+            case=case,
+            action=action,
+            note=note,
+        )
 
-        return UpdateReport(report=report)
+        return cls(case=case)
 
 
-class DeleteReport(graphene.Mutation):
+class SetCasePriority(BaseMutation):
     class Arguments:
-        report_id = graphene.UUID(required=True)
+        case_id = graphene.UUID(required=True)
+        priority = ActionPriorityEnum(required=True)
 
-    success = graphene.Boolean()
+    case = graphene.Field(ModerationCaseType)
 
+    @classmethod
     @superuser_required
-    def mutate(self, info: graphene.ResolveInfo, report_id: uuid.UUID):
+    def resolve(
+        cls,
+        root: Optional[Any],
+        info: graphene.ResolveInfo,
+        case_id: uuid.UUID,
+        priority: ActionPriorityChoices,
+    ) -> Self:
         try:
-            report = Report.objects.get(id=report_id)
-        except Report.DoesNotExist:
+            case = ModerationCase.objects.get(id=case_id)
+        except ModerationCase.DoesNotExist:
             raise GraphQLError(
-                "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
+                "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
             )
 
-        report.delete()
-        return DeleteReport(success=True)
+        case = ReportService.set_case_priority(
+            moderator=info.context.user,
+            case=case,
+            priority=priority,
+        )
+
+        return cls(case=case)
+
+
+class SetCaseUnderReview(BaseMutation):
+    class Arguments:
+        case_id = graphene.UUID(required=True)
+
+    case = graphene.Field(ModerationCaseType)
+
+    @classmethod
+    @superuser_required
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, case_id: uuid.UUID
+    ) -> Self:
+        try:
+            case = ModerationCase.objects.get(id=case_id)
+        except ModerationCase.DoesNotExist:
+            raise GraphQLError(
+                "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
+        case = ReportService.set_case_under_review(
+            moderator=info.context.user,
+            case=case,
+        )
+
+        return cls(case=case)
+
+
+class ReopenCase(BaseMutation):
+    class Arguments:
+        case_id = graphene.UUID(required=True)
+
+    case = graphene.Field(ModerationCaseType)
+
+    @classmethod
+    @superuser_required
+    def resolve(
+        cls, root: Optional[Any], info: graphene.ResolveInfo, case_id: uuid.UUID
+    ) -> Self:
+        try:
+            case = ModerationCase.objects.get(id=case_id)
+        except ModerationCase.DoesNotExist:
+            raise GraphQLError(
+                "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
+        case = ReportService.reopen_case(
+            moderator=info.context.user,
+            case=case,
+        )
+
+        return cls(case=case)

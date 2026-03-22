@@ -6,8 +6,6 @@ from django.utils import timezone
 
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant, Role
 from backend.access.services import RoleService
@@ -16,6 +14,8 @@ from backend.core.exceptions import (
 )
 from backend.invite.services import InviteService
 from backend.core.tests.service_base import ServiceTestBase
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 User = get_user_model()
 
@@ -68,10 +68,6 @@ class RoleServiceTest(ServiceTestBase):
         owner_role = owner_participant.role
 
         self.assertFalse(RoleService.can_affect_role(owner_participant, owner_role))
-
-    def test_get_room_roles(self):
-        roles = RoleService.get_room_roles(self.room)
-        self.assertGreaterEqual(roles.count(), 2)
 
     def test_get_role_by_id_success(self):
         role = RoleService.get_role_by_id(self.owner_role.id)
@@ -298,38 +294,6 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             permission_ids=[],
         )
         self.assertEqual(role.priority, lower_priority)
-
-    def test_update_role_name_and_description(self):
-        custom_role = RoleService.create_role(
-            user=self.owner,
-            room=self.room,
-            name="Original Name",
-            description="Original",
-            priority=self.owner_role.priority - 10,
-            permission_ids=[],
-        )
-
-        self.assertEqual(custom_role.name, "Original Name")
-
-    def test_assign_permission_to_role(self):
-        custom_role = RoleService.create_role(
-            user=self.owner,
-            room=self.room,
-            name="Custom Role",
-            description="Custom",
-            priority=self.owner_role.priority - 5,
-            permission_ids=[],
-        )
-
-        perm_ids = list(self.owner_role.permissions.values_list("id", flat=True)[:2])
-
-        updated = RoleService.assign_permissions_to_role(
-            user=self.owner,
-            role=custom_role,
-            permission_ids=perm_ids,
-        )
-
-        self.assertEqual(updated.permissions.count(), len(perm_ids))
 
     def test_permission_set_is_subset_validation(self):
         self._add_member(self.member, self.owner_role)

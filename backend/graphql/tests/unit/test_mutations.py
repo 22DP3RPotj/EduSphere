@@ -32,24 +32,22 @@ class UserMutationsTests(JSONWebTokenTestCase):
 
     def test_register_user_success(self):
         mutation = """
-            mutation RegisterUser(
+            mutation Register(
                 $username: String!
                 $name: String!
                 $email: String!
                 $password1: String!
                 $password2: String!
             ) {
-                registerUser(
+                register(
                     email: $email
                     name: $name
                     password1: $password1
                     password2: $password2
                     username: $username
                 ) {
-                    user {
-                        username
-                    }
                     success
+                    errors
                 }
             }
         """
@@ -60,22 +58,23 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "password1": "securepassword123",
             "password2": "securepassword123",
         }
+        #  Login (token generation) is disabled until email is verified
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
-        self.assertTrue(result.data["registerUser"]["success"])
-        self.assertEqual(result.data["registerUser"]["user"]["username"], "newuser")
+        self.assertTrue(result.data["register"]["success"])
+        self.assertIsNone(result.data["register"]["errors"])
         self.assertTrue(User.objects.filter(username="newuser").exists())
 
     def test_register_user_password_mismatch(self):
         mutation = """
-            mutation RegisterUser(
+            mutation Register(
                 $username: String!
                 $name: String!
                 $email: String!
                 $password1: String!
                 $password2: String!
             ) {
-                registerUser(
+                register(
                     email: $email
                     name: $name
                     password1: $password1
@@ -83,6 +82,7 @@ class UserMutationsTests(JSONWebTokenTestCase):
                     username: $username
                 ) {
                     success
+                    errors
                 }
             }
         """
@@ -94,8 +94,41 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "password2": "4asdfgh56",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
+        self.assertIsNone(result.errors)
+        self.assertFalse(result.data["register"]["success"])
+        self.assertIn("password2", result.data["register"]["errors"])
 
-        self.assertIsNotNone(result.errors)
+    def test_auth_mutation_fields_exposed(self):
+        query = """
+            query {
+                __type(name: "Mutation") {
+                    fields {
+                        name
+                    }
+                }
+            }
+        """
+        result: ExecutionResult = self.client.execute(query)
+        self.assertIsNone(result.errors)
+
+        mutation_fields = {field["name"] for field in result.data["__type"]["fields"]}
+        expected_auth_fields = {
+            "register",
+            "verifyAccount",
+            "resendActivationEmail",
+            "sendPasswordResetEmail",
+            "passwordReset",
+            "passwordChange",
+            "archiveAccount",
+            "deleteAccount",
+            "updateAccount",
+            "tokenAuth",
+            "verifyToken",
+            "refreshToken",
+            "revokeToken",
+        }
+
+        self.assertTrue(expected_auth_fields.issubset(mutation_fields))
 
     def test_update_user_success(self):
         user = User.objects.create_user(
@@ -166,7 +199,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_create_room_success(self):
         self.client.authenticate(self.user)
         mutation = """
-            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: RoomVisibility!) {
+            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: VisibilityChoices!) {
                 createRoom(name: $name, topicNames: $topicNames, description: $description, visibility: $visibility) {
                     room {
                         id
@@ -194,7 +227,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
     def test_create_room_private(self):
         self.client.authenticate(self.user)
         mutation = """
-            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: RoomVisibility!) {
+            mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: VisibilityChoices!) {
                 createRoom(name: $name, topicNames: $topicNames, description: $description, visibility: $visibility) {
                     room {
                         visibility
@@ -237,7 +270,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
 
         self.client.authenticate(self.user)
         mutation = """
-            mutation UpdateRoom($roomId: UUID!, $name: String, $description: String, $visibility: RoomVisibility) {
+            mutation UpdateRoom($roomId: UUID!, $name: String, $description: String, $visibility: VisibilityChoices) {
                 updateRoom(roomId: $roomId, name: $name, description: $description, visibility: $visibility) {
                     room {
                         name

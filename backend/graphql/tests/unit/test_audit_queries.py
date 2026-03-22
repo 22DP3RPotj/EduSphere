@@ -2,20 +2,55 @@ import pghistory
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from graphql_jwt.testcases import JSONWebTokenTestCase
+from graphql_sync_dataloaders import DeferredExecutionContext
+from graphql_jwt.testcases import JSONWebTokenClient, JSONWebTokenTestCase
 
 from backend.access.models import Role
+from backend.graphql.context.registry import GQLDataLoaderRegistry
 from backend.invite.models import Invite
 from backend.room.models import Room
-from backend.room.choices import RoomVisibility
-from backend.invite.choices import InviteStatus
+from backend.room.choices import VisibilityChoices
+from backend.invite.choices import InviteStatusChoices
 
 pytestmark = pytest.mark.unit
 
 User = get_user_model()
 
 
+class DataLoaderClient(JSONWebTokenClient):
+    """
+    Extends JSONWebTokenClient with two things the test client lacks:
+
+    1. request.loaders — attached in request() which is the method
+       JSONWebTokenClient.execute() ultimately calls to build its context,
+       mirroring what GQLDataLoaderMiddleware does in production.
+
+    2. DeferredExecutionContext — wired into the schema execution so
+       SyncDataLoader batching is honoured, exactly as in the production
+       GraphQLView. Without this, .load() still works but each call hits
+       the DB individually (no batching).
+    """
+
+    def request(self, **request):
+        wsgi_request = super().request(**request)
+        wsgi_request.loaders = GQLDataLoaderRegistry()
+        return wsgi_request
+
+    def execute(self, query, variables=None, **extra):
+        extra.update(self._credentials)
+        context = self.post("/", **extra)
+        return self._schema.execute(
+            query,
+            context_value=context,
+            variable_values=variables,
+            execution_context_class=DeferredExecutionContext,
+            middleware=[m() for m in self._middleware],
+        )
+
+
 class AuditQueryTests(JSONWebTokenTestCase):
+    client_class = DataLoaderClient
+
     def setUp(self):
         self.superuser = User.objects.create_superuser(
             username="superuser",
@@ -55,17 +90,15 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """Test room audit logging, actor resolution, and filtering."""
         self.client.authenticate(self.superuser)
 
-        # Create room and update it to generate history
         with pghistory.context(user=self.user.id):
             room = Room.objects.create(
                 host=self.user,
                 name="Audit Room",
                 description="Initial",
-                visibility=RoomVisibility.PUBLIC,
+                visibility=VisibilityChoices.PUBLIC,
             )
-            # Update to trigger history
             room.name = "Audit Room Updated"
-            room.visibility = RoomVisibility.PRIVATE
+            room.visibility = VisibilityChoices.PRIVATE
             room.save()
 
         query = """
@@ -86,27 +119,21 @@ class AuditQueryTests(JSONWebTokenTestCase):
             }
         """
 
-        # Query all
         response = self.client.execute(query)
         self.assertIsNone(response.errors)
         data = response.data["roomAudits"]["edges"]
-
-        # Depending on pghistory config, we expect at least the update event
         self.assertGreater(len(data), 0)
 
-        # Verify the latest update
         latest = data[-1]["node"]
         self.assertEqual(latest["name"], "Audit Room Updated")
-        self.assertEqual(latest["visibility"], RoomVisibility.PRIVATE)
+        self.assertEqual(latest["visibility"], VisibilityChoices.PRIVATE)
         self.assertEqual(latest["actor"]["username"], self.user.username)
         self.assertEqual(str(latest["pghObjId"]), str(room.id))
 
-        # Test Filter by name
         response = self.client.execute(query, variables={"name": "Updated"})
         self.assertIsNone(response.errors)
         self.assertGreater(len(response.data["roomAudits"]["edges"]), 0)
 
-        # Test Filter by targetId
         response = self.client.execute(query, variables={"targetId": str(room.id)})
         self.assertIsNone(response.errors)
         self.assertGreater(len(response.data["roomAudits"]["edges"]), 0)
@@ -123,14 +150,13 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """Test user audit logging and filters."""
         self.client.authenticate(self.superuser)
 
-        # Update user to generate history
         with pghistory.context(user=self.superuser.id):
             self.user.is_active = False
             self.user.save()
 
         query = """
-            query GetUserAudits($username: String) {
-                userAudits(username: $username) {
+            query GetUserAudits($actorUsername: String) {
+                userAudits(actorUsername: $actorUsername) {
                     edges {
                         node {
                             pghObjId
@@ -144,7 +170,8 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """
 
         response = self.client.execute(
-            query, variables={"username": self.user.username}
+            query,
+            variables={"actorUsername": self.superuser.username},
         )
         self.assertIsNone(response.errors)
         data = response.data["userAudits"]["edges"]
@@ -162,7 +189,6 @@ class AuditQueryTests(JSONWebTokenTestCase):
         room = Room.objects.create(host=self.user, name="Invite Room")
         role = Role.objects.create(room=room, name="Guest", priority=1)
 
-        # Create invite
         with pghistory.context(user=self.user.id):
             invite = Invite.objects.create(
                 room=room,
@@ -171,12 +197,9 @@ class AuditQueryTests(JSONWebTokenTestCase):
                 role=role,
                 expires_at=timezone.now() + timezone.timedelta(days=1),
             )
-
-            # Update status
-            invite.status = InviteStatus.ACCEPTED
+            invite.status = InviteStatusChoices.ACCEPTED
             invite.save()
 
-        # Use literal enum value to avoid type issues with variables
         query = """
             query GetInviteAudits {
                 inviteAudits(status: ACCEPTED) {
@@ -206,7 +229,6 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """Test common date filtering across audit logs."""
         self.client.authenticate(self.superuser)
 
-        # Generate an event "now"
         with pghistory.context(user=self.user.id):
             self.user.name = "Time Test"
             self.user.save()
@@ -227,14 +249,12 @@ class AuditQueryTests(JSONWebTokenTestCase):
             }
         """
 
-        # Test valid range
         response = self.client.execute(
             query, variables={"dateFrom": yesterday, "dateTo": tomorrow}
         )
         self.assertIsNone(response.errors)
         self.assertGreater(len(response.data["userAudits"]["edges"]), 0)
 
-        # Test future range (should be empty if we haven't created future events)
         future_start = (now + timezone.timedelta(days=2)).date().isoformat()
         future_end = (now + timezone.timedelta(days=3)).date().isoformat()
 

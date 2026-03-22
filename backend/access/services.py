@@ -1,24 +1,20 @@
 import uuid
-from typing import Any, Optional
+from typing import Optional
 
-from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
 
 from backend.account.models import User
-from backend.invite.models import Invite
 from backend.room.models import Room
 
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
-    ConflictException,
     ValidationException,
 )
-from backend.access.models import Participant, Role, Permission
+from backend.access.models import Participant, Role
+from backend.access.rules.labels import AccessPermission
 from backend.access.enums import PermissionCode
 from backend.access.dtos import RoleDeleteResult
-from backend.access.forms import RoleForm
-from backend.access.templates import DEFAULT_ROLE_TEMPLATES
+from backend.access import actions
+from backend.room.rules.labels import RoomPermission
 
 
 class RoleService:
@@ -133,19 +129,6 @@ class RoleService:
         ).exists()
 
     @staticmethod
-    def get_room_roles(room: Room) -> QuerySet[Role]:
-        """
-        Get all roles in a room.
-
-        Args:
-            room: The room to get roles from
-
-        Returns:
-            QuerySet of roles
-        """
-        return Role.objects.filter(room=room).prefetch_related("permissions")
-
-    @staticmethod
     def get_role_by_id(role_id: uuid.UUID) -> Optional[Role]:
         """
         Get a role with optimized prefetch_related queries.
@@ -157,11 +140,7 @@ class RoleService:
             The Role instance or None if not found
         """
         try:
-            role = (
-                Role.objects.select_related("room")
-                .prefetch_related("permissions")
-                .get(id=role_id)
-            )
+            role = Role.objects.with_room().with_permissions().get(id=role_id)
         except Role.DoesNotExist:
             return None
 
@@ -179,34 +158,22 @@ class RoleService:
         Returns:
             The Participant instance or None if not found
         """
-        try:
-            participant = (
-                Participant.objects.select_related("role")
-                .prefetch_related("role__permissions")
-                .get(user=user, room=room)
-            )
-        except Participant.DoesNotExist:
-            return None
-
-        return participant
+        return (
+            room.memberships.filter(user=user)
+            .select_related("role")
+            .prefetch_related("role__permissions")
+            .first()
+        )
 
     @staticmethod
     def create_default_roles(room: Room) -> None:
         """
-        Create default roles for a room. Should be called once when the room is created.
+        Create default roles for a new room.
 
         Args:
-            room: The room
+            room: The room to create default roles for
         """
-        for role_code, data in DEFAULT_ROLE_TEMPLATES.items():
-            role = Role.objects.create(
-                room=room,
-                name=role_code.label,
-                priority=data["priority"],
-                description=data["description"],
-            )
-            perms = Permission.objects.filter(code__in=data["permission_codes"])
-            role.permissions.set(perms)
+        actions.create_default_roles(room=room)
 
     @staticmethod
     def create_role(
@@ -266,30 +233,13 @@ class RoleService:
                     "You can only grant permissions your role already possesses."
                 )
 
-        data: dict[str, Any] = {
-            "name": name,
-            "description": description,
-            "priority": priority,
-        }
-
-        form = RoleForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid role data", errors=form.errors)
-
-        try:
-            role = form.save(commit=False)
-            role.room = room
-            role.save()
-
-            if permission_ids:
-                permissions = Permission.objects.filter(id__in=permission_ids)
-                role.permissions.set(permissions)
-
-        except IntegrityError as e:
-            raise ConflictException("Could not create role due to a conflict.") from e
-
-        return role
+        return actions.create_role(
+            room=room,
+            name=name,
+            description=description,
+            priority=priority,
+            permission_ids=permission_ids,
+        )
 
     @staticmethod
     def update_role(
@@ -319,65 +269,39 @@ class RoleService:
             ValidationException: If form validation fails
             ConflictException: If update conflicts
         """
+        if not user.has_perm(AccessPermission.UPDATE, role):
+            raise PermissionException("You don't have permission to update this role.")
+
         participant = RoleService.get_participant(user, role.room)
 
-        if participant is None:
-            raise PermissionException(
-                "You are not a participant of this room and cannot update roles."
-            )
+        if participant is None or participant.role is None:
+            raise PermissionException("You must have a role to update role priorities.")
 
-        if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
-        ):
-            raise PermissionException(
-                "You don't have permission to manage roles in this room"
-            )
-
-        if not RoleService.can_affect_role(participant, role):
-            raise PermissionException(
-                "Cannot affect roles with higher or equal priority."
-            )
-
-        data: dict[str, Any] = {}
-
-        if name is not None:
-            data["name"] = name
-        if description is not None:
-            data["description"] = description
         if priority is not None:
-            data["priority"] = priority
+            user_priority = participant.role.priority
+            if priority >= user_priority:
+                raise PermissionException(
+                    f"Cannot set role priority equal to or higher than your own. "
+                    f"Your priority: {user_priority}, "
+                    f"Attempted priority: {priority}"
+                )
 
-        try:
-            with transaction.atomic():
-                if data:
-                    form = RoleForm(data=data, instance=role)
+        if permission_ids is not None:
+            if not RoleService._is_valid_permission_set(participant, permission_ids):
+                raise PermissionException(
+                    "Cannot assign permissions you don't have. "
+                    "You can only grant permissions your role already possesses."
+                )
 
-                    if not form.is_valid():
-                        raise FormValidationException(
-                            "Invalid role data", errors=form.errors
-                        )
-
-                    form.save()
-
-                if permission_ids is not None:
-                    if not RoleService._is_valid_permission_set(
-                        participant, permission_ids
-                    ):
-                        raise PermissionException(
-                            "Cannot assign permissions you don't have. "
-                            "You can only grant permissions your role already possesses."
-                        )
-
-                    permissions = Permission.objects.filter(id__in=permission_ids)
-                    role.permissions.set(permissions)
-
-        except IntegrityError as e:
-            raise ConflictException("Could not update role due to a conflict.") from e
-
-        return role
+        return actions.update_role(
+            role=role,
+            name=name,
+            description=description,
+            priority=priority,
+            permission_ids=permission_ids,
+        )
 
     @staticmethod
-    @transaction.atomic
     def delete_role(
         user: User, role: Role, substitution_role: Optional[Role] = None
     ) -> RoleDeleteResult:
@@ -401,37 +325,22 @@ class RoleService:
             PermissionException: If user doesn't have permission or priority hierarchy violation
             ValidationException: If role has participants/invites but no substitution role provided
         """
+        if not user.has_perm(AccessPermission.DELETE, role):
+            raise PermissionException("You don't have permission to delete this role.")
+
         participant = RoleService.get_participant(user, role.room)
 
-        if participant is None:
-            raise PermissionException(
-                "You are not a participant of this room and cannot delete roles."
-            )
-
-        if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
-        ):
-            raise PermissionException(
-                "You don't have permission to manage roles in this room"
-            )
+        if participant is None or participant.role is None:
+            raise PermissionException("You must have a role to delete roles.")
 
         if not RoleService.can_affect_role(participant, role):
             raise PermissionException(
-                "Cannot affect roles with equal or higher priority."
+                f"Cannot delete roles with priority equal to or higher than your own. "
+                f"Your priority: {participant.role.priority}, "
+                f"Target role priority: {role.priority}"
             )
 
-        participants_count = Participant.objects.filter(role=role).update(
-            role=substitution_role
-        )
-        invites_count = Invite.objects.filter(role=role).update(role=substitution_role)
-
-        role.delete()
-
-        return RoleDeleteResult(
-            success=True,
-            participants_reassigned=participants_count,
-            invites_reassigned=invites_count,
-        )
+        return actions.delete_role(role=role, substitution_role=substitution_role)
 
     @staticmethod
     def assign_permissions_to_role(
@@ -453,23 +362,23 @@ class RoleService:
         Raises:
             PermissionException: If user doesn't have permission, priority violation, or permission escalation attempt
         """
-        participant = RoleService.get_participant(user, role.room)
-
-        if participant is None:
+        if not user.has_perm(AccessPermission.UPDATE, role):
             raise PermissionException(
-                "You are not a participant of this room and cannot manage permissions."
+                "You don't have permission to assign permissions to this role."
             )
 
-        if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
-        ):
+        participant = RoleService.get_participant(user, role.room)
+
+        if participant is None or participant.role is None:
             raise PermissionException(
-                "You don't have permission to manage roles in this room"
+                "You must have a role to assign permissions to roles."
             )
 
         if not RoleService.can_affect_role(participant, role):
             raise PermissionException(
-                "Cannot affect roles with equal or higher priority."
+                f"Cannot modify roles with priority equal to or higher than your own. "
+                f"Your priority: {participant.role.priority}, "
+                f"Target role priority: {role.priority}"
             )
 
         if not RoleService._is_valid_permission_set(participant, permission_ids):
@@ -478,9 +387,10 @@ class RoleService:
                 "You can only grant permissions your role already possesses."
             )
 
-        permissions = Permission.objects.filter(id__in=permission_ids)
-        role.permissions.set(permissions)
-        return role
+        return actions.assign_permissions_to_role(
+            role=role,
+            permission_ids=permission_ids,
+        )
 
     @staticmethod
     def remove_permissions_from_role(
@@ -502,29 +412,29 @@ class RoleService:
         Raises:
             PermissionException: If user doesn't have permission or priority hierarchy violation
         """
-        participant = RoleService.get_participant(user, role.room)
-
-        if participant is None:
+        if not user.has_perm(AccessPermission.UPDATE, role):
             raise PermissionException(
-                "You are not a participant of this room and cannot update roles."
+                "You don't have permission to remove permissions from this role."
             )
 
-        if not RoleService.has_permission(
-            user, role.room, PermissionCode.ROOM_MANAGE_ROLES
-        ):
+        participant = RoleService.get_participant(user, role.room)
+
+        if participant is None or participant.role is None:
             raise PermissionException(
-                "You don't have permission to manage roles in this room"
+                "You must have a role to remove permissions from roles."
             )
 
         if not RoleService.can_affect_role(participant, role):
             raise PermissionException(
-                "Cannot affect roles with higher or equal priority."
+                f"Cannot modify roles with priority equal to or higher than your own. "
+                f"Your priority: {participant.role.priority}, "
+                f"Target role priority: {role.priority}"
             )
 
-        if permission_ids:
-            permissions = list(Permission.objects.filter(id__in=permission_ids))
-            role.permissions.remove(*permissions)
-        return role
+        return actions.remove_permissions_from_role(
+            role=role,
+            permission_ids=permission_ids,
+        )
 
 
 class ParticipantService:
@@ -554,42 +464,6 @@ class ParticipantService:
         return participant
 
     @staticmethod
-    def add_participant(
-        room: Room,
-        user: User,
-        role: Optional[Role],
-    ) -> Participant:
-        """
-        Add a participant to a room.
-
-        Args:
-            room: The room
-            user: The user to add
-            role: The role to assign to the user
-
-        Returns:
-            The created Participant instance
-
-        Raises:
-            ValidationException: If role doesn't belong to the room
-            ConflictException: If user is already a participant
-        """
-        if role is not None and role.room != room:
-            raise ValidationException("Role must belong to the same room.")
-
-        if Participant.objects.filter(user=user, room=room).exists():
-            raise ConflictException("User is already a participant of this room.")
-
-        try:
-            participant = Participant.objects.create(user=user, room=room, role=role)
-        except IntegrityError as e:
-            raise ConflictException(
-                "User is already a participant of this room."
-            ) from e
-
-        return participant
-
-    @staticmethod
     def change_participant_role(
         user: User,
         participant: Participant,
@@ -610,29 +484,29 @@ class ParticipantService:
             PermissionException: If user doesn't have permission
             ValidationException: If role doesn't belong to the room
         """
-        if not RoleService.has_permission(
-            user, participant.room, PermissionCode.ROOM_MANAGE_ROLES
-        ):
-            raise PermissionException(
-                "You don't have permission to manage participant roles."
-            )
+        if not user.has_perm(AccessPermission.UPDATE, new_role):
+            raise PermissionException("You don't have permission to assign this role.")
 
         if new_role.room != participant.room:
             raise ValidationException("New role must belong to the same room.")
 
-        user_participant = RoleService.get_participant(user, participant.room)
-        if user_participant is None:
-            raise PermissionException("You must be a participant to manage roles.")
+        actor_participant = ParticipantService.get_participant(user, participant.room)
 
-        if not RoleService.can_affect_role(user_participant, new_role):
+        if actor_participant is None or actor_participant.role is None:
             raise PermissionException(
-                "Cannot assign roles with higher or equal priority."
+                "You must have a role to change participant roles."
             )
 
-        participant.role = new_role
-        participant.save()
+        if not RoleService.can_affect_role(actor_participant, new_role):
+            raise PermissionException(
+                f"Cannot assign roles with priority equal to or higher than your own. "
+                f"Your priority: {actor_participant.role.priority}, "
+                f"Target role priority: {new_role.priority}"
+            )
 
-        return participant
+        return actions.change_participant_role(
+            participant=participant, new_role=new_role
+        )
 
     @staticmethod
     def remove_participant(
@@ -653,28 +527,32 @@ class ParticipantService:
             PermissionException: If user doesn't have permission
         """
         # User can remove themselves or must have role management permission
-        if user != participant.user:
-            if not RoleService.has_permission(
-                user, participant.room, PermissionCode.ROOM_MANAGE_ROLES
-            ):
+        if user == participant.user:
+            raise PermissionException(
+                "Participants cannot remove themselves from the room."
+            )
+
+        actor_participant = ParticipantService.get_participant(user, participant.room)
+
+        if actor_participant is None or actor_participant.role is None:
+            raise PermissionException(
+                "You don't have permission to remove participants."
+            )
+
+        if not user.has_perm(RoomPermission.MANAGE_PARTICIPANTS, participant.room):
+            raise PermissionException(
+                "You don't have permission to remove participants."
+            )
+
+        if participant.role is not None:
+            if not RoleService.can_affect_role(actor_participant, participant.role):
                 raise PermissionException(
-                    "You don't have permission to remove participants."
+                    f"Cannot remove participants with roles of equal or higher priority. "
+                    f"Your priority: {actor_participant.role.priority}, "
+                    f"Target participant role priority: {participant.role.priority}"
                 )
 
-            user_participant = RoleService.get_participant(user, participant.room)
-            if user_participant is None:
-                raise PermissionException("You must be a participant to remove others.")
-
-            if participant.role is None:
-                raise ValidationException("Participant has no role assigned.")
-
-            if not RoleService.can_affect_role(user_participant, participant.role):
-                raise PermissionException(
-                    "Cannot remove participants with higher or equal role priority."
-                )
-
-        participant.delete()
-        return True
+        return actions.remove_participant(participant=participant)
 
     @staticmethod
     def get_user_rooms(user: User):

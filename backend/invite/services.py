@@ -2,44 +2,29 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from django.db import IntegrityError, transaction
-from django.utils import timezone
-
 from backend.account.models import User
 from backend.invite.models import Invite
 from backend.room.models import Room
 from backend.access.models import Role, Participant
-from backend.core.forms import InviteForm
 from backend.core.exceptions import (
-    FormValidationException,
     PermissionException,
     ConflictException,
     ValidationException,
 )
-from backend.access.services import RoleService
-from backend.access.enums import PermissionCode
+from backend.invite.rules.labels import InvitePermission
+from backend.invite import actions
 
 
 class InviteService:
     """Service for invite mutation operations."""
 
     @staticmethod
-    def _update_expired_invites() -> None:
-        """
-        Lazy update: Mark all expired pending invites as EXPIRED.
-        Should be called whenever an invite is fetched.
-        """
-        Invite.objects.filter(
-            status=Invite.Status.PENDING, expires_at__lt=timezone.now()
-        ).update(status=Invite.Status.EXPIRED)
-
-    @staticmethod
     def send_invite(
         inviter: User,
         room: Room,
         invitee: User,
-        role: Role,
-        expires_at: datetime,
+        role: Optional[Role] = None,
+        expires_at: Optional[datetime] = None,
     ) -> Invite:
         """
         Send an invite to a user for a room.
@@ -60,14 +45,7 @@ class InviteService:
             ConflictException: If invite creation conflicts
             FormValidationException: If form validation fails
         """
-        if not Participant.objects.filter(user=inviter, room=room).exists():
-            raise PermissionException(
-                "You must be a participant of the room to send invites."
-            )
-
-        if not RoleService.has_permission(
-            inviter, room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
-        ):
+        if not inviter.has_perm(InvitePermission.CREATE, room):
             raise PermissionException(
                 "You don't have permission to invite users to this room."
             )
@@ -75,39 +53,21 @@ class InviteService:
         if Participant.objects.filter(user=invitee, room=room).exists():
             raise ValidationException("The user is already a participant of this room.")
 
-        if role.room != room:
+        if role and role.room != room:
             raise ValidationException("Role must belong to the same room.")
 
-        if Invite.active_invites(invitee=invitee, room=room).exists():
+        if Invite.objects.filter(invitee=invitee, room=room).active().exists():
             raise ConflictException(
                 "This user already has an active invite to this room."
             )
 
-        # TODO: move to forms
-        if expires_at <= timezone.now():
-            raise ValidationException("Expiration date must be in the future.")
-
-        data = {
-            "expires_at": expires_at,
-        }
-
-        form = InviteForm(data=data)
-
-        if not form.is_valid():
-            raise FormValidationException("Invalid invite data", errors=form.errors)
-
-        try:
-            invite = form.save(commit=False)
-            invite.inviter = inviter
-            invite.invitee = invitee
-            invite.role = role
-            invite.room = room
-            invite.save()
-
-        except IntegrityError as e:
-            raise ConflictException("Could not send invite due to a conflict.") from e
-
-        return invite
+        return actions.send_invite(
+            inviter=inviter,
+            room=room,
+            invitee=invitee,
+            role=role,
+            expires_at=expires_at,
+        )
 
     @staticmethod
     def accept_invite(user: User, invite: Invite) -> Participant:
@@ -126,32 +86,20 @@ class InviteService:
             ValidationException: If invite is not pending
             ConflictException: If user is already a participant
         """
-        if invite.invitee != user:
-            raise PermissionException("You can only accept invites sent to you.")
+        if not user.has_perm(InvitePermission.ACCEPT, invite):
+            raise PermissionException(
+                "You don't have permission to accept this invite."
+            )
 
         if invite.status != Invite.Status.PENDING:
             raise ValidationException(
                 f"Invite is '{invite.status.lower()}' and cannot be accepted."
             )
 
-        try:
-            with transaction.atomic():
-                participant = Participant.objects.create(
-                    user=user, room=invite.room, role=invite.role
-                )
-
-                invite.status = Invite.Status.ACCEPTED
-                invite.save(update_fields=["status"])
-
-        except IntegrityError as e:
-            raise ConflictException(
-                "User is already a participant of this room."
-            ) from e
-
-        return participant
+        return actions.accept_invite(user=user, invite=invite)
 
     @staticmethod
-    def decline_invite(user: User, invite: Invite) -> bool:
+    def decline_invite(user: User, invite: Invite) -> Invite:
         """
         Decline an invite.
 
@@ -160,27 +108,29 @@ class InviteService:
             invite: The invite to decline
 
         Returns:
-            True if decline was successful
+            The updated Invite instance
 
         Raises:
             PermissionException: If user is not the invitee
             ValidationException: If invite is not pending
         """
         if invite.invitee != user:
-            raise PermissionException("You can only decline invites sent to you.")
+            raise PermissionException("You are not the invitee for this invite.")
 
-        if invite.status != Invite.Status.PENDING:
+        if not user.has_perm(InvitePermission.REJECT, invite):
+            raise PermissionException(
+                "You don't have permission to reject this invite."
+            )
+
+        if not invite.is_active:
             raise ValidationException(
                 f"Invite is {invite.status.lower()} and cannot be declined."
             )
 
-        invite.status = Invite.Status.DECLINED
-        invite.save(update_fields=["status"])
-
-        return True
+        return actions.decline_invite(invite=invite)
 
     @staticmethod
-    def cancel_invite(user: User, invite: Invite) -> bool:
+    def cancel_invite(user: User, invite: Invite) -> Invite:
         """
         Cancel a pending invite (inviter only).
 
@@ -189,29 +139,28 @@ class InviteService:
             invite: The invite to cancel
 
         Returns:
-            True if cancel was successful
+            The updated Invite instance
 
         Raises:
             PermissionException: If user is not the inviter
             ValidationException: If invite is not pending
         """
-        if not RoleService.has_permission(
-            user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
-        ):
+        if not user.has_perm(InvitePermission.DELETE, invite):
             raise PermissionException(
-                "You don't have permission to cancel invites for this room."
+                "You don't have permission to cancel this invite."
             )
 
-        if invite.status != Invite.Status.PENDING:
+        if not invite.is_active:
             raise ValidationException(
                 f"Invite is {invite.status.lower()} and cannot be canceled."
             )
 
-        invite.delete()
-        return True
+        return actions.cancel_invite(invite=invite)
 
     @staticmethod
-    def resend_invite(user: User, invite: Invite, new_expires_at: datetime) -> Invite:
+    def resend_invite(
+        user: User, invite: Invite, new_expires_at: Optional[datetime]
+    ) -> Invite:
         """
         Resend an invite by updating its expiration date.
 
@@ -228,35 +177,15 @@ class InviteService:
             ValidationException: If invite is already resolved (accepted or declined)
         """
 
-        if not RoleService.has_permission(
-            user, invite.room, PermissionCode.ROOM_MANAGE_PARTICIPANTS
-        ):
+        if not user.has_perm(InvitePermission.UPDATE, invite):
             raise PermissionException(
-                "You don't have permission to resend invites for this room."
+                "You don't have permission to resend this invite."
             )
 
         if invite.is_resolved:
             raise ValidationException("Cannot resend a resolved invite.")
 
-        if new_expires_at <= timezone.now():
-            raise ValidationException("Expiration date must be in the future.")
-
-        invite.expires_at = new_expires_at
-        invite.save(update_fields=["expires_at"])
-
-        return invite
-
-    @staticmethod
-    def _update_if_expired(invite: Invite) -> None:
-        """
-        Check if invite has expired and update status if needed.
-
-        Args:
-            invite: The invite to check
-        """
-        if invite.is_expired and invite.status != Invite.Status.EXPIRED:
-            invite.status = Invite.Status.EXPIRED
-            invite.save(update_fields=["status"])
+        return actions.resend_invite(invite=invite, new_expires_at=new_expires_at)
 
     @staticmethod
     def get_invite_by_token(token: uuid.UUID) -> Optional[Invite]:
@@ -278,7 +207,41 @@ class InviteService:
         except Invite.DoesNotExist:
             return None
 
-        InviteService._update_if_expired(invite)
-        invite.refresh_from_db(fields=["status"])
-
+        invite.refresh()
         return invite
+
+
+# class InviteLinkService:
+#     """Service for invite link operations."""
+
+#     @staticmethod
+#     def create_invite_link(
+#         creator: User,
+#         room: Room,
+#         role: Optional[Role] = None,
+#         expires_at: Optional[datetime] = None,
+#     ) -> InviteLink:
+#         """
+#         Create an invite link for a room.
+
+#         Args:
+#             creator: User creating the invite link (must have ROOM_MANAGE_ROLES permission)
+#             room: The room to create the invite link for
+#             role: The role to assign to users who join via this link
+#             expires_at: The expiration datetime for the invite link
+#         Returns:
+#             The created InviteLink instance
+
+#         Raises:
+#             PermissionException: If creator doesn't have permission
+#             ValidationException: If role doesn't belong to room
+#         """
+#         if not creator.has_perm(InvitePermission.CREATE, room):
+#             raise PermissionException(
+#                 "You don't have permission to create invite links for this room."
+#             )
+
+#         if role and role.room != room:
+#             raise ValidationException("Role must belong to the same room.")
+
+#         return actions.create_invite_link(creator=creator, room=room, role=role)

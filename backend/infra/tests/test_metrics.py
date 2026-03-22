@@ -23,14 +23,12 @@ def test_prometheus_metrics_endpoint_accessible(client):
 def test_graphql_middleware_updates_metrics(client):
     """Verify that GraphQL queries increment our custom prometheus metrics."""
     # Note: GraphQL queries hit the /graphql/ endpoint.
-    # The middleware is in backend.infra.middleware.PrometheusMiddleware
+    # The middleware is in backend.infra.middleware.GQLPrometheusMiddleware
 
     query = """
     query TestQuery {
-        __schema {
-            queryType {
-                name
-            }
+        authStatus {
+            isAuthenticated
         }
     }
     """
@@ -43,7 +41,7 @@ def test_graphql_middleware_updates_metrics(client):
     before = (
         REGISTRY.get_sample_value(
             "graphql_resolver_completed_total",
-            {"operation_type": "query", "field": "Query.__schema"},
+            {"operation_type": "query", "field": "Query.authStatus"},
         )
         or 0.0
     )
@@ -58,7 +56,7 @@ def test_graphql_middleware_updates_metrics(client):
 
     after = REGISTRY.get_sample_value(
         "graphql_resolver_completed_total",
-        {"operation_type": "query", "field": "Query.__schema"},
+        {"operation_type": "query", "field": "Query.authStatus"},
     )
 
     assert after is not None

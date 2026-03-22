@@ -34,23 +34,7 @@ class IntegrationTests(ServiceTestBase):
 
         member_role = room.roles.get(name=RoleCode.MEMBER.label)
 
-        user1 = User.objects.create_user(
-            name="Workflow User 1",
-            username="workflow_user1",
-            email="workflow1@test.com",
-            password="testpass123",
-        )
-        user2 = User.objects.create_user(
-            name="Workflow User 2",
-            username="workflow_user2",
-            email="workflow2@test.com",
-            password="testpass123",
-        )
-
-        ParticipantService.add_participant(room, user1, member_role)
-        ParticipantService.add_participant(room, user2, member_role)
-
-        self.assertEqual(room.participants.count(), 3)
+        self.assertEqual(room.participants.count(), 1)
 
         invite = InviteService.send_invite(
             inviter=self.owner,
@@ -61,7 +45,7 @@ class IntegrationTests(ServiceTestBase):
         )
 
         InviteService.accept_invite(self.other_user, invite)
-        self.assertEqual(room.participants.count(), 4)
+        self.assertEqual(room.participants.count(), 2)
 
         message = MessageService.create_message(
             user=self.other_user, room=room, body="Hello from new participant"

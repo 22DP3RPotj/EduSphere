@@ -8,4 +8,4 @@ class GraphQLConfig(AppConfig):
     verbose_name = "GraphQL"
 
     def ready(self):
-        import backend.graphql.signals as _  # noqa
+        import backend.graphql.signals  # noqa

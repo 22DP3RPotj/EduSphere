@@ -28,23 +28,20 @@ class ValidationException(DomainException):
 
     code = ErrorCode.VALIDATION_ERROR
 
-    def __init__(self, message: str):
-        super().__init__(message)
+
+def format_form_errors(errors: ErrorDict) -> dict[str, list[str]]:
+    return {
+        field: list(dict.fromkeys(e.get("message", str(e)) for e in errs))
+        for field, errs in errors.get_json_data().items()
+    }
 
 
 class FormValidationException(ValidationException):
     """Exception raised for form validation errors."""
 
     def __init__(self, message: str, errors: ErrorDict):
-        self.errors = self._format_form_errors(errors)
+        self.errors = format_form_errors(errors)
         super().__init__(message)
-
-    @staticmethod
-    def _format_form_errors(errors: ErrorDict) -> dict[str, list[str]]:
-        return {
-            field: [e["message"] for e in errs]
-            for field, errs in errors.get_json_data().items()
-        }
 
 
 class PermissionException(DomainException):
@@ -52,17 +49,11 @@ class PermissionException(DomainException):
 
     code = ErrorCode.PERMISSION_DENIED
 
-    def __init__(self, message: str):
-        super().__init__(message)
-
 
 class NotFoundException(DomainException):
     """Exception raised when an entity is not found."""
 
     code = ErrorCode.NOT_FOUND
-
-    def __init__(self, message: str):
-        super().__init__(message)
 
 
 class ConflictException(DomainException):
@@ -70,5 +61,20 @@ class ConflictException(DomainException):
 
     code = ErrorCode.CONFLICT
 
-    def __init__(self, message: str):
-        super().__init__(message)
+
+class AlreadyExistsException(DomainException):
+    """Exception raised when trying to create an entity that already exists."""
+
+    code = ErrorCode.ALREADY_EXISTS
+
+
+class InternalErrorException(DomainException):
+    """Exception raised for unexpected internal errors."""
+
+    code = ErrorCode.INTERNAL_ERROR
+
+
+class BadRequestException(DomainException):
+    """Exception raised for bad requests."""
+
+    code = ErrorCode.BAD_REQUEST

@@ -5,7 +5,11 @@ from django.conf import settings
 from django.db import models
 from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.core.validators import FileExtensionValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MinLengthValidator,
+    RegexValidator,
+)
 
 from backend.account.choices import LanguageChoices
 from backend.account.managers import UserManager
@@ -18,7 +22,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
-    username = models.SlugField(max_length=32, unique=True)
+    username = models.CharField(
+        max_length=32,
+        unique=True,
+        validators=[
+            RegexValidator(
+                r"^[-a-z0-9_]+$",
+                "Username may only contain lowercase letters, digits, hyphens (-), and underscores (_).",
+            ),
+            MinLengthValidator(
+                settings.MINIMAL_USERNAME_LENGTH,
+                f"Username must be at least {settings.MINIMAL_USERNAME_LENGTH} characters long.",
+            ),
+        ],
+    )
     name = models.CharField(max_length=32)
     bio = models.TextField(blank=True, default="", max_length=4096)
     language = models.CharField(
@@ -40,6 +57,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 
@@ -62,16 +80,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["username"]),
             models.Index(fields=["date_joined"]),
         ]
-
-
-class UserHistory(
-    pghistory.create_event_model(
-        User,
-        fields=["username", "email", "is_active", "is_staff", "is_superuser"],
-    )
-):
-    class Meta:
-        app_label = "account"
 
 
 class UserBan(models.Model):
@@ -102,6 +110,16 @@ class UserBan(models.Model):
 
     def __str__(self):
         return f"Ban for {self.user.username}"
+
+
+class UserHistory(
+    pghistory.create_event_model(
+        User,
+        fields=["is_active", "is_staff", "is_superuser"],
+    )
+):
+    class Meta:
+        app_label = "account"
 
 
 class UserBanHistory(

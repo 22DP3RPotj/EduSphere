@@ -40,3 +40,6 @@ TODO
 
 # Password examples
 !.htpasswd.*.example
+
+# Backend environment setup
+!backend/config/settings/env.py

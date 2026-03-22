@@ -1,13 +1,15 @@
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.core.exceptions import FormValidationException, PermissionException
 from backend.room.models import Room
 from backend.room.services import RoomService
+from backend.room.rules.labels import RoomPermission
 from backend.core.tests.service_base import ServiceTestBase
+
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 
 class RoomServiceTest(ServiceTestBase):
@@ -15,10 +17,10 @@ class RoomServiceTest(ServiceTestBase):
 
     def test_can_view_participant(self):
         self._add_member(self.member, self.member_role)
-        self.assertTrue(RoomService.can_view(self.member, self.room))
+        self.assertTrue(self.member.has_perm(RoomPermission.VIEW, self.room))
 
     def test_can_view_public_room(self):
-        self.assertTrue(RoomService.can_view(self.other_user, self.room))
+        self.assertTrue(self.other_user.has_perm(RoomPermission.VIEW, self.room))
 
     def test_cannot_view_private_room(self):
         private_room = Room.objects.create(
@@ -27,7 +29,7 @@ class RoomServiceTest(ServiceTestBase):
             description="",
             visibility=Room.Visibility.PRIVATE,
         )
-        self.assertFalse(RoomService.can_view(self.other_user, private_room))
+        self.assertFalse(self.other_user.has_perm(RoomPermission.VIEW, private_room))
 
     def test_create_room_success(self):
         room = RoomService.create_room(

@@ -1,7 +1,7 @@
 import uuid
 from django.conf import settings
 from django.db import models
-from django.forms import ValidationError
+from django.core.exceptions import ValidationError
 
 from backend.messaging.choices import MessageStatusChoices
 
@@ -18,9 +18,6 @@ class Message(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.body[0:50] + ("..." if len(self.body) > 50 else "")
-
     class Meta:
         app_label = "messaging"
         indexes = [
@@ -32,10 +29,14 @@ class Message(models.Model):
         ]
         ordering = ["-created_at"]
 
+    def __str__(self):
+        return self.body[0:50] + ("..." if len(self.body) > 50 else "")
+
     def clean(self):
+        super().clean()
         if self.parent and self.parent.room_id != self.room_id:
             raise ValidationError(
-                "Parent message must be in the same room as the message."
+                {"parent": "Parent message must be in the same room as the message."}
             )
 
     def save(self, *args, **kwargs):

@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Model
+from django.utils import timezone
 
 from backend.account.models import User
 from backend.core.exceptions import ConflictException, FormValidationException
@@ -89,17 +90,25 @@ def take_case_action(
                     "Invalid moderation action data", errors=form.errors
                 )
 
+            current_case = (
+                ModerationCase.objects.select_for_update()
+                .filter(pk=case.pk, status__in=CaseStatusChoices.active())
+                .first()
+            )
+            if current_case is None:
+                raise ConflictException("Case can no longer be acted on.")
+
             moderation_action = form.save(commit=False)
-            moderation_action.case = case
+            moderation_action.case = current_case
             moderation_action.moderator = moderator
             moderation_action.action = action
             moderation_action.save()
 
-            case.update_status(status)
+            current_case.update_status(status)
     except IntegrityError as e:
         raise ConflictException("Could not take action due to a conflict.") from e
 
-    return case
+    return current_case
 
 
 def set_case_priority(
@@ -111,10 +120,31 @@ def set_case_priority(
 
 
 def set_case_under_review(case: ModerationCase) -> ModerationCase:
-    case.update_status(CaseStatusChoices.UNDER_REVIEW)
+    updated = ModerationCase.objects.filter(
+        pk=case.pk,
+        status=CaseStatusChoices.PENDING,
+    ).update(
+        status=CaseStatusChoices.UNDER_REVIEW,
+        updated_at=timezone.now(),
+    )
+
+    if not updated:
+        case.refresh_from_db()
+        raise ConflictException("Case is no longer pending.")
+
+    case.refresh_from_db()
     return case
 
 
 def reopen_case(case: ModerationCase) -> ModerationCase:
-    case.update_status(CaseStatusChoices.PENDING)
+    updated = ModerationCase.objects.filter(
+        pk=case.pk,
+        status__in=CaseStatusChoices.finalized(),
+    ).update(status=CaseStatusChoices.PENDING, updated_at=timezone.now())
+
+    if not updated:
+        case.refresh_from_db()
+        raise ConflictException("Case is no longer in a terminal state.")
+
+    case.refresh_from_db()
     return case

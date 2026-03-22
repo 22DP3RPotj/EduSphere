@@ -1,6 +1,6 @@
 import uuid
 import pghistory
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -98,18 +98,21 @@ class Room(models.Model):
         self.visibility = new_visibility
         self.save(update_fields=["visibility", "updated_at"])
 
-    def update_default_role(self, new_default_role: "Role"):
+    def update_default_role(self, new_default_role: "Optional[Role]"):
         if self.default_role == new_default_role:
             return
         self.default_role = new_default_role
-        self.save(update_fields=["default_role", "updated_at"])
+        self.save(update_fields=["default_role_id", "updated_at"])
 
     def __str__(self):
         return self.name
 
     def clean(self):
+        super().clean()
         if self.default_role_id and self.default_role.room_id != self.id:
-            raise ValidationError("Default role must belong to the same room.")
+            raise ValidationError(
+                {"default_role": "Default role must belong to this room."}
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()

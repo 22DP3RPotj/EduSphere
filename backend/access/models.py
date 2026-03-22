@@ -84,9 +84,10 @@ class Participant(models.Model):
         return f"{self.user.username} in {self.room.name}"
 
     def clean(self):
+        super().clean()
         if self.role is not None and self.role.room_id != self.room_id:
             raise ValidationError(
-                "Role must belong to the same room as the participant."
+                {"role": "Role must belong to the same room as the participant."}
             )
 
     def save(self, *args, **kwargs):

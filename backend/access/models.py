@@ -6,7 +6,7 @@ from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
 
 from backend.access.enums import PermissionCode
-from backend.access.querysets import RoleQuerySet
+from backend.access.querysets import PermissionQuerySet, RoleQuerySet
 
 
 class Permission(models.Model):
@@ -16,15 +16,17 @@ class Permission(models.Model):
     )
     description = models.CharField(max_length=255)
 
-    def __str__(self):
-        return self.code
-
     class Meta:
         app_label = "access"
         ordering = ["code"]
         indexes = [
             models.Index(fields=["code"]),
         ]
+
+    objects = PermissionQuerySet.as_manager()
+
+    def __str__(self):
+        return self.code
 
 
 class Role(models.Model):
@@ -82,7 +84,7 @@ class Participant(models.Model):
         return f"{self.user.username} in {self.room.name}"
 
     def clean(self):
-        if self.role.room_id != self.room_id:
+        if self.role is not None and self.role.room_id != self.room_id:
             raise ValidationError(
                 "Role must belong to the same room as the participant."
             )

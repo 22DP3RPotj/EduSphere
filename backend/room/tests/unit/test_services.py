@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.core.exceptions import FormValidationException, PermissionException
@@ -9,6 +7,9 @@ from backend.room.models import Room
 from backend.room.services import RoomService
 from backend.room.rules.labels import RoomPermission
 from backend.core.tests.service_base import ServiceTestBase
+
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 
 class RoomServiceTest(ServiceTestBase):

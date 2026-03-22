@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from django.contrib.contenttypes.models import ContentType
 
 from backend.core.exceptions import (
@@ -15,6 +13,9 @@ from backend.moderation.models import (
 )
 from backend.moderation.services import ReportService
 from backend.core.tests.service_base import ServiceTestBase
+
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 
 class ReportServiceTest(ServiceTestBase):

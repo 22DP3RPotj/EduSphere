@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = [pytest.mark.unit, pytest.mark.services]
-
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.access.services import ParticipantService, RoleService
@@ -10,6 +8,8 @@ from backend.core.exceptions import (
 )
 from backend.room.models import Room
 from backend.core.tests.service_base import ServiceTestBase
+
+pytestmark = [pytest.mark.unit, pytest.mark.services]
 
 
 class ParticipantServiceTest(ServiceTestBase):

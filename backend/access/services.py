@@ -464,29 +464,6 @@ class ParticipantService:
         return participant
 
     @staticmethod
-    def add_participant(
-        room: Room,
-        user: User,
-        role: Optional[Role],
-    ) -> Participant:
-        """
-        Add a participant to a room.
-
-        Args:
-            room: The room
-            user: The user to add
-            role: The role to assign to the user
-
-        Returns:
-            The created Participant instance
-
-        Raises:
-            ValidationException: If role doesn't belong to the room
-            ConflictException: If user is already a participant
-        """
-        return actions.add_participant(room=room, user=user, role=role)
-
-    @staticmethod
     def change_participant_role(
         user: User,
         participant: Participant,

@@ -246,25 +246,6 @@ class ReportMutationsTests(JSONWebTokenTestCase):
             result.data["setCaseUnderReview"]["case"]["status"], "UNDER_REVIEW"
         )
 
-    def test_delete_report_as_moderator(self):
-        report = make_report(self.user, self.room, self.reason_spam)
-
-        self.client.authenticate(self.moderator)
-        mutation = """
-            mutation DeleteReport($reportId: UUID!) {
-                deleteReport(reportId: $reportId) {
-                    success
-                }
-            }
-        """
-        result: ExecutionResult = self.client.execute(
-            mutation, {"reportId": str(report.id)}
-        )
-
-        self.assertIsNone(result.errors)
-        self.assertTrue(result.data["deleteReport"]["success"])
-        self.assertFalse(Report.objects.filter(id=report.id).exists())
-
 
 class ReportQueryTests(JSONWebTokenTestCase):
     def setUp(self):

@@ -15,7 +15,7 @@ from backend.graphql.moderation.types import (
     ReportTargetTypeEnum,
 )
 from backend.moderation.choices import ActionChoices
-from backend.moderation.models import ModerationCase, Report, ReportReason
+from backend.moderation.models import ModerationCase, ReportReason
 from backend.room.models import Room
 from backend.account.models import User
 from backend.messaging.models import Message
@@ -132,25 +132,3 @@ class SetCaseUnderReview(BaseMutation):
         )
 
         return cls(case=case)
-
-
-class DeleteReport(BaseMutation):
-    class Arguments:
-        report_id = graphene.UUID(required=True)
-
-    success = graphene.Boolean()
-
-    @classmethod
-    @superuser_required
-    def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, report_id: uuid.UUID
-    ):
-        try:
-            report = Report.objects.get(id=report_id)
-        except Report.DoesNotExist:
-            raise GraphQLError(
-                "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
-
-        report.delete()
-        return cls(success=True)

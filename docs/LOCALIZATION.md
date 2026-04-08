@@ -354,7 +354,7 @@ query GetUser {
 #### Update User Language
 
 ```graphql
-mutation UpdateUser($language: String) {
+mutation UpdateUser($language: LanguageChoices) {
   updateUser(language: $language) {
     user {
       id

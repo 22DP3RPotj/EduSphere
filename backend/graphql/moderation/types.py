@@ -1,11 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
 
-from backend.moderation.choices import (
-    ActionChoices,
-    ActionPriorityChoices,
-    CaseStatusChoices,
-)
 from backend.moderation.models import (
     ModerationAction,
     ModerationCase,
@@ -18,9 +13,9 @@ from backend.graphql.account.types import UserType
 from backend.graphql.messaging.types import MessageType
 
 
-CaseStatusEnum = graphene.Enum.from_enum(CaseStatusChoices)
-ActionEnum = graphene.Enum.from_enum(ActionChoices)
-ActionPriorityEnum = graphene.Enum.from_enum(ActionPriorityChoices)
+CaseStatusEnum = graphene.Enum.from_enum(ModerationCase.Status)
+ActionPriorityEnum = graphene.Enum.from_enum(ModerationCase.ActionPriority)
+ActionEnum = graphene.Enum.from_enum(ModerationAction.Action)
 
 
 class ReportTargetTypeEnum(graphene.Enum):

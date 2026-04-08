@@ -6,7 +6,7 @@ from django.db import DatabaseError
 import pghistory.models
 from datetime import datetime, timedelta
 
-from backend.core.tasks import run_audit_log_cleanup
+from backend.core.tasks.cleanup import run_audit_log_cleanup
 
 
 pytestmark = pytest.mark.unit
@@ -26,9 +26,9 @@ class CleanupOldAuditLogsTests(TestCase):
         self.MockEvent.__name__ = "MockEvent"
 
     @override_settings(AUDIT_LOG_RETENTION_DAYS=30, AUDIT_LOG_BATCH_SIZE=100)
-    @mock.patch("backend.core.tasks.apps.get_models")
-    @mock.patch("backend.core.tasks.logger")
-    @mock.patch("backend.core.tasks.timezone")
+    @mock.patch("backend.core.tasks.cleanup.apps.get_models")
+    @mock.patch("backend.core.tasks.cleanup.logger")
+    @mock.patch("backend.core.tasks.cleanup.timezone")
     def test_cleanup_successful_deletion(
         self, mock_timezone, mock_logger, mock_get_models
     ):
@@ -86,9 +86,9 @@ class CleanupOldAuditLogsTests(TestCase):
         self.assertEqual(total_deleted, 3)
 
     @override_settings(AUDIT_LOG_RETENTION_DAYS=30)
-    @mock.patch("backend.core.tasks.apps.get_models")
-    @mock.patch("backend.core.tasks.logger")
-    @mock.patch("backend.core.tasks.timezone")
+    @mock.patch("backend.core.tasks.cleanup.apps.get_models")
+    @mock.patch("backend.core.tasks.cleanup.logger")
+    @mock.patch("backend.core.tasks.cleanup.timezone")
     def test_cleanup_database_error(self, mock_timezone, mock_logger, mock_get_models):
         """Test handling of DatabaseError during cleanup."""
         mock_timezone.now.return_value = timezone.make_aware(datetime(2025, 1, 1))
@@ -106,8 +106,8 @@ class CleanupOldAuditLogsTests(TestCase):
         with self.assertRaises(DatabaseError):
             run_audit_log_cleanup()
 
-    @mock.patch("backend.core.tasks.apps.get_models")
-    @mock.patch("backend.core.tasks.timezone")
+    @mock.patch("backend.core.tasks.cleanup.apps.get_models")
+    @mock.patch("backend.core.tasks.cleanup.timezone")
     def test_cleanup_ignores_non_pghistory_models(self, mock_timezone, mock_get_models):
         """Test that normal models are ignored."""
         mock_timezone.now.return_value = timezone.make_aware(datetime(2025, 1, 1))
@@ -122,8 +122,8 @@ class CleanupOldAuditLogsTests(TestCase):
 
         self.assertEqual(total_deleted, 0)
 
-    @mock.patch("backend.core.tasks.apps.get_models")
-    @mock.patch("backend.core.tasks.timezone")
+    @mock.patch("backend.core.tasks.cleanup.apps.get_models")
+    @mock.patch("backend.core.tasks.cleanup.timezone")
     def test_cleanup_ignores_proxy_models(self, mock_timezone, mock_get_models):
         """Test that proxy models are ignored."""
         mock_timezone.now.return_value = timezone.make_aware(datetime(2025, 1, 1))

@@ -1,7 +1,6 @@
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from django.utils.text import slugify
 from backend.account.models import User
 
 
@@ -27,4 +26,4 @@ class UserForm(ModelForm):
 
     def clean_username(self) -> str:
         username = self.cleaned_data["username"]
-        return slugify(username.strip())
+        return username.strip().lower()

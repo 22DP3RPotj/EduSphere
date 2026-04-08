@@ -7,10 +7,10 @@ import {
   ROOMS_PARTICIPATED_BY_USER_QUERY
 } from "@/api/graphql"
 
-export function useUserQuery(username: string) {
+export function useUserQuery(userId: string) {
   const { result, loading, error, refetch } = useQuery(
     USER_QUERY,
-    { username },
+    { userId: userId },
     { fetchPolicy: "network-only" }
   )
 
@@ -22,10 +22,10 @@ export function useUserQuery(username: string) {
   }
 }
 
-export function useUserMessagesQuery(username: string) {
+export function useUserMessagesQuery(userId: string) {
   const { result, loading, error, refetch } = useQuery(
     MESSAGES_BY_USER_QUERY,
-    { userSlug: username },
+    { userId: userId },
     { fetchPolicy: "network-only" }
   )
 
@@ -37,10 +37,10 @@ export function useUserMessagesQuery(username: string) {
   }
 }
 
-export function useUserHostedRoomsQuery(username: string) {
+export function useUserHostedRoomsQuery(userId: string) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_QUERY,
-    { hostSlug: username },
+    { hostId: userId },
     { fetchPolicy: "network-only" }
   )
 
@@ -52,10 +52,10 @@ export function useUserHostedRoomsQuery(username: string) {
   }
 }
 
-export function useUserJoinedRoomsQuery(username: string) {
+export function useUserJoinedRoomsQuery(userId: string) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_PARTICIPATED_BY_USER_QUERY,
-    { userSlug: username },
+    { userId: userId },
     { fetchPolicy: "network-only" }
   )
 

@@ -44,15 +44,15 @@ export const ROOMS_QUERY = gql`
 `;
 
 export const USER_WITH_ROOMS_QUERY = gql`
-    query UserWithRooms($userSlug: String!) {
-        user(userSlug: $userSlug) {
+    query UserWithRooms($userId: UUID!) {
+        user(userId: $userId) {
             id
             username
             name
             avatar
             bio
         }
-        roomsParticipatedByUser(userSlug: $userSlug) {
+        roomsParticipatedByUser(userId: $userId) {
             id
             name
             description
@@ -60,7 +60,7 @@ export const USER_WITH_ROOMS_QUERY = gql`
             topics { name }
             host { username }
         }
-        roomsNotParticipatedByUser(userSlug: $userSlug) {
+        roomsNotParticipatedByUser(userId: $userId) {
             id
             name
             description
@@ -91,8 +91,8 @@ export const HOMEPAGE_INITIAL_QUERY = gql`
 `;
 
 export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
-    query RoomsParticipatedByUser($userSlug: String!) {
-        roomsParticipatedByUser(userSlug: $userSlug) {
+    query RoomsParticipatedByUser($userId: UUID!) {
+        roomsParticipatedByUser(userId: $userId) {
             id
             name
             description
@@ -104,8 +104,8 @@ export const ROOMS_PARTICIPATED_BY_USER_QUERY = gql`
 `;
 
 export const ROOMS_NOT_PARTICIPATED_BY_USER_QUERY = gql`
-    query RoomsNotParticipatedByUser($userSlug: String!) {
-        roomsNotParticipatedByUser(userSlug: $userSlug) {
+    query RoomsNotParticipatedByUser($userId: UUID!) {
+        roomsNotParticipatedByUser(userId: $userId) {
             id
             name
             description
@@ -134,8 +134,8 @@ export const ROOM_MESSAGES_QUERY = gql`
 `;
 
 export const MESSAGES_BY_USER_QUERY = gql`
-    query MessagesByUser($userSlug: String!) {
-        messagesByUser(userSlug: $userSlug) {
+    query MessagesByUser($userId: UUID!) {
+        messagesByUser(userId: $userId) {
             id
             body
             isEdited
@@ -161,8 +161,8 @@ export const TOPIC_QUERY = gql`
 `;
 
 export const USER_QUERY = gql`
-    query User($username: String!) {
-        user(userSlug: $username) {
+    query User($userId: UUID!) {
+        user(userId: $userId) {
             id
             username
             name

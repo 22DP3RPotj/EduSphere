@@ -35,11 +35,11 @@ CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_BEAT_SCHEDULE = {
     "cleanup_old_audit_logs": {
-        "task": "backend.core.tasks.cleanup_old_audit_logs",
+        "task": "backend.core.tasks.cleanup.cleanup_old_audit_logs",
         "schedule": crontab(hour=3, minute=0),
     },
     "expire_user_bans": {
-        "task": "backend.account.tasks.expire_user_bans",
+        "task": "backend.account.tasks.moderation.expire_user_bans",
         "schedule": crontab(minute=0),
     },
 }

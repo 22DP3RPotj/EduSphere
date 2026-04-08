@@ -59,6 +59,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True, blank=True)
 
+    verified_at = models.DateTimeField(null=True, blank=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -80,6 +82,10 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["username"]),
             models.Index(fields=["date_joined"]),
         ]
+
+    @property
+    def is_verified(self):
+        return self.verified_at is not None
 
 
 class UserBan(models.Model):
@@ -115,7 +121,7 @@ class UserBan(models.Model):
 class UserHistory(
     pghistory.create_event_model(
         User,
-        fields=["is_active", "is_staff", "is_superuser"],
+        fields=["is_active", "is_staff", "is_superuser", "verified_at"],
     )
 ):
     class Meta:

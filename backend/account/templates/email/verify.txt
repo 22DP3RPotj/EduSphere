@@ -1,0 +1,10 @@
+Hi {{ name }},
+
+Welcome to our platform! Please verify your email address by clicking the link below:
+
+{{ verify_url }}
+
+If you did not create an account, you can safely ignore this email.
+
+Best,
+The Team

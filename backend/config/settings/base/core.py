@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     "backend.graphql.apps.GraphQLConfig",
     "backend.infra.apps.InfraConfig",
     # Third-party apps
-    "graphql_auth",
     "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
     "graphene_django",
     "channels.apps.ChannelsConfig",

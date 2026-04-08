@@ -357,15 +357,13 @@ const authStore = useAuthStore();
 const { updateUser, updateUserLoading, updateUserError } = useAuth();
 const { availableLocales } = useLocale();
 
-const username = computed(() => route.params.userSlug as string);
-
 // User query
 const { 
   user, 
   loading: userLoading, 
   error: userError, 
   refetch: refetchUser 
-} = useUserQuery(username.value);
+} = useUserQuery(authStore.user?.id as string);
 
 // Tab queries
 const { 
@@ -373,21 +371,21 @@ const {
   loading: messagesLoading, 
   error: messagesError, 
   refetch: refetchMessages 
-} = useUserMessagesQuery(username.value);
+} = useUserMessagesQuery(authStore.user?.id as string);
 
 const { 
   rooms: hostedRooms, 
   loading: hostedRoomsLoading, 
   error: hostedRoomsError, 
   refetch: refetchHostedRooms 
-} = useUserHostedRoomsQuery(username.value);
+} = useUserHostedRoomsQuery(authStore.user?.id as string);
 
 const { 
   rooms: joinedRooms, 
   loading: joinedRoomsLoading, 
   error: joinedRoomsError, 
   refetch: refetchJoinedRooms 
-} = useUserJoinedRoomsQuery(username.value);
+} = useUserJoinedRoomsQuery(authStore.user?.id as string);
 
 // Combined loading state
 const loading = computed(() => userLoading.value);

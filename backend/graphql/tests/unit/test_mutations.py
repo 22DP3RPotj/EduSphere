@@ -47,7 +47,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
                     username: $username
                 ) {
                     success
-                    errors
                 }
             }
         """
@@ -62,7 +61,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
         self.assertTrue(result.data["register"]["success"])
-        self.assertIsNone(result.data["register"]["errors"])
         self.assertTrue(User.objects.filter(username="newuser").exists())
 
     def test_register_user_password_mismatch(self):
@@ -82,7 +80,6 @@ class UserMutationsTests(JSONWebTokenTestCase):
                     username: $username
                 ) {
                     success
-                    errors
                 }
             }
         """
@@ -94,41 +91,8 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "password2": "4asdfgh56",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertFalse(result.data["register"]["success"])
-        self.assertIn("password2", result.data["register"]["errors"])
-
-    def test_auth_mutation_fields_exposed(self):
-        query = """
-            query {
-                __type(name: "Mutation") {
-                    fields {
-                        name
-                    }
-                }
-            }
-        """
-        result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors)
-
-        mutation_fields = {field["name"] for field in result.data["__type"]["fields"]}
-        expected_auth_fields = {
-            "register",
-            "verifyAccount",
-            "resendActivationEmail",
-            "sendPasswordResetEmail",
-            "passwordReset",
-            "passwordChange",
-            "archiveAccount",
-            "deleteAccount",
-            "updateAccount",
-            "tokenAuth",
-            "verifyToken",
-            "refreshToken",
-            "revokeToken",
-        }
-
-        self.assertTrue(expected_auth_fields.issubset(mutation_fields))
+        self.assertIsNone(result.data["register"])
+        self.assertIn("password2", result.errors[0].extensions["errors"])
 
     def test_update_user_success(self):
         user = User.objects.create_user(
@@ -502,53 +466,42 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
     def test_update_user_active_status(self):
         self.client.authenticate(self.admin)
         mutation = """
-            mutation UpdateUserActiveStatus($userIds: [UUID!]!, $isActive: Boolean!, $reason: String) {
-                updateUserActiveStatus(userIds: $userIds, isActive: $isActive, reason: $reason) {
+            mutation BanUsers($userIds: [UUID!]!, $reason: String) {
+                banUsers(userIds: $userIds, reason: $reason) {
                     success
-                    updatedCount
+                    bannedCount
                 }
             }
         """
         variables = {
             "userIds": [str(self.user1.id), str(self.user2.id)],
-            "isActive": False,
             "reason": "Test ban",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
-        self.assertTrue(result.data["updateUserActiveStatus"]["success"])
-        self.assertEqual(result.data["updateUserActiveStatus"]["updatedCount"], 2)
+        self.assertTrue(result.data["banUsers"]["success"])
+        self.assertEqual(result.data["banUsers"]["bannedCount"], 2)
 
         self.user1.refresh_from_db()
         self.user2.refresh_from_db()
         self.assertFalse(self.user1.is_active)
         self.assertFalse(self.user2.is_active)
 
-        # Test unban
-        variables = {
-            "userIds": [str(self.user1.id)],
-            "isActive": True,
-        }
-        result = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.user1.refresh_from_db()
-        self.assertTrue(self.user1.is_active)
-
     def test_update_user_staff_status(self):
         self.client.authenticate(self.admin)
         mutation = """
-            mutation UpdateUserStaffStatus($userIds: [UUID!]!, $isStaff: Boolean!) {
-                updateUserStaffStatus(userIds: $userIds, isStaff: $isStaff) {
+            mutation PromoteUsers($userIds: [UUID!]!) {
+                promoteUsers(userIds: $userIds) {
                     success
                     updatedCount
                 }
             }
         """
-        variables = {"userIds": [str(self.user1.id)], "isStaff": True}
+        variables = {"userIds": [str(self.user1.id)]}
         result: ExecutionResult = self.client.execute(mutation, variables)
         self.assertIsNone(result.errors)
-        self.assertTrue(result.data["updateUserStaffStatus"]["success"])
-        self.assertEqual(result.data["updateUserStaffStatus"]["updatedCount"], 1)
+        self.assertTrue(result.data["promoteUsers"]["success"])
+        self.assertEqual(result.data["promoteUsers"]["updatedCount"], 1)
 
         self.user1.refresh_from_db()
         self.assertTrue(self.user1.is_staff)

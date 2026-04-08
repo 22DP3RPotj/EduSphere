@@ -16,7 +16,9 @@ class UserType(DjangoObjectType):
     is_verified = graphene.Boolean()
     verified_at = graphene.DateTime()
     # Public fields
-    language = LanguageEnum(required=True)
+    language = graphene.String(
+        required=True
+    )  # Overriden to return the display value instead of the raw enum value
 
     class Meta:
         model = User

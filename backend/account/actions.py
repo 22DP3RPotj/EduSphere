@@ -64,7 +64,7 @@ def register_user(
         email_token = _create_email_token(user, EmailTypeChoices.VERIFICATION)
         transaction.on_commit(
             lambda: enqueue_email(
-                user, EmailTypeChoices.VERIFICATION, email_token.token
+                user.id, EmailTypeChoices.VERIFICATION, email_token.token
             )
         )
 
@@ -102,7 +102,7 @@ def resend_verification_email(*, user: User) -> None:
         email_token = _create_email_token(user, EmailTypeChoices.VERIFICATION)
         transaction.on_commit(
             lambda: enqueue_email(
-                user, EmailTypeChoices.VERIFICATION, email_token.token
+                user.id, EmailTypeChoices.VERIFICATION, email_token.token
             )
         )
 
@@ -118,7 +118,7 @@ def send_password_reset_email(*, email: str) -> None:
         email_token = _create_email_token(user, EmailTypeChoices.PASSWORD_RESET)
         transaction.on_commit(
             lambda: enqueue_email(
-                user, EmailTypeChoices.PASSWORD_RESET, email_token.token
+                user.id, EmailTypeChoices.PASSWORD_RESET, email_token.token
             )
         )
 

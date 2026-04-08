@@ -11,7 +11,7 @@ class VerifyAccount(BaseMutation):
     """
     Mark the authenticated user's email as verified.
     The verification link should direct the user to a page that calls
-    this mutation while authenticated — no uid/token needed here.
+    this mutation while authenticated.
     """
 
     class Arguments:

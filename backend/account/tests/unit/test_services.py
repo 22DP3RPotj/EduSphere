@@ -9,7 +9,7 @@ from backend.core.exceptions import ValidationException
 pytestmark = pytest.mark.unit
 
 
-class AccountServiceTests(TestCase):
+class ModerationServiceTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             username="testuser",

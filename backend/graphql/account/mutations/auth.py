@@ -14,6 +14,9 @@ class VerifyAccount(BaseMutation):
     this mutation while authenticated — no uid/token needed here.
     """
 
+    class Arguments:
+        token = graphene.String(required=True)
+
     success = graphene.Boolean()
 
     @classmethod
@@ -22,8 +25,9 @@ class VerifyAccount(BaseMutation):
         cls,
         root: Optional[Any],
         info: graphene.ResolveInfo,
+        token: str,
     ) -> Self:
-        AccountService.verify_email(user=info.context.user)
+        AccountService.verify_email(token=token)
         return cls(success=True)
 
 
@@ -75,7 +79,6 @@ class PasswordReset(BaseMutation):
     """
 
     class Arguments:
-        uid = graphene.String(required=True)
         token = graphene.String(required=True)
         new_password = graphene.String(required=True)
 
@@ -86,11 +89,10 @@ class PasswordReset(BaseMutation):
         cls,
         root: Optional[Any],
         info: graphene.ResolveInfo,
-        uid: str,
         token: str,
         new_password: str,
     ) -> Self:
-        AccountService.reset_password(uid=uid, token=token, new_password=new_password)
+        AccountService.reset_password(token=token, new_password=new_password)
         return cls(success=True)
 
 

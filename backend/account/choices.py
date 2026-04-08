@@ -11,3 +11,8 @@ class UserStatusChoices(models.TextChoices):
     PRIVATE = "private", "Private"
     ARCHIVED = "archived", "Archived"
     TERMINATED = "terminated", "Terminated"
+
+
+class EmailTypeChoices(models.TextChoices):
+    VERIFICATION = "verification", "Verification"
+    PASSWORD_RESET = "password_reset", "Password Reset"

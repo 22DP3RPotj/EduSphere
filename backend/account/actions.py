@@ -1,23 +1,40 @@
+import secrets
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.password_validation import validate_password
-from django.utils.encoding import force_str
-from django.utils.http import urlsafe_base64_decode
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from backend.account.models import User, UserBan
+from backend.account.choices import EmailTypeChoices
+from backend.account.models import EmailToken, User, UserBan
 from backend.core.exceptions import (
     ConflictException,
     ValidationException,
     FormValidationException,
 )
 from backend.account.forms import RegisterForm
-from backend.account.tasks.email import enqueue_email, EmailType
+from backend.account.tasks.email import enqueue_email
+
+
+TOKEN_EXPIRY = {
+    EmailTypeChoices.VERIFICATION: timedelta(days=3),
+    EmailTypeChoices.PASSWORD_RESET: timedelta(hours=1),
+}
+
+
+def _create_email_token(user: User, token_type: EmailTypeChoices) -> EmailToken:
+    # Invalidate any prior unused tokens of this type
+    EmailToken.objects.filter(user=user, type=token_type, used_at__isnull=True).delete()
+
+    return EmailToken.objects.create(
+        user=user,
+        type=token_type,
+        token=secrets.token_urlsafe(32),
+        expires_at=timezone.now() + TOKEN_EXPIRY[token_type],
+    )
 
 
 def register_user(
@@ -44,17 +61,35 @@ def register_user(
     with transaction.atomic():
         user: User = form.save()
 
-        transaction.on_commit(lambda: enqueue_email(user, EmailType.VERIFICATION))
+        email_token = _create_email_token(user, EmailTypeChoices.VERIFICATION)
+        transaction.on_commit(
+            lambda: enqueue_email(
+                user, EmailTypeChoices.VERIFICATION, email_token.token
+            )
+        )
 
     return user
 
 
-def verify_email(*, user: User) -> User:
+def verify_email(*, token: str) -> User:
+    try:
+        email_token = EmailToken.objects.select_related("user").get(
+            token=token,
+            type=EmailTypeChoices.VERIFICATION,
+            used_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        )
+    except EmailToken.DoesNotExist:
+        raise ValidationException("Invalid or expired verification link.")
+
+    user = email_token.user
     if user.is_verified:
+        email_token.mark_as_used()
         raise ConflictException("Account is already verified.")
 
-    user.verified_at = timezone.now()
-    user.save(update_fields=["verified_at"])
+    with transaction.atomic():
+        user.verify()
+        email_token.mark_as_used()
 
     return user
 
@@ -63,7 +98,13 @@ def resend_verification_email(*, user: User) -> None:
     if user.is_verified:
         raise ConflictException("Account is already verified.")
 
-    transaction.on_commit(lambda: enqueue_email(user, EmailType.VERIFICATION))
+    with transaction.atomic():
+        email_token = _create_email_token(user, EmailTypeChoices.VERIFICATION)
+        transaction.on_commit(
+            lambda: enqueue_email(
+                user, EmailTypeChoices.VERIFICATION, email_token.token
+            )
+        )
 
 
 def send_password_reset_email(*, email: str) -> None:
@@ -73,26 +114,36 @@ def send_password_reset_email(*, email: str) -> None:
     except User.DoesNotExist:
         return
 
-    transaction.on_commit(lambda: enqueue_email(user, EmailType.PASSWORD_RESET))
+    with transaction.atomic():
+        email_token = _create_email_token(user, EmailTypeChoices.PASSWORD_RESET)
+        transaction.on_commit(
+            lambda: enqueue_email(
+                user, EmailTypeChoices.PASSWORD_RESET, email_token.token
+            )
+        )
 
 
-def reset_password(*, uid: str, token: str, new_password: str) -> User:
+def reset_password(*, token: str, new_password: str) -> User:
     try:
-        pk = force_str(urlsafe_base64_decode(uid))
-        user = User.objects.get(pk=pk, is_active=True)
-    except (User.DoesNotExist, ValueError, TypeError):
+        email_token = EmailToken.objects.select_related("user").get(
+            token=token,
+            type=EmailTypeChoices.PASSWORD_RESET,
+            used_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        )
+    except (EmailToken.DoesNotExist, ValueError, TypeError):
         raise ValidationException("Invalid password reset link.")
 
-    if not default_token_generator.check_token(user, token):
-        raise ValidationException("Password reset link is invalid or has expired.")
+    user = email_token.user
 
     try:
         validate_password(new_password, user=user)
     except ValidationError as e:
         raise ValidationException("\n".join(e.messages))
 
-    user.set_password(new_password)
-    user.save(update_fields=["password"])
+    with transaction.atomic():
+        user.update_password(new_password)
+        email_token.mark_as_used()
 
     return user
 
@@ -106,8 +157,7 @@ def change_password(*, user: User, old_password: str, new_password: str) -> User
     except ValidationError as e:
         raise ValidationException("\n".join(e.messages))
 
-    user.set_password(new_password)
-    user.save(update_fields=["password"])
+    user.update_password(new_password)
 
     return user
 
@@ -127,8 +177,7 @@ def ban_user(
             expires_at=expires_at,
             is_active=True,
         )
-        user.is_active = False
-        user.save(update_fields=["is_active"])
+        user.deactivate()
 
     return ban
 
@@ -136,20 +185,17 @@ def ban_user(
 def unban_user(*, user: User) -> User:
     with transaction.atomic():
         UserBan.objects.filter(user=user, is_active=True).update(is_active=False)
-        user.is_active = True
-        user.save(update_fields=["is_active"])
+        user.activate()
 
     return user
 
 
 def lift_ban(*, ban: UserBan) -> None:
     with transaction.atomic():
-        ban.is_active = False
-        ban.save(update_fields=["is_active"])
+        ban.deactivate()
 
         if not UserBan.objects.filter(user=ban.user, is_active=True).exists():
-            ban.user.is_active = True
-            ban.user.save(update_fields=["is_active"])
+            ban.user.activate()
 
 
 def is_user_banned(user: User) -> bool:

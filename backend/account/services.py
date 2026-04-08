@@ -40,14 +40,14 @@ class AccountService:
         )
 
     @staticmethod
-    def verify_email(*, user: User) -> User:
+    def verify_email(*, token: str) -> User:
         """
         Mark the authenticated user's email as verified.
 
         Raises:
             ConflictException: If already verified.
         """
-        return actions.verify_email(user=user)
+        return actions.verify_email(token=token)
 
     @staticmethod
     def resend_verification_email(*, user: User) -> None:
@@ -68,14 +68,14 @@ class AccountService:
         actions.send_password_reset_email(email=email)
 
     @staticmethod
-    def reset_password(*, uid: str, token: str, new_password: str) -> User:
+    def reset_password(*, token: str, new_password: str) -> User:
         """
         Reset a user's password using the uid + token from the reset email.
 
         Raises:
             ValidationException: If the link is invalid or expired.
         """
-        return actions.reset_password(uid=uid, token=token, new_password=new_password)
+        return actions.reset_password(token=token, new_password=new_password)
 
     @staticmethod
     def change_password(*, user: User, old_password: str, new_password: str) -> User:

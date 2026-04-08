@@ -121,7 +121,7 @@
               v-for="participant in participants" 
               :key="participant.id" 
               class="participant-item"
-              @click="navigateToUserProfile(participant.username)"
+              @click="navigateToUserProfile(participant.id)"
             >
               <img 
                 :src="participantAvatarUrls[participant.id] || '/default.svg'" 
@@ -573,8 +573,8 @@ async function sendMessage() {
   }
 }
 
-function navigateToUserProfile(userSlug: string) {
-  router.push(`/u/${userSlug}`);
+function navigateToUserProfile(userId: UUID) {
+  router.push(`/u/${userId}`);
 }
 
 function scrollToBottom() {

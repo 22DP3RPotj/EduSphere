@@ -357,13 +357,15 @@ const authStore = useAuthStore();
 const { updateUser, updateUserLoading, updateUserError } = useAuth();
 const { availableLocales } = useLocale();
 
+const userId = route.params.userId as string;
+
 // User query
 const { 
   user, 
   loading: userLoading, 
   error: userError, 
   refetch: refetchUser 
-} = useUserQuery(authStore.user?.id as string);
+} = useUserQuery(userId);
 
 // Tab queries
 const { 
@@ -371,21 +373,21 @@ const {
   loading: messagesLoading, 
   error: messagesError, 
   refetch: refetchMessages 
-} = useUserMessagesQuery(authStore.user?.id as string);
+} = useUserMessagesQuery(userId);
 
 const { 
   rooms: hostedRooms, 
   loading: hostedRoomsLoading, 
   error: hostedRoomsError, 
   refetch: refetchHostedRooms 
-} = useUserHostedRoomsQuery(authStore.user?.id as string);
+} = useUserHostedRoomsQuery(userId);
 
 const { 
   rooms: joinedRooms, 
   loading: joinedRoomsLoading, 
   error: joinedRoomsError, 
   refetch: refetchJoinedRooms 
-} = useUserJoinedRoomsQuery(authStore.user?.id as string);
+} = useUserJoinedRoomsQuery(userId);
 
 // Combined loading state
 const loading = computed(() => userLoading.value);
@@ -536,13 +538,8 @@ async function saveProfile() {
     const result = await updateUser(updateData);
     
     if (result.success) {
-      // Check if username changed, if so redirect
-      if (result.user!.username !== route.params.userSlug) {
-        router.replace(`/u/${result.user!.username}`);
-      } else {
-        // Refetch user data to update the computed property
-        refetchUser();
-      }
+      // Refetch user data to update the computed property
+      refetchUser();
       
       isEditing.value = false;
       avatarPreview.value = null;
@@ -561,14 +558,6 @@ async function saveProfile() {
     editFormErrors.value = parseGraphQLError(error);
   }
 }
-
-// Watch for route changes to reload when username changes (unchanged)
-watch(() => route.params.userSlug, (newUsername) => {
-  if (newUsername) {
-    // Cancel editing if switching users
-    isEditing.value = false;
-  }
-});
 </script>
 <style scoped>
 /* Add error message styles */

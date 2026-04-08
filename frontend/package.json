@@ -22,7 +22,7 @@
     "js-cookie": "^3.0.5",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate-2": "^2.0.32",
-    "react": "^19.2.4",
+    "react": "^19.2.5",
     "terser": "^5.46.1",
     "timeago.js": "^4.0.2",
     "vue": "^3.5.32",

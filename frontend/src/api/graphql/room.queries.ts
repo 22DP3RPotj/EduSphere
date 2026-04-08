@@ -29,8 +29,8 @@ export const ROOM_QUERY = gql`
 `;
 
 export const ROOMS_QUERY = gql`
-    query Rooms($hostSlug: String, $search: String, $topics: [String]) {
-        rooms(hostSlug: $hostSlug, search: $search, topics: $topics) {
+    query Rooms($hostId: UUID!, $search: String, $topics: [String]) {
+        rooms(hostId: $hostId, search: $search, topics: $topics) {
             id
             name
             description

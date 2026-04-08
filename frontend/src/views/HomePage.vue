@@ -401,7 +401,7 @@ const {
   error: userRoomsError,
   refetch: refetchUserRooms 
 } = useUserRoomsQuery(
-  computed(() => authStore.user?.username || '')
+  computed(() => authStore.user?.id || '')
 );
 
 // Show only first 3 recommendations

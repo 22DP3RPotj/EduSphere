@@ -68,7 +68,7 @@ export const UPDATE_USER_MUTATION = gql`
         $name: String
         $bio: String
         $avatar: Upload
-        $language: String
+        $language: LanguageChoices
     ) {
         updateUser(
             name: $name

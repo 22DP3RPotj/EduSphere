@@ -226,8 +226,6 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
-const roomId = route.params.roomId as string;
-
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
 const showSidebar = ref<boolean>(window.innerWidth > 768);
@@ -236,6 +234,8 @@ const showEditForm = ref<boolean>(false);
 const showRoomActionsMenu = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
 const isWebSocketInitialized = ref<boolean>(false);
+  
+const roomId = computed(() => route.params.roomId as UUID);
 
 // Use WebSocket messages when available, otherwise use initial GraphQL messages
 const messages = computed(() => {
@@ -383,7 +383,7 @@ const {
   connectionStatus,
   isConnected
 } = useWebSocket(
-  roomId,
+  roomId.value,
 );
 
 // Error recovery functions

@@ -4,6 +4,7 @@ import {
   HOMEPAGE_INITIAL_QUERY,
   USER_WITH_ROOMS_QUERY
 } from "@/api/graphql"
+import type { UUID } from "@/types/main.types"
 
 export function useHomepageInitialQuery(search: Ref<string | null>, topics: Ref<string[] | null>) {
   const variables = computed(() => ({
@@ -32,7 +33,7 @@ export function useHomepageInitialQuery(search: Ref<string | null>, topics: Ref<
   }
 }
 
-export function useUserRoomsQuery(userId: Ref<string>) {
+export function useUserRoomsQuery(userId: Ref<UUID | null>) {
   const variables = computed(() => ({
     userId: userId.value
   }))

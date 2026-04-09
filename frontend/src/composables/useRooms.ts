@@ -13,10 +13,10 @@ import {
 
 import type { CreateRoomInput, UpdateRoomInput } from "@/types"
 
-export function useRoomQuery(roomId: string) {
+export function useRoomQuery(roomId: Ref<UUID | null>) {
   const { result, loading, error, refetch } = useQuery(
     ROOM_QUERY,
-    { roomId },
+    { roomId: roomId.value },
     {
       fetchPolicy: "network-only",
     },
@@ -30,10 +30,10 @@ export function useRoomQuery(roomId: string) {
   }
 }
 
-export function useRoomMessagesQuery(roomId: string, options?: { enabled?: Ref<boolean> }) {
+export function useRoomMessagesQuery(roomId: Ref<UUID>, options?: { enabled?: Ref<boolean> }) {
   const { result, loading, error, refetch } = useQuery(
     ROOM_MESSAGES_QUERY,
-    { roomId },
+    { roomId: roomId.value },
     {
       enabled: options?.enabled?.value ?? true,
       fetchPolicy: "network-only",
@@ -117,8 +117,8 @@ export function useUpdateRoom() {
 export function useDeleteRoom() {
   const { mutate, loading, error } = useMutation(DELETE_ROOM_MUTATION)
 
-  async function deleteRoom(roomId: string) {
-    const result = await mutate({ roomId })
+  async function deleteRoom(roomId: Ref<UUID>) {
+    const result = await mutate({ roomId: roomId.value })
 
     if (result?.data?.deleteRoom?.success) {
       return { success: true }
@@ -134,17 +134,17 @@ export function useDeleteRoom() {
   }
 }
 
-export function useJoinRoom(roomId?: string) {
+export function useJoinRoom(roomId?: Ref<UUID>) {
   const { mutate, loading, error } = useMutation(
     JOIN_ROOM_MUTATION,
     () => ({
-      refetchQueries: roomId
-        ? [{ query: ROOM_QUERY, variables: { roomId } }]
+      refetchQueries: roomId?.value
+        ? [{ query: ROOM_QUERY, variables: { roomId: roomId.value } }]
         : [],
     })
   )
 
-  async function joinRoom(roomId: string) {
+  async function joinRoom(roomId: UUID) {
     const result = await mutate({ roomId })
 
     if (result?.data?.joinRoom?.room) {

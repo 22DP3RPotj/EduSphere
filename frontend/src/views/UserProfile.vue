@@ -365,7 +365,7 @@ const {
   loading: userLoading, 
   error: userError, 
   refetch: refetchUser 
-} = useUserQuery(userId.value);
+} = useUserQuery(userId);
 
 // Tab queries
 const { 
@@ -373,21 +373,21 @@ const {
   loading: messagesLoading, 
   error: messagesError, 
   refetch: refetchMessages 
-} = useUserMessagesQuery(userId.value);
+} = useUserMessagesQuery(userId);
 
 const { 
   rooms: hostedRooms, 
   loading: hostedRoomsLoading, 
   error: hostedRoomsError, 
   refetch: refetchHostedRooms 
-} = useUserHostedRoomsQuery(userId.value);
+} = useUserHostedRoomsQuery(userId);
 
 const { 
   rooms: joinedRooms, 
   loading: joinedRoomsLoading, 
   error: joinedRoomsError, 
   refetch: refetchJoinedRooms 
-} = useUserJoinedRoomsQuery(userId.value);
+} = useUserJoinedRoomsQuery(userId);
 
 // Combined loading state
 const loading = computed(() => userLoading.value);

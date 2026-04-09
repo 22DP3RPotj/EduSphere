@@ -1,4 +1,4 @@
-import { computed } from "vue"
+import { computed, type Ref } from "vue"
 import { useQuery } from "@vue/apollo-composable"
 import {
   USER_QUERY,
@@ -8,10 +8,10 @@ import {
 } from "@/api/graphql"
 import type { UUID } from "@/types"
 
-export function useUserQuery(userId: UUID) {
+export function useUserQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     USER_QUERY,
-    { userId: userId },
+    { userId: userId.value },
     { fetchPolicy: "network-only" }
   )
 
@@ -23,10 +23,10 @@ export function useUserQuery(userId: UUID) {
   }
 }
 
-export function useUserMessagesQuery(userId: UUID) {
+export function useUserMessagesQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     MESSAGES_BY_USER_QUERY,
-    { userId: userId },
+    { userId: userId.value },
     { fetchPolicy: "network-only" }
   )
 
@@ -38,10 +38,10 @@ export function useUserMessagesQuery(userId: UUID) {
   }
 }
 
-export function useUserHostedRoomsQuery(userId: UUID) {
+export function useUserHostedRoomsQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_QUERY,
-    { hostId: userId },
+    { hostId: userId.value },
     { fetchPolicy: "network-only" }
   )
 
@@ -53,10 +53,10 @@ export function useUserHostedRoomsQuery(userId: UUID) {
   }
 }
 
-export function useUserJoinedRoomsQuery(userId: UUID) {
+export function useUserJoinedRoomsQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_PARTICIPATED_BY_USER_QUERY,
-    { userId: userId },
+    { userId: userId.value },
     { fetchPolicy: "network-only" }
   )
 

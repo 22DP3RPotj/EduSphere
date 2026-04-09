@@ -15,7 +15,7 @@ import type {
 } from "@/types"
 
 export function useWebSocket(
-  roomId: string,
+  roomId: UUID,
 ) {
   const socket: Ref<WebSocket | null> = ref(null)
   const messages: Ref<Message[]> = ref([])
@@ -240,6 +240,7 @@ export function useWebSocket(
         avatar: data.author_avatar,
         name: data.author,
         bio: null,
+        language: data.author_id === authStore.user?.id ? authStore.user.language : "en",
         isStaff: false,
         isActive: false,
         isSuperuser: false,

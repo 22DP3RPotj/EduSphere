@@ -6,8 +6,9 @@ import {
   ROOMS_QUERY,
   ROOMS_PARTICIPATED_BY_USER_QUERY
 } from "@/api/graphql"
+import type { UUID } from "@/types"
 
-export function useUserQuery(userId: string) {
+export function useUserQuery(userId: UUID) {
   const { result, loading, error, refetch } = useQuery(
     USER_QUERY,
     { userId: userId },
@@ -22,7 +23,7 @@ export function useUserQuery(userId: string) {
   }
 }
 
-export function useUserMessagesQuery(userId: string) {
+export function useUserMessagesQuery(userId: UUID) {
   const { result, loading, error, refetch } = useQuery(
     MESSAGES_BY_USER_QUERY,
     { userId: userId },
@@ -37,7 +38,7 @@ export function useUserMessagesQuery(userId: string) {
   }
 }
 
-export function useUserHostedRoomsQuery(userId: string) {
+export function useUserHostedRoomsQuery(userId: UUID) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_QUERY,
     { hostId: userId },
@@ -52,7 +53,7 @@ export function useUserHostedRoomsQuery(userId: string) {
   }
 }
 
-export function useUserJoinedRoomsQuery(userId: string) {
+export function useUserJoinedRoomsQuery(userId: UUID) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_PARTICIPATED_BY_USER_QUERY,
     { userId: userId },

@@ -342,7 +342,7 @@ import { useLocale } from '@/composables/useLocale';
 import { parseGraphQLError } from '@/utils/errorParser';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
-import type { Room } from '@/types';
+import type { Room, UUID } from '@/types';
 
 import {
   useUserQuery,
@@ -357,7 +357,7 @@ const authStore = useAuthStore();
 const { updateUser, updateUserLoading, updateUserError } = useAuth();
 const { availableLocales } = useLocale();
 
-const userId = route.params.userId as string;
+const userId = computed(() => route.params.userId as UUID);
 
 // User query
 const { 
@@ -365,7 +365,7 @@ const {
   loading: userLoading, 
   error: userError, 
   refetch: refetchUser 
-} = useUserQuery(userId);
+} = useUserQuery(userId.value);
 
 // Tab queries
 const { 
@@ -373,21 +373,21 @@ const {
   loading: messagesLoading, 
   error: messagesError, 
   refetch: refetchMessages 
-} = useUserMessagesQuery(userId);
+} = useUserMessagesQuery(userId.value);
 
 const { 
   rooms: hostedRooms, 
   loading: hostedRoomsLoading, 
   error: hostedRoomsError, 
   refetch: refetchHostedRooms 
-} = useUserHostedRoomsQuery(userId);
+} = useUserHostedRoomsQuery(userId.value);
 
 const { 
   rooms: joinedRooms, 
   loading: joinedRoomsLoading, 
   error: joinedRoomsError, 
   refetch: refetchJoinedRooms 
-} = useUserJoinedRoomsQuery(userId);
+} = useUserJoinedRoomsQuery(userId.value);
 
 // Combined loading state
 const loading = computed(() => userLoading.value);

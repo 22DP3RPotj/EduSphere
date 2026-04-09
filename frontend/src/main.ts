@@ -15,6 +15,7 @@ import App from "@/App.vue";
 import router from "@/router";
 import { provideApollo } from "./api/apollo.client";
 import i18n from "./i18n";
+import { initializeLocaleSync } from "@/composables/useLocale";
 
 library.add(fas);
 
@@ -36,6 +37,11 @@ app.component('FontAwesomeIcon', FontAwesomeIcon);
 const initApp = async () => {
   const authStore = useAuthStore();
   authStore.initialize();
+
+  initializeLocaleSync({
+    locale: i18n.global.locale as { value: string },
+    availableLocales: i18n.global.availableLocales,
+  });
 
   // TODO: Come up with a better way to handle CSRF tokens
   // This is a temporary solution to fetch the CSRF token from the backend

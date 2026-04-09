@@ -220,7 +220,7 @@ import { parseGraphQLError } from '@/utils/errorParser';
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { User, Room, Participant, UUID } from '@/types';
+import type { Room, Participant, UUID } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();

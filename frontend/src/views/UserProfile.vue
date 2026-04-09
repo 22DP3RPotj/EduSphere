@@ -103,7 +103,7 @@
 
               <!-- Language selector -->
               <div class="form-group">
-                <label for="language-select" class="form-label">Language</label>
+                <label for="language-select" class="form-label">{{ t('profile.language') }}</label>
                 <select
                   id="language-select"
                   v-model="editForm.language"
@@ -336,6 +336,7 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
 import { useLocale } from '@/composables/useLocale';
@@ -354,6 +355,7 @@ import {
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const { t, te } = useI18n();
 const { updateUser, updateUserLoading, updateUserError } = useAuth();
 const { availableLocales } = useLocale();
 
@@ -466,11 +468,8 @@ function formatDate(dateString: string) {
 }
 
 function getLanguageName(locale: string): string {
-  const languageNames: Record<string, string> = {
-    'en': 'English',
-    'lv': 'Latviešu (Latvian)'
-  };
-  return languageNames[locale] || locale;
+  const key = `languages.${locale}`;
+  return te(key) ? t(key) : locale;
 }
 
 function startEditing() {

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 import graphene
@@ -47,7 +48,7 @@ class UserType(DjangoObjectType):
 
         return None
 
-    def resolve_verified_at(self, info) -> Optional[str]:
+    def resolve_verified_at(self, info) -> Optional[datetime]:
         user = info.context.user
 
         if not user.is_authenticated:

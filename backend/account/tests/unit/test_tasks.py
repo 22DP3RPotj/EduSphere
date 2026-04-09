@@ -49,7 +49,7 @@ class ExpireUserBansTests(TestCase):
 
         # Verify
         self.assertEqual(count, 1)
-        mock_lift_ban.assert_called_once_with(ban)
+        mock_lift_ban.assert_called_once_with(ban=ban)
         mock_logger.info.assert_any_call("Expired 1 user bans.")
 
     @mock.patch("backend.account.tasks.moderation.AccountActions.lift_ban")
@@ -87,4 +87,4 @@ class ExpireUserBansTests(TestCase):
             run_expire_user_bans()
 
         # Verify
-        mock_lift_ban.assert_called_once_with(ban)
+        mock_lift_ban.assert_called_once_with(ban=ban)

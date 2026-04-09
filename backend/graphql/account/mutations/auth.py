@@ -3,8 +3,18 @@ import graphql_jwt
 from typing import Any, Optional, Self
 from graphql_jwt.decorators import login_required
 
+from backend.graphql.account.types import UserType
 from backend.graphql.mutations import BaseMutation
 from backend.account.services import AccountService
+
+
+class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
+    user = graphene.Field(UserType)
+    success = graphene.Boolean()
+
+    @classmethod
+    def resolve(cls, root, info, **kwargs):
+        return cls(user=info.context.user, success=True)
 
 
 class VerifyAccount(BaseMutation):
@@ -127,7 +137,7 @@ class PasswordChange(BaseMutation):
 
 class AuthMutation(graphene.ObjectType):
     # --- JWT token lifecycle ---
-    token_auth = graphql_jwt.ObtainJSONWebToken.Field()
+    token_auth = ObtainJSONWebToken.Field()
     verify_token = graphql_jwt.Verify.Field()
     refresh_token = graphql_jwt.Refresh.Field()
     delete_token = graphql_jwt.DeleteJSONWebTokenCookie.Field()

@@ -28,14 +28,14 @@ export const REFRESH_TOKEN_MUTATION = gql`
 `;
 
 export const REGISTER_MUTATION = gql`
-    mutation RegisterUser(
+    mutation Register(
         $username: String!
         $name: String!
         $email: String!
         $password1: String!
         $password2: String!
     ) {
-        registerUser(
+        register(
         username: $username
         name: $name
         email: $email
@@ -43,14 +43,6 @@ export const REGISTER_MUTATION = gql`
         password2: $password2
         ) {
             success
-            user {
-                id
-                username
-                name
-                language
-                isStaff
-                isSuperuser
-            }
         }
     }
 `;

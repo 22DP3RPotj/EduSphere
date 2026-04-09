@@ -2,7 +2,7 @@ import graphene
 
 from .resolvers import AuthQuery, UserQuery
 from .mutations.user import (
-    RegisterUser,
+    Register,
     UpdateUser,
 )
 from .mutations.auth import AuthMutation
@@ -14,7 +14,7 @@ class AccountQueries(AuthQuery, UserQuery, graphene.ObjectType):
 
 
 class AccountMutations(AuthMutation, graphene.ObjectType):
-    register = RegisterUser.Field()
+    register = Register.Field()
     update_user = UpdateUser.Field()
     ban_users = BanUsers.Field()
     unban_users = UnbanUsers.Field()

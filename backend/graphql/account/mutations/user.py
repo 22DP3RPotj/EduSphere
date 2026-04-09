@@ -15,7 +15,7 @@ from backend.account.forms import UserForm
 from backend.account.services import AccountService
 
 
-class RegisterUser(BaseMutation):
+class Register(BaseMutation):
     class Arguments:
         username = graphene.String(required=True)
         name = graphene.String(required=True)

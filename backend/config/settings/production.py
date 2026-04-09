@@ -5,6 +5,8 @@ DEBUG = False
 GIT_SHA = env("GIT_SHA")
 APP_VERSION = env("APP_VERSION")
 
+FRONTEND_URL = env("FRONTEND_URL")
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.sendgrid.net"
 EMAIL_PORT = 587

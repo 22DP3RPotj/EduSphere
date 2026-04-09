@@ -334,7 +334,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
@@ -448,6 +448,23 @@ const tabsData = computed(() => ({
 
 const isOwnProfile = computed(() => {
   return authStore.user && user.value && authStore.user.username === user.value.username;
+});
+
+watch(userId, (newUserId, previousUserId) => {
+  if (!previousUserId || newUserId === previousUserId) {
+    return;
+  }
+
+  // Reset transient edit state when switching to another user's profile in-place.
+  isEditing.value = false;
+  editForm.value = {
+    name: '',
+    bio: '',
+    avatar: null,
+    language: 'en'
+  };
+  avatarPreview.value = null;
+  clearEditFormErrors();
 });
 
 function setActiveTab(tab: TabKey) {

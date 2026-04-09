@@ -13,7 +13,7 @@ from backend.account.services import ModerationService
 
 class BanUser(BaseMutation):
     """
-    Ban a user, skipping if already banned or if the actor themselves.
+    Ban a user.
     """
 
     class Arguments:

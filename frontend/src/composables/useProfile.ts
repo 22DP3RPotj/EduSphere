@@ -11,7 +11,7 @@ import type { UUID } from "@/types"
 export function useUserQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     USER_QUERY,
-    { userId: userId.value },
+    computed(() => ({ userId: userId.value })),
     { fetchPolicy: "network-only" }
   )
 
@@ -26,7 +26,7 @@ export function useUserQuery(userId: Ref<UUID>) {
 export function useUserMessagesQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     MESSAGES_BY_USER_QUERY,
-    { userId: userId.value },
+    computed(() => ({ userId: userId.value })),
     { fetchPolicy: "network-only" }
   )
 
@@ -41,7 +41,7 @@ export function useUserMessagesQuery(userId: Ref<UUID>) {
 export function useUserHostedRoomsQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_QUERY,
-    { hostId: userId.value },
+    computed(() => ({ hostId: userId.value })),
     { fetchPolicy: "network-only" }
   )
 
@@ -56,7 +56,7 @@ export function useUserHostedRoomsQuery(userId: Ref<UUID>) {
 export function useUserJoinedRoomsQuery(userId: Ref<UUID>) {
   const { result, loading, error, refetch } = useQuery(
     ROOMS_PARTICIPATED_BY_USER_QUERY,
-    { userId: userId.value },
+    computed(() => ({ userId: userId.value })),
     { fetchPolicy: "network-only" }
   )
 

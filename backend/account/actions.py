@@ -2,8 +2,6 @@ import secrets
 from typing import Optional
 from datetime import datetime, timedelta
 
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -11,8 +9,6 @@ from django.utils import timezone
 from backend.account.choices import EmailTypeChoices
 from backend.account.models import EmailToken, User, UserBan
 from backend.core.exceptions import (
-    ConflictException,
-    ValidationException,
     FormValidationException,
 )
 from backend.account.forms import RegisterForm
@@ -71,21 +67,8 @@ def register_user(
     return user
 
 
-def verify_email(*, token: str) -> User:
-    try:
-        email_token = EmailToken.objects.select_related("user").get(
-            token=token,
-            type=EmailTypeChoices.VERIFICATION,
-            used_at__isnull=True,
-            expires_at__gt=timezone.now(),
-        )
-    except EmailToken.DoesNotExist:
-        raise ValidationException("Invalid or expired verification link.")
-
+def verify_email(*, email_token: EmailToken) -> User:
     user = email_token.user
-    if user.is_verified:
-        email_token.mark_as_used()
-        raise ConflictException("Account is already verified.")
 
     with transaction.atomic():
         user.verify()
@@ -95,9 +78,6 @@ def verify_email(*, token: str) -> User:
 
 
 def resend_verification_email(*, user: User) -> None:
-    if user.is_verified:
-        raise ConflictException("Account is already verified.")
-
     with transaction.atomic():
         email_token = _create_email_token(user, EmailTypeChoices.VERIFICATION)
         transaction.on_commit(
@@ -107,13 +87,7 @@ def resend_verification_email(*, user: User) -> None:
         )
 
 
-def send_password_reset_email(*, email: str) -> None:
-    """Silent on failure to prevent email enumeration."""
-    try:
-        user = User.objects.get(email=email, is_active=True)
-    except User.DoesNotExist:
-        return
-
+def send_password_reset_email(*, user: User) -> None:
     with transaction.atomic():
         email_token = _create_email_token(user, EmailTypeChoices.PASSWORD_RESET)
         transaction.on_commit(
@@ -123,40 +97,16 @@ def send_password_reset_email(*, email: str) -> None:
         )
 
 
-def reset_password(*, token: str, new_password: str) -> User:
-    try:
-        email_token = EmailToken.objects.select_related("user").get(
-            token=token,
-            type=EmailTypeChoices.PASSWORD_RESET,
-            used_at__isnull=True,
-            expires_at__gt=timezone.now(),
-        )
-    except (EmailToken.DoesNotExist, ValueError, TypeError):
-        raise ValidationException("Invalid password reset link.")
-
-    user = email_token.user
-
-    try:
-        validate_password(new_password, user=user)
-    except ValidationError as e:
-        raise ValidationException("\n".join(e.messages))
-
+def reset_password(*, email_token: EmailToken, new_password: str) -> User:
     with transaction.atomic():
+        user = email_token.user
         user.update_password(new_password)
         email_token.mark_as_used()
 
     return user
 
 
-def change_password(*, user: User, old_password: str, new_password: str) -> User:
-    if not user.check_password(old_password):
-        raise ValidationException("Current password is incorrect.")
-
-    try:
-        validate_password(new_password, user=user)
-    except ValidationError as e:
-        raise ValidationException("\n".join(e.messages))
-
+def change_password(*, user: User, new_password: str) -> User:
     user.update_password(new_password)
 
     return user

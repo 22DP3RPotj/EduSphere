@@ -203,19 +203,6 @@ const i18n = createI18n({
 });
 ```
 
-Update language selector in UserProfile.vue:
-
-```typescript
-function getLanguageName(locale: string): string {
-  const languageNames: Record<string, string> = {
-    'en': 'English',
-    'lv': 'Latviešu (Latvian)',
-    'es': 'Español (Spanish)'  // Add new language
-  };
-  return languageNames[locale] || locale;
-}
-```
-
 ## Best Practices
 
 ### 1. Translation Key Naming

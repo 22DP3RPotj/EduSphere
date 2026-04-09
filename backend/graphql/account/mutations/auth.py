@@ -37,7 +37,7 @@ class VerifyAccount(BaseMutation):
         info: graphene.ResolveInfo,
         token: str,
     ) -> Self:
-        AccountService.verify_email(token=token)
+        AccountService.verify_email(user=info.context.user, token=token)
         return cls(success=True)
 
 

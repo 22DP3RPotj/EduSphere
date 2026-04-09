@@ -117,8 +117,8 @@ export function useUpdateRoom() {
 export function useDeleteRoom() {
   const { mutate, loading, error } = useMutation(DELETE_ROOM_MUTATION)
 
-  async function deleteRoom(roomId: Ref<UUID>) {
-    const result = await mutate({ roomId: roomId.value })
+  async function deleteRoom(roomId: UUID) {
+    const result = await mutate({ roomId: roomId })
 
     if (result?.data?.deleteRoom?.success) {
       return { success: true }

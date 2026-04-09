@@ -319,7 +319,7 @@ const participants = computed<ParticipantWithHost[]>(() => {
   const allParticipants: ParticipantWithHost[] = [...room.value.participants];
 
   // Mark the host in the existing participants list
-  const hostIndex = allParticipants.findIndex(p => p.id === room.value!.host.id);
+  const hostIndex = allParticipants.findIndex(p => p.user.id === room.value!.host.id);
   if (hostIndex !== -1) {
     allParticipants[hostIndex] = {
       ...allParticipants[hostIndex],
@@ -383,7 +383,7 @@ const {
   connectionStatus,
   isConnected
 } = useWebSocket(
-  roomId.value,
+  roomId,
 );
 
 // Error recovery functions

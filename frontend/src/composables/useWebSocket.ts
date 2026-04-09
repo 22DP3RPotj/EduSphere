@@ -15,7 +15,7 @@ import type {
 } from "@/types"
 
 export function useWebSocket(
-  roomId: UUID,
+  roomId: Ref<UUID>,
 ) {
   const socket: Ref<WebSocket | null> = ref(null)
   const messages: Ref<Message[]> = ref([])
@@ -66,7 +66,7 @@ export function useWebSocket(
   async function fetchRoomMessages(): Promise<Message[]> {
     const response = await apolloClient.query({
       query: ROOM_MESSAGES_QUERY,
-      variables: { roomId },
+      variables: { roomId: roomId.value },
       fetchPolicy: 'network-only'
     });
 
@@ -111,7 +111,7 @@ export function useWebSocket(
     }
 
     // Initialize WebSocket connection
-    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${roomId}`
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${roomId.value}`
     
     // Close existing connection if any
     closeWebSocket()

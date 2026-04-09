@@ -1,13 +1,17 @@
 from datetime import datetime
 from typing import Optional
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from backend.account.choices import EmailTypeChoices
 from backend.account.rules.labels import AccountPermission
 from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
 from backend.account import actions
-from backend.account.models import User, UserBan
+from backend.account.models import EmailToken, User, UserBan
 
 
 class AccountService:
@@ -40,14 +44,32 @@ class AccountService:
         )
 
     @staticmethod
-    def verify_email(*, token: str) -> User:
+    def verify_email(*, user: User, token: str) -> User:
         """
         Mark the authenticated user's email as verified.
 
         Raises:
             ConflictException: If already verified.
         """
-        return actions.verify_email(token=token)
+        try:
+            email_token = EmailToken.objects.select_related("user").get(
+                token=token,
+                type=EmailTypeChoices.VERIFICATION,
+                used_at__isnull=True,
+                expires_at__gt=timezone.now(),
+            )
+        except EmailToken.DoesNotExist:
+            raise ValidationException("Invalid or expired verification link.")
+
+        if email_token.user != user:
+            raise ValidationException(
+                "This verification link does not belong to your account."
+            )
+
+        if user.is_verified:
+            raise ValidationException("Email is already verified.")
+
+        return actions.verify_email(email_token=email_token)
 
     @staticmethod
     def resend_verification_email(*, user: User) -> None:
@@ -57,6 +79,9 @@ class AccountService:
         Raises:
             ConflictException: If already verified.
         """
+        if user.is_verified:
+            raise ValidationException("Email is already verified.")
+
         actions.resend_verification_email(user=user)
 
     @staticmethod
@@ -65,17 +90,43 @@ class AccountService:
         Send a password-reset email.
         Silent on unknown addresses to prevent enumeration.
         """
-        actions.send_password_reset_email(email=email)
+
+        try:
+            user = User.objects.get(email=email, is_active=True)
+        except User.DoesNotExist:
+            """Silent on failure to prevent email enumeration."""
+            return
+
+        actions.send_password_reset_email(user=user)
 
     @staticmethod
     def reset_password(*, token: str, new_password: str) -> User:
         """
-        Reset a user's password using the uid + token from the reset email.
+        Reset a user's password using the token from the reset email.
 
         Raises:
             ValidationException: If the link is invalid or expired.
         """
-        return actions.reset_password(token=token, new_password=new_password)
+        try:
+            email_token = EmailToken.objects.select_related("user").get(
+                token=token,
+                type=EmailTypeChoices.PASSWORD_RESET,
+                used_at__isnull=True,
+                expires_at__gt=timezone.now(),
+            )
+        except (EmailToken.DoesNotExist, ValueError, TypeError):
+            raise ValidationException("Invalid password reset link.")
+
+        user = email_token.user
+
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as e:
+            raise ValidationException("\n".join(e.messages))
+
+        return actions.reset_password(
+            email_token=email_token, new_password=new_password
+        )
 
     @staticmethod
     def change_password(*, user: User, old_password: str, new_password: str) -> User:
@@ -85,9 +136,16 @@ class AccountService:
         Raises:
             ValidationException: If old_password is incorrect.
         """
+        if not user.check_password(old_password):
+            raise ValidationException("Current password is incorrect.")
+
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as e:
+            raise ValidationException("\n".join(e.messages))
+
         return actions.change_password(
             user=user,
-            old_password=old_password,
             new_password=new_password,
         )
 

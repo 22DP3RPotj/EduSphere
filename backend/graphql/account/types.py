@@ -17,7 +17,7 @@ class UserType(DjangoObjectType):
     is_verified = graphene.Boolean()
     verified_at = graphene.DateTime()
     # Public fields
-    language = graphene.String(required=True)  # Overriden to return the osi code
+    language = graphene.String(required=True)  # Overridden to return the ISO code
 
     class Meta:
         model = User

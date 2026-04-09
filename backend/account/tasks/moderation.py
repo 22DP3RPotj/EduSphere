@@ -22,7 +22,7 @@ def run_expire_user_bans():
 
     count = 0
     for ban in expired_bans:
-        AccountActions.lift_ban(ban)
+        AccountActions.lift_ban(ban=ban)
         count += 1
 
     if count > 0:

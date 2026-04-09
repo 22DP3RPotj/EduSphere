@@ -16,7 +16,7 @@ class MessageQuery(graphene.ObjectType):
     messages = graphene.List(MessageType, room_id=graphene.UUID(required=True))
     messages_by_user = graphene.List(
         MessageType,
-        user_slug=graphene.String(required=True),
+        user_id=graphene.UUID(required=True),
     )
 
     def resolve_messages(
@@ -35,10 +35,10 @@ class MessageQuery(graphene.ObjectType):
         return room.message_set.select_related("author").order_by("created_at")
 
     def resolve_messages_by_user(
-        self, info: graphene.ResolveInfo, user_slug: str
+        self, info: graphene.ResolveInfo, user_id: uuid.UUID
     ) -> QuerySet[Message]:
         try:
-            user = User.objects.get(username=user_slug)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise GraphQLError("User not found", extensions={"code": "NOT_FOUND"})
 

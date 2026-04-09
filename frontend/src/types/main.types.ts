@@ -11,7 +11,7 @@ export interface User {
   isStaff: boolean;
   isActive: boolean;
   isSuperuser: boolean;
-  dateJoined: string;
+  dateJoined: DateTime;
 }
 
 export interface Permission {
@@ -32,11 +32,11 @@ export interface Participant {
   id: UUID;
   user: User;
   role: Role;
-  joined_at: string;
+  joined_at: DateTime;
 }
 
 export interface Topic {
-  // id: UUID;
+  id: UUID;
   name: string;
 }
 
@@ -46,7 +46,7 @@ export interface Room {
   host: User;
   topics: Topic[];
   description: string;
-  participants: User[];
+  participants: Participant[];
   updated_at: DateTime;
   created_at: DateTime;
 }

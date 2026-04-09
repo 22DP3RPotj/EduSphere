@@ -9,16 +9,19 @@ export const ROOM_QUERY = gql`
             createdAt
             host {
                 id
-                username
                 name
+                username
                 avatar
             }
             participants {
                 id
-                username
-                avatar
+                role
+                joinedAt
                 user {
                     id
+                    name
+                    username
+                    avatar
                 }
             }
             topics {

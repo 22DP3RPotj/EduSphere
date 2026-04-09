@@ -121,15 +121,15 @@
               v-for="participant in participants" 
               :key="participant.id" 
               class="participant-item"
-              @click="navigateToUserProfile(participant.id)"
+              @click="navigateToUserProfile(participant.user.id)"
             >
               <img 
                 :src="participantAvatarUrls[participant.id] || '/default.svg'" 
-                :alt="`${participant.username}`"
+                :alt="`${participant.user.username}`"
                 class="participant-avatar"
               />
               <div class="participant-info">
-                <span class="participant-name">{{ participant.username }}</span>
+                <span class="participant-name">{{ participant.user.username }}</span>
                 <span v-if="participant.isHost" class="host-badge">Host</span>
               </div>
             </div>
@@ -324,16 +324,16 @@ const participants = computed<ParticipantWithHost[]>(() => {
     allParticipants[hostIndex] = {
       ...allParticipants[hostIndex],
       isHost: true
-    } as User;
+    } as ParticipantWithHost;
   }
   
   return allParticipants;
 });
 
-const participantAvatarUrls = computed<Record<string, string>>(() => {
-  const urls: Record<string, string> = {};
+const participantAvatarUrls = computed<Record<UUID, string>>(() => {
+  const urls: Record<UUID, string> = {};
   for (const participant of participants.value) {
-    urls[participant.id] = buildAvatarUrl((participant as unknown as User).avatar ?? null);
+    urls[participant.id] = buildAvatarUrl(participant.user.avatar);
   }
   return urls;
 });

@@ -244,7 +244,7 @@ export function useWebSocket(
         isStaff: false,
         isActive: false,
         isSuperuser: false,
-        dateJoined: "",
+        dateJoined: asDateTime(""),
       },
       room: {} as Room,
     }

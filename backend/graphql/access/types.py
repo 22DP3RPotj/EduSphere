@@ -30,8 +30,6 @@ class RoleType(DjangoObjectType):
 class ParticipantType(DjangoObjectType):
     user = graphene.Field(UserType, required=True)
     role = graphene.Field(RoleType)
-    username = graphene.String(required=True)
-    avatar = graphene.String()
 
     class Meta:
         model = Participant

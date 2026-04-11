@@ -15,7 +15,10 @@ export const ROOM_QUERY = gql`
             }
             participants {
                 id
-                role
+                role {
+                    id
+                    name
+                }
                 joinedAt
                 user {
                     id

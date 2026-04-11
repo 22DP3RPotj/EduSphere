@@ -88,13 +88,12 @@ class AccountService:
     def send_password_reset_email(*, email: str) -> None:
         """
         Send a password-reset email.
-        Silent on unknown addresses to prevent enumeration.
+        Silent on failure to prevent email enumeration.
         """
 
         try:
             user = User.objects.get(email=email, is_active=True)
         except User.DoesNotExist:
-            """Silent on failure to prevent email enumeration."""
             return
 
         actions.send_password_reset_email(user=user)

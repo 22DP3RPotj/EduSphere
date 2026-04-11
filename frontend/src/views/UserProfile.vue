@@ -94,10 +94,10 @@
                   v-model="editForm.bio"
                   class="form-textarea"
                   placeholder="Tell us about yourself..."
-                  maxlength="500"
+                  maxlength="4096"
                 ></textarea>
                 <div class="char-count">
-                  {{ editForm.bio.length }}/2000
+                  {{ editForm.bio.length }}/4096
                 </div>
               </div>
 

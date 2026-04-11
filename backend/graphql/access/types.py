@@ -40,12 +40,6 @@ class ParticipantType(DjangoObjectType):
             "joined_at",
         )
 
-    def resolve_username(self, info):
-        return self.user.username
-
-    def resolve_avatar(self, info):
-        return self.user.avatar
-
 
 class RoleDeleteType(PydanticObjectType):
     class Meta:

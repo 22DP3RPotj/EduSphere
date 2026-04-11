@@ -16,7 +16,7 @@ class InviteType(DjangoObjectType):
     inviter = graphene.Field("backend.graphql.account.types.UserType", required=True)
     invitee = graphene.Field("backend.graphql.account.types.UserType", required=True)
     room = graphene.Field("backend.graphql.room.types.RoomType", required=True)
-    role = graphene.Field("backend.graphql.access.types.RoleType", required=True)
+    role = graphene.Field("backend.graphql.access.types.RoleType")
     status = graphene.Field(InviteStatusEnum, required=True)
 
     class Meta:

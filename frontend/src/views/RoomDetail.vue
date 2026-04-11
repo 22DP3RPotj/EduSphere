@@ -725,12 +725,12 @@ async function handleRemoveParticipant(participantId: UUID) {
 async function handleSendInvite() {
   if (!room.value || !inviteUserEmail.value.trim()) return;
 
-  await sendInviteMutation({
+  let result = await sendInviteMutation({
     roomId: room.value.id,
     inviteeEmail: inviteUserEmail.value.trim(),
     roleId: inviteRoleId.value as UUID | undefined,
   });
-  inviteSuccess.value = true;
+  inviteSuccess.value = result.success;
   setTimeout(() => {
     showInviteModal.value = false;
     inviteUserEmail.value = '';

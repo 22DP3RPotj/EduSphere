@@ -5,9 +5,9 @@ import {
   REPORT_REASONS_QUERY,
   SUBMITTED_REPORTS_QUERY,
 } from "@/api/graphql"
-import type { CreateReportInput } from "@/types"
+import type { CreateReportInput, ReportTargetType } from "@/types"
 
-export function useReportReasons(targetType?: Ref<string | undefined>) {
+export function useReportReasons(targetType?: Ref<ReportTargetType | undefined>) {
   const { result, loading, error } = useQuery(
     REPORT_REASONS_QUERY,
     () => ({ targetType: targetType?.value }),

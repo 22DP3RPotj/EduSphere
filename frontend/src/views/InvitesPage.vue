@@ -162,7 +162,6 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
   useReceivedInvites,
@@ -174,7 +173,6 @@ import {
 } from '@/composables/useInvites';
 import type { UUID } from '@/types';
 
-const _router = useRouter();
 const { t } = useI18n();
 
 const activeTab = ref<'received' | 'sent'>('received');

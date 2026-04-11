@@ -69,7 +69,7 @@ export interface Report {
   reporter: User;
   target: Room | User | Message;
   case: ModerationCase | null;
-  created_at: DateTime;
+  createdAt: DateTime;
 }
 
 export interface ReportReason {

@@ -57,8 +57,8 @@ const routes = [
     meta: { requireAuth: true }
   },
   {
-    path: "/my-reports",
-    component: () => import("@/views/MyReportsPage.vue"),
+    path: "/reports",
+    component: () => import("@/views/ReportsPage.vue"),
     meta: { requireAuth: true }
   },
   {

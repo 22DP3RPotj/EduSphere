@@ -20,8 +20,18 @@ class CaseStatusEnum(graphene.Enum):
     DISMISSED = "DISMISSED"
 
 
-ActionPriorityEnum = graphene.Enum.from_enum(ModerationCase.ActionPriority)
-ActionEnum = graphene.Enum.from_enum(ModerationAction.Action)
+class ActionPriorityEnum(graphene.Enum):
+    LOW = 0
+    MEDIUM = 1
+    HIGH = 2
+
+
+class ActionEnum(graphene.Enum):
+    NO_VIOLATION = "NO_VIOLATION"
+    CONTENT_REMOVED = "CONTENT_REMOVED"
+    WARNING = "WARNING"
+    TEMP_BAN = "TEMP_BAN"
+    PERM_BAN = "PERM_BAN"
 
 
 class ReportTargetTypeEnum(graphene.Enum):
@@ -82,6 +92,9 @@ class ModerationActionType(DjangoObjectType):
     class Meta:
         model = ModerationAction
         fields = ("id", "action", "note", "moderator", "created_at")
+
+    def resolve_action(self, info: graphene.ResolveInfo):
+        return str(self.action)
 
 
 class ModerationCaseType(DjangoObjectType):

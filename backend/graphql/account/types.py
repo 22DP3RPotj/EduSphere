@@ -8,7 +8,9 @@ from backend.account.models import User
 from backend.account.rules.labels import AccountPermission
 
 
-LanguageEnum = graphene.Enum.from_enum(User.Language)
+class LanguageEnum(graphene.Enum):
+    ENGLISH = "en"
+    LATVIAN = "lv"
 
 
 class UserType(DjangoObjectType):

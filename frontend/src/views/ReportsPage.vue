@@ -12,13 +12,41 @@
       <p>Loading reports...</p>
     </div>
 
-    <div v-else-if="reports.length === 0" class="empty-state">
-      <font-awesome-icon icon="flag" size="2x" />
-      <p>You haven't submitted any reports yet.</p>
-    </div>
+    <template v-else>
+      <div v-if="reports.length > 0" class="filters-row">
+        <div class="filter-group">
+          <label for="status-filter">Case Status</label>
+          <select id="status-filter" v-model="statusFilter" class="filter-select">
+            <option value="">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="UNDER_REVIEW">Under Review</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="DISMISSED">Dismissed</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="reason-filter">Reason</label>
+          <select id="reason-filter" v-model="reasonFilter" class="filter-select">
+            <option value="">All</option>
+            <option v-for="reason in uniqueReasons" :key="reason.id" :value="reason.id">
+              {{ reason.label }}
+            </option>
+          </select>
+        </div>
+      </div>
 
-    <div v-else class="reports-list">
-      <div v-for="report in reports" :key="report.id" class="report-card">
+      <div v-if="filteredReports.length === 0 && reports.length > 0" class="empty-state">
+        <font-awesome-icon icon="filter" size="2x" />
+        <p>No reports match the selected filters.</p>
+      </div>
+
+      <div v-else-if="reports.length === 0" class="empty-state">
+        <font-awesome-icon icon="flag" size="2x" />
+        <p>You haven't submitted any reports yet.</p>
+      </div>
+
+      <div v-else class="reports-list">
+        <div v-for="report in filteredReports" :key="report.id" class="report-card">
         <div class="report-info">
           <div class="report-reason">
             <font-awesome-icon icon="exclamation-circle" class="icon" />
@@ -35,13 +63,39 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script lang="ts" setup>
+import { ref, computed } from 'vue';
 import { useSubmittedReports } from '@/composables/useReports';
+import type { Report } from '@/types';
 
 const { reports, loading } = useSubmittedReports();
+
+const statusFilter = ref('');
+const reasonFilter = ref('');
+
+const uniqueReasons = computed(() => {
+  const seen = new Map<string, { id: string; label: string }>();
+  for (const r of reports.value) {
+    if (!seen.has(r.reason.id)) {
+      seen.set(r.reason.id, { id: r.reason.id, label: r.reason.label });
+    }
+  }
+  return [...seen.values()];
+});
+
+const filteredReports = computed(() => {
+  return reports.value.filter((r: Report) => {
+    if (reasonFilter.value && r.reason.id !== reasonFilter.value) return false;
+    if (statusFilter.value) {
+      if (!r.case || r.case.status !== statusFilter.value) return false;
+    }
+    return true;
+  });
+});
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString(undefined, {
@@ -88,6 +142,39 @@ function formatStatus(status: string) {
 
 .back-button:hover {
   background-color: var(--hover-bg);
+}
+
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.filter-select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background-color: var(--white);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
 }
 
 .loading-state,

@@ -44,7 +44,7 @@
             <span class="nav-label">Invites</span>
           </router-link>
 
-          <router-link v-if="isAuthenticated" to="/my-reports" class="nav-item" active-class="active" @click="closePanel">
+          <router-link v-if="isAuthenticated" to="/reports" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="flag" class="nav-icon" />
             <span class="nav-label">My Reports</span>
           </router-link>

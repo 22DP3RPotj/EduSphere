@@ -4,7 +4,10 @@ from graphene_django.types import DjangoObjectType
 from backend.messaging.models import Message, MessageStatus
 
 
-MessageStatusEnum = graphene.Enum.from_enum(MessageStatus.Status)
+class MessageStatusEnum(graphene.Enum):
+    SENT = "SENT"
+    DELIVERED = "DELIVERED"
+    SEEN = "SEEN"
 
 
 class MessageType(DjangoObjectType):

@@ -28,18 +28,32 @@
 
     <!-- Received Invites -->
     <div v-if="activeTab === 'received'" class="tab-content">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="received-status-filter">Status</label>
+          <select id="received-status-filter" v-model="receivedStatusFilter" class="filter-select">
+            <option value="">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="ACCEPTED">Accepted</option>
+            <option value="DECLINED">Declined</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="REVOKED">Revoked</option>
+          </select>
+        </div>
+      </div>
+
       <div v-if="receivedLoading" class="loading-state">
         <div class="spinner"></div>
         <p>{{ t('common.loading') }}</p>
       </div>
 
-      <div v-else-if="receivedInvites.length === 0" class="empty-state">
+      <div v-else-if="filteredReceivedInvites.length === 0" class="empty-state">
         <font-awesome-icon icon="envelope-open" size="2x" />
         <p>{{ t('invite.noReceivedInvites') }}</p>
       </div>
 
       <div v-else class="invites-list">
-        <div v-for="invite in receivedInvites" :key="invite.id" class="invite-card">
+        <div v-for="invite in filteredReceivedInvites" :key="invite.id" class="invite-card">
           <div class="invite-info">
             <div class="invite-room">
               <font-awesome-icon icon="door-open" class="icon" />
@@ -80,18 +94,32 @@
 
     <!-- Sent Invites -->
     <div v-if="activeTab === 'sent'" class="tab-content">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="sent-status-filter">Status</label>
+          <select id="sent-status-filter" v-model="sentStatusFilter" class="filter-select">
+            <option value="">All</option>
+            <option value="PENDING">Pending</option>
+            <option value="ACCEPTED">Accepted</option>
+            <option value="DECLINED">Declined</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="REVOKED">Revoked</option>
+          </select>
+        </div>
+      </div>
+
       <div v-if="sentLoading" class="loading-state">
         <div class="spinner"></div>
         <p>{{ t('common.loading') }}</p>
       </div>
 
-      <div v-else-if="sentInvites.length === 0" class="empty-state">
+      <div v-else-if="filteredSentInvites.length === 0" class="empty-state">
         <font-awesome-icon icon="paper-plane" size="2x" />
         <p>{{ t('invite.noSentInvites') }}</p>
       </div>
 
       <div v-else class="invites-list">
-        <div v-for="invite in sentInvites" :key="invite.id" class="invite-card">
+        <div v-for="invite in filteredSentInvites" :key="invite.id" class="invite-card">
           <div class="invite-info">
             <div class="invite-room">
               <font-awesome-icon icon="door-open" class="icon" />
@@ -133,7 +161,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
@@ -150,6 +178,8 @@ const _router = useRouter();
 const { t } = useI18n();
 
 const activeTab = ref<'received' | 'sent'>('received');
+const receivedStatusFilter = ref('');
+const sentStatusFilter = ref('');
 
 const { invites: receivedInvites, loading: receivedLoading, refetch: refetchReceived } = useReceivedInvites();
 const { invites: sentInvites, loading: sentLoading, refetch: refetchSent } = useSentInvites();
@@ -157,6 +187,16 @@ const { acceptInvite, loading: acceptLoading } = useAcceptInvite();
 const { declineInvite, loading: declineLoading } = useDeclineInvite();
 const { cancelInvite, loading: cancelLoading } = useCancelInvite();
 const { resendInvite, loading: resendLoading } = useResendInvite();
+
+const filteredReceivedInvites = computed(() => {
+  if (!receivedStatusFilter.value) return receivedInvites.value;
+  return receivedInvites.value.filter(i => i.status === receivedStatusFilter.value);
+});
+
+const filteredSentInvites = computed(() => {
+  if (!sentStatusFilter.value) return sentInvites.value;
+  return sentInvites.value.filter(i => i.status === sentStatusFilter.value);
+});
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString(undefined, {
@@ -225,6 +265,39 @@ async function handleResend(token: UUID) {
 
 .back-button:hover {
   background-color: var(--bg-light);
+}
+
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.filter-select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 .invites-tabs {

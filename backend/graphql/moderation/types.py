@@ -13,7 +13,13 @@ from backend.graphql.account.types import UserType
 from backend.graphql.messaging.types import MessageType
 
 
-CaseStatusEnum = graphene.Enum.from_enum(ModerationCase.Status)
+class CaseStatusEnum(graphene.Enum):
+    PENDING = "PENDING"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    RESOLVED = "RESOLVED"
+    DISMISSED = "DISMISSED"
+
+
 ActionPriorityEnum = graphene.Enum.from_enum(ModerationCase.ActionPriority)
 ActionEnum = graphene.Enum.from_enum(ModerationAction.Action)
 
@@ -93,6 +99,9 @@ class ModerationCaseType(DjangoObjectType):
             "reports",
             "actions",
         )
+
+    def resolve_status(self, info: graphene.ResolveInfo):
+        return str(self.status)
 
     def resolve_target(self, info: graphene.ResolveInfo):
         return self.content_object

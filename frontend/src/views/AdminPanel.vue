@@ -369,6 +369,18 @@
               <option value="action">Moderation Actions</option>
             </select>
           </div>
+          <div class="filter-group">
+            <label for="audit-date-from">From</label>
+            <input id="audit-date-from" v-model="auditFilters.dateFrom" type="date" class="filter-input" />
+          </div>
+          <div class="filter-group">
+            <label for="audit-date-to">To</label>
+            <input id="audit-date-to" v-model="auditFilters.dateTo" type="date" class="filter-input" />
+          </div>
+          <div class="filter-group">
+            <label for="audit-actor">Actor Username</label>
+            <input id="audit-actor" v-model="auditFilters.actorUsername" type="text" class="filter-input" placeholder="Filter by actor..." />
+          </div>
         </div>
       </div>
 
@@ -561,7 +573,7 @@ import {
 } from '@/composables/useAudit';
 import { buildAvatarUrl } from '@/utils/media';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { ModerationCase, User } from '@/types';
+import type { ModerationCase, User, UUID } from '@/types';
 
 // Role importance for sorting (higher = more important)
 const ROLE_IMPORTANCE = {
@@ -601,13 +613,13 @@ const caseFiltersApplied = ref({ status: '', priority: '' });
 const activeCaseActions = ref<string | null>(null);
 const caseActionModal = ref({
   isOpen: false,
-  caseId: '',
+  caseId: '' as UUID,
   action: '',
   note: '',
 });
 const priorityModal = ref({
   isOpen: false,
-  caseId: '',
+  caseId: '' as UUID,
   priority: 'MEDIUM',
 });
 
@@ -966,7 +978,7 @@ async function bulkActivateUsers() {
 }
 
 // Case Actions
-async function startReviewCase(caseId: string) {
+async function startReviewCase(caseId: UUID) {
   activeCaseActions.value = null;
   try {
     await setCaseUnderReview(caseId);
@@ -988,7 +1000,7 @@ function openCaseActionModal(mc: ModerationCase) {
 
 function closeCaseActionModal() {
   caseActionModal.value.isOpen = false;
-  caseActionModal.value.caseId = '';
+  caseActionModal.value.caseId = '' as UUID;
   caseActionModal.value.action = '';
   caseActionModal.value.note = '';
 }
@@ -1019,7 +1031,7 @@ function openPriorityModal(mc: ModerationCase) {
 
 function closePriorityModal() {
   priorityModal.value.isOpen = false;
-  priorityModal.value.caseId = '';
+  priorityModal.value.caseId = '' as UUID;
 }
 
 async function confirmSetPriority() {
@@ -1032,7 +1044,7 @@ async function confirmSetPriority() {
   }
 }
 
-async function handleReopenCase(caseId: string) {
+async function handleReopenCase(caseId: UUID) {
   activeCaseActions.value = null;
   showConfirmation(
     'Reopen Case',

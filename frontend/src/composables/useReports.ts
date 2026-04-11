@@ -38,13 +38,18 @@ export function useCreateReport() {
   const { mutate, loading, error } = useMutation(CREATE_REPORT_MUTATION)
 
   async function createReport(data: CreateReportInput) {
-    const result = await mutate(data)
+    try {
+      const result = await mutate(data)
 
-    if (result?.data?.createReport?.report) {
-      return { success: true, report: result.data.createReport.report }
+      if (result?.data?.createReport?.report) {
+        return { success: true, report: result.data.createReport.report }
+      }
+
+      return { success: false, error: "Failed to create report" }
+    } catch (e: unknown) {
+      const gqlError = (e as { graphQLErrors?: { message: string }[] })?.graphQLErrors?.[0]
+      return { success: false, error: gqlError?.message || "Failed to create report" }
     }
-
-    return { success: false, error: "Failed to create report" }
   }
 
   return { createReport, loading, error }

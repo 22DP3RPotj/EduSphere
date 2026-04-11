@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const SEND_INVITE_MUTATION = gql`
-    mutation SendInvite($roomId: UUID!, $inviteeId: UUID!, $expiresAt: DateTime, $roleId: UUID) {
-        sendInvite(roomId: $roomId, inviteeId: $inviteeId, expiresAt: $expiresAt, roleId: $roleId) {
+    mutation SendInvite($roomId: UUID!, $inviteeEmail: String!, $expiresAt: DateTime, $roleId: UUID) {
+        sendInvite(roomId: $roomId, inviteeEmail: $inviteeEmail, expiresAt: $expiresAt, roleId: $roleId) {
             invite {
                 id
                 token

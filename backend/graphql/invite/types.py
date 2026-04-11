@@ -4,7 +4,12 @@ from graphene_django.types import DjangoObjectType
 from backend.invite.models import Invite
 
 
-InviteStatusEnum = graphene.Enum.from_enum(Invite.Status)
+class InviteStatusEnum(graphene.Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    DECLINED = "DECLINED"
+    EXPIRED = "EXPIRED"
+    REVOKED = "REVOKED"
 
 
 class InviteType(DjangoObjectType):
@@ -27,3 +32,6 @@ class InviteType(DjangoObjectType):
             "created_at",
             "expires_at",
         )
+
+    def resolve_status(self, info: graphene.ResolveInfo):
+        return str(self.status)

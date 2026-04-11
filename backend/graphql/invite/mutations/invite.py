@@ -17,7 +17,7 @@ from backend.core.exceptions import ErrorCode
 class SendInvite(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
-        invitee_id = graphene.UUID(required=True)
+        invitee_email = graphene.String(required=True)
         expires_at = graphene.DateTime(required=False)
         role_id = graphene.UUID(required=False)
 
@@ -30,7 +30,7 @@ class SendInvite(BaseMutation):
         root: Optional[Any],
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
-        invitee_id: uuid.UUID,
+        invitee_email: str,
         expires_at: Optional[graphene.DateTime] = None,
         role_id: Optional[uuid.UUID] = None,
     ) -> Self:
@@ -42,11 +42,9 @@ class SendInvite(BaseMutation):
             )
 
         try:
-            invitee = User.objects.get(id=invitee_id)
+            invitee = User.objects.get(email=invitee_email)
         except User.DoesNotExist:
-            raise GraphQLError(
-                "Invitee not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            return cls(invite=None)
 
         role = None
         if role_id is not None:

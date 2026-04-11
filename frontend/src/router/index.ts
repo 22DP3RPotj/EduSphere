@@ -57,6 +57,11 @@ const routes = [
     meta: { requireAuth: true }
   },
   {
+    path: "/my-reports",
+    component: () => import("@/views/MyReportsPage.vue"),
+    meta: { requireAuth: true }
+  },
+  {
     path: "/admin",
     component: () => import("@/views/AdminPanel.vue"),
     meta: { requireAuth: true, requireAdmin: true }

@@ -28,13 +28,13 @@
         <h3>Invite User</h3>
         <form @submit.prevent="handleSendInvite">
           <div class="form-group">
-            <label for="invite-user-id">User ID</label>
+            <label for="invite-user-email">Email</label>
             <input
-              id="invite-user-id"
-              v-model="inviteUserId"
-              type="text"
+              id="invite-user-email"
+              v-model="inviteUserEmail"
+              type="email"
               class="form-input"
-              placeholder="Enter user ID to invite"
+              placeholder="Enter user email to invite"
               required
             />
           </div>
@@ -45,9 +45,10 @@
               <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
             </select>
           </div>
+          <div v-if="inviteSuccess" class="success-text">Invite sent successfully!</div>
           <div class="modal-actions">
             <button type="button" class="btn-cancel" @click="showInviteModal = false">Cancel</button>
-            <button type="submit" class="btn-confirm" :disabled="sendInviteLoading || !inviteUserId.trim()">
+            <button type="submit" class="btn-confirm" :disabled="sendInviteLoading || !inviteUserEmail.trim()">
               <font-awesome-icon v-if="sendInviteLoading" icon="spinner" spin />
               Send Invite
             </button>
@@ -499,8 +500,9 @@ const { roles: roomRoles } = useRoomRoles(roomId);
 
 // Invite modal state
 const showInviteModal = ref(false);
-const inviteUserId = ref('');
+const inviteUserEmail = ref('');
 const inviteRoleId = ref<string | null>(null);
+const inviteSuccess = ref(false);
 
 // Participant context menu state
 const participantMenuId = ref<UUID | null>(null);
@@ -721,18 +723,20 @@ async function handleRemoveParticipant(participantId: UUID) {
 }
 
 async function handleSendInvite() {
-  if (!room.value || !inviteUserId.value.trim()) return;
+  if (!room.value || !inviteUserEmail.value.trim()) return;
 
-  const result = await sendInviteMutation({
+  await sendInviteMutation({
     roomId: room.value.id,
-    inviteeId: inviteUserId.value.trim() as UUID,
+    inviteeEmail: inviteUserEmail.value.trim(),
     roleId: inviteRoleId.value as UUID | undefined,
   });
-  if (result.success) {
+  inviteSuccess.value = true;
+  setTimeout(() => {
     showInviteModal.value = false;
-    inviteUserId.value = '';
+    inviteUserEmail.value = '';
     inviteRoleId.value = null;
-  }
+    inviteSuccess.value = false;
+  }, 1500);
 }
 
 async function sendMessage() {
@@ -1785,5 +1789,14 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 .close-btn:hover {
   color: var(--text-color);
   background-color: var(--bg-light);
+}
+
+.success-text {
+  color: var(--success-text, #155724);
+  background-color: var(--success-bg, #d4edda);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  text-align: center;
 }
 </style>

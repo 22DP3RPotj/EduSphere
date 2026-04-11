@@ -83,6 +83,44 @@ export const JOIN_ROOM_MUTATION = gql`
     }
 `;
 
+export const LEAVE_ROOM_MUTATION = gql`
+    mutation LeaveRoom($roomId: UUID!) {
+        leaveRoom(roomId: $roomId) {
+            success
+        }
+    }
+`;
+
+export const CHANGE_PARTICIPANT_ROLE_MUTATION = gql`
+    mutation ChangeParticipantRole($participantId: UUID!, $roleId: UUID!) {
+        changeParticipantRole(participantId: $participantId, roleId: $roleId) {
+            participant {
+                id
+                user {
+                    id
+                    username
+                    name
+                    avatar
+                }
+                role {
+                    id
+                    name
+                    priority
+                }
+                joinedAt
+            }
+        }
+    }
+`;
+
+export const REMOVE_PARTICIPANT_MUTATION = gql`
+    mutation RemoveParticipant($participantId: UUID!) {
+        removeParticipant(participantId: $participantId) {
+            success
+        }
+    }
+`;
+
 export const DELETE_MESSAGE_MUTATION = gql`
     mutation DeleteMessage($messageId: UUID!) {
         deleteMessage(messageId: $messageId) {

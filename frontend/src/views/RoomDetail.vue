@@ -22,6 +22,86 @@
       @close="cancelRoomDeletion"
     />
 
+    <!-- Invite User Modal -->
+    <div v-if="showInviteModal" class="edit-modal-overlay" @click="showInviteModal = false">
+      <div class="edit-modal-content invite-modal" @click.stop>
+        <h3>Invite User</h3>
+        <form @submit.prevent="handleSendInvite">
+          <div class="form-group">
+            <label for="invite-user-email">Email</label>
+            <input
+              id="invite-user-email"
+              v-model="inviteUserEmail"
+              type="email"
+              class="form-input"
+              placeholder="Enter user email to invite"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="invite-role">Role (optional)</label>
+            <select id="invite-role" v-model="inviteRoleId" class="form-select">
+              <option :value="null">No role</option>
+              <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+            </select>
+          </div>
+          <div v-if="inviteSuccess" class="success-text">Invite sent successfully!</div>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" @click="showInviteModal = false">Cancel</button>
+            <button type="submit" class="btn-confirm" :disabled="sendInviteLoading || !inviteUserEmail.trim()">
+              <font-awesome-icon v-if="sendInviteLoading" icon="spinner" spin />
+              Send Invite
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Change Role Modal -->
+    <div v-if="showRoleChangeModal" class="edit-modal-overlay" @click="showRoleChangeModal = false">
+      <div class="edit-modal-content role-modal" @click.stop>
+        <h3>Change Role</h3>
+        <div class="form-group">
+          <label for="select-role">Select Role</label>
+          <select id="select-role" v-model="selectedRoleId" class="form-select">
+            <option :value="null" disabled>Select a role</option>
+            <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+          </select>
+        </div>
+        <p v-if="roleChangeError" class="modal-error">{{ roleChangeError }}</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" @click="showRoleChangeModal = false">Cancel</button>
+          <button type="button" class="btn-confirm" :disabled="changeRoleLoading || !selectedRoleId" @click="confirmRoleChange">
+            <font-awesome-icon v-if="changeRoleLoading" icon="spinner" spin />
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role Manager Modal -->
+    <div v-if="showRoleManager && room" class="edit-modal-overlay" @click="showRoleManager = false">
+      <div class="edit-modal-content role-manager-modal" @click.stop>
+        <div class="role-manager-modal-header">
+          <button class="close-btn" @click="showRoleManager = false">
+            <font-awesome-icon icon="times" />
+          </button>
+        </div>
+        <RoleManager :room-id="room.id" @updated="refetchRoom" />
+      </div>
+    </div>
+
+    <!-- Report Room Modal -->
+    <ReportModal
+      v-if="room"
+      :is-open="showReportModal"
+      :target-type="ReportTargetType.ROOM"
+      :target-id="room.id"
+      target-label="Room"
+      @close="showReportModal = false"
+      @submitted="showReportModal = false"
+    />
+
     <!-- Loading state -->
     <div v-if="loading" class="room-loading">
       <div class="spinner"></div>
@@ -75,6 +155,10 @@
                 <font-awesome-icon icon="edit" />
                 <span>Edit Room</span>
               </button>
+              <button class="room-action-item" @click="showRoomActionsMenu = false; showRoleManager = true">
+                <font-awesome-icon icon="user-tag" />
+                <span>Manage Roles</span>
+              </button>
               <button class="room-action-item delete-action" @click="handleRoomDelete">
                 <font-awesome-icon icon="trash" />
                 <span>Delete Room</span>
@@ -84,6 +168,19 @@
           
           <button v-if="!isParticipant && authStore.isAuthenticated" class="join-button" @click="handleJoin">
             Join Room
+          </button>
+          <button v-if="isParticipant && !isHost" class="leave-button" :disabled="leaveLoading" @click="handleLeave">
+            <font-awesome-icon v-if="leaveLoading" icon="spinner" spin />
+            <font-awesome-icon v-else icon="sign-out-alt" />
+            Leave
+          </button>
+          <button v-if="isParticipant && !isHost" class="report-button" @click="showReportModal = true">
+            <font-awesome-icon icon="flag" />
+            Report
+          </button>
+          <button v-if="isHost" class="invite-button" @click="showInviteModal = true">
+            <font-awesome-icon icon="user-plus" />
+            Invite
           </button>
         </div>
       </div>
@@ -131,6 +228,23 @@
               <div class="participant-info">
                 <span class="participant-name">{{ participant.user.username }}</span>
                 <span v-if="participant.isHost" class="host-badge">Host</span>
+                <span v-else-if="participant.role" class="role-badge">{{ participant.role.name }}</span>
+              </div>
+              <!-- Host context menu for participants -->
+              <div v-if="isHost && !participant.isHost" class="participant-context" @click.stop>
+                <button class="context-menu-btn" @click.stop="toggleParticipantMenu(participant.id)">
+                  <font-awesome-icon icon="ellipsis-vertical" />
+                </button>
+                <div v-if="participantMenuId === participant.id" class="context-dropdown">
+                  <button class="context-item" @click="openRoleChangeModal(participant.id)">
+                    <font-awesome-icon icon="user-tag" />
+                    Change Role
+                  </button>
+                  <button class="context-item danger" @click="handleRemoveParticipant(participant.id)">
+                    <font-awesome-icon icon="user-minus" />
+                    Remove
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -214,12 +328,18 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoomQuery, useRoomMessagesQuery, useDeleteRoom, useJoinRoom } from '@/composables/useRooms';
+import { useLeaveRoom, useChangeParticipantRole, useRemoveParticipant } from '@/composables/useParticipants';
+import { useSendInvite } from '@/composables/useInvites';
+import { useRoomRoles } from '@/composables/useRoles';
 import { useWebSocket } from '@/composables/useWebSocket';
 import { parseGraphQLError } from '@/utils/errorParser';
 
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
+import RoleManager from '@/components/common/RoleManager.vue';
+import ReportModal from '@/components/common/ReportModal.vue';
+import { ReportTargetType } from '@/types';
 import type { Room, Participant, UUID } from '@/types';
 
 const authStore = useAuthStore();
@@ -233,6 +353,8 @@ const isMobileView = ref<boolean>(window.innerWidth <= 768);
 const showEditForm = ref<boolean>(false);
 const showRoomActionsMenu = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
+const showRoleManager = ref<boolean>(false);
+const showReportModal = ref<boolean>(false);
 const isWebSocketInitialized = ref<boolean>(false);
   
 const roomId = computed(() => route.params.roomId as UUID);
@@ -370,6 +492,25 @@ const {
   loading: joinLoading, 
   error: joinError 
 } = useJoinRoom(roomId);
+
+const { leaveRoom: leaveRoomMutation, loading: leaveLoading } = useLeaveRoom(roomId);
+const { changeParticipantRole: changeRoleMutation, loading: changeRoleLoading } = useChangeParticipantRole();
+const { removeParticipant: removeParticipantMutation } = useRemoveParticipant();
+const { sendInvite: sendInviteMutation, loading: sendInviteLoading } = useSendInvite();
+const { roles: roomRoles } = useRoomRoles(roomId);
+
+// Invite modal state
+const showInviteModal = ref(false);
+const inviteUserEmail = ref('');
+const inviteRoleId = ref<string | null>(null);
+const inviteSuccess = ref(false);
+
+// Participant context menu state
+const participantMenuId = ref<UUID | null>(null);
+const showRoleChangeModal = ref(false);
+const roleChangeParticipantId = ref<UUID | null>(null);
+const selectedRoleId = ref<string | null>(null);
+const roleChangeError = ref<string | null>(null);
 
 const {
   messages: websocketMessages,
@@ -534,6 +675,80 @@ async function handleJoin() {
       generalErrors: [result.error || 'Failed to join room']
     };
   }
+}
+
+async function handleLeave() {
+  if (!room.value) return;
+  clearMessageOperationErrors();
+
+  const result = await leaveRoomMutation(room.value.id);
+  if (result.success) {
+    closeWebSocket();
+    router.push('/');
+  } else {
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: [result.error || 'Failed to leave room']
+    };
+  }
+}
+
+function toggleParticipantMenu(participantId: UUID) {
+  participantMenuId.value = participantMenuId.value === participantId ? null : participantId;
+}
+
+function openRoleChangeModal(participantId: UUID) {
+  roleChangeParticipantId.value = participantId;
+  selectedRoleId.value = null;
+  roleChangeError.value = null;
+  showRoleChangeModal.value = true;
+  participantMenuId.value = null;
+}
+
+async function confirmRoleChange() {
+  if (!roleChangeParticipantId.value || !selectedRoleId.value) return;
+
+  roleChangeError.value = null;
+  const result = await changeRoleMutation(roleChangeParticipantId.value, selectedRoleId.value as UUID);
+  if (result.success) {
+    await refetchRoom();
+    showRoleChangeModal.value = false;
+    roleChangeParticipantId.value = null;
+    selectedRoleId.value = null;
+  } else {
+    roleChangeError.value = result.error || 'Failed to change participant role';
+  }
+}
+
+async function handleRemoveParticipant(participantId: UUID) {
+  participantMenuId.value = null;
+  clearMessageOperationErrors();
+  const result = await removeParticipantMutation(participantId);
+  if (result.success) {
+    await refetchRoom();
+  } else {
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: [result.error || 'Failed to remove participant'],
+    };
+  }
+}
+
+async function handleSendInvite() {
+  if (!room.value || !inviteUserEmail.value.trim()) return;
+
+  let result = await sendInviteMutation({
+    roomId: room.value.id,
+    inviteeEmail: inviteUserEmail.value.trim(),
+    roleId: inviteRoleId.value as UUID | undefined,
+  });
+  inviteSuccess.value = result.success;
+  setTimeout(() => {
+    showInviteModal.value = false;
+    inviteUserEmail.value = '';
+    inviteRoleId.value = null;
+    inviteSuccess.value = false;
+  }, 1500);
 }
 
 async function sendMessage() {
@@ -978,6 +1193,12 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   padding: 0.5rem 0.75rem;
 }
 
+.modal-error {
+  color: var(--error-color);
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem 0;
+}
+
 .btn-home {
   padding: 0.5rem 1rem;
   background-color: var(--primary-color);
@@ -1337,5 +1558,263 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* Leave & Invite buttons */
+.leave-button {
+  background-color: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+}
+
+.leave-button:hover:not(:disabled) {
+  background-color: #ef4444;
+  color: white;
+}
+
+.leave-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.report-button {
+  background-color: transparent;
+  border: 1px solid var(--text-light);
+  color: var(--text-light);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+}
+
+.report-button:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.invite-button {
+  background-color: var(--primary-color);
+  border: none;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+}
+
+.invite-button:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Role badge */
+.role-badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius);
+  background-color: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* Participant context menu */
+.participant-item {
+  position: relative;
+}
+
+.participant-context {
+  position: relative;
+  margin-left: auto;
+}
+
+.context-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.participant-item:hover .context-menu-btn {
+  opacity: 1;
+}
+
+.context-menu-btn:hover {
+  background-color: var(--bg-light);
+}
+
+.context-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.context-item:hover {
+  background-color: var(--bg-light);
+}
+
+.context-item.danger {
+  color: #ef4444;
+}
+
+.context-item.danger:hover {
+  background-color: #fef2f2;
+}
+
+/* Invite & Role change modals */
+.invite-modal,
+.role-modal {
+  max-width: 400px;
+  padding: 1.5rem;
+}
+
+.invite-modal h3,
+.role-modal h3 {
+  margin: 0 0 1rem;
+  color: var(--text-color);
+}
+
+.invite-modal .form-group,
+.role-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.invite-modal label,
+.role-modal label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  font-size: 0.9rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-cancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-cancel:hover {
+  background-color: var(--bg-light);
+}
+
+.btn-confirm {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+}
+
+.btn-confirm:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.btn-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Role Manager Modal */
+.role-manager-modal {
+  max-width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.role-manager-modal-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  transition: var(--transition);
+}
+
+.close-btn:hover {
+  color: var(--text-color);
+  background-color: var(--bg-light);
+}
+
+.success-text {
+  color: var(--success-text, #155724);
+  background-color: var(--success-bg, #d4edda);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  text-align: center;
 }
 </style>

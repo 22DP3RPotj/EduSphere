@@ -149,6 +149,71 @@
               </div>
             </div>
           </form>
+
+          <!-- Change Password Section -->
+          <div class="change-password-section">
+            <div class="section-header" @click="showChangePassword = !showChangePassword">
+              <h3>{{ t('auth.changePassword') }}</h3>
+              <font-awesome-icon :icon="showChangePassword ? 'chevron-up' : 'chevron-down'" />
+            </div>
+            <form v-if="showChangePassword" class="edit-form" @submit.prevent="handleChangePassword">
+              <div class="form-content">
+                <div class="form-group">
+                  <label for="current-password" class="form-label">{{ t('auth.currentPassword') }}</label>
+                  <input
+                    id="current-password"
+                    v-model="passwordForm.oldPassword"
+                    type="password"
+                    class="form-input"
+                    :placeholder="t('auth.enterCurrentPassword')"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="new-password" class="form-label">{{ t('auth.newPassword') }}</label>
+                  <input
+                    id="new-password"
+                    v-model="passwordForm.newPassword"
+                    type="password"
+                    class="form-input"
+                    :placeholder="t('auth.enterNewPassword')"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="confirm-new-password" class="form-label">{{ t('auth.confirmPassword') }}</label>
+                  <input
+                    id="confirm-new-password"
+                    v-model="passwordForm.confirmPassword"
+                    type="password"
+                    class="form-input"
+                    :placeholder="t('auth.confirmYourPassword')"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  class="save-button"
+                  :disabled="passwordChangeLoading"
+                >
+                  <font-awesome-icon v-if="passwordChangeLoading" icon="spinner" spin />
+                  {{ t('auth.changePassword') }}
+                </button>
+              </div>
+              <div v-if="passwordChangeSuccess" class="success-message">
+                <font-awesome-icon icon="check-circle" />
+                {{ t('auth.passwordChanged') }}
+              </div>
+              <div v-if="passwordChangeErrors.generalErrors.length > 0" class="error-message edit-form-error">
+                <font-awesome-icon icon="exclamation-circle" />
+                <div class="error-list">
+                  <p v-for="(errMsg, index) in passwordChangeErrors.generalErrors" :key="index">{{ errMsg }}</p>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
         
         <!-- View mode -->
@@ -356,7 +421,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const { t, te } = useI18n();
-const { updateUser, updateUserLoading, updateUserError } = useAuth();
+const { updateUser, updateUserLoading, updateUserError, changePassword } = useAuth();
 const { availableLocales } = useLocale();
 
 const userId = computed(() => route.params.userId as UUID);
@@ -532,6 +597,50 @@ function clearEditFormErrors() {
   editFormErrors.value = { fieldErrors: {}, generalErrors: [] };
 }
 
+// Password change state
+const showChangePassword = ref(false);
+const passwordChangeLoading = ref(false);
+const passwordChangeSuccess = ref(false);
+const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' });
+const passwordChangeErrors = ref<{ fieldErrors: Record<string, string[]>; generalErrors: string[] }>({
+  fieldErrors: {},
+  generalErrors: []
+});
+
+async function handleChangePassword() {
+  passwordChangeErrors.value = { fieldErrors: {}, generalErrors: [] };
+  passwordChangeSuccess.value = false;
+
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    passwordChangeErrors.value.generalErrors = [t('auth.passwordsDoNotMatch')];
+    return;
+  }
+
+  passwordChangeLoading.value = true;
+  try {
+    const result = await changePassword({
+      oldPassword: passwordForm.value.oldPassword,
+      newPassword: passwordForm.value.newPassword
+    });
+    if (result.success) {
+      passwordChangeSuccess.value = true;
+      passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' };
+    } else {
+      const resultWithErrors = result as { fieldErrors?: Record<string, string[]>; generalErrors?: string[]; error?: string };
+      passwordChangeErrors.value = {
+        fieldErrors: resultWithErrors.fieldErrors || {},
+        generalErrors: resultWithErrors.generalErrors?.length
+          ? resultWithErrors.generalErrors
+          : [resultWithErrors.error || 'Password change failed']
+      };
+    }
+  } catch (error) {
+    passwordChangeErrors.value = parseGraphQLError(error);
+  } finally {
+    passwordChangeLoading.value = false;
+  }
+}
+
 async function saveProfile() {
   clearEditFormErrors();
   
@@ -592,6 +701,42 @@ async function saveProfile() {
 
 .edit-form-error {
   margin: 1rem 2rem;
+}
+
+.change-password-section {
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.section-header:hover {
+  background-color: var(--bg-light);
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.success-message {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 0.75rem;
+  margin: 0.5rem 2rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .error-message svg {

@@ -13,9 +13,25 @@ from backend.graphql.account.types import UserType
 from backend.graphql.messaging.types import MessageType
 
 
-CaseStatusEnum = graphene.Enum.from_enum(ModerationCase.Status)
-ActionPriorityEnum = graphene.Enum.from_enum(ModerationCase.ActionPriority)
-ActionEnum = graphene.Enum.from_enum(ModerationAction.Action)
+class CaseStatusEnum(graphene.Enum):
+    PENDING = "PENDING"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    RESOLVED = "RESOLVED"
+    DISMISSED = "DISMISSED"
+
+
+class ActionPriorityEnum(graphene.Enum):
+    LOW = 0
+    MEDIUM = 1
+    HIGH = 2
+
+
+class ActionEnum(graphene.Enum):
+    NO_VIOLATION = "NO_VIOLATION"
+    CONTENT_REMOVED = "CONTENT_REMOVED"
+    WARNING = "WARNING"
+    TEMP_BAN = "TEMP_BAN"
+    PERM_BAN = "PERM_BAN"
 
 
 class ReportTargetTypeEnum(graphene.Enum):
@@ -77,6 +93,9 @@ class ModerationActionType(DjangoObjectType):
         model = ModerationAction
         fields = ("id", "action", "note", "moderator", "created_at")
 
+    def resolve_action(self, info: graphene.ResolveInfo):
+        return str(self.action)
+
 
 class ModerationCaseType(DjangoObjectType):
     status = graphene.Field(CaseStatusEnum, required=True)
@@ -93,6 +112,9 @@ class ModerationCaseType(DjangoObjectType):
             "reports",
             "actions",
         )
+
+    def resolve_status(self, info: graphene.ResolveInfo):
+        return str(self.status)
 
     def resolve_target(self, info: graphene.ResolveInfo):
         return self.content_object

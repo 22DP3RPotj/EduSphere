@@ -39,16 +39,9 @@ const initApp = async () => {
   authStore.initialize();
 
   initializeLocaleSync({
-    locale: i18n.global.locale as { value: string },
+    locale: i18n.global.locale as unknown as { value: string },
     availableLocales: i18n.global.availableLocales,
   });
-
-  // TODO: Come up with a better way to handle CSRF tokens
-  // This is a temporary solution to fetch the CSRF token from the backend
-  // await fetch('/api/csrf/', {
-  //   method: 'GET',
-  //   credentials: 'include',
-  // });
   
   app.mount("#app");
 };

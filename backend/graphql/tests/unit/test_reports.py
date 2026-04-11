@@ -196,7 +196,7 @@ class ReportMutationsTests(JSONWebTokenTestCase):
 
         self.client.authenticate(self.moderator)
         mutation = """
-            mutation TakeCaseAction($caseId: UUID!, $action: ActionChoices!, $note: String) {
+            mutation TakeCaseAction($caseId: UUID!, $action: ActionEnum!, $note: String) {
                 takeCaseAction(caseId: $caseId, action: $action, note: $note) {
                     case {
                         status

@@ -6,7 +6,6 @@ from graphql import GraphQLError
 
 from backend.core.exceptions import ErrorCode
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
-from backend.room.choices import VisibilityChoices
 from backend.room.models import Room
 from backend.room.services import RoomService
 from backend.graphql.mutations import BaseMutation
@@ -30,14 +29,14 @@ class CreateRoom(BaseMutation):
         name: str,
         topic_names: list[str],
         description: str,
-        visibility: Optional[VisibilityChoices] = None,
+        visibility: Optional[RoomVisibilityEnum] = None,
     ) -> Self:
 
         room = RoomService.create_room(
             user=info.context.user,
             name=name,
             description=description,
-            visibility=visibility,
+            visibility=visibility.value if visibility is not None else None,
             topic_names=topic_names,
         )
 
@@ -64,7 +63,7 @@ class UpdateRoom(BaseMutation):
         name: Optional[str] = None,
         description: Optional[str] = None,
         topic_names: Optional[list[str]] = None,
-        visibility: Optional[VisibilityChoices] = None,
+        visibility: Optional[RoomVisibilityEnum] = None,
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
@@ -78,7 +77,7 @@ class UpdateRoom(BaseMutation):
             room=room,
             name=name,
             description=description,
-            visibility=visibility,
+            visibility=visibility.value if visibility is not None else None,
             topic_names=topic_names,
         )
 

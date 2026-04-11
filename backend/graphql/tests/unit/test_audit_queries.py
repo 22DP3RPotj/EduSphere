@@ -124,7 +124,7 @@ class AuditQueryTests(JSONWebTokenTestCase):
         data = response.data["roomAudits"]["edges"]
         self.assertGreater(len(data), 0)
 
-        latest = data[-1]["node"]
+        latest = data[0]["node"]
         self.assertEqual(latest["name"], "Audit Room Updated")
         self.assertEqual(latest["visibility"], VisibilityChoices.PRIVATE)
         self.assertEqual(latest["actor"]["username"], self.user.username)

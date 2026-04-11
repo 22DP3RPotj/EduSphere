@@ -5,7 +5,9 @@ from backend.room.models import Room, Topic
 from backend.access.models import Participant
 
 
-RoomVisibilityEnum = graphene.Enum.from_enum(Room.Visibility)
+class RoomVisibilityEnum(graphene.Enum):
+    PUBLIC = "PUBLIC"
+    PRIVATE = "PRIVATE"
 
 
 class TopicType(DjangoObjectType):
@@ -41,6 +43,9 @@ class RoomType(DjangoObjectType):
 
     def resolve_participants(self, info):
         return Participant.objects.select_related("user", "role").filter(room=self)
+
+    def resolve_visibility(self, info: graphene.ResolveInfo):
+        return str(self.visibility)
 
     def resolve_topics(self, info):
         return self.topics.all()

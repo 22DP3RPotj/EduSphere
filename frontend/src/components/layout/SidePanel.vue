@@ -39,6 +39,16 @@
             <span class="nav-label">Create Room</span>
           </router-link>
 
+          <router-link v-if="isAuthenticated" to="/invites" class="nav-item" active-class="active" @click="closePanel">
+            <font-awesome-icon icon="envelope" class="nav-icon" />
+            <span class="nav-label">Invites</span>
+          </router-link>
+
+          <router-link v-if="isAuthenticated" to="/reports" class="nav-item" active-class="active" @click="closePanel">
+            <font-awesome-icon icon="flag" class="nav-icon" />
+            <span class="nav-label">My Reports</span>
+          </router-link>
+
           <router-link v-if="isAuthenticated && currentUser?.isSuperuser" to="/admin" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="shield" class="nav-icon" />
             <span class="nav-label">Admin Panel</span>

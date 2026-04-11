@@ -5,7 +5,7 @@
         <font-awesome-icon icon="shield-alt" />
         Admin Panel
       </h1>
-      <p class="admin-subtitle">Manage users and review reports</p>
+      <p class="admin-subtitle">Manage users, moderate cases, and review audit logs</p>
     </div>
 
     <!-- Tab Navigation -->
@@ -18,12 +18,19 @@
         User Management
       </button>
       <button
-        :class="['tab-button', { active: activeTab === 'reports' }]"
-        @click="activeTab = 'reports'"
+        :class="['tab-button', { active: activeTab === 'cases' }]"
+        @click="activeTab = 'cases'"
       >
-        <font-awesome-icon icon="flag" />
-        Reports
-        <span v-if="pendingReportsCount > 0" class="badge-count">{{ pendingReportsCount }}</span>
+        <font-awesome-icon icon="gavel" />
+        Cases
+        <span v-if="pendingCasesCount > 0" class="badge-count">{{ pendingCasesCount }}</span>
+      </button>
+      <button
+        :class="['tab-button', { active: activeTab === 'audit' }]"
+        @click="activeTab = 'audit'"
+      >
+        <font-awesome-icon icon="clipboard-list" />
+        Audit Log
       </button>
     </div>
 
@@ -219,13 +226,13 @@
       </div>
     </div>
 
-    <!-- Reports Tab -->
-    <div v-show="activeTab === 'reports'" class="admin-section">
+    <!-- Cases Tab -->
+    <div v-show="activeTab === 'cases'" class="admin-section">
       <div class="section-controls">
         <div class="filters-row">
           <div class="filter-group">
-            <label for="status-filter">Status</label>
-            <select id="status-filter" v-model="reportFiltersUI.status" class="filter-select">
+            <label for="case-status-filter">Status</label>
+            <select id="case-status-filter" v-model="caseFiltersUI.status" class="filter-select">
               <option value="">All Statuses</option>
               <option value="PENDING">Pending</option>
               <option value="UNDER_REVIEW">Under Review</option>
@@ -234,161 +241,259 @@
             </select>
           </div>
           <div class="filter-group">
-            <label for="reason-filter">Reason</label>
-            <select id="reason-filter" v-model="reportFiltersUI.reason" class="filter-select">
-              <option value="">All Reasons</option>
-              <option value="SPAM">Spam</option>
-              <option value="HARASSMENT">Harassment</option>
-              <option value="INAPPROPRIATE_CONTENT">Inappropriate Content</option>
-              <option value="HATE_SPEECH">Hate Speech</option>
-              <option value="OTHER">Other</option>
+            <label for="case-priority-filter">Priority</label>
+            <select id="case-priority-filter" v-model="caseFiltersUI.priority" class="filter-select">
+              <option value="">All Priorities</option>
+              <option value="0">Low</option>
+              <option value="1">Medium</option>
+              <option value="2">High</option>
             </select>
           </div>
-          <div class="filter-group">
-            <label for="user-filter">Reporter</label>
-            <input
-              id="user-filter"
-              v-model="reportFiltersUI.user"
-              type="text"
-              placeholder="Filter by reporter..."
-              class="filter-input"
-            />
-          </div>
-          <button class="apply-filters-btn" @click="applyReportFilters">
+          <button class="apply-filters-btn" @click="applyCaseFilters">
             Apply Filters
           </button>
         </div>
       </div>
 
       <!-- Error State -->
-      <div v-if="reportsError" class="error-banner">
+      <div v-if="casesError" class="error-banner">
         <font-awesome-icon icon="exclamation-triangle" />
         <div class="error-content">
-          <p>Failed to load reports: {{ reportsError.message }}</p>
-          <button class="btn-retry" @click="() => refetchReportsComposable()">Retry</button>
+          <p>Failed to load cases: {{ casesError.message }}</p>
+          <button class="btn-retry" @click="() => refetchCasesComposable()">Retry</button>
         </div>
       </div>
 
-      <!-- Reports List -->
-      <div class="reports-list">
-        <!-- Loading State -->
-        <div v-if="loadingReports" class="loading-state">
+      <!-- Cases List -->
+      <div class="cases-list">
+        <div v-if="loadingCases" class="loading-state">
           <div class="spinner"></div>
-          <p>Loading reports...</p>
+          <p>Loading cases...</p>
         </div>
 
         <div v-else>
-          <div v-for="report in sortedReports" :key="report.id" class="report-card">
-            <div class="report-header">
-              <div class="report-meta">
-                <span class="report-id">Report #{{ report.id.slice(0, 8) }}</span>
-                <span :class="['report-status-badge', `status-${report.status.toLowerCase()}`]">
-                  {{ formatStatus(report.status) }}
+          <div v-for="mc in sortedCases" :key="mc.id" class="case-card">
+            <div class="case-header">
+              <div class="case-meta">
+                <span class="case-id">Case #{{ mc.id.slice(0, 8) }}</span>
+                <span :class="['case-status-badge', `status-${mc.status.toLowerCase()}`]">
+                  {{ formatStatus(mc.status) }}
                 </span>
-                <span class="report-reason-badge">{{ formatReason(report.reason) }}</span>
+                <span :class="['case-priority-badge', `priority-${priorityLabel(mc.priority).toLowerCase()}`]">
+                  {{ priorityLabel(mc.priority) }}
+                </span>
               </div>
-              <div class="report-actions-header">
-                <div class="report-date">{{ formatDate(report.created_at) }}</div>
+              <div class="case-actions-header">
+                <div class="case-date">{{ formatDate(mc.createdAt) }}</div>
                 <div class="dropdown">
-                  <button class="btn-icon-action" @click.stop="toggleReportActions(report.id)">
+                  <button class="btn-icon-action" @click.stop="toggleCaseActions(mc.id)">
                     <font-awesome-icon icon="ellipsis-vertical" />
                   </button>
-                  <div v-if="activeReportActions === report.id" class="dropdown-menu">
+                  <div v-if="activeCaseActions === mc.id" class="dropdown-menu">
                     <button
-                      v-if="report.status !== 'UNDER_REVIEW'"
+                      v-if="mc.status === 'PENDING'"
                       class="dropdown-item"
-                      @click="updateReportStatus(report.id, 'UNDER_REVIEW')"
+                      @click="startReviewCase(mc.id)"
                     >
                       <font-awesome-icon icon="eye" />
-                      Mark Under Review
+                      Start Review
+                    </button>
+                    <button class="dropdown-item" @click="openCaseActionModal(mc)">
+                      <font-awesome-icon icon="gavel" />
+                      Take Action
+                    </button>
+                    <button class="dropdown-item" @click="openPriorityModal(mc)">
+                      <font-awesome-icon icon="flag" />
+                      Set Priority
                     </button>
                     <button
-                      v-if="report.status !== 'RESOLVED'"
+                      v-if="mc.status === 'RESOLVED' || mc.status === 'DISMISSED'"
                       class="dropdown-item"
-                      @click="updateReportStatus(report.id, 'RESOLVED')"
+                      @click="handleReopenCase(mc.id)"
                     >
-                      <font-awesome-icon icon="check" />
-                      Resolve
-                    </button>
-                    <button
-                      v-if="report.status !== 'DISMISSED'"
-                      class="dropdown-item"
-                      @click="updateReportStatus(report.id, 'DISMISSED')"
-                    >
-                      <font-awesome-icon icon="times" />
-                      Dismiss
-                    </button>
-                    <button class="dropdown-item" @click="showModeratorNoteModal(report)">
-                      <font-awesome-icon icon="note-sticky" />
-                      Add Moderator Note
-                    </button>
-                    <button class="dropdown-item delete-action" @click="confirmDeleteReport(report.id)">
-                      <font-awesome-icon icon="trash" />
-                      Delete Report
+                      <font-awesome-icon icon="redo" />
+                      Reopen
                     </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="report-body">
-              <div class="report-info">
-                <div class="info-row">
-                  <span class="info-label">Reporter:</span>
-                  <span class="info-value">
-                    {{ report.user ? report.user.username : 'Deleted User' }}
-                  </span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Room:</span>
-                  <span class="info-value">
-                    {{ report.room.name }} (by @{{ report.room.host.username }})
-                  </span>
+            <div class="case-body">
+              <!-- Linked Reports -->
+              <div class="case-reports">
+                <h4>Reports ({{ mc.reports.length }})</h4>
+                <div v-for="report in mc.reports" :key="report.id" class="case-report-item">
+                  <span class="report-reason-badge">{{ report.reason.label }}</span>
+                  <span class="report-reporter">by {{ report.reporter?.username || 'Unknown' }}</span>
+                  <p v-if="report.description" class="report-description-text">{{ report.description }}</p>
                 </div>
               </div>
-              <div class="report-description">
-                <strong>Description:</strong>
-                <p>{{ report.body }}</p>
-              </div>
-              <div v-if="report.moderatorNote" class="moderator-note">
-                <strong>Moderator Note:</strong>
-                <p>{{ report.moderatorNote }}</p>
-                <span class="moderator-info">
-                  - {{ report.moderator?.username }} on {{ formatDate(report.updated_at) }}
-                </span>
+
+              <!-- Action History -->
+              <div v-if="mc.actions.length > 0" class="case-action-history">
+                <h4>Actions</h4>
+                <div v-for="action in mc.actions" :key="action.id" class="case-action-item">
+                  <span :class="['action-type-badge', `action-${action.action.toLowerCase()}`]">
+                    {{ formatActionType(action.action) }}
+                  </span>
+                  <span class="action-moderator">{{ action.moderator?.username || '<System>' }}</span>
+                  <span class="action-date">{{ formatDate(action.createdAt) }}</span>
+                  <p v-if="action.note" class="action-note">{{ action.note }}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div v-if="sortedReports.length === 0" class="no-results">
+          <div v-if="sortedCases.length === 0" class="no-results">
             <font-awesome-icon icon="inbox" size="2x" />
-            <p>No reports found</p>
+            <p>No cases found</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Moderator Note Modal -->
-    <div v-if="moderatorNoteModal.isOpen" class="modal-overlay" @click="closeModeratorNoteModal">
+    <!-- Audit Log Tab -->
+    <div v-show="activeTab === 'audit'" class="admin-section">
+      <div class="section-controls">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="audit-type-filter">Audit Type</label>
+            <select id="audit-type-filter" v-model="auditType" class="filter-select">
+              <option value="user">Users</option>
+              <option value="userBan">User Bans</option>
+              <option value="room">Rooms</option>
+              <option value="invite">Invites</option>
+              <option value="report">Reports</option>
+              <option value="case">Moderation Cases</option>
+              <option value="action">Moderation Actions</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="audit-date-from">From</label>
+            <input id="audit-date-from" v-model="auditFilters.dateFrom" type="date" class="filter-input" />
+          </div>
+          <div class="filter-group">
+            <label for="audit-date-to">To</label>
+            <input id="audit-date-to" v-model="auditFilters.dateTo" type="date" class="filter-input" />
+          </div>
+          <div class="filter-group">
+            <label for="audit-actor">Actor Username</label>
+            <input id="audit-actor" v-model="auditFilters.actorUsername" type="text" class="filter-input" placeholder="Filter by actor..." />
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit entries -->
+      <div v-if="auditLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading audit log...</p>
+      </div>
+      <div v-else-if="auditError" class="error-banner">
+        <font-awesome-icon icon="exclamation-triangle" />
+        <div class="error-content">
+          <p>Failed to load audit log: {{ auditError.message }}</p>
+        </div>
+      </div>
+      <div v-else>
+        <table class="admin-table audit-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Label</th>
+              <th>Object ID</th>
+              <th>Actor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="entry in auditEntries" :key="entry.pghId">
+              <td>{{ formatDate(entry.pghCreatedAt) }}</td>
+              <td><span class="audit-label-badge">{{ entry.pghLabel }}</span></td>
+              <td class="audit-obj-id">{{ entry.pghObjId?.slice(0, 8) || '—' }}</td>
+              <td>{{ entry.actor?.username || '<System>' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="auditEntries.length === 0" class="no-results">
+          <font-awesome-icon icon="clipboard-list" size="2x" />
+          <p>No audit entries found</p>
+        </div>
+
+        <div v-if="auditHasMore" class="load-more-container">
+          <button class="btn-load-more" @click="auditLoadMore">
+            Load More
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Action Modal -->
+    <div v-if="caseActionModal.isOpen" class="modal-overlay" @click="closeCaseActionModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>Add Moderator Note</h3>
-          <button class="modal-close" @click="closeModeratorNoteModal">
+          <h3>Take Action on Case</h3>
+          <button class="modal-close" @click="closeCaseActionModal">
             <font-awesome-icon icon="times" />
           </button>
         </div>
         <div class="modal-body">
-          <label for="moderator-note">Moderator Note</label>
-          <textarea
-            id="moderator-note"
-            v-model="moderatorNoteModal.input"
-            placeholder="Add a moderator note..."
-            rows="4"
-          ></textarea>
+          <div class="form-group">
+            <label for="case-action-type">Action</label>
+            <select id="case-action-type" v-model="caseActionModal.action" class="filter-select">
+              <option value="">Select an action...</option>
+              <option value="NO_VIOLATION">No Violation</option>
+              <option value="CONTENT_REMOVED">Content Removed</option>
+              <option value="WARNING">Warning</option>
+              <option value="TEMP_BAN">Temporary Ban</option>
+              <option value="PERM_BAN">Permanent Ban</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="case-action-note">Note (optional)</label>
+            <textarea
+              id="case-action-note"
+              v-model="caseActionModal.note"
+              placeholder="Add a note about this action..."
+              rows="4"
+            ></textarea>
+          </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" @click="closeModeratorNoteModal">Cancel</button>
-          <button class="btn-confirm" @click="confirmAddModeratorNote">Add Note</button>
+          <button class="btn-cancel" @click="closeCaseActionModal">Cancel</button>
+          <button
+            class="btn-confirm"
+            :disabled="!caseActionModal.action"
+            @click="confirmCaseAction"
+          >
+            Take Action
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Priority Modal -->
+    <div v-if="priorityModal.isOpen" class="modal-overlay" @click="closePriorityModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Set Case Priority</h3>
+          <button class="modal-close" @click="closePriorityModal">
+            <font-awesome-icon icon="times" />
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="priority-select">Priority</label>
+            <select id="priority-select" v-model="priorityModal.priority" class="filter-select">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closePriorityModal">Cancel</button>
+          <button class="btn-confirm" @click="confirmSetPriority">Set Priority</button>
         </div>
       </div>
     </div>
@@ -449,15 +554,31 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
   useAdminUsers,
-  useAdminReports,
-  useUpdateUserStaffStatus,
-  useUpdateUserActiveStatus,
-  useUpdateReport,
-  useDeleteReport,
+  useAdminCases,
+  useBanUser,
+  useUnbanUser,
+  useUnbanUsers,
+  usePromoteUser,
+  useDemoteUser,
+  usePromoteUsers,
+  useDemoteUsers,
+  useTakeCaseAction,
+  useSetCaseUnderReview,
+  useSetCasePriority,
+  useReopenCase,
 } from '@/composables/useAdmin';
+import {
+  useUserAudits,
+  useUserBanAudits,
+  useRoomAudits,
+  useInviteAudits,
+  useReportAudits,
+  useModerationCaseAudits,
+  useModerationActionAudits,
+} from '@/composables/useAudit';
 import { buildAvatarUrl } from '@/utils/media';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { Report, User } from '@/types';
+import type { ModerationCase, User, UUID } from '@/types';
 
 // Role importance for sorting (higher = more important)
 const ROLE_IMPORTANCE = {
@@ -473,7 +594,7 @@ function getUserRoleImportance(user: User): number {
 }
 
 // Tab state
-const activeTab = ref<'users' | 'reports'>('users');
+const activeTab = ref<'users' | 'cases' | 'audit'>('users');
 
 // User Management State
 const userSearch = ref({
@@ -491,23 +612,24 @@ const selectedUsers = ref<string[]>([]);
 const activeUserActions = ref<string | null>(null);
 const selectedBulkAction = ref<'promote' | 'demote' | 'activate' | null>(null);
 
-// Report Management State
-const reportFiltersUI = ref({
-  status: '',
-  reason: '',
-  user: '',
-});
-const reportFiltersApplied = ref({
-  status: '',
-  reason: '',
-  user: '',
-});
-const moderatorNoteModal = ref({
+// Case Management State
+const caseFiltersUI = ref({ status: '', priority: '' });
+const caseFiltersApplied = ref({ status: '', priority: '' });
+const activeCaseActions = ref<string | null>(null);
+const caseActionModal = ref({
   isOpen: false,
-  report: null as Report | null,
-  input: '',
+  caseId: '' as UUID,
+  action: '',
+  note: '',
 });
-const activeReportActions = ref<string | null>(null);
+const priorityModal = ref({
+  isOpen: false,
+  caseId: '' as UUID,
+  priority: 'MEDIUM',
+});
+
+// Audit state
+const auditType = ref<'user' | 'userBan' | 'room' | 'invite' | 'report' | 'case' | 'action'>('user');
 
 // Termination Modal
 const terminationModal = ref({
@@ -525,18 +647,62 @@ const confirmationModal = ref({
   action: null as (() => Promise<void>) | null,
 });
 
-// Composables
+// Composables - Users
 const { users, loading: loadingUsers, error: usersError, refetch: refetchUsersComposable } = useAdminUsers(computed(() => userSearch.value.filter));
-const { reports, loading: loadingReports, error: reportsError, refetch: refetchReportsComposable } = useAdminReports(computed(() => reportFiltersApplied.value.status), computed(() => reportFiltersApplied.value.reason));
+const { banUser } = useBanUser();
+const { unbanUser } = useUnbanUser();
+const { unbanUsers } = useUnbanUsers();
+const { promoteUser: promoteUserMutation } = usePromoteUser();
+const { demoteUser: demoteUserMutation } = useDemoteUser();
+const { promoteUsers } = usePromoteUsers();
+const { demoteUsers } = useDemoteUsers();
 
-const { updateStaffStatus } = useUpdateUserStaffStatus();
-const { updateActiveStatus } = useUpdateUserActiveStatus();
-const { updateReport } = useUpdateReport();
-const { deleteReport } = useDeleteReport();
+// Composables - Cases
+const { cases, loading: loadingCases, error: casesError, refetch: refetchCasesComposable } = useAdminCases(
+  computed(() => ({
+    status: caseFiltersApplied.value.status || undefined,
+    priority: caseFiltersApplied.value.priority ? Number(caseFiltersApplied.value.priority) : undefined,
+    targetType: undefined,
+  }))
+);
+const { takeCaseAction } = useTakeCaseAction();
+const { setCaseUnderReview } = useSetCaseUnderReview();
+const { setCasePriority } = useSetCasePriority();
+const { reopenCase } = useReopenCase();
+
+// Composables - Audit
+const auditFilters = ref({ dateFrom: undefined, dateTo: undefined, actorUsername: undefined, name: undefined });
+const auditTabActive = computed(() => activeTab.value === 'audit');
+const userAudit = useUserAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'user'));
+const userBanAudit = useUserBanAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'userBan'));
+const roomAudit = useRoomAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'room'));
+const inviteAudit = useInviteAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'invite'));
+const reportAudit = useReportAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'report'));
+const caseAudit = useModerationCaseAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'case'));
+const actionAudit = useModerationActionAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'action'));
+
+const auditMap = {
+  user: userAudit,
+  userBan: userBanAudit,
+  room: roomAudit,
+  invite: inviteAudit,
+  report: reportAudit,
+  case: caseAudit,
+  action: actionAudit,
+} as const;
+
+const auditEntries = computed(() => auditMap[auditType.value].entries.value);
+const auditLoading = computed(() => auditMap[auditType.value].loading.value);
+const auditError = computed(() => auditMap[auditType.value].error.value);
+const auditHasMore = computed(() => auditMap[auditType.value].hasNextPage.value);
+
+function auditLoadMore() {
+  auditMap[auditType.value].loadMore();
+}
 
 // Computed
-const pendingReportsCount = computed(() => {
-  return reports.value.filter((r) => r.status === 'PENDING' || r.status === 'UNDER_REVIEW').length;
+const pendingCasesCount = computed(() => {
+  return cases.value.filter((c) => c.status === 'PENDING' || c.status === 'UNDER_REVIEW').length;
 });
 
 const allUsersSelected = computed(() => {
@@ -556,7 +722,6 @@ const sortedUsers = computed(() => {
       aVal = new Date(String(aValue)).getTime();
       bVal = new Date(String(bValue)).getTime();
     } else if (userSort.value.column === 'isStaff') {
-      // Sort by role importance using the mapping
       aVal = getUserRoleImportance(a);
       bVal = getUserRoleImportance(b);
     } else if (userSort.value.column === 'isActive') {
@@ -577,9 +742,9 @@ const sortedUsers = computed(() => {
   return sorted;
 });
 
-const sortedReports = computed(() => {
-  return [...reports.value].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+const sortedCases = computed(() => {
+  return [...cases.value].sort((a, b) => {
+    return new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime();
   });
 });
 
@@ -597,8 +762,6 @@ function closeTerminationModal() {
 }
 
 function calculateExpiresAt(duration: string): string | undefined {
-  // TODO: REWORK
-  // Use a library like date-fns for more robust date handling and to avoid timezone issues
   if (duration === 'permanent') return undefined;
 
   const now = new Date();
@@ -624,14 +787,9 @@ async function confirmTermination() {
   const expiresAt = calculateExpiresAt(terminationModal.value.duration);
 
   try {
-    const result = await updateActiveStatus(
-      terminationModal.value.userId,
-      false, // isActive = false (Ban)
-      reason,
-      expiresAt
-    );
+    const result = await banUser(terminationModal.value.userId as UUID, reason, expiresAt);
 
-    if (result?.data?.updateUserActiveStatus?.success) {
+    if (result?.success) {
       await refetchUsersComposable();
       selectedUsers.value = [];
       closeTerminationModal();
@@ -644,7 +802,7 @@ async function confirmTermination() {
 function terminateUser(userId: string) {
   terminationModal.value.userId = userId;
   terminationModal.value.isOpen = true;
-  activeUserActions.value = null; // Close dropdown
+  activeUserActions.value = null;
 }
 
 function activateUser(userId: string) {
@@ -653,21 +811,20 @@ function activateUser(userId: string) {
     title: 'Confirm Activation',
     message: 'Are you sure you want to activate this user?',
     action: async () => {
-      const result = await updateActiveStatus([userId], true);
-      if (result?.data?.updateUserActiveStatus?.success) {
+      const result = await unbanUser(userId as UUID);
+      if (result?.success) {
         await refetchUsersComposable();
-        // Clear selection if this user was selected
         const idx = selectedUsers.value.indexOf(userId);
         if (idx > -1) selectedUsers.value.splice(idx, 1);
       }
     },
   };
-  activeUserActions.value = null; // Close dropdown
+  activeUserActions.value = null;
 }
 
-function applyReportFilters() {
-  reportFiltersApplied.value = { ...reportFiltersUI.value };
-  refetchReportsComposable();
+function applyCaseFilters() {
+  caseFiltersApplied.value = { ...caseFiltersUI.value };
+  refetchCasesComposable();
 }
 
 function toggleUserSelection(userId: string) {
@@ -702,8 +859,8 @@ function toggleUserActions(userId: string) {
   activeUserActions.value = activeUserActions.value === userId ? null : userId;
 }
 
-function toggleReportActions(reportId: string) {
-  activeReportActions.value = activeReportActions.value === reportId ? null : reportId;
+function toggleCaseActions(caseId: string) {
+  activeCaseActions.value = activeCaseActions.value === caseId ? null : caseId;
 }
 
 function showConfirmation(title: string, message: string, action: () => Promise<void>) {
@@ -737,7 +894,7 @@ async function promoteUser(userId: string) {
     'Are you sure you want to promote this user to staff?',
     async () => {
       try {
-        await updateStaffStatus([userId], true);
+        await promoteUserMutation(userId as UUID);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -755,7 +912,7 @@ async function demoteUser(userId: string) {
     'Are you sure you want to remove staff role from this user?',
     async () => {
       try {
-        await updateStaffStatus([userId], false);
+        await demoteUserMutation(userId as UUID);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -765,7 +922,6 @@ async function demoteUser(userId: string) {
     }
   );
 }
-
 
 // Bulk Actions
 function applyBulkAction() {
@@ -789,7 +945,7 @@ async function bulkPromoteUsers() {
     `Are you sure you want to promote ${selectedUsers.value.length} users to staff?`,
     async () => {
       try {
-        await updateStaffStatus(selectedUsers.value, true);
+        await promoteUsers(selectedUsers.value as UUID[]);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -806,7 +962,7 @@ async function bulkDemoteUsers() {
     `Are you sure you want to remove staff role from ${selectedUsers.value.length} users?`,
     async () => {
       try {
-        await updateStaffStatus(selectedUsers.value, false);
+        await demoteUsers(selectedUsers.value as UUID[]);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -819,7 +975,7 @@ async function bulkDemoteUsers() {
 
 async function bulkActivateUsers() {
   try {
-    await updateActiveStatus(selectedUsers.value, true);
+    await unbanUsers(selectedUsers.value as UUID[]);
     await refetchUsersComposable();
     selectedUsers.value = [];
   } catch (error) {
@@ -827,57 +983,104 @@ async function bulkActivateUsers() {
   }
 }
 
-// Report Actions
-async function updateReportStatus(reportId: string, status: string) {
-  activeReportActions.value = null;
+// Case Actions
+async function startReviewCase(caseId: UUID) {
+  activeCaseActions.value = null;
   try {
-    await updateReport(reportId, status);
-    await refetchReportsComposable();
+    await setCaseUnderReview(caseId);
+    await refetchCasesComposable();
   } catch (error) {
-    console.error('Failed to update report status:', error);
+    console.error('Failed to start review:', error);
   }
 }
 
-function showModeratorNoteModal(report: Report) {
-  activeReportActions.value = null;
-  moderatorNoteModal.value.report = report;
-  moderatorNoteModal.value.input = report.moderatorNote || '';
-  moderatorNoteModal.value.isOpen = true;
+function openCaseActionModal(mc: ModerationCase) {
+  activeCaseActions.value = null;
+  caseActionModal.value = {
+    isOpen: true,
+    caseId: mc.id,
+    action: '',
+    note: '',
+  };
 }
 
-function closeModeratorNoteModal() {
-  moderatorNoteModal.value.isOpen = false;
-  moderatorNoteModal.value.report = null;
-  moderatorNoteModal.value.input = '';
+function closeCaseActionModal() {
+  caseActionModal.value.isOpen = false;
+  caseActionModal.value.caseId = '' as UUID;
+  caseActionModal.value.action = '';
+  caseActionModal.value.note = '';
 }
 
-async function confirmAddModeratorNote() {
-  if (!moderatorNoteModal.value.report) return;
-
+async function confirmCaseAction() {
+  if (!caseActionModal.value.action) return;
   try {
-    await updateReport(moderatorNoteModal.value.report.id, undefined, moderatorNoteModal.value.input);
-    await refetchReportsComposable();
-    closeModeratorNoteModal();
+    await takeCaseAction(
+      caseActionModal.value.caseId,
+      caseActionModal.value.action,
+      caseActionModal.value.note || undefined
+    );
+    await refetchCasesComposable();
+    closeCaseActionModal();
   } catch (error) {
-    console.error('Failed to add moderator note:', error);
+    console.error('Failed to take case action:', error);
   }
 }
 
-async function confirmDeleteReport(reportId: string) {
-  activeReportActions.value = null;
+function openPriorityModal(mc: ModerationCase) {
+  activeCaseActions.value = null;
+  priorityModal.value = {
+    isOpen: true,
+    caseId: mc.id,
+    priority: mc.priority === 0 ? 'LOW' : mc.priority === 1 ? 'MEDIUM' : 'HIGH',
+  };
+}
+
+function closePriorityModal() {
+  priorityModal.value.isOpen = false;
+  priorityModal.value.caseId = '' as UUID;
+}
+
+async function confirmSetPriority() {
+  try {
+    await setCasePriority(priorityModal.value.caseId, priorityModal.value.priority);
+    await refetchCasesComposable();
+    closePriorityModal();
+  } catch (error) {
+    console.error('Failed to set priority:', error);
+  }
+}
+
+async function handleReopenCase(caseId: UUID) {
+  activeCaseActions.value = null;
   showConfirmation(
-    'Delete Report',
-    'Are you sure you want to permanently delete this report?',
+    'Reopen Case',
+    'Are you sure you want to reopen this case?',
     async () => {
       try {
-        await deleteReport(reportId);
-        await refetchReportsComposable();
+        await reopenCase(caseId);
+        await refetchCasesComposable();
       } catch (error) {
-        console.error('Failed to delete report:', error);
+        console.error('Failed to reopen case:', error);
         throw error;
       }
     }
   );
+}
+
+function priorityLabel(priority: number): string {
+  switch (priority) {
+    case 0: return 'Low';
+    case 1: return 'Medium';
+    case 2: return 'High';
+    default: return 'Unknown';
+  }
+}
+
+function formatActionType(action: string): string {
+  return action
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 function formatDate(dateString: string | undefined) {
@@ -897,18 +1100,11 @@ function formatStatus(status: string) {
     .join(' ');
 }
 
-function formatReason(reason: string) {
-  return reason
-    .split('_')
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
 // Close dropdowns when clicking outside
 function handleClickOutside(event: MouseEvent) {
   if (!(event.target as Element).closest('.dropdown')) {
     activeUserActions.value = null;
-    activeReportActions.value = null;
+    activeCaseActions.value = null;
   }
 }
 
@@ -1457,8 +1653,8 @@ onUnmounted(() => {
   color: var(--text-color);
 }
 
-/* Reports */
-.reports-list {
+/* Cases */
+.cases-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -1466,18 +1662,18 @@ onUnmounted(() => {
   min-height: 200px;
 }
 
-.report-card {
+.case-card {
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 1.5rem;
   transition: var(--transition);
 }
 
-.report-card:hover {
+.case-card:hover {
   box-shadow: var(--shadow);
 }
 
-.report-header {
+.case-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1485,20 +1681,20 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
-.report-meta {
+.case-meta {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.report-id {
+.case-id {
   font-family: monospace;
   font-size: 0.875rem;
   color: var(--text-light);
 }
 
-.report-status-badge {
+.case-status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -1526,6 +1722,79 @@ onUnmounted(() => {
   color: #6b7280;
 }
 
+.case-priority-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.priority-low {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.priority-medium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.priority-high {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.case-actions-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.case-date {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.case-body {
+  margin-bottom: 1rem;
+}
+
+.case-reports h4,
+.case-action-history h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.case-report-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.case-report-item:last-child {
+  border-bottom: none;
+}
+
+.report-reporter {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.report-description-text {
+  width: 100%;
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
 .report-reason-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -1535,67 +1804,114 @@ onUnmounted(() => {
   color: var(--text-color);
 }
 
-.report-actions-header {
+.case-action-history {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.case-action-item {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.report-date {
-  font-size: 0.875rem;
-  color: var(--text-light);
-  white-space: nowrap;
-}
-
-.report-body {
-  margin-bottom: 1rem;
-}
-
-.report-info {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
 }
 
-.info-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.info-label {
+.action-type-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
+}
+
+.action-no_violation {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.action-content_removed {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.action-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.action-temp_ban {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.action-perm_ban {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.action-moderator {
+  font-size: 0.875rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.action-date {
+  font-size: 0.8rem;
   color: var(--text-light);
 }
 
-.info-value {
+.action-note {
+  width: 100%;
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
   color: var(--text-color);
-}
-
-.report-description {
-  margin-bottom: 1rem;
-}
-
-.report-description p,
-.moderator-note p {
-  margin: 0.5rem 0;
-  color: var(--text-color);
-  line-height: 1.6;
-}
-
-.moderator-note {
-  padding: 1rem;
+  padding: 0.5rem;
   background-color: var(--bg-color);
-  border-left: 3px solid var(--primary-color);
   border-radius: var(--radius);
+  border-left: 3px solid var(--primary-color);
 }
 
-.moderator-info {
-  display: block;
-  margin-top: 0.5rem;
+/* Audit */
+.audit-table th,
+.audit-table td {
+  padding: 0.75rem 1rem;
+}
+
+.audit-label-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.audit-obj-id {
+  font-family: monospace;
   font-size: 0.875rem;
   color: var(--text-light);
-  font-style: italic;
+}
+
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.btn-load-more {
+  padding: 0.75rem 2rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-load-more:hover {
+  background-color: var(--primary-hover);
 }
 
 /* Modal */
@@ -1818,12 +2134,12 @@ onUnmounted(() => {
     height: 28px;
   }
 
-  .report-header {
+  .case-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .report-actions-header {
+  .case-actions-header {
     width: 100%;
     justify-content: space-between;
   }

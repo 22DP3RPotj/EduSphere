@@ -26,6 +26,9 @@ class RoleType(DjangoObjectType):
             "permissions",
         )
 
+    def resolve_permissions(self, info: graphene.ResolveInfo):
+        return self.permissions.all()
+
 
 class ParticipantType(DjangoObjectType):
     user = graphene.Field(UserType, required=True)

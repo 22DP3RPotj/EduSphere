@@ -21,6 +21,21 @@ const routes = [
     redirect: "/auth",
     meta: { requireGuest: true }
   },
+  {
+    path: "/forgot-password",
+    component: () => import("@/views/ForgotPasswordPage.vue"),
+    meta: { requireGuest: true }
+  },
+  {
+    path: "/reset-password",
+    component: () => import("@/views/ResetPasswordPage.vue"),
+    meta: { requireGuest: true }
+  },
+  {
+    path: "/verify-email",
+    component: () => import("@/views/VerifyEmailPage.vue"),
+    meta: { requireAuth: true }
+  },
   { 
     path: "/create-room", 
     component: () => import("@/views/CreateRoom.vue"), 
@@ -34,6 +49,16 @@ const routes = [
   {
     path: "/r/:roomId",
     component: () => import("@/views/RoomDetail.vue"),
+    meta: { requireAuth: true }
+  },
+  {
+    path: "/invites",
+    component: () => import("@/views/InvitesPage.vue"),
+    meta: { requireAuth: true }
+  },
+  {
+    path: "/reports",
+    component: () => import("@/views/ReportsPage.vue"),
     meta: { requireAuth: true }
   },
   {

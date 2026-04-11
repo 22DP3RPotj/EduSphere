@@ -16,41 +16,161 @@ export const GET_ALL_USERS = gql`
   }
 `;
 
-export const GET_ALL_REPORTS = gql`
-  query GetReports($status: ReportStatus, $reason: ReportReason, $userId: UUID) {
-    reports(status: $status, reason: $reason, userId: $userId) {
+export const GET_REPORTS = gql`
+  query GetReports(
+    $reason: UUID,
+    $reporter: UUID,
+    $case: UUID,
+    $hasCase: Boolean,
+    $targetType: ReportTargetTypeEnum,
+    $createdAfter: DateTime,
+    $createdBefore: DateTime
+  ) {
+    reports(
+      reason: $reason,
+      reporter: $reporter,
+      case: $case,
+      hasCase: $hasCase,
+      targetType: $targetType,
+      createdAfter: $createdAfter,
+      createdBefore: $createdBefore
+    ) {
       id
-      body
-      reason
-      status
-      moderatorNote
+      description
       createdAt
-      updatedAt
-      user {
+      reason {
+        id
+        slug
+        label
+      }
+      reporter {
         id
         username
         name
         avatar
       }
-      room {
+      case {
         id
-        name
-        host {
-          id
-          username
-        }
-      }
-      moderator {
-        id
-        username
-        name
+        status
+        priority
       }
     }
   }
 `;
 
 export const GET_REPORT_COUNT = gql`
-  query GetReportCount($status: ReportStatus, $reason: ReportReason, $userId: UUID) {
-    reportCount(status: $status, reason: $reason, userId: $userId)
+  query GetReportCount(
+    $reason: UUID,
+    $reporter: UUID,
+    $case: UUID,
+    $hasCase: Boolean,
+    $targetType: ReportTargetTypeEnum,
+    $createdAfter: DateTime,
+    $createdBefore: DateTime
+  ) {
+    reportCount(
+      reason: $reason,
+      reporter: $reporter,
+      case: $case,
+      hasCase: $hasCase,
+      targetType: $targetType,
+      createdAfter: $createdAfter,
+      createdBefore: $createdBefore
+    )
+  }
+`;
+
+export const GET_CASES = gql`
+  query GetCases(
+    $status: CaseStatusEnum,
+    $priority: Int,
+    $hasActions: Boolean,
+    $targetType: ReportTargetTypeEnum,
+    $createdAfter: DateTime,
+    $createdBefore: DateTime,
+    $updatedAfter: DateTime,
+    $updatedBefore: DateTime
+  ) {
+    cases(
+      status: $status,
+      priority: $priority,
+      hasActions: $hasActions,
+      targetType: $targetType,
+      createdAfter: $createdAfter,
+      createdBefore: $createdBefore,
+      updatedAfter: $updatedAfter,
+      updatedBefore: $updatedBefore
+    ) {
+      id
+      status
+      priority
+      createdAt
+      updatedAt
+      reports {
+        id
+        description
+        reason {
+          id
+          slug
+          label
+        }
+        reporter {
+          id
+          username
+          name
+        }
+      }
+      actions {
+        id
+        action
+        note
+        createdAt
+        moderator {
+          id
+          username
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const GET_CASE = gql`
+  query GetCase($caseId: UUID!) {
+    case(caseId: $caseId) {
+      id
+      status
+      priority
+      createdAt
+      updatedAt
+      reports {
+        id
+        description
+        createdAt
+        reason {
+          id
+          slug
+          label
+        }
+        reporter {
+          id
+          username
+          name
+          avatar
+        }
+      }
+      actions {
+        id
+        action
+        note
+        createdAt
+        moderator {
+          id
+          username
+          name
+          avatar
+        }
+      }
+    }
   }
 `;

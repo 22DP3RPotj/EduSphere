@@ -1,8 +1,48 @@
-import type { User, Room, Message, UUID, DateTime } from './main.types';
+import type { User, Room, Message, UUID, DateTime, ReportTargetType } from './main.types';
 
 export interface LoginInput {
   email: string;
   password: string;
+}
+
+export interface PasswordChangeInput {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface PasswordResetInput {
+  token: string;
+  newPassword: string;
+}
+
+export interface SendInviteInput {
+  roomId: UUID;
+  inviteeEmail: string;
+  expiresAt?: string;
+  roleId?: UUID;
+}
+
+export interface CreateReportInput {
+  targetType: ReportTargetType;
+  targetId: UUID;
+  reasonId: UUID;
+  description?: string;
+}
+
+export interface CreateRoleInput {
+  roomId: UUID;
+  name: string;
+  description: string;
+  priority: number;
+  permissionIds?: UUID[];
+}
+
+export interface UpdateRoleInput {
+  roleId: UUID;
+  name?: string;
+  description?: string;
+  priority?: number;
+  permissionIds?: UUID[];
 }
 
 
@@ -38,23 +78,23 @@ export interface CreateRoomInput {
 }
 
 export interface UpdateRoomInput {
-  roomId: string;
+  roomId: UUID;
   topicNames?: string[];
   description?: string;
 }
 
 export interface CreateMessageInput {
-  roomId: string;
+  roomId: UUID;
   body: string;
 }
 
 export interface UpdateMessageInput {
-  messageId: string;
+  messageId: UUID;
   body: string;
 }
 
 export interface DeleteMessageInput {
-  messageId: string;
+  messageId: UUID;
 }
 
 // Response types for mutations - these should match your GraphQL response structure

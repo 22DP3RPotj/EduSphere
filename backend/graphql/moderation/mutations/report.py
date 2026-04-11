@@ -13,7 +13,6 @@ from backend.graphql.moderation.types import (
     ReportType,
     ReportTargetTypeEnum,
 )
-from backend.moderation.choices import ActionChoices, ActionPriorityChoices
 from backend.moderation.models import ModerationCase, ReportReason
 from backend.room.models import Room
 from backend.account.models import User
@@ -87,7 +86,7 @@ class TakeCaseAction(BaseMutation):
         root: Optional[Any],
         info: graphene.ResolveInfo,
         case_id: uuid.UUID,
-        action: ActionChoices,
+        action: ActionEnum,
         note: Optional[str] = None,
     ) -> Self:
         try:
@@ -100,7 +99,7 @@ class TakeCaseAction(BaseMutation):
         case = ReportService.take_case_action(
             moderator=info.context.user,
             case=case,
-            action=action,
+            action=action.value,
             note=note,
         )
 
@@ -121,7 +120,7 @@ class SetCasePriority(BaseMutation):
         root: Optional[Any],
         info: graphene.ResolveInfo,
         case_id: uuid.UUID,
-        priority: ActionPriorityChoices,
+        priority: ActionPriorityEnum,
     ) -> Self:
         try:
             case = ModerationCase.objects.get(id=case_id)
@@ -133,7 +132,7 @@ class SetCasePriority(BaseMutation):
         case = ReportService.set_case_priority(
             moderator=info.context.user,
             case=case,
-            priority=priority,
+            priority=priority.value,
         )
 
         return cls(case=case)

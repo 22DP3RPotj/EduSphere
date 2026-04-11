@@ -48,6 +48,10 @@
       <span v-else>Login</span>
     </button>
 
+    <p class="forgot-password">
+      <router-link to="/forgot-password">Forgot password?</router-link>
+    </p>
+
     <p class="switch-form">
       Don't have an account?
       <button type="button" @click="$emit('switch-to-register')">Register</button>
@@ -100,4 +104,20 @@ async function handleSubmit() {
 <style scoped>
 @import '@/assets/styles/form-styles.css';
 @import '@/assets/styles/form-errors.css';
+
+.forgot-password {
+  text-align: right;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.forgot-password a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
 </style>

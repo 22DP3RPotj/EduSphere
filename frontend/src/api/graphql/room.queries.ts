@@ -54,6 +54,7 @@ export const USER_WITH_ROOMS_QUERY = gql`
             name
             avatar
             bio
+            language
         }
         roomsParticipatedByUser(userId: $userId) {
             id
@@ -171,6 +172,7 @@ export const USER_QUERY = gql`
             name
             avatar
             bio
+            language
         }
     }
 `;

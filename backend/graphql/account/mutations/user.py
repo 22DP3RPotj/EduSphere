@@ -9,7 +9,7 @@ from django.utils.datastructures import MultiValueDict
 
 from backend.account.choices import LanguageChoices
 from backend.core.exceptions import ErrorCode, format_form_errors
-from backend.graphql.account.types import LanguageEnum, UserType
+from backend.graphql.account.types import UserType
 from backend.graphql.mutations import BaseMutation
 from backend.account.forms import UserForm
 from backend.account.services import AccountService
@@ -51,7 +51,7 @@ class UpdateUser(BaseMutation):
         name = graphene.String(required=False)
         username = graphene.String(required=False)
         bio = graphene.String(required=False)
-        language = LanguageEnum(required=False)
+        language = graphene.String(required=False)
         avatar = Upload(required=False)
 
     user = graphene.Field(UserType)
@@ -65,7 +65,7 @@ class UpdateUser(BaseMutation):
         name: Optional[str] = None,
         username: Optional[str] = None,
         bio: Optional[str] = None,
-        language: Optional[LanguageChoices] = None,
+        language: Optional[str] = None,
         avatar: Optional[Upload] = None,
     ) -> Self:
         user = info.context.user
@@ -93,6 +93,11 @@ class UpdateUser(BaseMutation):
 
         user = form.save(commit=False)
         if language is not None:
+            valid = {c.value for c in LanguageChoices}
+            if language not in valid:
+                raise GraphQLError(
+                    "Invalid language", extensions={"code": ErrorCode.VALIDATION_ERROR}
+                )
             user.language = language
         user.save()
 

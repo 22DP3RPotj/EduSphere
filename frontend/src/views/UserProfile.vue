@@ -97,7 +97,7 @@
                   maxlength="500"
                 ></textarea>
                 <div class="char-count">
-                  {{ editForm.bio.length }}/500
+                  {{ editForm.bio.length }}/2000
                 </div>
               </div>
 
@@ -492,10 +492,10 @@ function getLanguageName(locale: string): string {
 function startEditing() {
   isEditing.value = true;
   editForm.value = {
-    name: user.value!.name || '',
-    bio: user.value!.bio || '',
+    name: user.value?.name || '',
+    bio: user.value?.bio || '',
     avatar: null,
-    language: user.value!.language || 'en'
+    language: user.value?.language || 'en'
   };
   avatarPreview.value = null;
   clearEditFormErrors();
@@ -504,10 +504,10 @@ function startEditing() {
 function cancelEditing() {
   isEditing.value = false;
   editForm.value = {
-    name: user.value!.name || '',
-    bio: user.value!.bio || '',
+    name: user.value?.name || '',
+    bio: user.value?.bio || '',
     avatar: null,
-    language: user.value!.language || 'en'
+    language: user.value?.language || 'en'
   };
   avatarPreview.value = null;
   clearEditFormErrors();

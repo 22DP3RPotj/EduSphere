@@ -185,3 +185,59 @@ class DemoteUsers(BaseMutation):
             is_staff=False,
         )
         return cls(success=True, updated_count=updated_count)
+
+
+class PromoteUser(BaseMutation):
+    class Arguments:
+        user_id = graphene.UUID(required=True)
+
+    success = graphene.Boolean()
+
+    @classmethod
+    @superuser_required
+    def resolve(
+        cls,
+        root: Optional[Any],
+        info: graphene.ResolveInfo,
+        user_id: uuid.UUID,
+    ) -> Self:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise GraphQLError(
+                "User not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
+        ModerationService.promote_user(
+            actor=info.context.user,
+            user=user,
+        )
+        return cls(success=True)
+
+
+class DemoteUser(BaseMutation):
+    class Arguments:
+        user_id = graphene.UUID(required=True)
+
+    success = graphene.Boolean()
+
+    @classmethod
+    @superuser_required
+    def resolve(
+        cls,
+        root: Optional[Any],
+        info: graphene.ResolveInfo,
+        user_id: uuid.UUID,
+    ) -> Self:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise GraphQLError(
+                "User not found", extensions={"code": ErrorCode.NOT_FOUND}
+            )
+
+        ModerationService.demote_user(
+            actor=info.context.user,
+            user=user,
+        )
+        return cls(success=True)

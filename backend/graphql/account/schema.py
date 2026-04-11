@@ -13,6 +13,8 @@ from .mutations.moderation import (
     UnbanUser,
     PromoteUsers,
     DemoteUsers,
+    PromoteUser,
+    DemoteUser,
 )
 
 
@@ -29,3 +31,5 @@ class AccountMutations(AuthMutation, graphene.ObjectType):
     unban_user = UnbanUser.Field()
     promote_users = PromoteUsers.Field()
     demote_users = DemoteUsers.Field()
+    promote_user = PromoteUser.Field()
+    demote_user = DemoteUser.Field()

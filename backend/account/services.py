@@ -272,3 +272,33 @@ class ModerationService:
             )
 
         return User.objects.filter(id__in=user_ids).update(is_staff=is_staff)
+
+    @staticmethod
+    def promote_user(*, actor: User, user: User) -> None:
+        """
+        Grant staff status to a single user.
+
+        Raises:
+            PermissionException: If actor lacks promote permission.
+        """
+        if not actor.has_perm(AccountPermission.PROMOTE):
+            raise PermissionException(
+                "You do not have permission to change staff status."
+            )
+
+        user.promote_to_staff()
+
+    @staticmethod
+    def demote_user(*, actor: User, user: User) -> None:
+        """
+        Revoke staff status from a single user.
+
+        Raises:
+            PermissionException: If actor lacks promote permission.
+        """
+        if not actor.has_perm(AccountPermission.PROMOTE):
+            raise PermissionException(
+                "You do not have permission to change staff status."
+            )
+
+        user.demote_from_staff()

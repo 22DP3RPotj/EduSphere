@@ -85,6 +85,16 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=["date_joined"]),
         ]
 
+    def promote_to_staff(self):
+        if not self.is_staff:
+            self.is_staff = True
+            self.save(update_fields=["is_staff"])
+
+    def demote_from_staff(self):
+        if self.is_staff:
+            self.is_staff = False
+            self.save(update_fields=["is_staff"])
+
     def verify(self):
         if not self.is_verified:
             self.verified_at = timezone.now()

@@ -555,8 +555,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
   useAdminUsers,
   useAdminCases,
-  useUpdateUserStaffStatus,
-  useUpdateUserActiveStatus,
+  useBanUser,
+  useUnbanUser,
+  useUnbanUsers,
+  usePromoteUser,
+  useDemoteUser,
+  usePromoteUsers,
+  useDemoteUsers,
   useTakeCaseAction,
   useSetCaseUnderReview,
   useSetCasePriority,
@@ -644,8 +649,13 @@ const confirmationModal = ref({
 
 // Composables - Users
 const { users, loading: loadingUsers, error: usersError, refetch: refetchUsersComposable } = useAdminUsers(computed(() => userSearch.value.filter));
-const { updateStaffStatus } = useUpdateUserStaffStatus();
-const { updateActiveStatus } = useUpdateUserActiveStatus();
+const { banUser } = useBanUser();
+const { unbanUser } = useUnbanUser();
+const { unbanUsers } = useUnbanUsers();
+const { promoteUser: promoteUserMutation } = usePromoteUser();
+const { demoteUser: demoteUserMutation } = useDemoteUser();
+const { promoteUsers } = usePromoteUsers();
+const { demoteUsers } = useDemoteUsers();
 
 // Composables - Cases
 const { cases, loading: loadingCases, error: casesError, refetch: refetchCasesComposable } = useAdminCases(
@@ -776,14 +786,9 @@ async function confirmTermination() {
   const expiresAt = calculateExpiresAt(terminationModal.value.duration);
 
   try {
-    const result = await updateActiveStatus(
-      terminationModal.value.userId,
-      false,
-      reason,
-      expiresAt
-    );
+    const result = await banUser(terminationModal.value.userId as UUID, reason, expiresAt);
 
-    if (result?.data?.updateUserActiveStatus?.success) {
+    if (result?.success) {
       await refetchUsersComposable();
       selectedUsers.value = [];
       closeTerminationModal();
@@ -805,8 +810,8 @@ function activateUser(userId: string) {
     title: 'Confirm Activation',
     message: 'Are you sure you want to activate this user?',
     action: async () => {
-      const result = await updateActiveStatus([userId], true);
-      if (result?.data?.updateUserActiveStatus?.success) {
+      const result = await unbanUser(userId as UUID);
+      if (result?.success) {
         await refetchUsersComposable();
         const idx = selectedUsers.value.indexOf(userId);
         if (idx > -1) selectedUsers.value.splice(idx, 1);
@@ -888,7 +893,7 @@ async function promoteUser(userId: string) {
     'Are you sure you want to promote this user to staff?',
     async () => {
       try {
-        await updateStaffStatus([userId], true);
+        await promoteUserMutation(userId as UUID);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -906,7 +911,7 @@ async function demoteUser(userId: string) {
     'Are you sure you want to remove staff role from this user?',
     async () => {
       try {
-        await updateStaffStatus([userId], false);
+        await demoteUserMutation(userId as UUID);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -939,7 +944,7 @@ async function bulkPromoteUsers() {
     `Are you sure you want to promote ${selectedUsers.value.length} users to staff?`,
     async () => {
       try {
-        await updateStaffStatus(selectedUsers.value, true);
+        await promoteUsers(selectedUsers.value as UUID[]);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -956,7 +961,7 @@ async function bulkDemoteUsers() {
     `Are you sure you want to remove staff role from ${selectedUsers.value.length} users?`,
     async () => {
       try {
-        await updateStaffStatus(selectedUsers.value, false);
+        await demoteUsers(selectedUsers.value as UUID[]);
         await refetchUsersComposable();
         selectedUsers.value = [];
       } catch (error) {
@@ -969,7 +974,7 @@ async function bulkDemoteUsers() {
 
 async function bulkActivateUsers() {
   try {
-    await updateActiveStatus(selectedUsers.value, true);
+    await unbanUsers(selectedUsers.value as UUID[]);
     await refetchUsersComposable();
     selectedUsers.value = [];
   } catch (error) {

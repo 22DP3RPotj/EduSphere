@@ -1,33 +1,5 @@
 import { gql } from "@apollo/client";
 
-export const UPDATE_USER_STAFF_STATUS = gql`
-  mutation UpdateUserStaffStatus($userIds: [UUID!]!, $isStaff: Boolean!) {
-    updateUserStaffStatus(userIds: $userIds, isStaff: $isStaff) {
-      success
-      updatedCount
-    }
-  }
-`;
-
-export const UPDATE_USER_ACTIVE_STATUS = gql`
-  mutation UpdateUserActiveStatus(
-    $userIds: [UUID!]!
-    $isActive: Boolean!
-    $reason: String
-    $expiresAt: DateTime
-  ) {
-    updateUserActiveStatus(
-      userIds: $userIds
-      isActive: $isActive
-      reason: $reason
-      expiresAt: $expiresAt
-    ) {
-      success
-      updatedCount
-    }
-  }
-`;
-
 export const TAKE_CASE_ACTION = gql`
   mutation TakeCaseAction($caseId: UUID!, $action: ActionEnum!, $note: String) {
     takeCaseAction(caseId: $caseId, action: $action, note: $note) {
@@ -104,6 +76,26 @@ export const UNBAN_USER = gql`
   }
 `;
 
+export const BAN_USERS = gql`
+  mutation BanUsers($userIds: [UUID!]!, $reason: String, $expiresAt: DateTime) {
+    banUsers(userIds: $userIds, reason: $reason, expiresAt: $expiresAt) {
+      success
+      bannedCount
+      skippedCount
+    }
+  }
+`;
+
+export const UNBAN_USERS = gql`
+  mutation UnbanUsers($userIds: [UUID!]!) {
+    unbanUsers(userIds: $userIds) {
+      success
+      unbannedCount
+      skippedCount
+    }
+  }
+`;
+
 export const PROMOTE_USERS = gql`
   mutation PromoteUsers($userIds: [UUID!]!) {
     promoteUsers(userIds: $userIds) {
@@ -118,6 +110,22 @@ export const DEMOTE_USERS = gql`
     demoteUsers(userIds: $userIds) {
       success
       updatedCount
+    }
+  }
+`;
+
+export const PROMOTE_USER = gql`
+  mutation PromoteUser($userId: UUID!) {
+    promoteUser(userId: $userId) {
+      success
+    }
+  }
+`;
+
+export const DEMOTE_USER = gql`
+  mutation DemoteUser($userId: UUID!) {
+    demoteUser(userId: $userId) {
+      success
     }
   }
 `;

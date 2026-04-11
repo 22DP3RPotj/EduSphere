@@ -3,16 +3,18 @@ import { useQuery, useMutation } from '@vue/apollo-composable';
 import type { Ref } from 'vue';
 import { GET_ALL_USERS, GET_REPORTS, GET_REPORT_COUNT, GET_CASES, GET_CASE } from '@/api/graphql/admin.queries';
 import {
-  UPDATE_USER_STAFF_STATUS,
-  UPDATE_USER_ACTIVE_STATUS,
   TAKE_CASE_ACTION,
   SET_CASE_UNDER_REVIEW,
   SET_CASE_PRIORITY,
   REOPEN_CASE,
   BAN_USER,
   UNBAN_USER,
+  BAN_USERS,
+  UNBAN_USERS,
   PROMOTE_USERS,
   DEMOTE_USERS,
+  PROMOTE_USER,
+  DEMOTE_USER,
 } from '@/api/graphql/admin.mutations';
 import type { User, ModerationCase, Report, UUID } from '@/types';
 
@@ -134,49 +136,6 @@ export function useAdminCase(caseId: Ref<UUID | null>) {
   };
 }
 
-export function useUpdateUserStaffStatus() {
-  const { mutate, loading, error } = useMutation(UPDATE_USER_STAFF_STATUS);
-
-  const updateStaffStatus = async (userIds: string[], isStaff: boolean) => {
-    return await mutate({
-      userIds,
-      isStaff,
-    });
-  };
-
-  return {
-    updateStaffStatus,
-    loading,
-    error,
-  };
-}
-
-export function useUpdateUserActiveStatus() {
-  const { mutate, loading, error } = useMutation(UPDATE_USER_ACTIVE_STATUS);
-
-  const updateActiveStatus = async (
-    ids: string | string[],
-    isActive: boolean,
-    reason?: string,
-    expiresAt?: string
-  ) => {
-    const userIds = Array.isArray(ids) ? ids : [ids];
-    
-    return await mutate({
-      userIds,
-      isActive,
-      reason,
-      expiresAt,
-    });
-  };
-
-  return {
-    updateActiveStatus,
-    loading,
-    error,
-  };
-}
-
 export function useTakeCaseAction() {
   const { mutate, loading, error } = useMutation(TAKE_CASE_ACTION);
 
@@ -273,6 +232,34 @@ export function useUnbanUser() {
   return { unbanUser, loading, error };
 }
 
+export function useBanUsers() {
+  const { mutate, loading, error } = useMutation(BAN_USERS);
+
+  const banUsers = async (userIds: UUID[], reason?: string, expiresAt?: string) => {
+    const result = await mutate({ userIds, reason, expiresAt });
+    if (result?.data?.banUsers?.success) {
+      return { success: true, bannedCount: result.data.banUsers.bannedCount as number };
+    }
+    return { success: false, error: 'Failed to ban users' };
+  };
+
+  return { banUsers, loading, error };
+}
+
+export function useUnbanUsers() {
+  const { mutate, loading, error } = useMutation(UNBAN_USERS);
+
+  const unbanUsers = async (userIds: UUID[]) => {
+    const result = await mutate({ userIds });
+    if (result?.data?.unbanUsers?.success) {
+      return { success: true, unbannedCount: result.data.unbanUsers.unbannedCount as number };
+    }
+    return { success: false, error: 'Failed to unban users' };
+  };
+
+  return { unbanUsers, loading, error };
+}
+
 export function usePromoteUsers() {
   const { mutate, loading, error } = useMutation(PROMOTE_USERS);
 
@@ -303,4 +290,32 @@ export function useDemoteUsers() {
   };
 
   return { demoteUsers, loading, error };
+}
+
+export function usePromoteUser() {
+  const { mutate, loading, error } = useMutation(PROMOTE_USER);
+
+  const promoteUser = async (userId: UUID) => {
+    const result = await mutate({ userId });
+    if (result?.data?.promoteUser?.success) {
+      return { success: true };
+    }
+    return { success: false, error: 'Failed to promote user' };
+  };
+
+  return { promoteUser, loading, error };
+}
+
+export function useDemoteUser() {
+  const { mutate, loading, error } = useMutation(DEMOTE_USER);
+
+  const demoteUser = async (userId: UUID) => {
+    const result = await mutate({ userId });
+    if (result?.data?.demoteUser?.success) {
+      return { success: true };
+    }
+    return { success: false, error: 'Failed to demote user' };
+  };
+
+  return { demoteUser, loading, error };
 }

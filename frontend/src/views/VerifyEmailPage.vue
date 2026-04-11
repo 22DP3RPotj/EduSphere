@@ -85,6 +85,7 @@ async function handleResend() {
 <style scoped>
 @import '@/assets/styles/form-layout.css';
 @import '@/assets/styles/form-styles.css';
+@import '@/assets/styles/form-errors.css';
 
 .status-message {
   text-align: center;

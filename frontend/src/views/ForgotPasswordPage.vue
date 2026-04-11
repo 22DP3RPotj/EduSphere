@@ -82,6 +82,7 @@ async function handleSubmit() {
 <style scoped>
 @import '@/assets/styles/form-layout.css';
 @import '@/assets/styles/form-styles.css';
+@import '@/assets/styles/form-errors.css';
 
 .form-subtitle {
   color: var(--text-light);

@@ -337,7 +337,7 @@
                   <span :class="['action-type-badge', `action-${action.action.toLowerCase()}`]">
                     {{ formatActionType(action.action) }}
                   </span>
-                  <span class="action-moderator">{{ action.moderator?.username || 'System' }}</span>
+                  <span class="action-moderator">{{ action.moderator?.username || '<System>' }}</span>
                   <span class="action-date">{{ formatDate(action.createdAt) }}</span>
                   <p v-if="action.note" class="action-note">{{ action.note }}</p>
                 </div>
@@ -410,7 +410,7 @@
               <td>{{ formatDate(entry.pghCreatedAt) }}</td>
               <td><span class="audit-label-badge">{{ entry.pghLabel }}</span></td>
               <td class="audit-obj-id">{{ entry.pghObjId?.slice(0, 8) || '—' }}</td>
-              <td>{{ entry.actor?.username || 'System' }}</td>
+              <td>{{ entry.actor?.username || '<System>' }}</td>
             </tr>
           </tbody>
         </table>
@@ -672,13 +672,14 @@ const { reopenCase } = useReopenCase();
 
 // Composables - Audit
 const auditFilters = ref({ dateFrom: undefined, dateTo: undefined, actorUsername: undefined, name: undefined });
-const userAudit = useUserAudits(auditFilters);
-const userBanAudit = useUserBanAudits(auditFilters);
-const roomAudit = useRoomAudits(auditFilters);
-const inviteAudit = useInviteAudits(auditFilters);
-const reportAudit = useReportAudits(auditFilters);
-const caseAudit = useModerationCaseAudits(auditFilters);
-const actionAudit = useModerationActionAudits(auditFilters);
+const auditTabActive = computed(() => activeTab.value === 'audit');
+const userAudit = useUserAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'user'));
+const userBanAudit = useUserBanAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'userBan'));
+const roomAudit = useRoomAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'room'));
+const inviteAudit = useInviteAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'invite'));
+const reportAudit = useReportAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'report'));
+const caseAudit = useModerationCaseAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'case'));
+const actionAudit = useModerationActionAudits(auditFilters, computed(() => auditTabActive.value && auditType.value === 'action'));
 
 const auditMap = {
   user: userAudit,

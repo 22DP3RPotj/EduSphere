@@ -74,7 +74,7 @@ async function handleSubmit() {
   if (result.success) {
     emailSent.value = true
   } else {
-    generalErrors.value = ('generalErrors' in result ? result.generalErrors : undefined) || [result.error || 'Failed to send reset email']
+    generalErrors.value = [result.error || 'Failed to send reset email']
   }
 }
 </script>

@@ -103,7 +103,7 @@ async function handleSubmit() {
   if (result.success) {
     resetSuccess.value = true
   } else {
-    generalErrors.value = ('generalErrors' in result ? result.generalErrors : undefined) || [result.error || 'Password reset failed']
+    generalErrors.value = [result.error || 'Password reset failed']
   }
 }
 </script>

@@ -412,7 +412,7 @@ async function handleResend(token: UUID) {
 .invite-status.pending { background-color: #fef3c7; color: #92400e; }
 .invite-status.accepted { background-color: #d1fae5; color: #065f46; }
 .invite-status.declined { background-color: #fde2e2; color: #991b1b; }
-.invite-status.cancelled { background-color: #e5e7eb; color: #4b5563; }
+.invite-status.revoked { background-color: #e5e7eb; color: #4b5563; }
 .invite-status.expired { background-color: #e5e7eb; color: #6b7280; }
 
 .invite-dates {

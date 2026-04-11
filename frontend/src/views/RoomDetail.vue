@@ -68,6 +68,7 @@
             <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
           </select>
         </div>
+        <p v-if="roleChangeError" class="modal-error">{{ roleChangeError }}</p>
         <div class="modal-actions">
           <button type="button" class="btn-cancel" @click="showRoleChangeModal = false">Cancel</button>
           <button type="button" class="btn-confirm" :disabled="changeRoleLoading || !selectedRoleId" @click="confirmRoleChange">
@@ -509,6 +510,7 @@ const participantMenuId = ref<UUID | null>(null);
 const showRoleChangeModal = ref(false);
 const roleChangeParticipantId = ref<UUID | null>(null);
 const selectedRoleId = ref<string | null>(null);
+const roleChangeError = ref<string | null>(null);
 
 const {
   messages: websocketMessages,
@@ -698,6 +700,7 @@ function toggleParticipantMenu(participantId: UUID) {
 function openRoleChangeModal(participantId: UUID) {
   roleChangeParticipantId.value = participantId;
   selectedRoleId.value = null;
+  roleChangeError.value = null;
   showRoleChangeModal.value = true;
   participantMenuId.value = null;
 }
@@ -705,20 +708,29 @@ function openRoleChangeModal(participantId: UUID) {
 async function confirmRoleChange() {
   if (!roleChangeParticipantId.value || !selectedRoleId.value) return;
 
+  roleChangeError.value = null;
   const result = await changeRoleMutation(roleChangeParticipantId.value, selectedRoleId.value as UUID);
   if (result.success) {
     await refetchRoom();
+    showRoleChangeModal.value = false;
+    roleChangeParticipantId.value = null;
+    selectedRoleId.value = null;
+  } else {
+    roleChangeError.value = result.error || 'Failed to change participant role';
   }
-  showRoleChangeModal.value = false;
-  roleChangeParticipantId.value = null;
-  selectedRoleId.value = null;
 }
 
 async function handleRemoveParticipant(participantId: UUID) {
   participantMenuId.value = null;
+  clearMessageOperationErrors();
   const result = await removeParticipantMutation(participantId);
   if (result.success) {
     await refetchRoom();
+  } else {
+    messageOperationErrors.value = {
+      fieldErrors: {},
+      generalErrors: [result.error || 'Failed to remove participant'],
+    };
   }
 }
 
@@ -1179,6 +1191,12 @@ watch(() => messages.value.length, (newLength, oldLength) => {
 .message-error {
   margin: 0 0 0.75rem 0;
   padding: 0.5rem 0.75rem;
+}
+
+.modal-error {
+  color: var(--error-color);
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem 0;
 }
 
 .btn-home {

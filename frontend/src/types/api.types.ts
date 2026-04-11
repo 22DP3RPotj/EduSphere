@@ -1,8 +1,48 @@
-import type { User, Room, Message, UUID, DateTime } from './main.types';
+import type { User, Room, Message, UUID, DateTime, ReportTargetType } from './main.types';
 
 export interface LoginInput {
   email: string;
   password: string;
+}
+
+export interface PasswordChangeInput {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface PasswordResetInput {
+  token: string;
+  newPassword: string;
+}
+
+export interface SendInviteInput {
+  roomId: string;
+  inviteeId: string;
+  expiresAt?: string;
+  roleId?: string;
+}
+
+export interface CreateReportInput {
+  targetType: ReportTargetType;
+  targetId: string;
+  reasonId: string;
+  description?: string;
+}
+
+export interface CreateRoleInput {
+  roomId: string;
+  name: string;
+  description: string;
+  priority: number;
+  permissionIds?: string[];
+}
+
+export interface UpdateRoleInput {
+  roleId: string;
+  name?: string;
+  description?: string;
+  priority?: number;
+  permissionIds?: string[];
 }
 
 

@@ -55,6 +55,46 @@ export const LOGOUT_MUTATION = gql`
     }
 `;
 
+export const VERIFY_ACCOUNT_MUTATION = gql`
+    mutation VerifyAccount($token: String!) {
+        verifyAccount(token: $token) {
+            success
+        }
+    }
+`;
+
+export const RESEND_ACTIVATION_EMAIL_MUTATION = gql`
+    mutation ResendActivationEmail {
+        resendActivationEmail {
+            success
+        }
+    }
+`;
+
+export const SEND_PASSWORD_RESET_EMAIL_MUTATION = gql`
+    mutation SendPasswordResetEmail($email: String!) {
+        sendPasswordResetEmail(email: $email) {
+            success
+        }
+    }
+`;
+
+export const PASSWORD_RESET_MUTATION = gql`
+    mutation PasswordReset($token: String!, $newPassword: String!) {
+        passwordReset(token: $token, newPassword: $newPassword) {
+            success
+        }
+    }
+`;
+
+export const PASSWORD_CHANGE_MUTATION = gql`
+    mutation PasswordChange($oldPassword: String!, $newPassword: String!) {
+        passwordChange(oldPassword: $oldPassword, newPassword: $newPassword) {
+            success
+        }
+    }
+`;
+
 export const UPDATE_USER_MUTATION = gql`
     mutation UpdateUser(
         $name: String

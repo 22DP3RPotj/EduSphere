@@ -64,15 +64,93 @@ export interface Message {
 
 export interface Report {
   id: UUID;
-  body: string;
-  reason: string;
-  status: string;
-  moderatorNote: string | null;
+  description: string | null;
+  reason: ReportReason;
+  reporter: User;
+  target: Room | User | Message;
+  case: ModerationCase | null;
   created_at: DateTime;
-  updated_at: DateTime;
-  user: User;
-  room: Room;
-  moderator: User | null;
+}
+
+export interface ReportReason {
+  id: UUID;
+  slug: string;
+  label: string;
+  isActive: boolean;
+}
+
+export enum InviteStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  EXPIRED = 'EXPIRED',
+  REVOKED = 'REVOKED',
+}
+
+export interface Invite {
+  id: UUID;
+  token: UUID;
+  room: { id: UUID; name: string };
+  inviter: User;
+  invitee: User;
+  role: Role | null;
+  status: InviteStatus;
+  createdAt: DateTime;
+  expiresAt: DateTime | null;
+}
+
+export enum CaseStatus {
+  PENDING = 'PENDING',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  RESOLVED = 'RESOLVED',
+  DISMISSED = 'DISMISSED',
+}
+
+export enum CasePriority {
+  LOW = 0,
+  MEDIUM = 1,
+  HIGH = 2,
+}
+
+export enum ActionType {
+  NO_VIOLATION = 'NO_VIOLATION',
+  CONTENT_REMOVED = 'CONTENT_REMOVED',
+  WARNING = 'WARNING',
+  TEMP_BAN = 'TEMP_BAN',
+  PERM_BAN = 'PERM_BAN',
+}
+
+export interface ModerationCase {
+  id: UUID;
+  status: CaseStatus;
+  priority: number;
+  reports: Report[];
+  actions: ModerationAction[];
+  target: Room | User | Message;
+  createdAt: DateTime;
+  updatedAt: DateTime;
+}
+
+export interface ModerationAction {
+  id: UUID;
+  action: ActionType;
+  note: string | null;
+  moderator: User;
+  createdAt: DateTime;
+}
+
+export enum ReportTargetType {
+  ROOM = 'ROOM',
+  USER = 'USER',
+  MESSAGE = 'MESSAGE',
+}
+
+export interface AuditEntry {
+  pghId: string;
+  pghCreatedAt: DateTime;
+  pghLabel: string;
+  pghObjId: UUID;
+  actor: User | null;
 }
 
 // Pagination types

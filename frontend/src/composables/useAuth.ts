@@ -8,10 +8,15 @@ import {
   REGISTER_MUTATION,
   LOGOUT_MUTATION,
   UPDATE_USER_MUTATION,
+  VERIFY_ACCOUNT_MUTATION,
+  RESEND_ACTIVATION_EMAIL_MUTATION,
+  SEND_PASSWORD_RESET_EMAIL_MUTATION,
+  PASSWORD_RESET_MUTATION,
+  PASSWORD_CHANGE_MUTATION,
   GET_AUTH_STATUS,
 } from "@/api/graphql"
 
-import type { LoginInput, RegisterInput, UpdateUserInput, TokenPayload } from "@/types"
+import type { LoginInput, RegisterInput, UpdateUserInput, TokenPayload, PasswordChangeInput, PasswordResetInput } from "@/types"
 import { parseGraphQLError } from "@/utils/errorParser"
 
 export function useAuth() {
@@ -43,6 +48,41 @@ export function useAuth() {
 
   // Refresh token mutation
   const { mutate: refreshTokenMutate } = useMutation(REFRESH_TOKEN_MUTATION)
+
+  // Verify account mutation
+  const {
+    mutate: verifyAccountMutate,
+    loading: verifyAccountLoading,
+    error: verifyAccountError,
+  } = useMutation(VERIFY_ACCOUNT_MUTATION)
+
+  // Resend activation email mutation
+  const {
+    mutate: resendActivationEmailMutate,
+    loading: resendActivationLoading,
+    error: resendActivationError,
+  } = useMutation(RESEND_ACTIVATION_EMAIL_MUTATION)
+
+  // Send password reset email mutation
+  const {
+    mutate: sendPasswordResetEmailMutate,
+    loading: sendPasswordResetLoading,
+    error: sendPasswordResetError,
+  } = useMutation(SEND_PASSWORD_RESET_EMAIL_MUTATION)
+
+  // Password reset mutation
+  const {
+    mutate: passwordResetMutate,
+    loading: passwordResetLoading,
+    error: passwordResetError,
+  } = useMutation(PASSWORD_RESET_MUTATION)
+
+  // Password change mutation
+  const {
+    mutate: passwordChangeMutate,
+    loading: passwordChangeLoading,
+    error: passwordChangeError,
+  } = useMutation(PASSWORD_CHANGE_MUTATION)
 
   // Auth status query
   const {
@@ -209,6 +249,71 @@ export function useAuth() {
     return true
   }
 
+  async function verifyAccount(token: string) {
+    try {
+      const result = await verifyAccountMutate({ token })
+      if (result?.data?.verifyAccount?.success) {
+        return { success: true }
+      }
+      return { success: false, error: "Verification failed" }
+    } catch (error) {
+      const parsedError = parseGraphQLError(error)
+      return { success: false, error: "Verification failed", ...parsedError }
+    }
+  }
+
+  async function resendActivationEmail() {
+    try {
+      const result = await resendActivationEmailMutate()
+      if (result?.data?.resendActivationEmail?.success) {
+        return { success: true }
+      }
+      return { success: false, error: "Failed to resend activation email" }
+    } catch (error) {
+      const parsedError = parseGraphQLError(error)
+      return { success: false, error: "Failed to resend activation email", ...parsedError }
+    }
+  }
+
+  async function sendPasswordResetEmail(email: string) {
+    try {
+      const result = await sendPasswordResetEmailMutate({ email })
+      if (result?.data?.sendPasswordResetEmail?.success) {
+        return { success: true }
+      }
+      return { success: false, error: "Failed to send reset email" }
+    } catch (error) {
+      const parsedError = parseGraphQLError(error)
+      return { success: false, error: "Failed to send reset email", ...parsedError }
+    }
+  }
+
+  async function resetPassword(data: PasswordResetInput) {
+    try {
+      const result = await passwordResetMutate(data)
+      if (result?.data?.passwordReset?.success) {
+        return { success: true }
+      }
+      return { success: false, error: "Password reset failed" }
+    } catch (error) {
+      const parsedError = parseGraphQLError(error)
+      return { success: false, error: "Password reset failed", ...parsedError }
+    }
+  }
+
+  async function changePassword(data: PasswordChangeInput) {
+    try {
+      const result = await passwordChangeMutate(data)
+      if (result?.data?.passwordChange?.success) {
+        return { success: true }
+      }
+      return { success: false, error: "Password change failed" }
+    } catch (error) {
+      const parsedError = parseGraphQLError(error)
+      return { success: false, error: "Password change failed", ...parsedError }
+    }
+  }
+
   return {
     // State
     loginLoading,
@@ -231,5 +336,22 @@ export function useAuth() {
     refreshToken,
     verifyAuthState,
     refetchAuthStatus,
+    verifyAccount,
+    resendActivationEmail,
+    sendPasswordResetEmail,
+    resetPassword,
+    changePassword,
+
+    // New loading/error states
+    verifyAccountLoading,
+    verifyAccountError,
+    resendActivationLoading,
+    resendActivationError,
+    sendPasswordResetLoading,
+    sendPasswordResetError,
+    passwordResetLoading,
+    passwordResetError,
+    passwordChangeLoading,
+    passwordChangeError,
   }
 }

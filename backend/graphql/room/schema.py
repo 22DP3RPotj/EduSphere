@@ -2,7 +2,7 @@ import graphene
 
 from .resolvers import RoomQuery, TopicQuery
 
-from .mutations.room import CreateRoom, DeleteRoom, UpdateRoom, JoinRoom
+from .mutations.room import CreateRoom, DeleteRoom, UpdateRoom, JoinRoom, LeaveRoom
 
 
 class RoomQueries(RoomQuery, TopicQuery, graphene.ObjectType):
@@ -14,3 +14,4 @@ class RoomMutations(graphene.ObjectType):
     delete_room = DeleteRoom.Field()
     update_room = UpdateRoom.Field()
     join_room = JoinRoom.Field()
+    leave_room = LeaveRoom.Field()

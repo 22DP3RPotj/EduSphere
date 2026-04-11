@@ -61,8 +61,8 @@ function useAuditQuery(
       updateQuery: (prev: Record<string, unknown>, { fetchMoreResult }: { fetchMoreResult: Record<string, unknown> }) => {
         if (!fetchMoreResult) return prev
 
-        const prevConnection = prev[dataKey]
-        const newConnection = fetchMoreResult[dataKey]
+        const prevConnection = prev[dataKey] as { edges: unknown[] }
+        const newConnection = fetchMoreResult[dataKey] as { edges: unknown[] }
 
         return {
           [dataKey]: {

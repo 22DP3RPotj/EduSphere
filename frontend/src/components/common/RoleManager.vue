@@ -45,6 +45,7 @@
     </div>
 
     <!-- Create/Edit Form Modal -->
+    <Teleport to="body">
     <div v-if="showCreateForm || editingRole" class="modal-overlay" @click="closeForm">
       <div class="modal-content" @click.stop>
         <h3>{{ editingRole ? t('role.editRole') : t('role.createRole') }}</h3>
@@ -90,8 +91,10 @@
         </form>
       </div>
     </div>
+    </Teleport>
 
     <!-- Delete confirmation -->
+    <Teleport to="body">
     <div v-if="deletingRole" class="modal-overlay" @click="deletingRole = null">
       <div class="modal-content" @click.stop>
         <h3>{{ t('role.deleteRole') }}</h3>
@@ -101,7 +104,7 @@
           <select v-model="substitutionRoleId" class="form-select">
             <option :value="null">None</option>
             <option
-              v-for="r in roles.filter(r => r.id !== deletingRole!.id)"
+              v-for="r in roles.filter((r: Role) => r.id !== deletingRole!.id)"
               :key="r.id"
               :value="r.id"
             >
@@ -118,6 +121,7 @@
         </div>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
@@ -131,11 +135,11 @@ import {
   useUpdateRole,
   useDeleteRole,
 } from '@/composables/useRoles';
-import type { UUID } from '@/types';
+import type { Role, UUID } from '@/types';
 
 const props = defineProps({
   roomId: {
-    type: String as PropType<UUID>,
+    type: String as unknown as PropType<UUID>,
     required: true,
   },
 });
@@ -288,7 +292,7 @@ async function handleDelete() {
 }
 
 .role-card {
-  background-color: var(--bg-secondary);
+  background-color: var(--white);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 1rem;
@@ -373,11 +377,11 @@ async function handleDelete() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1100;
 }
 
 .modal-content {
-  background-color: var(--bg-secondary);
+  background-color: var(--white);
   border-radius: var(--radius);
   padding: 1.5rem;
   max-width: 480px;
@@ -408,7 +412,7 @@ async function handleDelete() {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  background-color: var(--bg-secondary);
+  background-color: var(--white);
   color: var(--text-color);
   font-size: 0.9rem;
 }

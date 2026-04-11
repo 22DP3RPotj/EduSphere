@@ -56,12 +56,12 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue';
 import { useReportReasons, useCreateReport } from '@/composables/useReports';
-import type { ReportTargetType } from '@/types';
+import type { ReportTargetType, UUID } from '@/types';
 
 const props = defineProps<{
   isOpen: boolean;
   targetType: ReportTargetType;
-  targetId: string;
+  targetId: UUID;
   targetLabel?: string;
 }>();
 
@@ -99,7 +99,7 @@ async function submitReport() {
   const result = await createReport({
     targetType: props.targetType,
     targetId: props.targetId,
-    reasonId: selectedReason.value,
+    reasonId: selectedReason.value as UUID,
     description: description.value || undefined,
   });
 

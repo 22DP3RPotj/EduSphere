@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 from backend.account.models import User, UserBan
-from backend.account.tasks import run_expire_user_bans
+from backend.account.tasks.moderation import run_expire_user_bans
 
 
 pytestmark = pytest.mark.unit
@@ -26,12 +26,10 @@ class ExpireUserBansTests(TestCase):
             password="password",
         )
 
-    @mock.patch("backend.account.tasks.RestrictionService")
-    @mock.patch("backend.account.tasks.logger")
-    @mock.patch("backend.account.tasks.timezone")
-    def test_expire_bans_successful(
-        self, mock_timezone, mock_logger, mock_restriction_service
-    ):
+    @mock.patch("backend.account.tasks.moderation.AccountActions.lift_ban")
+    @mock.patch("backend.account.tasks.moderation.logger")
+    @mock.patch("backend.account.tasks.moderation.timezone")
+    def test_expire_bans_successful(self, mock_timezone, mock_logger, mock_lift_ban):
         """Test that expired bans are correctly identified and lifted."""
         # Setup fixed time
         fixed_now = timezone.make_aware(datetime(2025, 1, 1, 12, 0, 0))
@@ -51,14 +49,12 @@ class ExpireUserBansTests(TestCase):
 
         # Verify
         self.assertEqual(count, 1)
-        mock_restriction_service.lift_ban.assert_called_once_with(ban)
+        mock_lift_ban.assert_called_once_with(ban=ban)
         mock_logger.info.assert_any_call("Expired 1 user bans.")
 
-    @mock.patch("backend.account.tasks.RestrictionService")
-    @mock.patch("backend.account.tasks.logger")
-    def test_expire_bans_handles_service_error(
-        self, mock_logger, mock_restriction_service
-    ):
+    @mock.patch("backend.account.tasks.moderation.AccountActions.lift_ban")
+    @mock.patch("backend.account.tasks.moderation.logger")
+    def test_expire_bans_handles_service_error(self, mock_logger, mock_lift_ban):
         """Test that errors during unbanning are logged and don't stop the process."""
         # Create two expired bans
         user2 = User.objects.create_user(
@@ -84,11 +80,11 @@ class ExpireUserBansTests(TestCase):
         )
 
         # Service raises error for first user
-        mock_restriction_service.lift_ban.side_effect = Exception("Service error")
+        mock_lift_ban.side_effect = Exception("Service error")
 
         # Execute
         with pytest.raises(Exception, match="Service error"):
             run_expire_user_bans()
 
         # Verify
-        mock_restriction_service.lift_ban.assert_called_once_with(ban)
+        mock_lift_ban.assert_called_once_with(ban=ban)

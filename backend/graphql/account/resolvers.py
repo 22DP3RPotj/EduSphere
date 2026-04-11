@@ -5,7 +5,6 @@ import uuid
 from typing import Optional
 from graphql_jwt.decorators import superuser_required
 from graphql import GraphQLError
-from graphql_auth.queries import MeQuery
 
 from django.db.models import QuerySet
 
@@ -15,8 +14,15 @@ from backend.account.models import User
 from backend.core.exceptions import ErrorCode
 
 
-class AuthQuery(MeQuery, graphene.ObjectType):
+class AuthQuery(graphene.ObjectType):
+    me = graphene.Field(UserType)
     auth_status = graphene.Field(AuthStatusType)
+
+    def resolve_me(self, info: graphene.ResolveInfo) -> Optional[User]:
+        user = info.context.user
+        if user.is_authenticated:
+            return user
+        return None
 
     def resolve_auth_status(self, info: graphene.ResolveInfo) -> AuthStatusType:
         user = info.context.user

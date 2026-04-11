@@ -1,15 +1,15 @@
 import pytest
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 from backend.account.models import User, UserBan
-from backend.account.services import RestrictionService
+from backend.account.services import ModerationService
+from backend.core.exceptions import ValidationException
 
 
 pytestmark = pytest.mark.unit
 
 
-class RestrictionServiceTests(TestCase):
+class ModerationServiceTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             username="testuser",
@@ -26,7 +26,9 @@ class RestrictionServiceTests(TestCase):
 
     def test_ban_user_success(self):
         reason = "Violation of TOS"
-        ban = RestrictionService.ban_user(self.user, self.admin, reason)
+        ban = ModerationService.ban_user(
+            user=self.user, banned_by=self.admin, reason=reason
+        )
 
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
@@ -36,23 +38,32 @@ class RestrictionServiceTests(TestCase):
         self.assertEqual(ban.reason, reason)
 
     def test_ban_user_self_ban_fails(self):
-        with self.assertRaisesMessage(ValidationError, "Users cannot ban themselves"):
-            RestrictionService.ban_user(self.admin, self.admin, "Self ban")
+        with self.assertRaisesMessage(ValidationException, "You cannot ban yourself."):
+            ModerationService.ban_user(
+                user=self.admin, banned_by=self.admin, reason="Self ban"
+            )
 
     def test_ban_user_with_expiration(self):
         expires_at = timezone.now() + timezone.timedelta(days=1)
-        ban = RestrictionService.ban_user(self.user, self.admin, "Temp ban", expires_at)
+        ban = ModerationService.ban_user(
+            user=self.user,
+            banned_by=self.admin,
+            reason="Temp ban",
+            expires_at=expires_at,
+        )
 
         self.assertEqual(ban.expires_at, expires_at)
 
     def test_unban_user_success(self):
         # First ban the user
-        RestrictionService.ban_user(self.user, self.admin, "Ban")
+        ModerationService.ban_user(
+            user=self.user, banned_by=self.admin, reason="Temp ban"
+        )
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
 
         # Unban
-        RestrictionService.unban_user(self.user)
+        ModerationService.unban_user(actor=self.admin, user=self.user)
 
         # Verify
         self.user.refresh_from_db()

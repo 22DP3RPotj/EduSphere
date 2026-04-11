@@ -2,11 +2,18 @@ import graphene
 
 from .resolvers import AuthQuery, UserQuery
 from .mutations.user import (
+    Register,
     UpdateUser,
-    UpdateUserActiveStatus,
-    UpdateUserStaffStatus,
 )
 from .mutations.auth import AuthMutation
+from .mutations.moderation import (
+    BanUsers,
+    BanUser,
+    UnbanUsers,
+    UnbanUser,
+    PromoteUsers,
+    DemoteUsers,
+)
 
 
 class AccountQueries(AuthQuery, UserQuery, graphene.ObjectType):
@@ -14,6 +21,11 @@ class AccountQueries(AuthQuery, UserQuery, graphene.ObjectType):
 
 
 class AccountMutations(AuthMutation, graphene.ObjectType):
+    register = Register.Field()
     update_user = UpdateUser.Field()
-    update_user_active_status = UpdateUserActiveStatus.Field()
-    update_user_staff_status = UpdateUserStaffStatus.Field()
+    ban_users = BanUsers.Field()
+    ban_user = BanUser.Field()
+    unban_users = UnbanUsers.Field()
+    unban_user = UnbanUser.Field()
+    promote_users = PromoteUsers.Field()
+    demote_users = DemoteUsers.Field()

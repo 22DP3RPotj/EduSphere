@@ -401,7 +401,7 @@ const {
   error: userRoomsError,
   refetch: refetchUserRooms 
 } = useUserRoomsQuery(
-  computed(() => authStore.user?.username || '')
+  computed(() => authStore.user?.id ?? null)
 );
 
 // Show only first 3 recommendations
@@ -435,6 +435,7 @@ const hasActiveFilters = computed(() => {
   return selectedTopics.value.length > 0 || appliedSearchQuery.value !== '';
 });
 
+// TODO: Better way?
 // Function to calculate minimum height for content areas to prevent CLS
 function getMinContentHeight(section: string): string {
   switch (section) {

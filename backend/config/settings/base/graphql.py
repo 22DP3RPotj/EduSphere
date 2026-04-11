@@ -24,15 +24,3 @@ GRAPHQL_JWT = {
     "JWT_BLACKLIST_ENABLED": True,
     "JWT_BLACKLIST_AFTER_ROTATION": True,
 }
-
-GRAPHQL_AUTH = {
-    "LOGIN_ALLOWED_FIELDS": ["email"],
-    "REGISTER_MUTATION_FIELDS": ["username", "name", "email"],
-    "UPDATE_MUTATION_FIELDS": ["username", "name"],
-    "ALLOW_LOGIN_NOT_VERIFIED": False,
-    "USER_NODE_FILTER_FIELDS": {
-        "email": ["exact"],
-        "username": ["exact"],
-        "is_active": ["exact"],
-    },
-}

@@ -30,8 +30,6 @@ class RoleType(DjangoObjectType):
 class ParticipantType(DjangoObjectType):
     user = graphene.Field(UserType, required=True)
     role = graphene.Field(RoleType)
-    username = graphene.String(required=True)
-    avatar = graphene.String()
 
     class Meta:
         model = Participant
@@ -41,12 +39,6 @@ class ParticipantType(DjangoObjectType):
             "role",
             "joined_at",
         )
-
-    def resolve_username(self, info):
-        return self.user.username
-
-    def resolve_avatar(self, info):
-        return self.user.avatar
 
 
 class RoleDeleteType(PydanticObjectType):

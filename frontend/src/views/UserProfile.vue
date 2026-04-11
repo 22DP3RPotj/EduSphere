@@ -94,11 +94,29 @@
                   v-model="editForm.bio"
                   class="form-textarea"
                   placeholder="Tell us about yourself..."
-                  maxlength="500"
+                  maxlength="4096"
                 ></textarea>
                 <div class="char-count">
-                  {{ editForm.bio.length }}/500
+                  {{ editForm.bio.length }}/4096
                 </div>
+              </div>
+
+              <!-- Language selector -->
+              <div class="form-group">
+                <label for="language-select" class="form-label">{{ t('profile.language') }}</label>
+                <select
+                  id="language-select"
+                  v-model="editForm.language"
+                  class="form-select"
+                >
+                  <option
+                    v-for="locale in availableLocales"
+                    :key="locale"
+                    :value="locale"
+                  >
+                    {{ getLanguageName(locale) }}
+                  </option>
+                </select>
               </div>
             </div>
             
@@ -316,14 +334,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
+import { useLocale } from '@/composables/useLocale';
 import { parseGraphQLError } from '@/utils/errorParser';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
-import type { Room } from '@/types';
+import type { Room, UUID } from '@/types';
 
 import {
   useUserQuery,
@@ -335,9 +355,11 @@ import {
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const { t, te } = useI18n();
 const { updateUser, updateUserLoading, updateUserError } = useAuth();
+const { availableLocales } = useLocale();
 
-const username = computed(() => route.params.userSlug as string);
+const userId = computed(() => route.params.userId as UUID);
 
 // User query
 const { 
@@ -345,7 +367,7 @@ const {
   loading: userLoading, 
   error: userError, 
   refetch: refetchUser 
-} = useUserQuery(username.value);
+} = useUserQuery(userId);
 
 // Tab queries
 const { 
@@ -353,32 +375,33 @@ const {
   loading: messagesLoading, 
   error: messagesError, 
   refetch: refetchMessages 
-} = useUserMessagesQuery(username.value);
+} = useUserMessagesQuery(userId);
 
 const { 
   rooms: hostedRooms, 
   loading: hostedRoomsLoading, 
   error: hostedRoomsError, 
   refetch: refetchHostedRooms 
-} = useUserHostedRoomsQuery(username.value);
+} = useUserHostedRoomsQuery(userId);
 
 const { 
   rooms: joinedRooms, 
   loading: joinedRoomsLoading, 
   error: joinedRoomsError, 
   refetch: refetchJoinedRooms 
-} = useUserJoinedRoomsQuery(username.value);
+} = useUserJoinedRoomsQuery(userId);
 
 // Combined loading state
 const loading = computed(() => userLoading.value);
 
-type EditForm = { name: string; bio: string; avatar: File | null };
+type EditForm = { name: string; bio: string; avatar: File | null; language: string };
 const isEditing = ref<boolean>(false);
 const editLoading = computed(() => updateUserLoading.value);
 const editForm = ref<EditForm>({
   name: '',
   bio: '',
-  avatar: null
+  avatar: null,
+  language: 'en'
 });
 const avatarPreview = ref<string | null>(null);
 
@@ -427,6 +450,23 @@ const isOwnProfile = computed(() => {
   return authStore.user && user.value && authStore.user.username === user.value.username;
 });
 
+watch(userId, (newUserId, previousUserId) => {
+  if (!previousUserId || newUserId === previousUserId) {
+    return;
+  }
+
+  // Reset transient edit state when switching to another user's profile in-place.
+  isEditing.value = false;
+  editForm.value = {
+    name: '',
+    bio: '',
+    avatar: null,
+    language: 'en'
+  };
+  avatarPreview.value = null;
+  clearEditFormErrors();
+});
+
 function setActiveTab(tab: TabKey) {
   activeTab.value = tab;
 }
@@ -444,12 +484,18 @@ function formatDate(dateString: string) {
   });
 }
 
+function getLanguageName(locale: string): string {
+  const key = `languages.${locale}`;
+  return te(key) ? t(key) : locale;
+}
+
 function startEditing() {
   isEditing.value = true;
   editForm.value = {
-    name: user.value!.name || '',
-    bio: user.value!.bio || '',
-    avatar: null
+    name: user.value?.name || '',
+    bio: user.value?.bio || '',
+    avatar: null,
+    language: user.value?.language || 'en'
   };
   avatarPreview.value = null;
   clearEditFormErrors();
@@ -458,9 +504,10 @@ function startEditing() {
 function cancelEditing() {
   isEditing.value = false;
   editForm.value = {
-    name: user.value!.name || '',
-    bio: user.value!.bio || '',
-    avatar: null
+    name: user.value?.name || '',
+    bio: user.value?.bio || '',
+    avatar: null,
+    language: user.value?.language || 'en'
   };
   avatarPreview.value = null;
   clearEditFormErrors();
@@ -489,12 +536,15 @@ async function saveProfile() {
   clearEditFormErrors();
   
   try {
-    const updateData: { name?: string; bio?: string; avatar?: File | null } = {};
+    const updateData: { name?: string; bio?: string; avatar?: File | null; language?: string } = {};
     if (editForm.value.name.trim()) {
       updateData.name = editForm.value.name.trim();
     }
 
     updateData.bio = editForm.value.bio.trim();
+
+    // Always include language field
+    updateData.language = editForm.value.language;
 
     // Add avatar if selected
     if (editForm.value.avatar) {
@@ -504,13 +554,8 @@ async function saveProfile() {
     const result = await updateUser(updateData);
     
     if (result.success) {
-      // Check if username changed, if so redirect
-      if (result.user!.username !== route.params.userSlug) {
-        router.replace(`/u/${result.user!.username}`);
-      } else {
-        // Refetch user data to update the computed property
-        refetchUser();
-      }
+      // Refetch user data to update the computed property
+      refetchUser();
       
       isEditing.value = false;
       avatarPreview.value = null;
@@ -529,14 +574,6 @@ async function saveProfile() {
     editFormErrors.value = parseGraphQLError(error);
   }
 }
-
-// Watch for route changes to reload when username changes (unchanged)
-watch(() => route.params.userSlug, (newUsername) => {
-  if (newUsername) {
-    // Cancel editing if switching users
-    isEditing.value = false;
-  }
-});
 </script>
 <style scoped>
 /* Add error message styles */
@@ -802,7 +839,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   flex-shrink: 0;
 }
 
-.form-input, .form-textarea {
+.form-input, .form-textarea, .form-select {
   box-sizing: border-box;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
@@ -813,7 +850,7 @@ watch(() => route.params.userSlug, (newUsername) => {
   background-color: var(--white);
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus, .form-textarea:focus, .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);

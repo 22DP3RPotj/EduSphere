@@ -123,7 +123,7 @@ export function useAuth() {
 
     const result = await registerMutate(data)
 
-    if (result?.data?.registerUser?.success) {
+    if (result?.data?.register?.success) {
       // Auto-login after registration
       return await login(data.email, data.password1)
     }

@@ -17,6 +17,7 @@ class RoomQuery(graphene.ObjectType):
     room = graphene.Field(RoomType, room_id=graphene.UUID(required=True))
     rooms = graphene.List(
         RoomType,
+        host_id=graphene.UUID(),
         host_slug=graphene.String(),
         search=graphene.String(),
         topics=graphene.List(graphene.String),
@@ -46,6 +47,7 @@ class RoomQuery(graphene.ObjectType):
     def resolve_rooms(
         self,
         info: graphene.ResolveInfo,
+        host_id: Optional[uuid.UUID] = None,
         host_slug: Optional[str] = None,
         search: Optional[str] = None,
         topics: Optional[list[str]] = None,
@@ -59,6 +61,7 @@ class RoomQuery(graphene.ObjectType):
         return (
             RoomFilter(
                 data={
+                    "host_id": host_id,
                     "host_slug": host_slug,
                     "search": search,
                     "topics": topics,

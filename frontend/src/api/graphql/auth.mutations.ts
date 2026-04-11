@@ -11,6 +11,7 @@ export const LOGIN_MUTATION = gql`
                 username
                 name
                 avatar
+                language
                 isSuperuser
             }
         }
@@ -27,14 +28,14 @@ export const REFRESH_TOKEN_MUTATION = gql`
 `;
 
 export const REGISTER_MUTATION = gql`
-    mutation RegisterUser(
+    mutation Register(
         $username: String!
         $name: String!
         $email: String!
         $password1: String!
         $password2: String!
     ) {
-        registerUser(
+        register(
         username: $username
         name: $name
         email: $email
@@ -42,13 +43,6 @@ export const REGISTER_MUTATION = gql`
         password2: $password2
         ) {
             success
-            user {
-                id
-                username
-                name
-                isStaff
-                isSuperuser
-            }
         }
     }
 `;
@@ -66,11 +60,13 @@ export const UPDATE_USER_MUTATION = gql`
         $name: String
         $bio: String
         $avatar: Upload
+        $language: String
     ) {
         updateUser(
             name: $name
             bio: $bio
             avatar: $avatar
+            language: $language
         ) {
             user {
                 id
@@ -78,6 +74,7 @@ export const UPDATE_USER_MUTATION = gql`
                 name
                 bio
                 avatar
+                language
                 isStaff
                 isSuperuser
             }

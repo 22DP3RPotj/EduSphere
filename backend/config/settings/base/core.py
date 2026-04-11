@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     "backend.graphql.apps.GraphQLConfig",
     "backend.infra.apps.InfraConfig",
     # Third-party apps
-    "graphql_auth",
     "graphql_jwt.refresh_token.apps.RefreshTokenConfig",
     "graphene_django",
     "channels.apps.ChannelsConfig",
@@ -98,6 +97,8 @@ EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
     default="django.core.mail.backends.smtp.EmailBackend",
 )
+
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost")
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

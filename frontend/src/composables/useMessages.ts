@@ -1,12 +1,12 @@
 import { useMutation } from "@vue/apollo-composable"
 import { DELETE_MESSAGE_MUTATION, UPDATE_MESSAGE_MUTATION } from "@/api/graphql"
 
-import type { UpdateMessageInput, DeleteMessageInput } from "@/types"
+import type { UpdateMessageInput, DeleteMessageInput, UUID } from "@/types"
 
 export function useDeleteMessage() {
   const { mutate, loading, error } = useMutation(DELETE_MESSAGE_MUTATION)
 
-  async function deleteMessage(messageId: string) {
+  async function deleteMessage(messageId: UUID) {
     const result = await mutate({ messageId } satisfies DeleteMessageInput)
 
     if (result?.data?.deleteMessage?.success) {
@@ -26,7 +26,7 @@ export function useDeleteMessage() {
 export function useUpdateMessage() {
   const { mutate, loading, error } = useMutation(UPDATE_MESSAGE_MUTATION)
 
-  async function updateMessage(messageId: string, body: string) {
+  async function updateMessage(messageId: UUID, body: string) {
     const result = await mutate({ messageId, body } satisfies UpdateMessageInput)
 
     if (result?.data?.updateMessage?.message) {

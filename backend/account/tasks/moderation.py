@@ -2,7 +2,7 @@ from celery import shared_task
 from django.utils import timezone
 from django.db.utils import DatabaseError
 from backend.account.models import UserBan
-from backend.account.services import RestrictionService
+from backend.account import actions as AccountActions
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ def run_expire_user_bans():
 
     count = 0
     for ban in expired_bans:
-        RestrictionService.lift_ban(ban)
+        AccountActions.lift_ban(ban=ban)
         count += 1
 
     if count > 0:

@@ -21,7 +21,6 @@ AUTH_PASSWORD_VALIDATORS = [
 MINIMAL_USERNAME_LENGTH = env.int("MINIMAL_USERNAME_LENGTH", default=3)
 
 AUTHENTICATION_BACKENDS = [
-    "graphql_auth.backends.GraphQLAuthBackend",
     "graphql_jwt.backends.JSONWebTokenBackend",
     "backend.access.backends.SecureRulesBackend",
     "django.contrib.auth.backends.ModelBackend",

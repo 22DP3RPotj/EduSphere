@@ -53,7 +53,7 @@
           </button>
 
           <template v-if="isAuthenticated">
-            <router-link :to="`/u/${currentUser?.username}`" class="user-profile" @click="closePanel">
+            <router-link :to="`/u/${currentUser?.id}`" class="user-profile" @click="closePanel">
               <img 
                 :src="buildAvatarUrl(currentUser?.avatar ?? null)"
                 :alt="`${currentUser?.username}'s avatar`" 

@@ -7,6 +7,7 @@ export const GET_USER = gql`
             name
             username
             avatar
+            language
             isStaff
             isSuperuser
         }
@@ -21,6 +22,7 @@ export const GET_AUTH_STATUS = gql`
                 name
                 username
                 avatar
+                language
                 isStaff
                 isSuperuser
             }

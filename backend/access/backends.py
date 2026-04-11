@@ -1,5 +1,5 @@
 from rules.permissions import ObjectPermissionBackend
-from backend.account.services import RestrictionService
+from backend.account import actions as AccountActions
 
 
 class SecureRulesBackend(ObjectPermissionBackend):
@@ -14,7 +14,7 @@ class SecureRulesBackend(ObjectPermissionBackend):
 
         # TODO:Use Redis/Memcached for a shared cache backend.
         # Check for Active Bans
-        if RestrictionService.is_user_banned(user_obj):
+        if AccountActions.is_user_banned(user_obj):
             return False
 
         # Superuser

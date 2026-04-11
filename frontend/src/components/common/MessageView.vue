@@ -193,7 +193,7 @@ function handleEscKey(event: KeyboardEvent) {
 }
 
 function adjustTextareaHeight(eventOrElement: Event | HTMLTextAreaElement) {
-  let textarea: HTMLTextAreaElement | null = null;
+  let textarea: HTMLTextAreaElement;
   if (eventOrElement instanceof Event) {
     textarea = eventOrElement.target as HTMLTextAreaElement;
   } else {

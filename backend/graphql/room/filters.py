@@ -5,6 +5,7 @@ from backend.room.models import Room, Topic
 
 
 class RoomFilter(django_filters.FilterSet):
+    host_id = django_filters.UUIDFilter(field_name="host__id", lookup_expr="exact")
     host_slug = django_filters.CharFilter(
         field_name="host__username", lookup_expr="exact"
     )

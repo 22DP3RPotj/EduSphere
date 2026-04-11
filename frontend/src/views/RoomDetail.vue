@@ -121,15 +121,15 @@
               v-for="participant in participants" 
               :key="participant.id" 
               class="participant-item"
-              @click="navigateToUserProfile(participant.username)"
+              @click="navigateToUserProfile(participant.user.id)"
             >
               <img 
                 :src="participantAvatarUrls[participant.id] || '/default.svg'" 
-                :alt="`${participant.username}`"
+                :alt="`${participant.user.username}`"
                 class="participant-avatar"
               />
               <div class="participant-info">
-                <span class="participant-name">{{ participant.username }}</span>
+                <span class="participant-name">{{ participant.user.username }}</span>
                 <span v-if="participant.isHost" class="host-badge">Host</span>
               </div>
             </div>
@@ -220,13 +220,11 @@ import { parseGraphQLError } from '@/utils/errorParser';
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
-import type { User, Room, Participant, UUID } from '@/types';
+import type { Room, Participant, UUID } from '@/types';
 
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
-
-const roomId = route.params.roomId as string;
 
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
@@ -236,6 +234,8 @@ const showEditForm = ref<boolean>(false);
 const showRoomActionsMenu = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
 const isWebSocketInitialized = ref<boolean>(false);
+  
+const roomId = computed(() => route.params.roomId as UUID);
 
 // Use WebSocket messages when available, otherwise use initial GraphQL messages
 const messages = computed(() => {
@@ -319,21 +319,21 @@ const participants = computed<ParticipantWithHost[]>(() => {
   const allParticipants: ParticipantWithHost[] = [...room.value.participants];
 
   // Mark the host in the existing participants list
-  const hostIndex = allParticipants.findIndex(p => p.id === room.value!.host.id);
+  const hostIndex = allParticipants.findIndex(p => p.user.id === room.value!.host.id);
   if (hostIndex !== -1) {
     allParticipants[hostIndex] = {
       ...allParticipants[hostIndex],
       isHost: true
-    } as User;
+    } as ParticipantWithHost;
   }
   
   return allParticipants;
 });
 
-const participantAvatarUrls = computed<Record<string, string>>(() => {
-  const urls: Record<string, string> = {};
+const participantAvatarUrls = computed<Record<UUID, string>>(() => {
+  const urls: Record<UUID, string> = {};
   for (const participant of participants.value) {
-    urls[participant.id] = buildAvatarUrl((participant as unknown as User).avatar ?? null);
+    urls[participant.id] = buildAvatarUrl(participant.user.avatar);
   }
   return urls;
 });
@@ -573,8 +573,8 @@ async function sendMessage() {
   }
 }
 
-function navigateToUserProfile(userSlug: string) {
-  router.push(`/u/${userSlug}`);
+function navigateToUserProfile(userId: UUID) {
+  router.push(`/u/${userId}`);
 }
 
 function scrollToBottom() {

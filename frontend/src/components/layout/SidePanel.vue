@@ -23,7 +23,7 @@
         <!-- Logo/Home Link -->
         <div class="panel-section logo-section">
           <router-link to="/" class="logo-link" @click="closePanel">
-            <span class="logo-text">Chat App</span>
+            <span class="logo-text">{{ t('nav.appName') }}</span>
           </router-link>
         </div>
         
@@ -31,27 +31,27 @@
         <div class="panel-section nav-section">
           <router-link to="/" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="home" class="nav-icon" />
-            <span class="nav-label">Home</span>
+            <span class="nav-label">{{ t('nav.home') }}</span>
           </router-link>
           
           <router-link v-if="isAuthenticated" to="/create-room" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="plus-circle" class="nav-icon" />
-            <span class="nav-label">Create Room</span>
+            <span class="nav-label">{{ t('room.createRoom') }}</span>
           </router-link>
 
           <router-link v-if="isAuthenticated" to="/invites" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="envelope" class="nav-icon" />
-            <span class="nav-label">Invites</span>
+            <span class="nav-label">{{ t('invite.invites') }}</span>
           </router-link>
 
           <router-link v-if="isAuthenticated" to="/reports" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="flag" class="nav-icon" />
-            <span class="nav-label">My Reports</span>
+            <span class="nav-label">{{ t('report.myReports') }}</span>
           </router-link>
 
           <router-link v-if="isAuthenticated && currentUser?.isSuperuser" to="/admin" class="nav-item" active-class="active" @click="closePanel">
             <font-awesome-icon icon="shield" class="nav-icon" />
-            <span class="nav-label">Admin Panel</span>
+            <span class="nav-label">{{ t('common.adminPanel') }}</span>
           </router-link>
         </div>
         
@@ -59,14 +59,14 @@
         <div class="panel-section user-section">
           <button class="theme-toggle-btn" @click="toggleTheme">
             <font-awesome-icon :icon="isDarkMode ? 'sun' : 'moon'" />
-            <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+            <span>{{ isDarkMode ? t('nav.lightMode') : t('nav.darkMode') }}</span>
           </button>
 
           <template v-if="isAuthenticated">
             <router-link :to="`/u/${currentUser?.id}`" class="user-profile" @click="closePanel">
               <img 
                 :src="buildAvatarUrl(currentUser?.avatar ?? null)"
-                :alt="`${currentUser?.username}'s avatar`" 
+                :alt="t('message.userAvatarAlt', { name: currentUser?.username })" 
                 class="user-avatar"
               />
               <div class="user-info">
@@ -77,14 +77,14 @@
             <button class="logout-btn" :disabled="logoutLoading" @click="handleLogout">
               <font-awesome-icon v-if="logoutLoading" icon="spinner" spin />
               <font-awesome-icon v-else icon="sign-out-alt" />
-              <span>{{ logoutLoading ? 'Logging out...' : 'Logout' }}</span>
+              <span>{{ logoutLoading ? t('common.loggingOut') : t('common.logout') }}</span>
             </button>
           </template>
           <template v-else>
             <router-link v-slot="{ navigate }" to="/login" custom>
               <button class="login-btn" @click="() => { navigate(); closePanel(); }">
                 <font-awesome-icon icon="sign-in-alt" />
-                <span>Login</span>
+                <span>{{ t('common.login') }}</span>
               </button>
             </router-link>
           </template>
@@ -96,11 +96,13 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
 import { buildAvatarUrl } from '@/utils/media';
 
 const authStore = useAuthStore();
+const { t } = useI18n();
 const { 
   logout, 
   logoutLoading, 

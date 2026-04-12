@@ -1,7 +1,7 @@
 <template>
   <div class="auth-form-container">
     <form class="auth-form" @submit.prevent="submitUpdate">
-      <h1 class="form-title">Edit Room</h1>
+      <h1 class="form-title">{{ t('room.editRoom') }}</h1>
       
       <!-- General errors display -->
       <div v-show="generalErrors.length > 0" class="error-message">
@@ -13,7 +13,7 @@
 
       <!-- Updated to support multiple topics with tag/chip interface -->
       <div class="form-group">
-        <label for="topic-name">Topics (select one or more)</label>
+        <label for="topic-name">{{ t('room.topicsLabel') }}</label>
         
         <!-- Selected topics display -->
         <div v-if="roomForm.topicNames && roomForm.topicNames.length > 0" class="selected-topics">
@@ -26,7 +26,7 @@
             <button 
               type="button" 
               class="remove-topic-btn"
-              :title="`Remove ${topicName}`"
+              :title="t('common.removeTopicTitle', { name: topicName })"
               @click="removeTopic(topicName)"
             >
               <font-awesome-icon icon="times" />
@@ -39,7 +39,7 @@
             id="topic-name"
             v-model="topicSearchInput"
             type="text"
-            placeholder="Search or create topics"
+            :placeholder="t('room.searchOrCreateTopics')"
             autocomplete="off"
             maxlength="32"
             :disabled="loading"
@@ -68,7 +68,7 @@
               </span>
             </div>
             <div v-if="filteredTopics.length === 0" class="no-suggestions">
-              No matching topics found. Press Enter to create "{{ topicSearchInput }}"
+              {{ t('room.noMatchingTopicsCreate', { topic: topicSearchInput }) }}
             </div>
           </div>
         </div>
@@ -81,11 +81,11 @@
       </div>
 
       <div class="form-group">
-        <label for="description">Description <span>(optional)</span></label>
+        <label for="description">{{ t('room.description') }} <span>{{ t('common.optional') }}</span></label>
         <textarea
           id="description"
           v-model="roomForm.description"
-          placeholder="Add a description"
+          :placeholder="t('room.addDescriptionPlaceholder')"
           maxlength="512"
           rows="4"
           :disabled="loading"
@@ -101,11 +101,11 @@
 
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" :disabled="loading" @click="$emit('cancel')">
-          Cancel
+          {{ t('common.cancel') }}
         </button>
         <button type="submit" class="btn btn-primary" :disabled="loading || !roomForm.topicNames || roomForm.topicNames.length === 0">
           <span v-if="loading" class="spinner"></span>
-          {{ loading ? 'Updating...' : 'Update Room' }}
+          {{ loading ? t('room.updating') : t('room.updateRoom') }}
         </button>
       </div>
     </form>
@@ -113,11 +113,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUpdateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
 
-import type { Topic, UpdateRoomInput } from '@/types';
+import type { Topic, UpdateRoomInput, UUID } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps({
   room: {
@@ -132,7 +135,7 @@ const { updateRoom, loading, error } = useUpdateRoom();
 const { topics } = useTopicsQuery();
 
 const roomForm = ref<UpdateRoomInput>({
-  roomId: '',
+  roomId: '' as UUID,
   topicNames: [],
   description: ''
 });
@@ -148,10 +151,6 @@ watch(() => props.room, (newRoom) => {
     roomForm.value.description = newRoom.description || '';
   }
 }, { immediate: true });
-
-onMounted(async () => {
-  // Topics are automatically fetched by useTopicsQuery
-});
 
 const parsedErrors = computed(() => {
   if (!error.value) {

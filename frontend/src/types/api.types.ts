@@ -47,13 +47,13 @@ export interface UpdateRoleInput {
 
 
 export type GqlMessage = {
-  id: UUID | string
+  id: UUID
   author: User
   room: Room
   body: string
   isEdited: boolean
-  createdAt: DateTime | string
-  updatedAt: DateTime | string
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 export interface RegisterInput {

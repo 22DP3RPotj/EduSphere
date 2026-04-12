@@ -72,14 +72,14 @@ export function useWebSocket(
 
     const items: GqlMessage[] = response.data?.messages || []
     const normalized: Message[] = items.map((m): Message => ({
-      id: asUUID(m.id as string),
+      id: m.id,
       author: m.author,
       room: m.room,
       parent: null,
       body: m.body,
-      is_edited: m.isEdited,
-      created_at: asDateTime(m.createdAt as string),
-      updated_at: asDateTime(m.updatedAt as string),
+      isEdited: m.isEdited,
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
     }))
     return normalized
   }
@@ -228,14 +228,14 @@ export function useWebSocket(
   // TODO: real values
   function handleNewMessage(data: WSNewMessage): void {
     const newMessage: Message = {
-      id: asUUID(data.id),
+      id: data.id,
       body: data.body,
-      created_at: asDateTime(data.created_at),
-      updated_at: asDateTime(data.updated_at),
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
       parent: null,
-      is_edited: data.is_edited,
+      isEdited: data.is_edited,
       author: {
-        id: asUUID(data.author_id),
+        id: data.author_id,
         username: data.author,
         avatar: data.author_avatar,
         name: data.author,
@@ -252,14 +252,14 @@ export function useWebSocket(
   }
 
   function handleUpdateMessage(data: WSUpdateMessage): void {
-    const messageId = asUUID(data.id)
+    const messageId = data.id;
     const index = messages.value.findIndex((m) => m.id === messageId)
     if (index !== -1) {
       messages.value[index] = {
         ...messages.value[index],
         body: data.body,
-        is_edited: data.is_edited,
-        updated_at: asDateTime(data.updated_at),
+        isEdited: data.is_edited,
+        updatedAt: data.updated_at,
       } as Message
     }
   }
@@ -298,7 +298,7 @@ export function useWebSocket(
         const msg: OutgoingWebSocketMessage = {
           message: trimmed,
           type: "text",
-          timestamp: new Date().toISOString(),
+          timestamp: asDateTime(new Date().toISOString()),
         }
         socket.value!.send(JSON.stringify(msg))
       } catch (err) {
@@ -327,7 +327,7 @@ export function useWebSocket(
       const msg: OutgoingDeleteMessage = {
         messageId,
         type: "delete",
-        timestamp: new Date().toISOString(),
+        timestamp: asDateTime(new Date().toISOString()),
       }
       socket.value.send(JSON.stringify(msg))
       return true
@@ -348,7 +348,7 @@ export function useWebSocket(
         messageId,
         message: newBody,
         type: "update",
-        timestamp: new Date().toISOString(),
+        timestamp: asDateTime(new Date().toISOString()),
       }
       socket.value.send(JSON.stringify(msg))
       return true

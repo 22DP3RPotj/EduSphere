@@ -48,9 +48,9 @@ export function useRoomMessagesQuery(roomId: Ref<UUID>, options?: { enabled?: Re
       room: m.room,
       parent: null,
       body: m.body,
-      is_edited: m.isEdited,
-      created_at: m.createdAt as DateTime,
-      updated_at: m.updatedAt as DateTime,
+      isEdited: m.isEdited,
+      createdAt: m.createdAt as DateTime,
+      updatedAt: m.updatedAt as DateTime,
     }))
   }
 

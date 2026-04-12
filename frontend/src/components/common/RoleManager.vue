@@ -24,7 +24,7 @@
         <div class="role-header">
           <div class="role-name-row">
             <span class="role-name">{{ role.name }}</span>
-            <span class="role-priority">P{{ role.priority }}</span>
+            <span class="role-priority">{{ t('role.priorityPrefix') }}{{ role.priority }}</span>
           </div>
           <div class="role-actions">
             <button class="btn-icon" @click="startEdit(role)">
@@ -102,7 +102,7 @@
         <div v-if="roles.length > 1" class="form-group">
           <label>{{ t('role.substitutionRole') }}</label>
           <select v-model="substitutionRoleId" class="form-select">
-            <option :value="null">None</option>
+            <option :value="null">{{ t('common.none') }}</option>
             <option
               v-for="r in roles.filter((r: Role) => r.id !== deletingRole!.id)"
               :key="r.id"

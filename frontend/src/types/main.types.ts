@@ -32,7 +32,7 @@ export interface Participant {
   id: UUID;
   user: User;
   role: Role;
-  joined_at: DateTime;
+  joinedAt: DateTime;
 }
 
 export interface Topic {
@@ -47,8 +47,8 @@ export interface Room {
   topics: Topic[];
   description: string;
   participants: Participant[];
-  updated_at: DateTime;
-  created_at: DateTime;
+  updatedAt: DateTime;
+  createdAt: DateTime;
 }
 
 export interface Message {
@@ -57,9 +57,9 @@ export interface Message {
   room: Room;
   parent: Message | null;
   body: string;
-  is_edited: boolean;
-  created_at: DateTime;
-  updated_at: DateTime;
+  isEdited: boolean;
+  createdAt: DateTime;
+  updatedAt: DateTime;
 }
 
 export interface Report {

@@ -2,7 +2,7 @@
   <div v-if="isOpen" class="modal-overlay" @click="close">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h3>Report {{ targetLabel }}</h3>
+        <h3>{{ t('report.reportTarget', { target: targetLabel }) }}</h3>
         <button class="modal-close" @click="close">
           <font-awesome-icon icon="times" />
         </button>
@@ -11,27 +11,27 @@
       <div v-if="submitted" class="modal-body">
         <div class="success-message">
           <font-awesome-icon icon="check-circle" class="success-icon" />
-          <p>Report submitted successfully. Our team will review it shortly.</p>
+          <p>{{ t('report.submitSuccess') }}</p>
         </div>
       </div>
 
       <template v-else>
         <div class="modal-body">
           <div class="form-group">
-            <label for="report-reason">Reason</label>
+            <label for="report-reason">{{ t('report.reason') }}</label>
             <select id="report-reason" v-model="selectedReason" class="report-select" :disabled="reasonsLoading">
-              <option value="">Select a reason...</option>
+              <option value="">{{ t('report.selectReason') }}</option>
               <option v-for="reason in reasons" :key="reason.id" :value="reason.id">
                 {{ reason.label }}
               </option>
             </select>
           </div>
           <div class="form-group">
-            <label for="report-description">Description (optional)</label>
+            <label for="report-description">{{ t('report.descriptionOptional') }}</label>
             <textarea
               id="report-description"
               v-model="description"
-              placeholder="Provide additional details..."
+              :placeholder="t('report.descriptionPlaceholder')"
               rows="4"
               maxlength="2000"
             ></textarea>
@@ -39,13 +39,13 @@
           <div v-if="submitError" class="error-text">{{ submitError }}</div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" @click="close">Cancel</button>
+          <button class="btn-cancel" @click="close">{{ t('common.cancel') }}</button>
           <button
             class="btn-confirm danger"
             :disabled="!selectedReason || submitLoading"
             @click="submitReport"
           >
-            {{ submitLoading ? 'Submitting...' : 'Submit Report' }}
+            {{ submitLoading ? t('report.submitting') : t('report.submitReport') }}
           </button>
         </div>
       </template>
@@ -55,8 +55,11 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useReportReasons, useCreateReport } from '@/composables/useReports';
 import type { ReportTargetType, UUID } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;

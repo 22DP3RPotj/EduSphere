@@ -3,19 +3,19 @@
     <div class="confirmation-modal" @click.stop>
       <div class="confirmation-container">
         <div class="confirmation-header">
-          <h2 class="modal-title">{{ title }}</h2>
+          <h2 class="modal-title">{{ displayTitle }}</h2>
         </div>
         
         <div class="confirmation-body">
-          <p>{{ message }}</p>
+          <p>{{ displayMessage }}</p>
         </div>
         
         <div class="confirmation-actions">
           <button class="btn btn-secondary" @click="handleCancel">
-            {{ cancelText }}
+            {{ displayCancelText }}
           </button>
           <button class="btn btn-danger" @click="handleConfirm">
-            {{ confirmText }}
+            {{ displayConfirmText }}
           </button>
         </div>
       </div>
@@ -24,7 +24,10 @@
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   isVisible: {
@@ -33,25 +36,30 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: 'Are you sure?'
+    default: ''
   },
   message: {
     type: String,
-    default: 'This action cannot be undone.'
+    default: ''
   },
   confirmText: {
     type: String,
-    default: 'Delete'
+    default: ''
   },
   cancelText: {
     type: String,
-    default: 'Cancel'
+    default: ''
   },
   allowOutsideClick: {
     type: Boolean,
     default: true
   }
 });
+
+const displayTitle = computed(() => props.title || t('common.areYouSure'));
+const displayMessage = computed(() => props.message || t('common.actionCannotBeUndone'));
+const displayConfirmText = computed(() => props.confirmText || t('common.delete'));
+const displayCancelText = computed(() => props.cancelText || t('common.cancel'));
 
 const emit = defineEmits(['confirm', 'cancel', 'close']);
 

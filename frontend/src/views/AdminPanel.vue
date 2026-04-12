@@ -3,9 +3,9 @@
     <div class="admin-header">
       <h1>
         <font-awesome-icon icon="shield-alt" />
-        Admin Panel
+        {{ t('common.adminPanel') }}
       </h1>
-      <p class="admin-subtitle">Manage users, moderate cases, and review audit logs</p>
+      <p class="admin-subtitle">{{ t('common.adminSubtitle') }}</p>
     </div>
 
     <!-- Tab Navigation -->
@@ -15,14 +15,14 @@
         @click="activeTab = 'users'"
       >
         <font-awesome-icon icon="users" />
-        User Management
+        {{ t('common.userManagement') }}
       </button>
       <button
         :class="['tab-button', { active: activeTab === 'cases' }]"
         @click="activeTab = 'cases'"
       >
         <font-awesome-icon icon="gavel" />
-        Cases
+        {{ t('moderation.cases') }}
         <span v-if="pendingCasesCount > 0" class="badge-count">{{ pendingCasesCount }}</span>
       </button>
       <button
@@ -30,7 +30,7 @@
         @click="activeTab = 'audit'"
       >
         <font-awesome-icon icon="clipboard-list" />
-        Audit Log
+        {{ t('audit.auditLog') }}
       </button>
     </div>
 
@@ -42,31 +42,31 @@
           <input
             v-model="userSearch.query"
             type="text"
-            placeholder="Search users by name or username..."
+            :placeholder="t('common.searchUsersPlaceholder')"
             class="search-input"
             @keyup.enter="onUserSearch"
           />
           <button class="search-button" @click="onUserSearch">
-            Search
+            {{ t('common.search') }}
           </button>
         </div>
         
         <!-- Bulk Actions Dropdown -->
         <div v-if="selectedUsers.length > 0" class="bulk-actions">
-          <span class="selected-count">{{ selectedUsers.length }} selected</span>
+          <span class="selected-count">{{ t('common.selectedCount', { count: selectedUsers.length }) }}</span>
           <div class="bulk-action-controls">
             <select v-model="selectedBulkAction" class="action-select">
-              <option :value="null">Select an action...</option>
-              <option value="promote">Promote to Staff</option>
-              <option value="demote">Remove Staff</option>
-              <option value="activate">Activate</option>
+              <option :value="null">{{ t('common.actions') }}</option>
+              <option value="promote">{{ t('common.promoteToStaff') }}</option>
+              <option value="demote">{{ t('common.removeStaff') }}</option>
+              <option value="activate">{{ t('common.activate') }}</option>
             </select>
             <button 
               class="btn-apply-action" 
               :disabled="!selectedBulkAction"
               @click="applyBulkAction"
             >
-              Apply
+              {{ t('common.apply') }}
             </button>
           </div>
         </div>
@@ -77,7 +77,7 @@
         <font-awesome-icon icon="exclamation-triangle" />
         <div class="error-content">
           <p>Failed to load users: {{ usersError.message }}</p>
-          <button class="btn-retry" @click="() => refetchUsersComposable()">Retry</button>
+          <button class="btn-retry" @click="() => refetchUsersComposable()">{{ t('common.retry') }}</button>
         </div>
       </div>
 
@@ -94,7 +94,7 @@
                 />
               </th>
               <th class="col-user" @click="sortBy('username')">
-                Username
+                {{ t('auth.username') }}
                 <font-awesome-icon
                   v-if="userSort.column === 'username'"
                   :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
@@ -102,7 +102,7 @@
                 />
               </th>
               <th class="col-name" @click="sortBy('name')">
-                Name
+                {{ t('common.name') }}
                 <font-awesome-icon
                   v-if="userSort.column === 'name'"
                   :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
@@ -110,7 +110,7 @@
                 />
               </th>
               <th class="col-date" @click="sortBy('dateJoined')">
-                Joined
+                {{ t('common.joined') }}
                 <font-awesome-icon
                   v-if="userSort.column === 'dateJoined'"
                   :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
@@ -118,7 +118,7 @@
                 />
               </th>
               <th class="col-role" @click="sortBy('isStaff')">
-                Role
+                {{ t('common.role') }}
                 <font-awesome-icon
                   v-if="userSort.column === 'isStaff'"
                   :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
@@ -126,7 +126,7 @@
                 />
               </th>
               <th class="col-status" @click="sortBy('isActive')">
-                Status
+                {{ t('common.status') }}
                 <font-awesome-icon
                   v-if="userSort.column === 'isActive'"
                   :icon="userSort.direction === 'asc' ? 'sort-up' : 'sort-down'"
@@ -159,13 +159,13 @@
               <td class="col-name">{{ user.name }}</td>
               <td class="col-date">{{ formatDate(user.dateJoined) }}</td>
               <td class="col-role">
-                <span v-if="user.isSuperuser" class="badge badge-superuser">Superuser</span>
-                <span v-else-if="user.isStaff" class="badge badge-staff">Staff</span>
-                <span v-else class="badge badge-user">User</span>
+                <span v-if="user.isSuperuser" class="badge badge-superuser">{{ t('common.superuser') }}</span>
+                <span v-else-if="user.isStaff" class="badge badge-staff">{{ t('common.staff') }}</span>
+                <span v-else class="badge badge-user">{{ t('common.user') }}</span>
               </td>
               <td class="col-status">
                 <span :class="['status-badge', user.isActive ? 'active' : 'inactive']">
-                  {{ user.isActive ? 'Active' : 'Inactive' }}
+                  {{ user.isActive ? t('common.active') : t('common.inactive') }}
                 </span>
               </td>
               <td class="col-actions">
@@ -180,7 +180,7 @@
                       @click="promoteUser(user.id)"
                     >
                       <font-awesome-icon icon="user-shield" />
-                      Promote to Staff
+                      {{ t('common.promoteToStaff') }}
                     </button>
                     <button
                       v-if="user.isStaff"
@@ -188,7 +188,7 @@
                       @click="demoteUser(user.id)"
                     >
                       <font-awesome-icon icon="user-minus" />
-                      Remove Staff
+                      {{ t('common.removeStaff') }}
                     </button>
                     <button
                       v-if="user.isActive"
@@ -196,7 +196,7 @@
                       @click="terminateUser(user.id)"
                     >
                       <font-awesome-icon icon="ban" />
-                      Terminate User
+                      {{ t('common.terminateUser') }}
                     </button>
                     <button
                       v-if="!user.isActive"
@@ -204,7 +204,7 @@
                       @click="activateUser(user.id)"
                     >
                       <font-awesome-icon icon="check-circle" />
-                      Activate User
+                      {{ t('common.activateUser') }}
                     </button>
                   </div>
                 </div>
@@ -216,12 +216,12 @@
         <!-- Loading State -->
         <div v-if="loadingUsers" class="loading-state">
           <div class="spinner"></div>
-          <p>Loading users...</p>
+          <p>{{ t('common.loadingUsers') }}</p>
         </div>
 
         <div v-else-if="sortedUsers.length === 0" class="no-results">
           <font-awesome-icon icon="users-slash" size="2x" />
-          <p>No users found</p>
+          <p>{{ t('common.noUsersFound') }}</p>
         </div>
       </div>
     </div>
@@ -231,26 +231,26 @@
       <div class="section-controls">
         <div class="filters-row">
           <div class="filter-group">
-            <label for="case-status-filter">Status</label>
+            <label for="case-status-filter">{{ t('common.status') }}</label>
             <select id="case-status-filter" v-model="caseFiltersUI.status" class="filter-select">
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="RESOLVED">Resolved</option>
-              <option value="DISMISSED">Dismissed</option>
+              <option value="">{{ t('common.allStatuses') }}</option>
+              <option value="PENDING">{{ t('common.pending') }}</option>
+              <option value="UNDER_REVIEW">{{ t('common.underReview') }}</option>
+              <option value="RESOLVED">{{ t('moderation.resolved') }}</option>
+              <option value="DISMISSED">{{ t('moderation.dismissed') }}</option>
             </select>
           </div>
           <div class="filter-group">
-            <label for="case-priority-filter">Priority</label>
+            <label for="case-priority-filter">{{ t('common.priority') }}</label>
             <select id="case-priority-filter" v-model="caseFiltersUI.priority" class="filter-select">
-              <option value="">All Priorities</option>
-              <option value="0">Low</option>
-              <option value="1">Medium</option>
-              <option value="2">High</option>
+              <option value="">{{ t('common.allPriorities') }}</option>
+              <option value="0">{{ t('common.low') }}</option>
+              <option value="1">{{ t('common.medium') }}</option>
+              <option value="2">{{ t('common.high') }}</option>
             </select>
           </div>
           <button class="apply-filters-btn" @click="applyCaseFilters">
-            Apply Filters
+            {{ t('common.applyFilters') }}
           </button>
         </div>
       </div>
@@ -259,8 +259,8 @@
       <div v-if="casesError" class="error-banner">
         <font-awesome-icon icon="exclamation-triangle" />
         <div class="error-content">
-          <p>Failed to load cases: {{ casesError.message }}</p>
-          <button class="btn-retry" @click="() => refetchCasesComposable()">Retry</button>
+          <p>{{ t('moderation.failedToLoadCases') }}<span v-if="casesError.message">: {{ casesError.message }}</span></p>
+          <button class="btn-retry" @click="() => refetchCasesComposable()">{{ t('common.retry') }}</button>
         </div>
       </div>
 
@@ -268,7 +268,7 @@
       <div class="cases-list">
         <div v-if="loadingCases" class="loading-state">
           <div class="spinner"></div>
-          <p>Loading cases...</p>
+          <p>{{ t('common.loadingCases') }}</p>
         </div>
 
         <div v-else>
@@ -279,7 +279,7 @@
                 <span :class="['case-status-badge', `status-${mc.status.toLowerCase()}`]">
                   {{ formatStatus(mc.status) }}
                 </span>
-                <span :class="['case-priority-badge', `priority-${priorityLabel(mc.priority).toLowerCase()}`]">
+                <span :class="['case-priority-badge', `priority-${priorityClass(mc.priority)}`]">
                   {{ priorityLabel(mc.priority) }}
                 </span>
               </div>
@@ -296,15 +296,15 @@
                       @click="startReviewCase(mc.id)"
                     >
                       <font-awesome-icon icon="eye" />
-                      Start Review
+                      {{ t('moderation.startReview') }}
                     </button>
                     <button class="dropdown-item" @click="openCaseActionModal(mc)">
                       <font-awesome-icon icon="gavel" />
-                      Take Action
+                      {{ t('moderation.takeAction') }}
                     </button>
                     <button class="dropdown-item" @click="openPriorityModal(mc)">
                       <font-awesome-icon icon="flag" />
-                      Set Priority
+                      {{ t('moderation.setCasePriority') }}
                     </button>
                     <button
                       v-if="mc.status === 'RESOLVED' || mc.status === 'DISMISSED'"
@@ -312,7 +312,7 @@
                       @click="handleReopenCase(mc.id)"
                     >
                       <font-awesome-icon icon="redo" />
-                      Reopen
+                      {{ t('moderation.reopen') }}
                     </button>
                   </div>
                 </div>
@@ -322,17 +322,17 @@
             <div class="case-body">
               <!-- Linked Reports -->
               <div class="case-reports">
-                <h4>Reports ({{ mc.reports.length }})</h4>
+                <h4>{{ t('audit.reports') }} ({{ mc.reports.length }})</h4>
                 <div v-for="report in mc.reports" :key="report.id" class="case-report-item">
                   <span class="report-reason-badge">{{ report.reason.label }}</span>
-                  <span class="report-reporter">by {{ report.reporter?.username || 'Unknown' }}</span>
+                  <span class="report-reporter">{{ t('common.by') }} {{ report.reporter?.username || t('common.unknown') }}</span>
                   <p v-if="report.description" class="report-description-text">{{ report.description }}</p>
                 </div>
               </div>
 
               <!-- Action History -->
               <div v-if="mc.actions.length > 0" class="case-action-history">
-                <h4>Actions</h4>
+                <h4>{{ t('common.actions') }}</h4>
                 <div v-for="action in mc.actions" :key="action.id" class="case-action-item">
                   <span :class="['action-type-badge', `action-${action.action.toLowerCase()}`]">
                     {{ formatActionType(action.action) }}
@@ -347,7 +347,7 @@
 
           <div v-if="sortedCases.length === 0" class="no-results">
             <font-awesome-icon icon="inbox" size="2x" />
-            <p>No cases found</p>
+            <p>{{ t('moderation.noCasesFound') }}</p>
           </div>
         </div>
       </div>
@@ -358,28 +358,28 @@
       <div class="section-controls">
         <div class="filters-row">
           <div class="filter-group">
-            <label for="audit-type-filter">Audit Type</label>
+            <label for="audit-type-filter">{{ t('audit.auditType') }}</label>
             <select id="audit-type-filter" v-model="auditType" class="filter-select">
-              <option value="user">Users</option>
-              <option value="userBan">User Bans</option>
-              <option value="room">Rooms</option>
-              <option value="invite">Invites</option>
-              <option value="report">Reports</option>
-              <option value="case">Moderation Cases</option>
-              <option value="action">Moderation Actions</option>
+              <option value="user">{{ t('audit.users') }}</option>
+              <option value="userBan">{{ t('audit.userBans') }}</option>
+              <option value="room">{{ t('audit.rooms') }}</option>
+              <option value="invite">{{ t('audit.invites') }}</option>
+              <option value="report">{{ t('audit.reports') }}</option>
+              <option value="case">{{ t('audit.moderationCases') }}</option>
+              <option value="action">{{ t('audit.moderationActions') }}</option>
             </select>
           </div>
           <div class="filter-group">
-            <label for="audit-date-from">From</label>
+            <label for="audit-date-from">{{ t('common.from') }}</label>
             <input id="audit-date-from" v-model="auditFilters.dateFrom" type="date" class="filter-input" />
           </div>
           <div class="filter-group">
-            <label for="audit-date-to">To</label>
+            <label for="audit-date-to">{{ t('common.to') }}</label>
             <input id="audit-date-to" v-model="auditFilters.dateTo" type="date" class="filter-input" />
           </div>
           <div class="filter-group">
-            <label for="audit-actor">Actor Username</label>
-            <input id="audit-actor" v-model="auditFilters.actorUsername" type="text" class="filter-input" placeholder="Filter by actor..." />
+            <label for="audit-actor">{{ t('audit.actorUsername') }}</label>
+            <input id="audit-actor" v-model="auditFilters.actorUsername" type="text" class="filter-input" :placeholder="t('audit.filterByActor')" />
           </div>
         </div>
       </div>
@@ -387,22 +387,22 @@
       <!-- Audit entries -->
       <div v-if="auditLoading" class="loading-state">
         <div class="spinner"></div>
-        <p>Loading audit log...</p>
+        <p>{{ t('audit.loadingAuditLog') }}</p>
       </div>
       <div v-else-if="auditError" class="error-banner">
         <font-awesome-icon icon="exclamation-triangle" />
         <div class="error-content">
-          <p>Failed to load audit log: {{ auditError.message }}</p>
+          <p>{{ t('audit.failedToLoadAuditLog', { message: auditError.message }) }}</p>
         </div>
       </div>
       <div v-else>
         <table class="admin-table audit-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Label</th>
-              <th>Object ID</th>
-              <th>Actor</th>
+              <th>{{ t('common.date') }}</th>
+              <th>{{ t('audit.label') }}</th>
+              <th>{{ t('audit.objectId') }}</th>
+              <th>{{ t('audit.actor') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -417,12 +417,12 @@
 
         <div v-if="auditEntries.length === 0" class="no-results">
           <font-awesome-icon icon="clipboard-list" size="2x" />
-          <p>No audit entries found</p>
+          <p>{{ t('audit.noAuditEntries') }}</p>
         </div>
 
         <div v-if="auditHasMore" class="load-more-container">
           <button class="btn-load-more" @click="auditLoadMore">
-            Load More
+            {{ t('common.loadMore') }}
           </button>
         </div>
       </div>
@@ -432,41 +432,41 @@
     <div v-if="caseActionModal.isOpen" class="modal-overlay" @click="closeCaseActionModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>Take Action on Case</h3>
+          <h3>{{ t('moderation.takeActionOnCase') }}</h3>
           <button class="modal-close" @click="closeCaseActionModal">
             <font-awesome-icon icon="times" />
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="case-action-type">Action</label>
+            <label for="case-action-type">{{ t('common.action') }}</label>
             <select id="case-action-type" v-model="caseActionModal.action" class="filter-select">
-              <option value="">Select an action...</option>
-              <option value="NO_VIOLATION">No Violation</option>
-              <option value="CONTENT_REMOVED">Content Removed</option>
-              <option value="WARNING">Warning</option>
-              <option value="TEMP_BAN">Temporary Ban</option>
-              <option value="PERM_BAN">Permanent Ban</option>
+              <option value="">{{ t('common.actions') }}</option>
+              <option value="NO_VIOLATION">{{ t('moderation.noViolation') }}</option>
+              <option value="CONTENT_REMOVED">{{ t('moderation.contentRemoved') }}</option>
+              <option value="WARNING">{{ t('moderation.warning') }}</option>
+              <option value="TEMP_BAN">{{ t('moderation.tempBan') }}</option>
+              <option value="PERM_BAN">{{ t('moderation.permBan') }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="case-action-note">Note (optional)</label>
+            <label for="case-action-note">{{ t('common.noteOptional') }}</label>
             <textarea
               id="case-action-note"
               v-model="caseActionModal.note"
-              placeholder="Add a note about this action..."
+              :placeholder="t('moderation.addNoteAboutActionPlaceholder')"
               rows="4"
             ></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" @click="closeCaseActionModal">Cancel</button>
+          <button class="btn-cancel" @click="closeCaseActionModal">{{ t('common.cancel') }}</button>
           <button
             class="btn-confirm"
             :disabled="!caseActionModal.action"
             @click="confirmCaseAction"
           >
-            Take Action
+            {{ t('moderation.takeAction') }}
           </button>
         </div>
       </div>
@@ -476,24 +476,24 @@
     <div v-if="priorityModal.isOpen" class="modal-overlay" @click="closePriorityModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>Set Case Priority</h3>
+          <h3>{{ t('moderation.setCasePriority') }}</h3>
           <button class="modal-close" @click="closePriorityModal">
             <font-awesome-icon icon="times" />
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="priority-select">Priority</label>
+            <label for="priority-select">{{ t('common.priority') }}</label>
             <select id="priority-select" v-model="priorityModal.priority" class="filter-select">
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
+              <option value="LOW">{{ t('common.low') }}</option>
+              <option value="MEDIUM">{{ t('common.medium') }}</option>
+              <option value="HIGH">{{ t('common.high') }}</option>
             </select>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" @click="closePriorityModal">Cancel</button>
-          <button class="btn-confirm" @click="confirmSetPriority">Set Priority</button>
+          <button class="btn-cancel" @click="closePriorityModal">{{ t('common.cancel') }}</button>
+          <button class="btn-confirm" @click="confirmSetPriority">{{ t('moderation.setCasePriority') }}</button>
         </div>
       </div>
     </div>
@@ -502,35 +502,35 @@
     <div v-if="terminationModal.isOpen" class="modal-overlay" @click="closeTerminationModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>Terminate User(s)</h3>
+          <h3>{{ t('common.terminateUsers') }}</h3>
           <button class="modal-close" @click="closeTerminationModal">
             <font-awesome-icon icon="times" />
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="termination-reason">Reason for Termination</label>
+            <label for="termination-reason">{{ t('common.terminationReason') }}</label>
             <textarea
               id="termination-reason"
               v-model="terminationModal.reason"
-              placeholder="Explain why the user is being terminated..."
+              :placeholder="t('common.terminationReasonPlaceholder')"
               rows="3"
             ></textarea>
           </div>
           <div class="form-group">
-            <label for="termination-duration">Duration</label>
+            <label for="termination-duration">{{ t('common.duration') }}</label>
              <select id="termination-duration" v-model="terminationModal.duration">
-              <option value="permanent">Permanent</option>
-              <option value="1h">1 Hour</option>
-              <option value="24h">24 Hours</option>
-              <option value="7d">7 Days</option>
-              <option value="30d">30 Days</option>
+              <option value="permanent">{{ t('common.permanent') }}</option>
+              <option value="1h">{{ t('common.oneHour') }}</option>
+              <option value="24h">{{ t('common.twentyFourHours') }}</option>
+              <option value="7d">{{ t('common.sevenDays') }}</option>
+              <option value="30d">{{ t('common.thirtyDays') }}</option>
             </select>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" @click="closeTerminationModal">Cancel</button>
-          <button class="btn-confirm danger" @click="confirmTermination">Terminate</button>
+          <button class="btn-cancel" @click="closeTerminationModal">{{ t('common.cancel') }}</button>
+          <button class="btn-confirm danger" @click="confirmTermination">{{ t('common.terminate') }}</button>
         </div>
       </div>
     </div>
@@ -541,8 +541,8 @@
       :is-visible="confirmationModal.isOpen"
       :title="confirmationModal.title"
       :message="confirmationModal.message"
-      confirm-text="Confirm"
-      cancel-text="Cancel"
+      :confirm-text="t('common.confirm')"
+      :cancel-text="t('common.cancel')"
       @confirm="executeConfirmedAction"
       @cancel="closeConfirmationModal"
       @close="closeConfirmationModal"
@@ -552,6 +552,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   useAdminUsers,
   useAdminCases,
@@ -579,6 +580,8 @@ import {
 import { buildAvatarUrl } from '@/utils/media';
 import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
 import type { ModerationCase, User, UUID } from '@/types';
+
+const { t } = useI18n();
 
 // Role importance for sorting (higher = more important)
 const ROLE_IMPORTANCE = {
@@ -808,8 +811,8 @@ function terminateUser(userId: string) {
 function activateUser(userId: string) {
   confirmationModal.value = {
     isOpen: true,
-    title: 'Confirm Activation',
-    message: 'Are you sure you want to activate this user?',
+    title: t('common.activateUser'),
+    message: t('common.areYouSure'),
     action: async () => {
       const result = await unbanUser(userId as UUID);
       if (result?.success) {
@@ -890,8 +893,8 @@ async function executeConfirmedAction() {
 async function promoteUser(userId: string) {
   activeUserActions.value = null;
   showConfirmation(
-    'Promote User',
-    'Are you sure you want to promote this user to staff?',
+    t('common.promoteToStaff'),
+    t('common.areYouSure'),
     async () => {
       try {
         await promoteUserMutation(userId as UUID);
@@ -908,8 +911,8 @@ async function promoteUser(userId: string) {
 async function demoteUser(userId: string) {
   activeUserActions.value = null;
   showConfirmation(
-    'Remove Staff Role',
-    'Are you sure you want to remove staff role from this user?',
+    t('common.removeStaff'),
+    t('common.areYouSure'),
     async () => {
       try {
         await demoteUserMutation(userId as UUID);
@@ -941,8 +944,8 @@ function applyBulkAction() {
 
 async function bulkPromoteUsers() {
   showConfirmation(
-    'Promote Users',
-    `Are you sure you want to promote ${selectedUsers.value.length} users to staff?`,
+    t('common.promoteToStaff'),
+    t('common.confirmBulkPromote', { count: selectedUsers.value.length }),
     async () => {
       try {
         await promoteUsers(selectedUsers.value as UUID[]);
@@ -958,8 +961,8 @@ async function bulkPromoteUsers() {
 
 async function bulkDemoteUsers() {
   showConfirmation(
-    'Remove Staff Role',
-    `Are you sure you want to remove staff role from ${selectedUsers.value.length} users?`,
+    t('common.removeStaff'),
+    t('common.confirmBulkDemote', { count: selectedUsers.value.length }),
     async () => {
       try {
         await demoteUsers(selectedUsers.value as UUID[]);
@@ -974,13 +977,20 @@ async function bulkDemoteUsers() {
 }
 
 async function bulkActivateUsers() {
-  try {
-    await unbanUsers(selectedUsers.value as UUID[]);
-    await refetchUsersComposable();
-    selectedUsers.value = [];
-  } catch (error) {
-    console.error('Failed to activate users:', error);
-  }
+  showConfirmation(
+    t('common.activate'),
+    t('common.confirmBulkActivate', { count: selectedUsers.value.length }),
+    async () => {
+      try {
+        await unbanUsers(selectedUsers.value as UUID[]);
+        await refetchUsersComposable();
+        selectedUsers.value = [];
+      } catch (error) {
+        console.error('Failed to activate users:', error);
+        throw error;
+      }
+    }
+  );
 }
 
 // Case Actions
@@ -1053,8 +1063,8 @@ async function confirmSetPriority() {
 async function handleReopenCase(caseId: UUID) {
   activeCaseActions.value = null;
   showConfirmation(
-    'Reopen Case',
-    'Are you sure you want to reopen this case?',
+    t('moderation.reopen'),
+    t('common.areYouSure'),
     async () => {
       try {
         await reopenCase(caseId);
@@ -1067,12 +1077,21 @@ async function handleReopenCase(caseId: UUID) {
   );
 }
 
+function priorityClass(priority: number): string {
+  switch (priority) {
+    case 0: return 'low';
+    case 1: return 'medium';
+    case 2: return 'high';
+    default: return 'unknown';
+  }
+}
+
 function priorityLabel(priority: number): string {
   switch (priority) {
-    case 0: return 'Low';
-    case 1: return 'Medium';
-    case 2: return 'High';
-    default: return 'Unknown';
+    case 0: return t('common.low');
+    case 1: return t('common.medium');
+    case 2: return t('common.high');
+    default: return t('common.unknown');
   }
 }
 
@@ -1094,10 +1113,13 @@ function formatDate(dateString: string | undefined) {
 }
 
 function formatStatus(status: string) {
-  return status
-    .split('_')
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ');
+  const statusMap: Record<string, string> = {
+    PENDING: t('common.pending'),
+    UNDER_REVIEW: t('common.underReview'),
+    RESOLVED: t('moderation.resolved'),
+    DISMISSED: t('moderation.dismissed'),
+  };
+  return statusMap[status] ?? status;
 }
 
 // Close dropdowns when clicking outside

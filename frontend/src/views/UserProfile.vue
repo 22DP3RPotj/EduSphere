@@ -5,13 +5,13 @@
       <button class="back-button" @click="$router.back()">
         <font-awesome-icon icon="arrow-left" />
       </button>
-      <h1>Profile</h1>
+      <h1>{{ t('profile.profile') }}</h1>
       
       <!-- Edit button for own profile -->
       <div v-if="isOwnProfile && !isEditing" class="header-actions">
         <button class="edit-button" @click="startEditing">
           <font-awesome-icon icon="edit" />
-          Edit
+          {{ t('common.edit') }}
         </button>
       </div>
     </div>
@@ -19,15 +19,15 @@
     <!-- Loading state -->
     <div v-if="loading" class="profile-loading">
       <div class="spinner"></div>
-      <p>Loading profile...</p>
+      <p>{{ t('profile.loadingProfile') }}</p>
     </div>
     
     <!-- Error state -->
     <div v-else-if="userError" class="profile-error">
-      <p>Sorry, we couldn't load this profile.</p>
+      <p>{{ t('profile.failedToLoadProfile') }}</p>
       <button class="retry-button" @click="() => refetchUser()">
         <font-awesome-icon icon="sync" />
-        Retry
+        {{ t('common.retry') }}
       </button>
     </div>
     
@@ -37,14 +37,14 @@
         <!-- Editing mode -->
         <div v-if="isEditing" class="edit-profile">
           <div class="edit-header">
-            <h3>Edit Profile</h3>
+            <h3>{{ t('profile.editProfile') }}</h3>
           </div>
           
           <form class="edit-form" @submit.prevent="saveProfile">
             <div class="form-content">
               <!-- Avatar upload -->
               <div class="form-group">
-                <label class="form-label">Profile Picture</label>
+                <label class="form-label">{{ t('profile.profilePicture') }}</label>
                 <div class="avatar-upload">
                   <div class="current-avatar">
                     <UserAvatar 
@@ -55,7 +55,7 @@
                     <img 
                       v-else 
                       :src="avatarPreview" 
-                      alt="Avatar preview" 
+                      :alt="t('profile.avatarPreview')" 
                       class="avatar-preview"
                     />
                   </div>
@@ -68,32 +68,32 @@
                   />
                   <label for="avatar-input" class="avatar-upload-button">
                     <font-awesome-icon icon="camera" />
-                    Change Picture
+                    {{ t('profile.changePicture') }}
                   </label>
                 </div>
               </div>
               
               <!-- Name input -->
               <div class="form-group">
-                <label for="name-input" class="form-label">Display Name</label>
+                <label for="name-input" class="form-label">{{ t('profile.displayName') }}</label>
                 <input
                   id="name-input"
                   v-model="editForm.name"
                   type="text"
                   class="form-input"
-                  placeholder="Enter your display name"
+                  :placeholder="t('profile.enterDisplayName')"
                   maxlength="150"
                 />
               </div>
               
               <!-- Bio input -->
               <div class="form-group bio-group">
-                <label for="bio-input" class="form-label">Bio</label>
+                <label for="bio-input" class="form-label">{{ t('profile.bio') }}</label>
                 <textarea
                   id="bio-input"
                   v-model="editForm.bio"
                   class="form-textarea"
-                  placeholder="Tell us about yourself..."
+                  :placeholder="t('profile.bioPlaceholder')"
                   maxlength="4096"
                 ></textarea>
                 <div class="char-count">
@@ -128,7 +128,7 @@
                 :disabled="editLoading"
                 @click="cancelEditing"
               >
-                Cancel
+                {{ t('common.cancel') }}
               </button>
               <button 
                 type="submit" 
@@ -137,7 +137,7 @@
               >
                 <font-awesome-icon v-if="editLoading" icon="spinner" spin />
                 <font-awesome-icon v-else icon="check" />
-                {{ editLoading ? 'Saving...' : 'Save Changes' }}
+                {{ editLoading ? t('common.saving') : t('common.saveChanges') }}
               </button>
             </div>
 
@@ -232,7 +232,7 @@
             {{ user.bio }}
           </div>
           <div v-else class="profile-bio no-bio">
-            {{ isOwnProfile ? "You haven't added a bio yet." : "This user hasn't added a bio yet." }}
+            {{ isOwnProfile ? t('profile.noBioSelf') : t('profile.noBioOther') }}
           </div>
         </div>
       </div>
@@ -244,21 +244,21 @@
           :class="{ active: activeTab === 'messages' }"
           @click="setActiveTab('messages')"
         >
-          Messages
+          {{ t('profile.messages') }}
         </div>
         <div 
           class="tab" 
           :class="{ active: activeTab === 'hostedRooms' }"
           @click="setActiveTab('hostedRooms')"
         >
-          Hosted Rooms
+          {{ t('profile.hostedRooms') }}
         </div>
         <div 
           class="tab" 
           :class="{ active: activeTab === 'joinedRooms' }"
           @click="setActiveTab('joinedRooms')"
         >
-          Joined Rooms
+          {{ t('profile.joinedRooms') }}
         </div>
       </div>
       
@@ -268,19 +268,19 @@
         <div v-if="activeTab === 'messages'" class="messages-tab">
           <div v-if="tabsData.messages.loading" class="tab-loading">
             <div class="spinner"></div>
-            <p>Loading messages...</p>
+            <p>{{ t('common.loadingMessages') }}</p>
           </div>
           
           <div v-else-if="tabsData.messages.error" class="tab-error">
-            <p>Failed to load messages</p>
+            <p>{{ t('message.failedToLoadMessages') }}</p>
             <button class="retry-button-small" @click="tabsData.messages.refetch?.()">
-              <font-awesome-icon icon="sync" /> Retry
+              <font-awesome-icon icon="sync" /> {{ t('common.retry') }}
             </button>
           </div>
           
           <div v-else-if="tabsData.messages.data.length === 0" class="empty-tab">
             <font-awesome-icon icon="comment-alt" size="2x" />
-            <p>No messages yet</p>
+            <p>{{ t('message.noMessagesYet') }}</p>
           </div>
           
           <div v-else class="messages-list">
@@ -288,14 +288,14 @@
               <div class="message-room">
                 <font-awesome-icon icon="comments" class="room-icon" />
                 <span>{{ message.room.name }}</span>
-                <span class="message-date">{{ formatDate(message.created_at) }}</span>
+                <span class="message-date">{{ formatDate(message.createdAt) }}</span>
               </div>
               <div class="message-content-preview">
                 {{ message.body }}
               </div>
               <div class="message-actions">
                 <button class="view-room-button" @click="navigateToRoom(message.room)">
-                  <font-awesome-icon icon="eye" /> View Room
+                  <font-awesome-icon icon="eye" /> {{ t('room.viewRoom') }}
                 </button>
               </div>
             </div>
@@ -306,19 +306,19 @@
         <div v-if="activeTab === 'hostedRooms'" class="rooms-tab">
           <div v-if="tabsData.hostedRooms.loading" class="tab-loading">
             <div class="spinner"></div>
-            <p>Loading rooms...</p>
+            <p>{{ t('common.loadingRooms') }}</p>
           </div>
           
           <div v-else-if="tabsData.hostedRooms.error" class="tab-error">
-            <p>Failed to load hosted rooms</p>
+            <p>{{ t('room.failedToLoadHostedRooms') }}</p>
             <button class="retry-button-small" @click="tabsData.hostedRooms.refetch?.()">
-              <font-awesome-icon icon="sync" /> Retry
+              <font-awesome-icon icon="sync" /> {{ t('common.retry') }}
             </button>
           </div>
           
           <div v-else-if="tabsData.hostedRooms.data.length === 0" class="empty-tab">
             <font-awesome-icon icon="door-closed" size="2x" />
-            <p>No rooms hosted yet</p>
+            <p>{{ t('room.noRoomsHosted') }}</p>
           </div>
           
           <div v-else class="rooms-list">
@@ -337,7 +337,7 @@
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
-                <span class="room-date">Created {{ formatDate(room.created_at) }}</span>
+                <span class="room-date">{{ t('room.createdOn') }} {{ formatDate(room.createdAt) }}</span>
               </div>
             </div>
           </div>
@@ -347,19 +347,19 @@
         <div v-if="activeTab === 'joinedRooms'" class="rooms-tab">
           <div v-if="tabsData.joinedRooms.loading" class="tab-loading">
             <div class="spinner"></div>
-            <p>Loading joined rooms...</p>
+            <p>{{ t('common.loadingJoinedRooms') }}</p>
           </div>
           
           <div v-else-if="tabsData.joinedRooms.error" class="tab-error">
-            <p>Failed to load joined rooms</p>
+            <p>{{ t('room.failedToLoadJoinedRooms') }}</p>
             <button class="retry-button-small" @click="tabsData.joinedRooms.refetch?.()">
-              <font-awesome-icon icon="sync" /> Retry
+              <font-awesome-icon icon="sync" /> {{ t('common.retry') }}
             </button>
           </div>
           
           <div v-else-if="tabsData.joinedRooms.data.length === 0" class="empty-tab">
             <font-awesome-icon icon="door-open" size="2x" />
-            <p>Not participating in any rooms yet</p>
+            <p>{{ t('room.notParticipatingYet') }}</p>
           </div>
           
           <div v-else class="rooms-list">
@@ -378,7 +378,7 @@
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
-                <span class="room-date">Created {{ formatDate(room.created_at) }}</span>
+                <span class="room-date">{{ t('room.createdOn') }} {{ formatDate(room.createdAt) }}</span>
               </div>
             </div>
           </div>
@@ -389,10 +389,10 @@
     <!-- User not found -->
     <div v-else class="profile-not-found">
       <font-awesome-icon icon="user-slash" size="3x" />
-      <h2>User not found</h2>
-      <p>The user you're looking for doesn't exist or is unavailable.</p>
+      <h2>{{ t('profile.userNotFound') }}</h2>
+      <p>{{ t('profile.userNotFoundMessage') }}</p>
       <button class="back-link" @click="$router.back()">
-        Go back
+        {{ t('common.goBack') }}
       </button>
     </div>
   </div>
@@ -752,7 +752,6 @@ async function saveProfile() {
   font-size: 0.875rem;
 }
 
-/* ... rest of the existing styles remain the same ... */
 .profile-container {
   display: flex;
   flex-direction: column;

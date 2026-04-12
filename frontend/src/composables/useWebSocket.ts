@@ -77,9 +77,9 @@ export function useWebSocket(
       room: m.room,
       parent: null,
       body: m.body,
-      is_edited: m.isEdited,
-      created_at: asDateTime(m.createdAt as string),
-      updated_at: asDateTime(m.updatedAt as string),
+      isEdited: m.isEdited,
+      createdAt: asDateTime(m.createdAt),
+      updatedAt: asDateTime(m.updatedAt),
     }))
     return normalized
   }
@@ -230,10 +230,10 @@ export function useWebSocket(
     const newMessage: Message = {
       id: asUUID(data.id),
       body: data.body,
-      created_at: asDateTime(data.created_at),
-      updated_at: asDateTime(data.updated_at),
+      createdAt: asDateTime(data.created_at),
+      updatedAt: asDateTime(data.updated_at),
       parent: null,
-      is_edited: data.is_edited,
+      isEdited: data.is_edited,
       author: {
         id: asUUID(data.author_id),
         username: data.author,

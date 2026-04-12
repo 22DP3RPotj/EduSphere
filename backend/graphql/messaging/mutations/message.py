@@ -16,6 +16,7 @@ class CreateMessage(BaseMutation):
     class Arguments:
         room_id = graphene.UUID(required=True)
         body = graphene.String(required=True)
+        parent_id = graphene.UUID(required=False)
 
     message = graphene.Field(MessageType)
 
@@ -27,6 +28,7 @@ class CreateMessage(BaseMutation):
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         body: str,
+        parent_id: uuid.UUID | None = None,
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
@@ -36,7 +38,7 @@ class CreateMessage(BaseMutation):
             )
 
         message = MessageService.create_message(
-            user=info.context.user, room=room, body=body
+            user=info.context.user, room=room, body=body, parent_id=parent_id
         )
 
         return cls(message=message)

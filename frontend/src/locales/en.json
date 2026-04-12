@@ -347,7 +347,11 @@
     "editedIndicator": "(edited)",
     "editPlaceholder": "Edit your message...",
     "editHint": "Press Ctrl+Enter to save, Esc to cancel",
-    "userAvatarAlt": "{name}'s avatar"
+    "userAvatarAlt": "{name}'s avatar",
+    "reply": "Reply",
+    "replyingTo": "Replying to {author}",
+    "unknownUser": "Unknown",
+    "statusTooltip": "Delivered to {delivered} · Seen by {seen}"
   },
   "profile": {
     "profile": "Profile",

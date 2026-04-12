@@ -347,7 +347,11 @@
     "editedIndicator": "(rediģēts)",
     "editPlaceholder": "Rediģējiet savu ziņojumu...",
     "editHint": "Nospiediet Ctrl+Enter, lai saglabātu, Esc, lai atceltu",
-    "userAvatarAlt": "{name} avatārs"
+    "userAvatarAlt": "{name} avatārs",
+    "reply": "Atbildēt",
+    "replyingTo": "Atbilde {author}",
+    "unknownUser": "Nezināms",
+    "statusTooltip": "Piegādāts {delivered} · Apskatīts {seen}"
   },
   "profile": {
     "profile": "Profils",

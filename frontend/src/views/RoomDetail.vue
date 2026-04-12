@@ -264,14 +264,30 @@
             <MessageView
               v-for="message in messages" 
               :key="message.id" 
+              :data-message-id="message.id"
               :message="message"
               :current-user-id="authStore.user?.id"
               :is-host="message.author?.id === room?.host?.id"
               @delete-message="handleMessageDelete"
               @update-message="handleMessageUpdate"
+              @reply-message="handleReplyMessage"
+              @scroll-to-message="scrollToMessage"
             />
           </div>
           
+          <!-- Reply preview bar -->
+          <div v-if="replyingTo" class="reply-preview-bar">
+            <div class="reply-preview-content">
+              <font-awesome-icon icon="reply" class="reply-preview-icon" />
+              <span class="reply-preview-text">
+                {{ t('message.replyingTo', { author: replyingTo.author }) }}: {{ replyingTo.body.slice(0, 80) }}{{ replyingTo.body.length > 80 ? '…' : '' }}
+              </span>
+            </div>
+            <button class="reply-cancel-btn" @click="cancelReply">
+              <font-awesome-icon icon="times" />
+            </button>
+          </div>
+
           <!-- Message input -->
           <div v-if="canSendMessage" class="message-input-container">
             <!-- Error display for message operations and advisories (input-level) -->
@@ -351,6 +367,7 @@ const { t } = useI18n();
 
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
+const replyingTo = ref<{ id: string; body: string; author: string } | null>(null);
 const showSidebar = ref<boolean>(window.innerWidth > 768);
 const isMobileView = ref<boolean>(window.innerWidth <= 768);
 const showEditForm = ref<boolean>(false);
@@ -521,6 +538,7 @@ const {
   sendMessage: sendWebSocketMessage,
   deleteMessage: deleteWebSocketMessage,
   updateMessage: updateWebSocketMessage,
+  markSeen,
   closeWebSocket,
   connectionError: websocketError,
   advisoryMessage,
@@ -594,6 +612,25 @@ async function handleMessageUpdate(messageId: UUID, newBody: string) {
     }
   } catch (error) {
     messageOperationErrors.value = parseGraphQLError(error);
+  }
+}
+
+function handleReplyMessage(payload: { id: string; body: string; author: string }) {
+  replyingTo.value = payload;
+  const inputEl = document.getElementById('messageInput');
+  if (inputEl) inputEl.focus();
+}
+
+function cancelReply() {
+  replyingTo.value = null;
+}
+
+function scrollToMessage(messageId: string) {
+  const el = messagesContainerRef.value?.querySelector(`[data-message-id="${messageId}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('highlight-flash');
+    setTimeout(() => el.classList.remove('highlight-flash'), 1500);
   }
 }
 
@@ -768,9 +805,11 @@ async function sendMessage() {
   }
   
   try {
-    const success = await sendWebSocketMessage(messageInput.value);
+    const parentId = replyingTo.value?.id as UUID | undefined;
+    const success = await sendWebSocketMessage(messageInput.value, parentId);
     if (success) {
       messageInput.value = '';
+      replyingTo.value = null;
       // Clear any lingering advisory after a successful send
       if (advisoryMessage.value) advisoryMessage.value = null;
       visibleAdvisory.value = null;
@@ -801,6 +840,55 @@ function scrollToBottom() {
   }
 }
 
+// Mark-seen IntersectionObserver
+let seenObserver: IntersectionObserver | null = null;
+let seenDebounceTimer: number | null = null;
+const pendingSeenIds = new Set<string>();
+
+function setupSeenObserver() {
+  if (!messagesContainerRef.value) return;
+  
+  seenObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const msgId = (entry.target as HTMLElement).dataset.messageId;
+        if (!msgId) continue;
+        // Skip own messages
+        const msg = websocketMessages.value.find(m => m.id === msgId);
+        if (!msg || msg.author?.id === authStore.user?.id) continue;
+        pendingSeenIds.add(msgId);
+      }
+      
+      if (pendingSeenIds.size > 0) {
+        if (seenDebounceTimer !== null) clearTimeout(seenDebounceTimer);
+        seenDebounceTimer = window.setTimeout(() => {
+          const ids = [...pendingSeenIds] as UUID[];
+          pendingSeenIds.clear();
+          markSeen(ids);
+        }, 500);
+      }
+    },
+    { root: messagesContainerRef.value, threshold: 0.5 }
+  );
+
+  // Observe existing message elements
+  const messageEls = messagesContainerRef.value.querySelectorAll('[data-message-id]');
+  messageEls.forEach(el => seenObserver!.observe(el));
+}
+
+function teardownSeenObserver() {
+  if (seenObserver) {
+    seenObserver.disconnect();
+    seenObserver = null;
+  }
+  if (seenDebounceTimer !== null) {
+    clearTimeout(seenDebounceTimer);
+    seenDebounceTimer = null;
+  }
+  pendingSeenIds.clear();
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   try {
@@ -811,6 +899,7 @@ onMounted(async () => {
     
     nextTick(() => {
       scrollToBottom();
+      setupSeenObserver();
     });
   } catch (error) {
     console.error('Error initializing room:', error);
@@ -818,6 +907,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  teardownSeenObserver();
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('click', closeRoomActionsMenu);
   if (advisoryTimer !== null) {
@@ -836,6 +926,15 @@ watch([() => room.value, () => authStore.isAuthenticated, () => isParticipant.va
   }, 
   { immediate: true }
 );
+
+// Re-observe message elements when messages change
+watch(() => websocketMessages.value.length, () => {
+  nextTick(() => {
+    if (!seenObserver || !messagesContainerRef.value) return;
+    const messageEls = messagesContainerRef.value.querySelectorAll('[data-message-id]');
+    messageEls.forEach(el => seenObserver!.observe(el));
+  });
+});
 
 // Delay rate-limit advisory until 1s of no typing; show other advisories immediately
 watch(() => advisoryMessage.value, (msg) => {
@@ -1432,6 +1531,61 @@ watch(() => messages.value.length, (newLength, oldLength) => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Reply preview bar */
+.reply-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background-color: rgba(79, 70, 229, 0.06);
+  border-top: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary-color);
+  font-size: 0.85rem;
+}
+
+.reply-preview-content {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.reply-preview-icon {
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.reply-preview-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-light);
+}
+
+.reply-cancel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 0.25rem;
+  flex-shrink: 0;
+}
+
+.reply-cancel-btn:hover {
+  color: var(--text-color);
+}
+
+/* Highlight flash for scroll-to-message */
+@keyframes highlight-flash {
+  0% { background-color: rgba(79, 70, 229, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.highlight-flash {
+  animation: highlight-flash 1.5s ease-out;
 }
 
 .message-input-container {

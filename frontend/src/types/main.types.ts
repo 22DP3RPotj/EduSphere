@@ -51,6 +51,11 @@ export interface Room {
   createdAt: DateTime;
 }
 
+export interface StatusSummary {
+  delivered: number;
+  seen: number;
+}
+
 export interface Message {
   id: UUID;
   author: User;
@@ -60,6 +65,7 @@ export interface Message {
   isEdited: boolean;
   createdAt: DateTime;
   updatedAt: DateTime;
+  statusSummary?: StatusSummary | null;
 }
 
 export interface Report {

@@ -4,8 +4,8 @@ import type { DateTime, UUID } from "./main.types";
 export type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
 
 // WebSocket actions
-export type MessageAction = 'new' | 'update' | 'delete';
-export type MessageType = 'text' | 'update' | 'delete';
+export type MessageAction = 'new' | 'update' | 'delete' | 'status_update';
+export type MessageType = 'text' | 'update' | 'delete' | 'mark_seen';
 
 // WebSocket incoming message types
 export interface WSBaseMessage {
@@ -23,6 +23,8 @@ export interface WSNewMessage extends WSBaseMessage {
   author: string;
   author_id: UUID;
   author_avatar: string | null;
+  parent_id: string | null;
+  parent_preview: { id: string; body: string; author: string } | null;
 }
 
 export interface WSUpdateMessage extends WSBaseMessage {
@@ -36,13 +38,25 @@ export interface WSDeleteMessage extends WSBaseMessage {
   action: 'delete';
 }
 
-export type ReceivedWebSocketMessage = WSNewMessage | WSUpdateMessage | WSDeleteMessage;
+export interface WSStatusUpdate {
+  type: 'chat_message';
+  action: 'status_update';
+  updates: Array<{ message_id: string; user_id: string; status: string }>;
+}
+
+export type ReceivedWebSocketMessage = WSNewMessage | WSUpdateMessage | WSDeleteMessage | WSStatusUpdate;
 
 // Outgoing WebSocket message types
 export interface OutgoingTextMessage {
   message: string;
   type: 'text';
   timestamp: DateTime;
+  parentId?: UUID;
+}
+
+export interface OutgoingMarkSeenMessage {
+  type: 'mark_seen';
+  messageIds: UUID[];
 }
 
 export interface OutgoingDeleteMessage {
@@ -61,4 +75,5 @@ export interface OutgoingUpdateMessage {
 export type OutgoingWebSocketMessage =
   | OutgoingTextMessage
   | OutgoingDeleteMessage
-  | OutgoingUpdateMessage;
+  | OutgoingUpdateMessage
+  | OutgoingMarkSeenMessage;

@@ -50,10 +50,16 @@ export type GqlMessage = {
   id: UUID
   author: User
   room: Room
+  parent?: {
+    id: UUID
+    body: string
+    author: { id: UUID; username: string }
+  } | null
   body: string
   isEdited: boolean
   createdAt: DateTime
   updatedAt: DateTime
+  statusSummary?: { delivered: number; seen: number } | null
 }
 
 export interface RegisterInput {

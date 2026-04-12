@@ -132,10 +132,22 @@ export const ROOM_MESSAGES_QUERY = gql`
                 username
                 avatar
             }
+            parent {
+                id
+                body
+                author {
+                    id
+                    username
+                }
+            }
             body
             isEdited
             createdAt
             updatedAt
+            statusSummary {
+                delivered
+                seen
+            }
         }
     }
 `;

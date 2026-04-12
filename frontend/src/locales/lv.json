@@ -109,6 +109,9 @@
     "loadingReports": "Ielādē ziņojumus...",
     "areYouSure": "Vai tiešām?",
     "actionCannotBeUndone": "Šo darbību nevar atcelt.",
+    "confirmBulkPromote": "Vai tiešām vēlaties paaugstināt {count} lietotāju(-s) uz personālu?",
+    "confirmBulkDemote": "Vai tiešām vēlaties noņemt personāla statusu {count} lietotāju(-s)?",
+    "confirmBulkActivate": "Vai tiešām vēlaties aktivizēt {count} lietotāju(-s)?",
     "loggingOut": "Izrakstīšanās..."
   },
   "auth": {

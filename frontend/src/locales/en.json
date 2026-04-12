@@ -109,6 +109,9 @@
     "loadingReports": "Loading reports...",
     "areYouSure": "Are you sure?",
     "actionCannotBeUndone": "This action cannot be undone.",
+    "confirmBulkPromote": "Are you sure you want to promote {count} user(s) to staff?",
+    "confirmBulkDemote": "Are you sure you want to remove staff from {count} user(s)?",
+    "confirmBulkActivate": "Are you sure you want to activate {count} user(s)?",
     "loggingOut": "Logging out..."
   },
   "auth": {

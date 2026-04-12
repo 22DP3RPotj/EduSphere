@@ -1,3 +1,5 @@
+import type { DateTime, UUID } from "./main.types";
+
 // WebSocket connection status
 export type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
 
@@ -9,17 +11,17 @@ export type MessageType = 'text' | 'update' | 'delete';
 export interface WSBaseMessage {
   type: 'chat_message';
   action: MessageAction;
-  id: string;
+  id: UUID;
 }
 
 export interface WSNewMessage extends WSBaseMessage {
   action: 'new';
   body: string;
-  created_at: string;
-  updated_at: string;
+  created_at: DateTime;
+  updated_at: DateTime;
   is_edited: boolean;
   author: string;
-  author_id: string;
+  author_id: UUID;
   author_avatar: string | null;
 }
 
@@ -27,7 +29,7 @@ export interface WSUpdateMessage extends WSBaseMessage {
   action: 'update';
   body: string;
   is_edited: boolean;
-  updated_at: string;
+  updated_at: DateTime;
 }
 
 export interface WSDeleteMessage extends WSBaseMessage {
@@ -40,20 +42,20 @@ export type ReceivedWebSocketMessage = WSNewMessage | WSUpdateMessage | WSDelete
 export interface OutgoingTextMessage {
   message: string;
   type: 'text';
-  timestamp: string;
+  timestamp: DateTime;
 }
 
 export interface OutgoingDeleteMessage {
-  messageId: string;
+  messageId: UUID;
   type: 'delete';
-  timestamp: string;
+  timestamp: DateTime;
 }
 
 export interface OutgoingUpdateMessage {
-  messageId: string;
+  messageId: UUID;
   message: string;
   type: 'update';
-  timestamp: string;
+  timestamp: DateTime;
 }
 
 export type OutgoingWebSocketMessage =

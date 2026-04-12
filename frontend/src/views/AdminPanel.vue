@@ -945,7 +945,7 @@ function applyBulkAction() {
 async function bulkPromoteUsers() {
   showConfirmation(
     t('common.promoteToStaff'),
-    t('common.areYouSure'),
+    t('common.confirmBulkPromote', { count: selectedUsers.value.length }),
     async () => {
       try {
         await promoteUsers(selectedUsers.value as UUID[]);
@@ -962,7 +962,7 @@ async function bulkPromoteUsers() {
 async function bulkDemoteUsers() {
   showConfirmation(
     t('common.removeStaff'),
-    t('common.areYouSure'),
+    t('common.confirmBulkDemote', { count: selectedUsers.value.length }),
     async () => {
       try {
         await demoteUsers(selectedUsers.value as UUID[]);
@@ -977,13 +977,20 @@ async function bulkDemoteUsers() {
 }
 
 async function bulkActivateUsers() {
-  try {
-    await unbanUsers(selectedUsers.value as UUID[]);
-    await refetchUsersComposable();
-    selectedUsers.value = [];
-  } catch (error) {
-    console.error('Failed to activate users:', error);
-  }
+  showConfirmation(
+    t('common.activate'),
+    t('common.confirmBulkActivate', { count: selectedUsers.value.length }),
+    async () => {
+      try {
+        await unbanUsers(selectedUsers.value as UUID[]);
+        await refetchUsersComposable();
+        selectedUsers.value = [];
+      } catch (error) {
+        console.error('Failed to activate users:', error);
+        throw error;
+      }
+    }
+  );
 }
 
 // Case Actions

@@ -30,14 +30,14 @@
     <div v-if="activeTab === 'received'" class="tab-content">
       <div class="filters-row">
         <div class="filter-group">
-          <label for="received-status-filter">Status</label>
+          <label for="received-status-filter">{{ t('common.status') }}</label>
           <select id="received-status-filter" v-model="receivedStatusFilter" class="filter-select">
-            <option value="">All</option>
-            <option value="PENDING">Pending</option>
-            <option value="ACCEPTED">Accepted</option>
-            <option value="DECLINED">Declined</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="REVOKED">Revoked</option>
+            <option value="">{{ t('common.all') }}</option>
+            <option value="PENDING">{{ t('common.pending') }}</option>
+            <option value="ACCEPTED">{{ t('common.accepted') }}</option>
+            <option value="DECLINED">{{ t('common.declined') }}</option>
+            <option value="EXPIRED">{{ t('common.expired') }}</option>
+            <option value="REVOKED">{{ t('common.revoked') }}</option>
           </select>
         </div>
       </div>
@@ -62,7 +62,7 @@
             <div class="invite-meta">
               <span class="invited-by">{{ t('invite.invitedBy') }}: <strong>{{ invite.inviter.name || invite.inviter.username }}</strong></span>
               <span v-if="invite.role" class="invite-role">{{ invite.role.name }}</span>
-              <span class="invite-status" :class="invite.status.toLowerCase()">{{ invite.status }}</span>
+              <span class="invite-status" :class="invite.status.toLowerCase()">{{ formatInviteStatus(invite.status) }}</span>
             </div>
             <div class="invite-dates">
               <span>{{ formatDate(invite.createdAt) }}</span>
@@ -96,14 +96,14 @@
     <div v-if="activeTab === 'sent'" class="tab-content">
       <div class="filters-row">
         <div class="filter-group">
-          <label for="sent-status-filter">Status</label>
+          <label for="sent-status-filter">{{ t('common.status') }}</label>
           <select id="sent-status-filter" v-model="sentStatusFilter" class="filter-select">
-            <option value="">All</option>
-            <option value="PENDING">Pending</option>
-            <option value="ACCEPTED">Accepted</option>
-            <option value="DECLINED">Declined</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="REVOKED">Revoked</option>
+            <option value="">{{ t('common.all') }}</option>
+            <option value="PENDING">{{ t('common.pending') }}</option>
+            <option value="ACCEPTED">{{ t('common.accepted') }}</option>
+            <option value="DECLINED">{{ t('common.declined') }}</option>
+            <option value="EXPIRED">{{ t('common.expired') }}</option>
+            <option value="REVOKED">{{ t('common.revoked') }}</option>
           </select>
         </div>
       </div>
@@ -128,7 +128,7 @@
             <div class="invite-meta">
               <span class="invited-to">{{ t('invite.invitedTo') }}: <strong>{{ invite.invitee.name || invite.invitee.username }}</strong></span>
               <span v-if="invite.role" class="invite-role">{{ invite.role.name }}</span>
-              <span class="invite-status" :class="invite.status.toLowerCase()">{{ invite.status }}</span>
+              <span class="invite-status" :class="invite.status.toLowerCase()">{{ formatInviteStatus(invite.status) }}</span>
             </div>
             <div class="invite-dates">
               <span>{{ formatDate(invite.createdAt) }}</span>
@@ -195,6 +195,17 @@ const filteredSentInvites = computed(() => {
   if (!sentStatusFilter.value) return sentInvites.value;
   return sentInvites.value.filter(i => i.status === sentStatusFilter.value);
 });
+
+function formatInviteStatus(status: string) {
+  const map: Record<string, string> = {
+    PENDING: t('common.pending'),
+    ACCEPTED: t('common.accepted'),
+    DECLINED: t('common.declined'),
+    EXPIRED: t('common.expired'),
+    REVOKED: t('common.revoked'),
+  };
+  return map[status] ?? status;
+}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString(undefined, {

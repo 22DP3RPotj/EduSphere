@@ -4,7 +4,7 @@
     <main class="main-content">
       <div class="sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
         <div class="sidebar-header">
-          <h3 class="sidebar-title">Filters</h3>
+          <h3 class="sidebar-title">{{ t('common.filters') }}</h3>
           <button v-if="isMobileView" class="close-sidebar-button" @click="toggleSidebar">
             <font-awesome-icon icon="times" />
           </button>
@@ -20,13 +20,13 @@
           </div>
 
           <div class="filter-group">
-            <label for="topic-search">Topics</label>
+            <label for="topic-search">{{ t('room.topics') }}</label>
             <div class="autocomplete-wrapper">
               <input
                 id="topic-search"
                 v-model="topicSearchQuery" 
                 type="text" 
-                placeholder="Search topics..." 
+                :placeholder="t('common.searchTopicsPlaceholder')" 
                 class="topic-search-input"
                 autocomplete="off"
                 @input="onTopicInput"
@@ -40,7 +40,7 @@
               <div v-show="showTopicSuggestions" class="suggestions-list">
                 <div v-if="loadingHomepage && !topics.length" class="loading-suggestions">
                   <div class="spinner"></div>
-                  <span>Loading topics...</span>
+                  <span>{{ t('common.loadingTopics') }}</span>
                 </div>
                 <template v-else>
                   <div
@@ -59,7 +59,7 @@
                     </span>
                   </div>
                   <div v-if="filteredTopics.length === 0 && topicSearchQuery" class="no-suggestions">
-                    No matching topics found
+                    {{ t('common.noMatchingTopics') }}
                   </div>
                 </template>
               </div>
@@ -67,7 +67,7 @@
             
             <!-- Selected topics display -->
             <div v-if="pendingTopics.length > 0" class="selected-topics">
-              <div class="selected-topics-label">Selected:</div>
+              <div class="selected-topics-label">{{ t('common.selected') }}</div>
               <div class="selected-topics-list">
                 <span 
                   v-for="topicName in pendingTopics" 
@@ -78,7 +78,7 @@
                   <button 
                     type="button" 
                     class="remove-topic-btn"
-                    :title="`Remove ${topicName}`"
+                    :title="t('common.removeTopicTitle', { name: topicName })"
                     @click="removeTopic(topicName)"
                   >
                     <font-awesome-icon icon="times" />
@@ -91,7 +91,7 @@
           <div class="filter-buttons-container">
             <button class="btn-apply-filters" @click="applyFilters">
               <font-awesome-icon icon="filter" />
-              Apply Filters
+              {{ t('common.applyFilters') }}
             </button>
             
             <button 
@@ -100,7 +100,7 @@
               @click="resetFilters"
             >
               <font-awesome-icon icon="times-circle" />
-              Reset Filters
+              {{ t('common.resetFilters') }}
             </button>
             <div v-show="!hasActiveFilters" class="btn-reset-filters-placeholder"></div>
           </div>
@@ -116,12 +116,12 @@
               id="room-search"
               v-model="searchInputQuery" 
               type="text" 
-              placeholder="Search rooms..." 
+              :placeholder="t('common.searchRoomsPlaceholder')" 
               @keyup.enter="applyFilters"
             />
           </div>
           <button class="btn-search" @click="applyFilters">
-            Search
+            {{ t('common.search') }}
           </button>
           <button v-if="isMobileView" class="filter-toggle-btn" @click="toggleSidebar">
             <font-awesome-icon icon="sliders-h" />
@@ -131,15 +131,15 @@
         <!-- Welcome section -->
         <section class="welcome-section">
           <div class="welcome-content">
-            <h1>Welcome to Chat App</h1>
-            <p class="welcome-subtitle">Join conversations on topics that matter to you</p>
+            <h1>{{ t('common.welcomeTitle') }}</h1>
+            <p class="welcome-subtitle">{{ t('common.welcomeSubtitle') }}</p>
             <div class="welcome-actions">
               <router-link v-if="isAuthenticated" to="/create-room" class="btn-create-room">
                 <font-awesome-icon icon="plus-circle" />
-                Create Room
+                {{ t('room.createRoom') }}
               </router-link>
               <router-link v-if="!isAuthenticated" to="/login" class="btn-login">
-                Login to join rooms
+                {{ t('auth.loginToJoinRooms') }}
               </router-link>
             </div>
           </div>
@@ -150,12 +150,12 @@
           <div class="section-header">
             <h2>
               <font-awesome-icon :icon="['fas', 'comments']" />
-              Active Rooms
+              {{ t('room.activeRooms') }}
             </h2>
             <div v-if="!isMobileView" class="section-controls">
               <button 
                 class="view-toggle-btn"
-                :title="isGridView ? 'Switch to list view' : 'Switch to grid view'"
+                :title="isGridView ? t('common.switchToListView') : t('common.switchToGridView')"
                 @click="toggleView"
               >
                 <font-awesome-icon :icon="isGridView ? 'list' : 'th-large'" />
@@ -168,17 +168,17 @@
             <!-- Error state for rooms -->
             <div v-if="homepageErrors.generalErrors.length > 0" class="error-state">
               <font-awesome-icon icon="exclamation-triangle" size="2x" />
-              <p>Failed to load rooms</p>
+              <p>{{ t('common.failedToLoadRooms') }}</p>
               <div class="error-details">
                 <p v-for="(errMsg, index) in homepageErrors.generalErrors" :key="index">{{ errMsg }}</p>
               </div>
-              <button class="btn-retry" @click="() => refetch()">Try Again</button>
+              <button class="btn-retry" @click="() => refetch()">{{ t('common.tryAgain') }}</button>
             </div>
 
             <!-- Loading state -->
             <div v-else-if="loadingHomepage" class="rooms-loading">
               <div class="spinner"></div>
-              <p>Loading rooms...</p>
+              <p>{{ t('common.loadingRooms') }}</p>
               <!-- Skeleton placeholders to reserve space -->
               <div :class="['rooms-container', 'skeleton-container', isGridView ? 'grid-view' : 'list-view']">
                 <div v-for="n in 6" :key="n" class="room-card-skeleton"></div>
@@ -188,8 +188,8 @@
             <!-- No results state -->
             <div v-else-if="rooms.length === 0" class="no-rooms">
               <font-awesome-icon icon="comment-slash" size="3x" />
-              <p>No rooms found matching your criteria</p>
-              <button class="btn-reset-filters" @click="resetFilters">Reset filters</button>
+              <p>{{ t('room.noRoomsFound') }}</p>
+              <button class="btn-reset-filters" @click="resetFilters">{{ t('common.resetFilters') }}</button>
             </div>
 
             <!-- Rooms grid/list -->
@@ -233,7 +233,7 @@
           <div class="section-header">
             <h2>
               <font-awesome-icon :icon="['fas', 'user-circle']" />
-              Joined Rooms
+              {{ t('room.joinedRooms') }}
             </h2>
           </div>
 
@@ -241,14 +241,14 @@
             <!-- Error state for user rooms -->
             <div v-if="userRoomsErrors.generalErrors.length > 0" class="error-state">
               <font-awesome-icon icon="exclamation-triangle" size="2x" />
-              <p>Failed to load your rooms</p>
-              <button class="btn-retry" @click="() => refetchUserRooms()">Try Again</button>
+              <p>{{ t('common.failedToLoadYourRooms') }}</p>
+              <button class="btn-retry" @click="() => refetchUserRooms()">{{ t('common.tryAgain') }}</button>
             </div>
 
             <!-- Loading state -->
             <div v-else-if="loadingUserRooms" class="rooms-loading">
               <div class="spinner"></div>
-              <p>Loading your rooms...</p>
+              <p>{{ t('common.loadingYourRooms') }}</p>
               <div class="rooms-container grid-view skeleton-container">
                 <div v-for="n in 3" :key="n" class="room-card-skeleton"></div>
               </div>
@@ -257,8 +257,8 @@
             <!-- No rooms state -->
             <div v-else-if="userRooms.length === 0" class="no-rooms">
               <font-awesome-icon icon="door-closed" size="2x" />
-              <p>You haven't joined any rooms yet</p>
-              <router-link to="/create-room" class="btn-create-room-small">Create your first room</router-link>
+              <p>{{ t('room.noJoinedRooms') }}</p>
+              <router-link to="/create-room" class="btn-create-room-small">{{ t('room.createFirstRoom') }}</router-link>
             </div>
 
             <!-- User rooms grid -->
@@ -294,7 +294,7 @@
           <div class="section-header">
             <h2>
               <font-awesome-icon :icon="['fas', 'star']" />
-              Recommended For You
+              {{ t('room.recommendedForYou') }}
             </h2>
           </div>
 
@@ -302,14 +302,14 @@
             <!-- Error state for recommendations -->
             <div v-if="userRoomsErrors.generalErrors.length > 0" class="error-state">
               <font-awesome-icon icon="exclamation-triangle" size="2x" />
-              <p>Failed to load recommendations</p>
-              <button class="btn-retry" @click="() => refetchUserRooms()">Try Again</button>
+              <p>{{ t('common.failedToLoadRecommendations') }}</p>
+              <button class="btn-retry" @click="() => refetchUserRooms()">{{ t('common.tryAgain') }}</button>
             </div>
 
             <!-- Loading state -->
             <div v-else-if="loadingUserRooms" class="rooms-loading">
               <div class="spinner"></div>
-              <p>Finding recommendations...</p>
+              <p>{{ t('common.findingRecommendations') }}</p>
               <div class="rooms-container grid-view skeleton-container">
                 <div v-for="n in 3" :key="n" class="room-card-skeleton"></div>
               </div>
@@ -318,7 +318,7 @@
             <!-- No recommendation state -->
             <div v-else-if="recommendedRooms.length === 0" class="no-rooms">
               <font-awesome-icon icon="compass" size="2x" />
-              <p>No recommendations available right now</p>
+              <p>{{ t('room.noRecommendations') }}</p>
             </div>
 
             <!-- Recommended rooms grid -->
@@ -355,12 +355,15 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useHomepageInitialQuery, useUserRoomsQuery } from '@/composables/useHomePage';
 import { parseGraphQLError } from '@/utils/errorParser';
 
 import type { Room, Topic } from '@/types';
+
+const { t } = useI18n();
 
 const router = useRouter();
 const authStore = useAuthStore();

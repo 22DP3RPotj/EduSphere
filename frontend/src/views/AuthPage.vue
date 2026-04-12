@@ -8,14 +8,12 @@
               :class="['tab-btn', { active: activeTab === 'login' }]" 
               @click="activeTab = 'login'"
             >
-              Login
+              {{ t('common.login') }}
             </button>
-            <button 
-              :class="['tab-btn', { active: activeTab === 'register' }]" 
+            <button
+              :class="['tab-btn', { active: activeTab === 'register' }]"
               @click="activeTab = 'register'"
-            >
-              Register
-            </button>
+            >{{ t('common.register') }}</button>
           </div>
         </div>
         
@@ -42,11 +40,13 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
 
 import LoginForm from '@/components/forms/LoginUser.vue';
 import RegisterForm from '@/components/forms/RegisterUser.vue';
 
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 

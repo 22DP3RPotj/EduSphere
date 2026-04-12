@@ -13,10 +13,10 @@
 
     <ConfirmationModal
       :is-visible="showDeleteConfirmation"
-      title="Are you sure?"
-      message="You want to delete this room?"
-      confirm-text="Delete"
-      cancel-text="Cancel"
+      :title="t('common.areYouSure')"
+      :message="t('room.confirmDeleteRoomMessage')"
+      :confirm-text="t('common.delete')"
+      :cancel-text="t('common.cancel')"
       @confirm="confirmRoomDeletion"
       @cancel="cancelRoomDeletion"
       @close="cancelRoomDeletion"
@@ -25,32 +25,32 @@
     <!-- Invite User Modal -->
     <div v-if="showInviteModal" class="edit-modal-overlay" @click="showInviteModal = false">
       <div class="edit-modal-content invite-modal" @click.stop>
-        <h3>Invite User</h3>
+        <h3>{{ t('room.invite') }}</h3>
         <form @submit.prevent="handleSendInvite">
           <div class="form-group">
-            <label for="invite-user-email">Email</label>
+            <label for="invite-user-email">{{ t('auth.email') }}</label>
             <input
               id="invite-user-email"
               v-model="inviteUserEmail"
               type="email"
               class="form-input"
-              placeholder="Enter user email to invite"
+              :placeholder="t('room.enterEmailToInvite')"
               required
             />
           </div>
           <div class="form-group">
-            <label for="invite-role">Role (optional)</label>
+            <label for="invite-role">{{ t('room.roleOptional') }}</label>
             <select id="invite-role" v-model="inviteRoleId" class="form-select">
-              <option :value="null">No role</option>
+              <option :value="null">{{ t('room.noRole') }}</option>
               <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
             </select>
           </div>
-          <div v-if="inviteSuccess" class="success-text">Invite sent successfully!</div>
+          <div v-if="inviteSuccess" class="success-text">{{ t('room.inviteSentSuccessfully') }}</div>
           <div class="modal-actions">
-            <button type="button" class="btn-cancel" @click="showInviteModal = false">Cancel</button>
+            <button type="button" class="btn-cancel" @click="showInviteModal = false">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn-confirm" :disabled="sendInviteLoading || !inviteUserEmail.trim()">
               <font-awesome-icon v-if="sendInviteLoading" icon="spinner" spin />
-              Send Invite
+              {{ t('invite.sendInvite') }}
             </button>
           </div>
         </form>
@@ -60,20 +60,20 @@
     <!-- Change Role Modal -->
     <div v-if="showRoleChangeModal" class="edit-modal-overlay" @click="showRoleChangeModal = false">
       <div class="edit-modal-content role-modal" @click.stop>
-        <h3>Change Role</h3>
+        <h3>{{ t('room.changeRole') }}</h3>
         <div class="form-group">
-          <label for="select-role">Select Role</label>
+          <label for="select-role">{{ t('room.selectRole') }}</label>
           <select id="select-role" v-model="selectedRoleId" class="form-select">
-            <option :value="null" disabled>Select a role</option>
+            <option :value="null" disabled>{{ t('room.selectARolePlaceholder') }}</option>
             <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
           </select>
         </div>
         <p v-if="roleChangeError" class="modal-error">{{ roleChangeError }}</p>
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" @click="showRoleChangeModal = false">Cancel</button>
+          <button type="button" class="btn-cancel" @click="showRoleChangeModal = false">{{ t('common.cancel') }}</button>
           <button type="button" class="btn-confirm" :disabled="changeRoleLoading || !selectedRoleId" @click="confirmRoleChange">
             <font-awesome-icon v-if="changeRoleLoading" icon="spinner" spin />
-            Confirm
+            {{ t('common.confirm') }}
           </button>
         </div>
       </div>
@@ -105,7 +105,7 @@
     <!-- Loading state -->
     <div v-if="loading" class="room-loading">
       <div class="spinner"></div>
-      <p>Loading room...</p>
+      <p>{{ t('room.loadingRoom') }}</p>
     </div>
     
     <!-- Room content -->
@@ -153,34 +153,34 @@
             <div v-if="showRoomActionsMenu" class="room-actions-dropdown">
               <button class="room-action-item" @click="handleEditRoom">
                 <font-awesome-icon icon="edit" />
-                <span>Edit Room</span>
+                <span>{{ t('room.editRoom') }}</span>
               </button>
               <button class="room-action-item" @click="showRoomActionsMenu = false; showRoleManager = true">
                 <font-awesome-icon icon="user-tag" />
-                <span>Manage Roles</span>
+                <span>{{ t('room.manageRoles') }}</span>
               </button>
               <button class="room-action-item delete-action" @click="handleRoomDelete">
                 <font-awesome-icon icon="trash" />
-                <span>Delete Room</span>
+                <span>{{ t('room.deleteRoom') }}</span>
               </button>
             </div>
           </div>
           
           <button v-if="!isParticipant && authStore.isAuthenticated" class="join-button" @click="handleJoin">
-            Join Room
+            {{ t('room.joinRoom') }}
           </button>
           <button v-if="isParticipant && !isHost" class="leave-button" :disabled="leaveLoading" @click="handleLeave">
             <font-awesome-icon v-if="leaveLoading" icon="spinner" spin />
             <font-awesome-icon v-else icon="sign-out-alt" />
-            Leave
+            {{ t('room.leave') }}
           </button>
           <button v-if="isParticipant && !isHost" class="report-button" @click="showReportModal = true">
             <font-awesome-icon icon="flag" />
-            Report
+            {{ t('report.report') }}
           </button>
           <button v-if="isHost" class="invite-button" @click="showInviteModal = true">
             <font-awesome-icon icon="user-plus" />
-            Invite
+            {{ t('room.invite') }}
           </button>
         </div>
       </div>
@@ -191,7 +191,7 @@
         <div class="error-list">
           <p v-for="(errMsg, index) in roomErrors.generalErrors" :key="index">{{ errMsg }}</p>
         </div>
-        <button class="btn-retry" @click="retryRoomOperations">Retry</button>
+        <button class="btn-retry" @click="retryRoomOperations">{{ t('common.retry') }}</button>
       </div>
 
       <!-- Error display for WebSocket -->
@@ -200,7 +200,7 @@
         <div class="error-list">
           <p v-for="(errMsg, index) in websocketErrors.generalErrors" :key="index">{{ errMsg }}</p>
         </div>
-        <button class="btn-retry" @click="retryWebSocketConnection">Reconnect</button>
+        <button class="btn-retry" @click="retryWebSocketConnection">{{ t('common.reconnect') }}</button>
       </div>
       
       <!-- Main content area with sidebar and conversation -->
@@ -208,7 +208,7 @@
         <!-- Sidebar with participants -->
         <div class="room-sidebar" :class="{ 'sidebar-visible': showSidebar, 'mobile-sidebar': isMobileView }">
           <div class="sidebar-header">
-            <h3 class="sidebar-title">Participants</h3>
+            <h3 class="sidebar-title">{{ t('room.participants') }}</h3>
             <button v-if="isMobileView" class="close-sidebar-button" @click="toggleSidebar">
               <font-awesome-icon icon="times" />
             </button>
@@ -227,7 +227,7 @@
               />
               <div class="participant-info">
                 <span class="participant-name">{{ participant.user.username }}</span>
-                <span v-if="participant.isHost" class="host-badge">Host</span>
+                <span v-if="participant.isHost" class="host-badge">{{ t('room.host') }}</span>
                 <span v-else-if="participant.role" class="role-badge">{{ participant.role.name }}</span>
               </div>
               <!-- Host context menu for participants -->
@@ -238,11 +238,11 @@
                 <div v-if="participantMenuId === participant.id" class="context-dropdown">
                   <button class="context-item" @click="openRoleChangeModal(participant.id)">
                     <font-awesome-icon icon="user-tag" />
-                    Change Role
+                    {{ t('room.changeRole') }}
                   </button>
                   <button class="context-item danger" @click="handleRemoveParticipant(participant.id)">
                     <font-awesome-icon icon="user-minus" />
-                    Remove
+                    {{ t('common.remove') }}
                   </button>
                 </div>
               </div>
@@ -256,8 +256,8 @@
             <!-- Error state for messages -->
             <div v-if="messageErrors.generalErrors.length > 0" class="error-state">
               <font-awesome-icon icon="exclamation-triangle" size="2x" />
-              <p>Failed to load messages</p>
-              <button class="btn-retry" @click="retryMessages">Retry</button>
+              <p>{{ t('message.failedToLoadMessages') }}</p>
+              <button class="btn-retry" @click="retryMessages">{{ t('common.retry') }}</button>
             </div>
 
             <!-- Messages content -->
@@ -289,7 +289,7 @@
                   v-model="messageInput"
                   type="text"
                   maxlength="2048"
-                  placeholder="Type your message here..."
+                  :placeholder="t('message.typeYourMessage')"
                 />
                 <div class="char-count" :class="{ 'char-limit-warning': messageInput.length === 500 }">
                   {{ messageInput.length }}/2048
@@ -301,12 +301,12 @@
             </form>
           </div>
           <div v-else-if="!authStore.isAuthenticated" class="auth-prompt">
-            <p>Please <router-link to="/login">login</router-link> to join the conversation</p>
+            <p>{{ t('room.loginToJoinBefore') }} <router-link to="/login">{{ t('common.login') }}</router-link> {{ t('room.loginToJoinAfter') }}</p>
           </div>
           <div v-else class="join-prompt">
-            <p>You need to join this room to participate in the conversation</p>
+            <p>{{ t('room.joinToParticipate') }}</p>
             <button class="join-button" @click="handleJoin">
-              Join Room
+              {{ t('room.joinRoom') }}
             </button>
           </div>
         </div>
@@ -316,8 +316,8 @@
     <!-- Error state -->
     <div v-else class="room-error">
       <font-awesome-icon icon="door-closed" size="3x" />
-      <p>Room not found or you don't have access.</p>
-      <router-link to="/" class="btn-home">Go back to home</router-link>
+      <p>{{ t('room.roomNotFound') }}</p>
+      <router-link to="/" class="btn-home">{{ t('common.goBackHome') }}</router-link>
     </div>
   </div>
 </template>
@@ -325,8 +325,11 @@
 <script lang="ts" setup>
 import { buildAvatarUrl } from '@/utils/media';
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
+
+const { t } = useI18n();
 import { useRoomQuery, useRoomMessagesQuery, useDeleteRoom, useJoinRoom } from '@/composables/useRooms';
 import { useLeaveRoom, useChangeParticipantRole, useRemoveParticipant } from '@/composables/useParticipants';
 import { useSendInvite } from '@/composables/useInvites';
@@ -415,11 +418,11 @@ const inputErrors = computed(() => {
 
 const connectionStatusTitle = computed(() => {
   switch (connectionStatus.value) {
-    case 'connected': return 'Connected to chat';
-    case 'connecting': return 'Connecting to chat...';
-    case 'error': return 'Connection error - click to reconnect';
-    case 'disconnected': return 'Disconnected - click to reconnect';
-    default: return 'Connection status unknown';
+    case 'connected': return t('room.connectionConnected');
+    case 'connecting': return t('room.connectionConnecting');
+    case 'error': return t('room.connectionError');
+    case 'disconnected': return t('room.connectionDisconnected');
+    default: return '';
   }
 });
 

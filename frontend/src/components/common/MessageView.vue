@@ -9,7 +9,7 @@
     <div v-if="!isMessageOwner" class="message-avatar">
       <img 
         :src="userAvatar" 
-        :alt="`${userDisplayName}'s avatar`" 
+        :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
         class="avatar-img" 
       />
     </div>
@@ -17,13 +17,13 @@
       <div class="message-header">
         <div class="message-author">
           <span class="username">{{ userDisplayName }}</span>
-          <span v-if="props.isHost" class="host-badge">Host</span>
+          <span v-if="props.isHost" class="host-badge">{{ t('room.host') }}</span>
           <span 
             class="message-time" 
             :title="new Date(props.message.created_at).toLocaleString()"
           >
             {{ formattedTimestamp }}
-            <span v-if="props.message.is_edited" class="is_edited-indicator">(edited)</span>
+            <span v-if="props.message.is_edited" class="is_edited-indicator">{{ t('message.editedIndicator') }}</span>
           </span>
         </div>
         
@@ -43,14 +43,14 @@
                 @click="startEditing"
               >
                 <font-awesome-icon icon="edit" class="action-icon" />
-                Edit
+                {{ t('common.edit') }}
               </button>
               <button 
                 class="dropdown-action delete-action"
                 @click="handleMessageDelete"
               >
                 <font-awesome-icon icon="trash" class="action-icon" />
-                Delete
+                {{ t('common.delete') }}
               </button>
             </div>
           </transition>
@@ -64,17 +64,17 @@
           v-model="editBody"
           class="message-edit-input"
           rows="1"
-          placeholder="Edit your message..."
+          :placeholder="t('message.editPlaceholder')"
           @input="adjustTextareaHeight"
           @keydown="handleEditKeydown"
         ></textarea>
-        <div class="edit-hint">Press Ctrl+Enter to save, Esc to cancel</div>
+        <div class="edit-hint">{{ t('message.editHint') }}</div>
         <div class="edit-actions">
           <button class="cancel-edit-button" @click="cancelEditing">
-            Cancel
+            {{ t('common.cancel') }}
           </button>
           <button class="save-edit-button" :disabled="!editBody.trim()" @click="saveEdit">
-            Save
+            {{ t('common.save') }}
           </button>
         </div>
       </div>
@@ -85,7 +85,7 @@
     <div v-if="isMessageOwner" class="message-avatar own-avatar">
       <img 
         :src="userAvatar" 
-        :alt="`${userDisplayName}'s avatar`" 
+        :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
         class="avatar-img" 
       />
     </div>
@@ -94,8 +94,11 @@
 
 <script lang="ts" setup>
 import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { format } from 'timeago.js';
 import { buildAvatarUrl } from '@/utils/media';
+
+const { t } = useI18n();
 
 const props = defineProps({
   message: {

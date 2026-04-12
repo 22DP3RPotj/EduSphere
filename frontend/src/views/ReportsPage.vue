@@ -4,30 +4,30 @@
       <button class="back-button" @click="$router.back()">
         <font-awesome-icon icon="arrow-left" />
       </button>
-      <h1>My Reports</h1>
+      <h1>{{ t('report.myReports') }}</h1>
     </div>
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading reports...</p>
+      <p>{{ t('common.loadingReports') }}</p>
     </div>
 
     <template v-else>
       <div v-if="reports.length > 0" class="filters-row">
         <div class="filter-group">
-          <label for="status-filter">Case Status</label>
+          <label for="status-filter">{{ t('report.caseStatus') }}</label>
           <select id="status-filter" v-model="statusFilter" class="filter-select">
-            <option value="">All</option>
-            <option value="PENDING">Pending</option>
-            <option value="UNDER_REVIEW">Under Review</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="DISMISSED">Dismissed</option>
+            <option value="">{{ t('common.all') }}</option>
+            <option value="PENDING">{{ t('common.pending') }}</option>
+            <option value="UNDER_REVIEW">{{ t('common.underReview') }}</option>
+            <option value="RESOLVED">{{ t('moderation.resolved') }}</option>
+            <option value="DISMISSED">{{ t('moderation.dismissed') }}</option>
           </select>
         </div>
         <div class="filter-group">
-          <label for="reason-filter">Reason</label>
+          <label for="reason-filter">{{ t('report.reason') }}</label>
           <select id="reason-filter" v-model="reasonFilter" class="filter-select">
-            <option value="">All</option>
+            <option value="">{{ t('common.all') }}</option>
             <option v-for="reason in uniqueReasons" :key="reason.id" :value="reason.id">
               {{ reason.label }}
             </option>
@@ -37,12 +37,12 @@
 
       <div v-if="filteredReports.length === 0 && reports.length > 0" class="empty-state">
         <font-awesome-icon icon="filter" size="2x" />
-        <p>No reports match the selected filters.</p>
+        <p>{{ t('report.noReportsMatchFilters') }}</p>
       </div>
 
       <div v-else-if="reports.length === 0" class="empty-state">
         <font-awesome-icon icon="flag" size="2x" />
-        <p>You haven't submitted any reports yet.</p>
+        <p>{{ t('report.noReportsYet') }}</p>
       </div>
 
       <div v-else class="reports-list">
@@ -58,7 +58,7 @@
             <span v-if="report.case" class="case-status" :class="report.case.status.toLowerCase()">
               {{ formatStatus(report.case.status) }}
             </span>
-            <span v-else class="case-status pending">Pending Review</span>
+            <span v-else class="case-status pending">{{ t('report.pendingReview') }}</span>
           </div>
         </div>
       </div>
@@ -69,8 +69,11 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSubmittedReports } from '@/composables/useReports';
 import type { Report } from '@/types';
+
+const { t } = useI18n();
 
 const { reports, loading } = useSubmittedReports();
 
@@ -106,8 +109,13 @@ function formatDate(dateStr: string) {
 }
 
 function formatStatus(status: string) {
-  return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).toLowerCase()
-    .replace(/\b\w/g, c => c.toUpperCase());
+  const statusMap: Record<string, string> = {
+    PENDING: t('common.pending'),
+    UNDER_REVIEW: t('common.underReview'),
+    RESOLVED: t('moderation.resolved'),
+    DISMISSED: t('moderation.dismissed'),
+  };
+  return statusMap[status] ?? status;
 }
 </script>
 

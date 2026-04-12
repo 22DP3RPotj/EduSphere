@@ -59,6 +59,11 @@ export interface MessageAuthor {
   avatar: string | null;
 }
 
+export interface StatusSummary {
+  delivered: number;
+  seen: number;
+}
+
 export interface Message {
   id: UUID;
   author: MessageAuthor;
@@ -68,6 +73,7 @@ export interface Message {
   isEdited: boolean;
   createdAt: DateTime;
   updatedAt: DateTime;
+  statusSummary?: StatusSummary | null;
 }
 
 export interface Report {

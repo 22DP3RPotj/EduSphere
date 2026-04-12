@@ -7,7 +7,9 @@ from backend.messaging.models import Message
 from backend.room.models import Room
 
 
-def create_message(user: User, room: Room, body: str) -> Message:
+def create_message(
+    user: User, room: Room, body: str, parent: Message | None = None
+) -> Message:
     data = {"body": body}
     form = MessageForm(data=data)
 
@@ -18,6 +20,7 @@ def create_message(user: User, room: Room, body: str) -> Message:
         message = form.save(commit=False)
         message.author = user
         message.room = room
+        message.parent = parent
         message.save()
     except IntegrityError as e:
         raise ConflictException("Could not create message due to a conflict.") from e

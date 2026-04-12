@@ -10,6 +10,9 @@ env.*
 # Environment examples
 !.env.example
 
+# Docs
+docs/*
+
 # IDE
 .vscode/
 .idea/

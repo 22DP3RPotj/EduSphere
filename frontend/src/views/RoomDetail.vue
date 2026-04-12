@@ -329,7 +329,6 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 
-const { t } = useI18n();
 import { useRoomQuery, useRoomMessagesQuery, useDeleteRoom, useJoinRoom } from '@/composables/useRooms';
 import { useLeaveRoom, useChangeParticipantRole, useRemoveParticipant } from '@/composables/useParticipants';
 import { useSendInvite } from '@/composables/useInvites';
@@ -348,6 +347,7 @@ import type { Room, Participant, UUID } from '@/types';
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);

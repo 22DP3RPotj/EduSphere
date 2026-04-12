@@ -259,7 +259,7 @@
       <div v-if="casesError" class="error-banner">
         <font-awesome-icon icon="exclamation-triangle" />
         <div class="error-content">
-          <p>Failed to load cases: {{ casesError.message }}</p>
+          <p>{{ t('moderation.failedToLoadCases') }}<span v-if="casesError.message">: {{ casesError.message }}</span></p>
           <button class="btn-retry" @click="() => refetchCasesComposable()">{{ t('common.retry') }}</button>
         </div>
       </div>
@@ -379,7 +379,7 @@
           </div>
           <div class="filter-group">
             <label for="audit-actor">{{ t('audit.actorUsername') }}</label>
-            <input id="audit-actor" v-model="auditFilters.actorUsername" type="text" class="filter-input" placeholder="Filter by actor..." />
+            <input id="audit-actor" v-model="auditFilters.actorUsername" type="text" class="filter-input" :placeholder="t('audit.filterByActor')" />
           </div>
         </div>
       </div>
@@ -392,7 +392,7 @@
       <div v-else-if="auditError" class="error-banner">
         <font-awesome-icon icon="exclamation-triangle" />
         <div class="error-content">
-          <p>Failed to load audit log: {{ auditError.message }}</p>
+          <p>{{ t('audit.failedToLoadAuditLog', { message: auditError.message }) }}</p>
         </div>
       </div>
       <div v-else>

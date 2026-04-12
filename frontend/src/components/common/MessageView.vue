@@ -2,7 +2,7 @@
   <div
     class="message-item"
     :class="{ 
-      'is_edited': props.message.is_edited, 
+      'is_edited': props.message.isEdited, 
       'own-message': isMessageOwner,
       'host-message': props.isHost 
   }">
@@ -20,10 +20,10 @@
           <span v-if="props.isHost" class="host-badge">{{ t('room.host') }}</span>
           <span 
             class="message-time" 
-            :title="new Date(props.message.created_at).toLocaleString()"
+            :title="new Date(props.message.createdAt).toLocaleString()"
           >
             {{ formattedTimestamp }}
-            <span v-if="props.message.is_edited" class="is_edited-indicator">{{ t('message.editedIndicator') }}</span>
+            <span v-if="props.message.isEdited" class="is_edited-indicator">{{ t('message.editedIndicator') }}</span>
           </span>
         </div>
         
@@ -128,10 +128,10 @@ const isMessageOwner = computed(() => {
 
 const formattedTimestamp = computed(() => {
   try {
-    const date = new Date(props.message.created_at);
+    const date = new Date(props.message.createdAt);
     return format(date);
   } catch {
-    return props.message.created_at;
+    return props.message.createdAt;
   }
 });
 

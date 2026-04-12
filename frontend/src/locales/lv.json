@@ -328,7 +328,7 @@
     "auditType": "Audita veids",
     "actorUsername": "Izpildītāja lietotājvārds",
     "loadingAuditLog": "Ielādē audita žurnālu...",
-    "failedToLoadAuditLog": "Neizdevās ielādēt audita žurnālu",
+    "failedToLoadAuditLog": "Neizdevās ielādēt audita žurnālu: {message}",
     "label": "Etiķete",
     "objectId": "Objekta ID"
   },

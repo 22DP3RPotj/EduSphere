@@ -288,7 +288,7 @@
               <div class="message-room">
                 <font-awesome-icon icon="comments" class="room-icon" />
                 <span>{{ message.room.name }}</span>
-                <span class="message-date">{{ formatDate(message.created_at) }}</span>
+                <span class="message-date">{{ formatDate(message.createdAt) }}</span>
               </div>
               <div class="message-content-preview">
                 {{ message.body }}
@@ -337,7 +337,7 @@
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
-                <span class="room-date">{{ t('room.createdOn') }} {{ formatDate(room.created_at) }}</span>
+                <span class="room-date">{{ t('room.createdOn') }} {{ formatDate(room.createdAt) }}</span>
               </div>
             </div>
           </div>
@@ -378,7 +378,7 @@
               </div>
               <div class="room-description">{{ room.description }}</div>
               <div class="room-footer">
-                <span class="room-date">{{ t('room.createdOn') }} {{ formatDate(room.created_at) }}</span>
+                <span class="room-date">{{ t('room.createdOn') }} {{ formatDate(room.createdAt) }}</span>
               </div>
             </div>
           </div>

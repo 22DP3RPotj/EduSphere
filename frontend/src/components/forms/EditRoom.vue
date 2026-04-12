@@ -118,9 +118,9 @@ import { useI18n } from 'vue-i18n';
 import { useUpdateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
 
-const { t } = useI18n();
-
 import type { Topic, UpdateRoomInput, UUID } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps({
   room: {

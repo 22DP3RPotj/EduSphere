@@ -328,7 +328,7 @@
     "auditType": "Audit Type",
     "actorUsername": "Actor Username",
     "loadingAuditLog": "Loading audit log...",
-    "failedToLoadAuditLog": "Failed to load audit log",
+    "failedToLoadAuditLog": "Failed to load audit log: {message}",
     "label": "Label",
     "objectId": "Object ID"
   },

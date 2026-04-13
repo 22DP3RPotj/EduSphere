@@ -93,13 +93,24 @@
 
     <!-- Report Room Modal -->
     <ReportModal
-      v-if="room"
+      v-if="room && showReportModal"
       :is-open="showReportModal"
       :target-type="ReportTargetType.ROOM"
       :target-id="room.id"
       target-label="Room"
       @close="showReportModal = false"
       @submitted="showReportModal = false"
+    />
+
+    <!-- Report Message Modal -->
+    <ReportModal
+      v-if="reportingMessageId"
+      :is-open="!!reportingMessageId"
+      :target-type="ReportTargetType.MESSAGE"
+      :target-id="reportingMessageId"
+      :target-label="t('report.reportMessage')"
+      @close="reportingMessageId = null"
+      @submitted="reportingMessageId = null"
     />
 
     <!-- Loading state -->
@@ -267,8 +278,10 @@
               :message="message"
               :current-user-id="authStore.user?.id"
               :is-host="message.author?.id === room?.host?.id"
+              :data-message-id="message.id"
               @delete-message="handleMessageDelete"
               @update-message="handleMessageUpdate"
+              @report-message="handleReportMessage"
             />
           </div>
           
@@ -358,6 +371,7 @@ const showRoomActionsMenu = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
 const showRoleManager = ref<boolean>(false);
 const showReportModal = ref<boolean>(false);
+const reportingMessageId = ref<UUID | null>(null);
 const isWebSocketInitialized = ref<boolean>(false);
   
 const roomId = computed(() => route.params.roomId as UUID);
@@ -621,6 +635,10 @@ async function confirmRoomDeletion() {
 
 function cancelRoomDeletion() {
   showDeleteConfirmation.value = false;
+}
+
+function handleReportMessage(messageId: UUID) {
+  reportingMessageId.value = messageId;
 }
 
 function handleEditRoom() {

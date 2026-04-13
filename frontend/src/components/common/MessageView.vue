@@ -55,6 +55,28 @@
             </div>
           </transition>
         </div>
+
+        <div v-else-if="canReport && !isEditing" class="message-actions">
+          <button 
+            class="action-toggle-button"
+            :class="{ 'active': showActions }"
+            @click="toggleActions"
+          >
+            <font-awesome-icon icon="ellipsis-v" />
+          </button>
+          
+          <transition name="dropdown">
+            <div v-if="showActions" class="action-dropdown">
+              <button 
+                class="dropdown-action report-action"
+                @click="handleReportMessage"
+              >
+                <font-awesome-icon icon="flag" class="action-icon" />
+                {{ t('report.report') }}
+              </button>
+            </div>
+          </transition>
+        </div>
       </div>
       
       <!-- Message content - edit mode -->
@@ -115,7 +137,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['delete-message', 'update-message']);
+const emit = defineEmits(['delete-message', 'update-message', 'report-message']);
 
 const isEditing = ref<boolean>(false);
 const editBody = ref<string>('');
@@ -124,6 +146,10 @@ const editTextarea = ref<HTMLTextAreaElement | null>(null);
 
 const isMessageOwner = computed(() => {
   return props.message.author?.id === props.currentUserId;
+});
+
+const canReport = computed(() => {
+  return !isMessageOwner.value && !!props.currentUserId;
 });
 
 const formattedTimestamp = computed(() => {
@@ -148,6 +174,11 @@ const userAvatar = computed(() => {
 function handleMessageDelete() {
   showActions.value = false;
   emit('delete-message', props.message.id);
+}
+
+function handleReportMessage() {
+  showActions.value = false;
+  emit('report-message', props.message.id);
 }
 
 async function startEditing() {

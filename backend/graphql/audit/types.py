@@ -82,6 +82,8 @@ class InviteLinkAuditType(BaseAuditType, DjangoObjectType):
 
 
 class ModerationCaseAuditType(BaseAuditType, DjangoObjectType):
+    priority = graphene.Int()
+
     class Meta:
         model = ModerationCaseHistory
         interfaces = (graphene.relay.Node,)
@@ -89,6 +91,11 @@ class ModerationCaseAuditType(BaseAuditType, DjangoObjectType):
             "status",
             "priority",
         )
+
+    def resolve_priority(self, info: graphene.ResolveInfo):
+        if self.priority is None:
+            return None
+        return int(self.priority)
 
 
 class ModerationActionAuditType(BaseAuditType, DjangoObjectType):

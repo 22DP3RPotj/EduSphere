@@ -93,7 +93,7 @@
 
     <!-- Report Room Modal -->
     <ReportModal
-      v-if="room"
+      v-if="room && showReportModal"
       :is-open="showReportModal"
       :target-type="ReportTargetType.ROOM"
       :target-id="room.id"

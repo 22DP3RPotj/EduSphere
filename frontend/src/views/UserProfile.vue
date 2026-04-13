@@ -2,7 +2,7 @@
   <div class="profile-container">
     <!-- Report User Modal -->
     <ReportModal
-      v-if="user && !isOwnProfile"
+      v-if="user && !isOwnProfile && authStore.isAuthenticated && showReportModal"
       :is-open="showReportModal"
       :target-type="ReportTargetType.USER"
       :target-id="user.id"

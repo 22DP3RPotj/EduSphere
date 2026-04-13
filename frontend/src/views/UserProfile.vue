@@ -1,5 +1,16 @@
 <template>
   <div class="profile-container">
+    <!-- Report User Modal -->
+    <ReportModal
+      v-if="user && !isOwnProfile"
+      :is-open="showReportModal"
+      :target-type="ReportTargetType.USER"
+      :target-id="user.id"
+      :target-label="user.username"
+      @close="showReportModal = false"
+      @submitted="showReportModal = false"
+    />
+
     <!-- Header with back button -->
     <div class="profile-header">
       <button class="back-button" @click="$router.back()">
@@ -12,6 +23,14 @@
         <button class="edit-button" @click="startEditing">
           <font-awesome-icon icon="edit" />
           {{ t('common.edit') }}
+        </button>
+      </div>
+
+      <!-- Report button for other profiles -->
+      <div v-if="!isOwnProfile && authStore.isAuthenticated && !isEditing" class="header-actions">
+        <button class="report-button" @click="showReportModal = true">
+          <font-awesome-icon icon="flag" />
+          {{ t('report.reportUser') }}
         </button>
       </div>
     </div>
@@ -408,6 +427,8 @@ import { useLocale } from '@/composables/useLocale';
 import { parseGraphQLError } from '@/utils/errorParser';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
+import ReportModal from '@/components/common/ReportModal.vue';
+import { ReportTargetType } from '@/types';
 import type { Room, UUID } from '@/types';
 
 import {
@@ -460,6 +481,7 @@ const {
 const loading = computed(() => userLoading.value);
 
 type EditForm = { name: string; bio: string; avatar: File | null; language: string };
+const showReportModal = ref<boolean>(false);
 const isEditing = ref<boolean>(false);
 const editLoading = computed(() => updateUserLoading.value);
 const editForm = ref<EditForm>({

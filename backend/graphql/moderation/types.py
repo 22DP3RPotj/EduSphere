@@ -99,6 +99,7 @@ class ModerationActionType(DjangoObjectType):
 
 class ModerationCaseType(DjangoObjectType):
     status = graphene.Field(CaseStatusEnum, required=True)
+    priority = graphene.Int(required=True)
     target = graphene.Field(ReportTargetType)
 
     class Meta:
@@ -115,6 +116,9 @@ class ModerationCaseType(DjangoObjectType):
 
     def resolve_status(self, info: graphene.ResolveInfo):
         return str(self.status)
+
+    def resolve_priority(self, info: graphene.ResolveInfo):
+        return int(self.priority)
 
     def resolve_target(self, info: graphene.ResolveInfo):
         return self.content_object

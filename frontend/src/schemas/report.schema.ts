@@ -1,8 +1,7 @@
 import { z } from 'zod';
+import { REPORT_LIMITS } from './field-limits';
 
-export const REPORT_LIMITS = {
-  description: 2048,
-} as const;
+export { REPORT_LIMITS } from './field-limits';
 
 export const reportSchema = z.object({
   description: z.string().max(REPORT_LIMITS.description),

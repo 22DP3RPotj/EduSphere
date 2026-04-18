@@ -117,7 +117,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUpdateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
-import { ROOM_LIMITS } from '@/schemas/room.schema';
+import { ROOM_LIMITS } from '@/schemas/field-limits';
 
 import type { Topic, UpdateRoomInput, UUID } from '@/types';
 

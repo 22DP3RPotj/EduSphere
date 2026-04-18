@@ -1,10 +1,7 @@
 import { z } from 'zod';
+import { ROOM_LIMITS } from './field-limits';
 
-export const ROOM_LIMITS = {
-  name: 64,
-  description: 512,
-  topicName: 32,
-} as const;
+export { ROOM_LIMITS } from './field-limits';
 
 export const createRoomSchema = z.object({
   name: z.string().min(1).max(ROOM_LIMITS.name),

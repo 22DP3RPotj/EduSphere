@@ -57,7 +57,7 @@
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useReportReasons, useCreateReport } from '@/composables/useReports';
-import { REPORT_LIMITS } from '@/schemas/report.schema';
+import { REPORT_LIMITS } from '@/schemas/field-limits';
 import type { ReportTargetType, UUID } from '@/types';
 
 const { t } = useI18n();

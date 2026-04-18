@@ -1,9 +1,7 @@
 import { z } from 'zod';
+import { USER_LIMITS } from './field-limits';
 
-export const USER_LIMITS = {
-  name: 32,
-  bio: 4096,
-} as const;
+export { USER_LIMITS } from './field-limits';
 
 export const profileEditSchema = z.object({
   name: z.string().max(USER_LIMITS.name),

@@ -132,7 +132,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCreateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
-import { ROOM_LIMITS } from '@/schemas/room.schema';
+import { ROOM_LIMITS } from '@/schemas/field-limits';
 
 import type { CreateRoomInput, Topic } from '@/types';
 

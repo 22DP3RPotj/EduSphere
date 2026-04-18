@@ -425,7 +425,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
 import { useLocale } from '@/composables/useLocale';
 import { parseGraphQLError } from '@/utils/errorParser';
-import { USER_LIMITS } from '@/schemas/user.schema';
+import { USER_LIMITS } from '@/schemas/field-limits';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import ReportModal from '@/components/common/ReportModal.vue';

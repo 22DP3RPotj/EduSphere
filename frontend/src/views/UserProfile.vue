@@ -101,7 +101,7 @@
                   type="text"
                   class="form-input"
                   :placeholder="t('profile.enterDisplayName')"
-                  maxlength="150"
+                  :maxlength="USER_LIMITS.name"
                 />
               </div>
               
@@ -113,10 +113,10 @@
                   v-model="editForm.bio"
                   class="form-textarea"
                   :placeholder="t('profile.bioPlaceholder')"
-                  maxlength="4096"
+                  :maxlength="USER_LIMITS.bio"
                 ></textarea>
                 <div class="char-count">
-                  {{ editForm.bio.length }}/4096
+                  {{ editForm.bio.length }}/{{ USER_LIMITS.bio }}
                 </div>
               </div>
 
@@ -425,6 +425,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/composables/useAuth';
 import { useLocale } from '@/composables/useLocale';
 import { parseGraphQLError } from '@/utils/errorParser';
+import { USER_LIMITS } from '@/schemas/user.schema';
 
 import UserAvatar from '@/components/common/UserAvatar.vue';
 import ReportModal from '@/components/common/ReportModal.vue';

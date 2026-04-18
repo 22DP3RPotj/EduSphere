@@ -18,13 +18,13 @@
           type="text"
           placeholder="Enter room name"
           autocomplete="off"
-          maxlength="64"
+          :maxlength="ROOM_LIMITS.name"
           required
           :disabled="loading"
           :class="{ 'input-error': fieldErrors.name }"
         >
         <div class="char-count">
-          {{ roomForm.name.length }}/64
+          {{ roomForm.name.length }}/{{ ROOM_LIMITS.name }}
         </div>
         <div v-if="fieldErrors.name" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.name" :key="index">{{ errMsg }}</p>
@@ -61,7 +61,7 @@
             type="text"
             placeholder="Search or create topics"
             autocomplete="off"
-            maxlength="32"
+            :maxlength="ROOM_LIMITS.topicName"
             :disabled="loading"
             :class="{ 'input-error': fieldErrors.topicNames }"
             @input="onTopicInput"
@@ -93,7 +93,7 @@
           </div>
         </div>
         <div class="char-count">
-          {{ topicSearchInput.length }}/32
+          {{ topicSearchInput.length }}/{{ ROOM_LIMITS.topicName }}
         </div>
         <div v-if="fieldErrors.topicNames" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.topicNames" :key="index">{{ errMsg }}</p>
@@ -106,13 +106,13 @@
           id="description"
           v-model="roomForm.description"
           placeholder="Add a description"
-          maxlength="512"
+          :maxlength="ROOM_LIMITS.description"
           rows="4"
           :disabled="loading"
           :class="{ 'input-error': fieldErrors.description }"
         ></textarea>
         <div class="char-count">
-          {{ roomForm.description.length }}/512
+          {{ roomForm.description.length }}/{{ ROOM_LIMITS.description }}
         </div>
         <div v-if="fieldErrors.description" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.description" :key="index">{{ errMsg }}</p>
@@ -132,6 +132,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCreateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
+import { ROOM_LIMITS } from '@/schemas/room.schema';
 
 import type { CreateRoomInput, Topic } from '@/types';
 

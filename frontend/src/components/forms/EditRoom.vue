@@ -41,7 +41,7 @@
             type="text"
             :placeholder="t('room.searchOrCreateTopics')"
             autocomplete="off"
-            maxlength="32"
+            :maxlength="ROOM_LIMITS.topicName"
             :disabled="loading"
             :class="{ 'input-error': fieldErrors.topicNames }"
             @input="onTopicInput"
@@ -73,7 +73,7 @@
           </div>
         </div>
         <div class="char-count">
-          {{ topicSearchInput.length }}/32
+          {{ topicSearchInput.length }}/{{ ROOM_LIMITS.topicName }}
         </div>
         <div v-if="fieldErrors.topicNames" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.topicNames" :key="index">{{ errMsg }}</p>
@@ -86,13 +86,13 @@
           id="description"
           v-model="roomForm.description"
           :placeholder="t('room.addDescriptionPlaceholder')"
-          maxlength="512"
+          :maxlength="ROOM_LIMITS.description"
           rows="4"
           :disabled="loading"
           :class="{ 'input-error': fieldErrors.description }"
         ></textarea>
         <div class="char-count">
-          {{ roomForm.description!.length }}/512
+          {{ roomForm.description!.length }}/{{ ROOM_LIMITS.description }}
         </div>
         <div v-if="fieldErrors.description" class="field-error">
           <p v-for="(errMsg, index) in fieldErrors.description" :key="index">{{ errMsg }}</p>
@@ -117,6 +117,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUpdateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
+import { ROOM_LIMITS } from '@/schemas/room.schema';
 
 import type { Topic, UpdateRoomInput, UUID } from '@/types';
 

@@ -301,11 +301,11 @@
                   id="messageInput"
                   v-model="messageInput"
                   type="text"
-                  maxlength="2048"
+                  :maxlength="MESSAGE_LIMITS.body"
                   :placeholder="t('message.typeYourMessage')"
                 />
                 <div class="char-count" :class="{ 'char-limit-warning': messageInput.length === 500 }">
-                  {{ messageInput.length }}/2048
+                  {{ messageInput.length }}/{{ MESSAGE_LIMITS.body }}
                 </div>
               </div>
               <button type="submit" :disabled="!messageInput.trim()">
@@ -348,6 +348,7 @@ import { useSendInvite } from '@/composables/useInvites';
 import { useRoomRoles } from '@/composables/useRoles';
 import { useWebSocket } from '@/composables/useWebSocket';
 import { parseGraphQLError } from '@/utils/errorParser';
+import { MESSAGE_LIMITS } from '@/schemas/message.schema';
 
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';

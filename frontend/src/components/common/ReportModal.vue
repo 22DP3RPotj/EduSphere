@@ -33,7 +33,7 @@
               v-model="description"
               :placeholder="t('report.descriptionPlaceholder')"
               rows="4"
-              maxlength="2000"
+              :maxlength="REPORT_LIMITS.description"
             ></textarea>
           </div>
           <div v-if="submitError" class="error-text">{{ submitError }}</div>
@@ -57,6 +57,7 @@
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useReportReasons, useCreateReport } from '@/composables/useReports';
+import { REPORT_LIMITS } from '@/schemas/report.schema';
 import type { ReportTargetType, UUID } from '@/types';
 
 const { t } = useI18n();

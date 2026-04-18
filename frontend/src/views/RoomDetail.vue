@@ -301,11 +301,11 @@
                   id="messageInput"
                   v-model="messageInput"
                   type="text"
-                  maxlength="2048"
+                  :maxlength="MESSAGE_LIMITS.body"
                   :placeholder="t('message.typeYourMessage')"
                 />
-                <div class="char-count" :class="{ 'char-limit-warning': messageInput.length === 500 }">
-                  {{ messageInput.length }}/2048
+                <div class="char-count" :class="{ 'char-limit-warning': messageInput.length >= MESSAGE_WARNING_THRESHOLD }">
+                  {{ messageInput.length }}/{{ MESSAGE_LIMITS.body }}
                 </div>
               </div>
               <button type="submit" :disabled="!messageInput.trim()">
@@ -348,6 +348,8 @@ import { useSendInvite } from '@/composables/useInvites';
 import { useRoomRoles } from '@/composables/useRoles';
 import { useWebSocket } from '@/composables/useWebSocket';
 import { parseGraphQLError } from '@/utils/errorParser';
+import { MESSAGE_LIMITS } from '@/schemas/field-limits';
+
 
 import MessageView from '@/components/common/MessageView.vue';
 import EditRoomForm from '@/components/forms/EditRoom.vue';
@@ -356,6 +358,8 @@ import RoleManager from '@/components/common/RoleManager.vue';
 import ReportModal from '@/components/common/ReportModal.vue';
 import { ReportTargetType } from '@/types';
 import type { Room, Participant, UUID } from '@/types';
+
+const MESSAGE_WARNING_THRESHOLD = Math.floor(MESSAGE_LIMITS.body * 0.9);
 
 const authStore = useAuthStore();
 const route = useRoute();

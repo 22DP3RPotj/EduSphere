@@ -83,25 +83,17 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores/auth.store'
 import { useInviteByToken, useAcceptInvite, useDeclineInvite } from '@/composables/useInvites'
 import type { UUID } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const authStore = useAuthStore()
 
 const token = route.params.token as string as UUID
-
-onMounted(() => {
-  if (!authStore.isAuthenticated) {
-    router.push(`/auth?redirect=/invite/${token}`)
-  }
-})
 
 const { invite, loading } = useInviteByToken(token)
 const { acceptInvite, loading: acceptLoading } = useAcceptInvite()

@@ -59,6 +59,7 @@ const routes = [
   {
     path: "/invite/:token",
     component: () => import("@/views/InviteLinkPage.vue"),
+    meta: { requireAuth: true }
   },
   {
     path: "/reports",

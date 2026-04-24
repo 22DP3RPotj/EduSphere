@@ -119,7 +119,7 @@ export function useResendInvite() {
   return { resendInvite, loading, error }
 }
 
-export function useInviteByToken(token: string) {
+export function useInviteByToken(token: UUID) {
   const { result, loading, error } = useQuery(
     INVITE_BY_TOKEN_QUERY,
     () => ({ token }),

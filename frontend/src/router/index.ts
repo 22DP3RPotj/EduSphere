@@ -57,6 +57,10 @@ const routes = [
     meta: { requireAuth: true }
   },
   {
+    path: "/invite/:token",
+    component: () => import("@/views/InviteLinkPage.vue"),
+  },
+  {
     path: "/reports",
     component: () => import("@/views/ReportsPage.vue"),
     meta: { requireAuth: true }

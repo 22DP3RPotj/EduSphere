@@ -236,7 +236,14 @@
     "inviteSent": "Invite sent successfully",
     "inviteAccepted": "Invite accepted",
     "inviteDeclined": "Invite declined",
-    "inviteCancelled": "Invite cancelled"
+    "inviteCancelled": "Invite cancelled",
+    "loadingInvite": "Loading invite...",
+    "inviteNotFound": "Invite not found",
+    "inviteExpired": "This invite has expired",
+    "inviteAlreadyUsed": "This invite has already been used",
+    "loginToAccept": "You need to log in to accept this invite",
+    "inviteFor": "You've been invited to join",
+    "joinAs": "You'll join as"
   },
   "role": {
     "roles": "Roles",

@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@vue/apollo-composable"
 import {
   RECEIVED_INVITES_QUERY,
   SENT_INVITES_QUERY,
+  INVITE_BY_TOKEN_QUERY,
   SEND_INVITE_MUTATION,
   ACCEPT_INVITE_MUTATION,
   DECLINE_INVITE_MUTATION,
@@ -116,4 +117,18 @@ export function useResendInvite() {
   }
 
   return { resendInvite, loading, error }
+}
+
+export function useInviteByToken(token: string) {
+  const { result, loading, error } = useQuery(
+    INVITE_BY_TOKEN_QUERY,
+    () => ({ token }),
+    { fetchPolicy: "network-only" },
+  )
+
+  return {
+    invite: computed<Invite | null>(() => result.value?.invite ?? null),
+    loading,
+    error,
+  }
 }

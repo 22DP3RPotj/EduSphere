@@ -236,7 +236,14 @@
     "inviteSent": "Uzaicinājums veiksmīgi nosūtīts",
     "inviteAccepted": "Uzaicinājums pieņemts",
     "inviteDeclined": "Uzaicinājums noraidīts",
-    "inviteCancelled": "Uzaicinājums atcelts"
+    "inviteCancelled": "Uzaicinājums atcelts",
+    "loadingInvite": "Ielādē uzaicinājumu...",
+    "inviteNotFound": "Uzaicinājums nav atrasts",
+    "inviteExpired": "Šī uzaicinājuma derīguma termiņš ir beidzies",
+    "inviteAlreadyUsed": "Šis uzaicinājums jau ir izmantots",
+    "loginToAccept": "Jums jāpierakstās, lai pieņemtu šo uzaicinājumu",
+    "inviteFor": "Jūs esat uzaicināts pievienoties",
+    "joinAs": "Jūs pievienosieties kā"
   },
   "role": {
     "roles": "Lomas",

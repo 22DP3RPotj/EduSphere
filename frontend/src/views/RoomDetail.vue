@@ -124,7 +124,7 @@
       <!-- Room header -->
       <div class="room-header">
         <div class="room-header-left">
-          <button class="back-button" @click="$router.back()">
+          <button class="back-button" @click="router.back()">
             <font-awesome-icon icon="arrow-left" />
           </button>
           <h2>{{ room.name }}</h2>

@@ -91,7 +91,7 @@
     "goBackHome": "Atpakaļ uz sākumlapu",
     "remove": "Noņemt",
     "action": "Darbība",
-    "welcomeTitle": "Laipni lūdzam Chat App",
+    "welcomeTitle": "Laipni lūdzam EduSphere",
     "welcomeSubtitle": "Pievienojieties sarunām par jūs interesējošām tēmām",
     "switchToListView": "Pārslēgties uz saraksta skatu",
     "switchToGridView": "Pārslēgties uz režģa skatu",
@@ -384,7 +384,7 @@
     "lv": "Latviešu"
   },
   "nav": {
-    "appName": "Chat App",
+    "appName": "EduSphere",
     "home": "Sākums",
     "lightMode": "Gaišais režīms",
     "darkMode": "Tumšais režīms"

@@ -91,7 +91,7 @@
     "goBackHome": "Go back to home",
     "remove": "Remove",
     "action": "Action",
-    "welcomeTitle": "Welcome to Chat App",
+    "welcomeTitle": "Welcome to EduSphere",
     "welcomeSubtitle": "Join conversations on topics that matter to you",
     "switchToListView": "Switch to list view",
     "switchToGridView": "Switch to grid view",
@@ -384,7 +384,7 @@
     "lv": "Latvian"
   },
   "nav": {
-    "appName": "Chat App",
+    "appName": "EduSphere",
     "home": "Home",
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode"

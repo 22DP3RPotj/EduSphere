@@ -63,14 +63,17 @@
             </div>
 
             <div class="action-buttons">
-              <button class="submit-btn" :disabled="acceptLoading || declineLoading" @click="handleAccept">
-                <font-awesome-icon v-if="acceptLoading" icon="spinner" spin />
-                <span v-else>{{ t('invite.acceptInvite') }}</span>
-              </button>
-              <button class="submit-btn secondary" :disabled="acceptLoading || declineLoading" @click="handleDecline">
-                <font-awesome-icon v-if="declineLoading" icon="spinner" spin />
-                <span v-else>{{ t('invite.declineInvite') }}</span>
-              </button>
+              <template v-if="isInvitee">
+                <button class="submit-btn" :disabled="acceptLoading || declineLoading" @click="handleAccept">
+                  <font-awesome-icon v-if="acceptLoading" icon="spinner" spin />
+                  <span v-else>{{ t('invite.acceptInvite') }}</span>
+                </button>
+                <button class="submit-btn secondary" :disabled="acceptLoading || declineLoading" @click="handleDecline">
+                  <font-awesome-icon v-if="declineLoading" icon="spinner" spin />
+                  <span v-else>{{ t('invite.declineInvite') }}</span>
+                </button>
+              </template>
+              <p v-else class="not-invitee-text">{{ t('invite.notYourInvite') }}</p>
             </div>
 
             <p v-if="actionError" class="error-text">{{ actionError }}</p>
@@ -83,10 +86,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useInviteByToken, useAcceptInvite, useDeclineInvite } from '@/composables/useInvites'
+import { useAuthStore } from '@/stores/auth.store'
 import type { UUID } from '@/types'
 
 const route = useRoute()
@@ -95,11 +99,18 @@ const { t } = useI18n()
 
 const token = route.params.token as string as UUID
 
+const authStore = useAuthStore()
+const currentUser = computed(() => authStore.currentUser)
+
 const { invite, loading } = useInviteByToken(token)
 const { acceptInvite, loading: acceptLoading } = useAcceptInvite()
 const { declineInvite, loading: declineLoading } = useDeclineInvite()
 
 const actionError = ref('')
+
+const isInvitee = computed(() =>
+  !!currentUser.value && !!invite.value && currentUser.value.id === invite.value.invitee.id
+)
 
 function formatStatus(status: string) {
   const map: Record<string, string> = {
@@ -125,7 +136,7 @@ async function handleAccept() {
   if (result.success) {
     router.push(`/r/${invite.value!.room.id}`)
   } else {
-    actionError.value = result.error ?? t('common.error')
+    actionError.value = t('invite.acceptFailed')
   }
 }
 
@@ -135,7 +146,7 @@ async function handleDecline() {
   if (result.success) {
     router.push('/')
   } else {
-    actionError.value = result.error ?? t('common.error')
+    actionError.value = t('invite.declineFailed')
   }
 }
 </script>
@@ -143,6 +154,8 @@ async function handleDecline() {
 <style scoped>
 @import '@/assets/styles/form-layout.css';
 @import '@/assets/styles/form-styles.css';
+@import '@/assets/styles/form-errors.css';
+
 
 .status-message {
   text-align: center;
@@ -252,6 +265,12 @@ async function handleDecline() {
 .error-text {
   color: var(--error-color, #ef4444);
   font-size: 0.875rem;
+  margin: 0;
+}
+
+.not-invitee-text {
+  font-size: 0.875rem;
+  color: var(--text-light);
   margin: 0;
 }
 </style>

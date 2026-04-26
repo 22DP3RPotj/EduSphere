@@ -248,7 +248,10 @@
     "inviteAlreadyUsed": "Šis uzaicinājums jau ir izmantots",
     "loginToAccept": "Jums jāpierakstās, lai pieņemtu šo uzaicinājumu",
     "inviteFor": "Jūs esat uzaicināts pievienoties",
-    "joinAs": "Jūs pievienosieties kā"
+    "joinAs": "Jūs pievienosieties kā",
+    "acceptFailed": "Neizdevās pieņemt uzaicinājumu. Lūdzu, mēģiniet vēlreiz.",
+    "declineFailed": "Neizdevās noraidīt uzaicinājumu. Lūdzu, mēģiniet vēlreiz.",
+    "notYourInvite": "Šis uzaicinājums nav adresēts jums."
   },
   "role": {
     "roles": "Lomas",

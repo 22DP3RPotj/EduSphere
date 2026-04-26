@@ -248,7 +248,10 @@
     "inviteAlreadyUsed": "This invite has already been used",
     "loginToAccept": "You need to log in to accept this invite",
     "inviteFor": "You've been invited to join",
-    "joinAs": "You'll join as"
+    "joinAs": "You'll join as",
+    "acceptFailed": "Failed to accept the invite. Please try again.",
+    "declineFailed": "Failed to decline the invite. Please try again.",
+    "notYourInvite": "This invite was not sent to you."
   },
   "role": {
     "roles": "Roles",

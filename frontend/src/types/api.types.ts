@@ -75,12 +75,14 @@ export interface CreateRoomInput {
   name: string;
   topicNames: string[];
   description: string;
+  visibility: 'PUBLIC' | 'PRIVATE';
 }
 
 export interface UpdateRoomInput {
   roomId: UUID;
   topicNames?: string[];
   description?: string;
+  visibility?: 'PUBLIC' | 'PRIVATE';
 }
 
 export interface CreateMessageInput {

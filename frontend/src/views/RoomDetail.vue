@@ -45,7 +45,6 @@
               <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
             </select>
           </div>
-          <div v-if="inviteSuccess" class="success-text">{{ t('room.inviteSentSuccessfully') }}</div>
           <div class="modal-actions">
             <button type="button" class="btn-cancel" @click="showInviteModal = false">{{ t('common.cancel') }}</button>
             <button type="submit" class="btn-confirm" :disabled="sendInviteLoading || !inviteUserEmail.trim()">
@@ -524,7 +523,6 @@ const { roles: roomRoles } = useRoomRoles(roomId);
 const showInviteModal = ref(false);
 const inviteUserEmail = ref('');
 const inviteRoleId = ref<string | null>(null);
-const inviteSuccess = ref(false);
 
 // Participant context menu state
 const participantMenuId = ref<UUID | null>(null);
@@ -762,18 +760,15 @@ async function handleRemoveParticipant(participantId: UUID) {
 async function handleSendInvite() {
   if (!room.value || !inviteUserEmail.value.trim()) return;
 
-  let result = await sendInviteMutation({
+  await sendInviteMutation({
     roomId: room.value.id,
     inviteeEmail: inviteUserEmail.value.trim(),
     roleId: inviteRoleId.value as UUID | undefined,
   });
-  inviteSuccess.value = result.success;
-  setTimeout(() => {
-    showInviteModal.value = false;
-    inviteUserEmail.value = '';
-    inviteRoleId.value = null;
-    inviteSuccess.value = false;
-  }, 1500);
+
+  showInviteModal.value = false;
+  inviteUserEmail.value = '';
+  inviteRoleId.value = null;
 }
 
 async function sendMessage() {

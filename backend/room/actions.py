@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from django.db import IntegrityError, transaction
@@ -6,10 +7,25 @@ from backend.account.models import User
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.access.services import RoleService
-from backend.core.exceptions import ConflictException, FormValidationException
+from backend.core.exceptions import (
+    ConflictException,
+    FormValidationException,
+    ValidationException,
+)
 from backend.room.choices import VisibilityChoices
 from backend.room.forms import RoomForm
 from backend.room.models import Room, Topic
+
+_TOPIC_NAME_RE = re.compile(r"^[^\x00-\x1f\x7f]+$", re.UNICODE)
+
+
+def _validate_topic_names(topic_names: list[str]) -> None:
+    invalid = [name for name in topic_names if not _TOPIC_NAME_RE.match(name.strip())]
+    if invalid:
+        sanitized = ", ".join(repr(name) for name in invalid)
+        raise ValidationException(
+            f"Topic names must not contain control characters or consist only of whitespace. Invalid: {sanitized}"
+        )
 
 
 def create_room(
@@ -30,6 +46,8 @@ def create_room(
     if not form.is_valid():
         raise FormValidationException("Invalid room data", errors=form.errors)
 
+    _validate_topic_names(topic_names)
+
     with transaction.atomic():
         room: Room = form.save(commit=False)
         room.host = user
@@ -38,7 +56,7 @@ def create_room(
         room.save()
 
         topics = [
-            Topic.objects.get_or_create(name=topic_name)[0]
+            Topic.objects.get_or_create(name=topic_name.strip())[0]
             for topic_name in topic_names
         ]
         room.topics.set(topics)
@@ -81,8 +99,9 @@ def update_room(
             form.save()
 
             if topic_names is not None:
+                _validate_topic_names(topic_names)
                 topics = [
-                    Topic.objects.get_or_create(name=topic_name)[0]
+                    Topic.objects.get_or_create(name=topic_name.strip())[0]
                     for topic_name in topic_names
                 ]
                 room.topics.set(topics)

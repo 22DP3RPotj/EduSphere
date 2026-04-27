@@ -52,16 +52,20 @@ const route = useRoute();
 
 const activeTab = ref('login');
 
-function handleLoginSuccess() {
+function resolveRedirect() {
   let redirectPath = route.query.redirect || '/';
   if (Array.isArray(redirectPath)) {
     redirectPath = redirectPath[0] || '/';
   }
-  router.push(redirectPath as string);
+  return redirectPath as string;
+}
+
+function handleLoginSuccess() {
+  router.push(resolveRedirect());
 }
 
 function handleRegisterSuccess() {
-  router.push('/');
+  router.push(resolveRedirect());
 }
 </script>
 

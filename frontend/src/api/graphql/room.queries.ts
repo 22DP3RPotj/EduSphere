@@ -6,6 +6,7 @@ export const ROOM_QUERY = gql`
             id
             name
             description
+            visibility
             createdAt
             host {
                 id
@@ -40,6 +41,7 @@ export const ROOMS_QUERY = gql`
             id
             name
             description
+            visibility
             createdAt
             topics {
                 name

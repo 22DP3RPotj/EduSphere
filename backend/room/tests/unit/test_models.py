@@ -22,7 +22,24 @@ class TopicModelTest(TestCase):
 
     def test_topic_invalid_name(self):
         with self.assertRaises(ValidationError):
-            topic = Topic(name="Music123")
+            topic = Topic(name="\x01control")
+            topic.full_clean()
+
+    def test_topic_name_with_numbers(self):
+        topic = Topic.objects.create(name="Music101")
+        self.assertEqual(topic.name, "Music101")
+
+    def test_topic_name_with_spaces(self):
+        topic = Topic.objects.create(name="Data Science")
+        self.assertEqual(topic.name, "Data Science")
+
+    def test_topic_name_with_unicode(self):
+        topic = Topic.objects.create(name="Программирование")
+        self.assertEqual(topic.name, "Программирование")
+
+    def test_topic_name_whitespace_only_invalid(self):
+        with self.assertRaises(ValidationError):
+            topic = Topic(name="   ")
             topic.full_clean()
 
 

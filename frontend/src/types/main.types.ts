@@ -47,6 +47,7 @@ export interface Room {
   topics: Topic[];
   description: string;
   participants: Participant[];
+  visibility: 'PUBLIC' | 'PRIVATE';
   updatedAt: DateTime;
   createdAt: DateTime;
 }

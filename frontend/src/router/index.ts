@@ -57,6 +57,11 @@ const routes = [
     meta: { requireAuth: true }
   },
   {
+    path: "/invite/:token",
+    component: () => import("@/views/InviteLinkPage.vue"),
+    meta: { requireAuth: true }
+  },
+  {
     path: "/reports",
     component: () => import("@/views/ReportsPage.vue"),
     meta: { requireAuth: true }
@@ -79,11 +84,14 @@ router.beforeEach(async (to, from, next) => {
   const user = authStore.user;
 
   if (to.meta.requireGuest && isAuthenticated) {
-    return next({ path: from.fullPath });
+    return next({ path: "/" });
   }
   
   if (to.meta.requireAuth && !isAuthenticated) {
-    return next({ path: "/auth" });
+    return next({
+      path: "/auth",
+      query: { redirect: to.fullPath }
+    });
   }
   
   if (to.meta.requireAdmin && !user?.isSuperuser) {

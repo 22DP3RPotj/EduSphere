@@ -1,7 +1,7 @@
 <template>
   <div class="invites-page">
     <div class="page-header">
-      <button class="back-button" @click="$router.back()">
+      <button class="back-button" @click="router.back()">
         <font-awesome-icon icon="arrow-left" />
       </button>
       <h1>{{ t('invite.invites') }}</h1>
@@ -163,6 +163,7 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import {
   useReceivedInvites,
   useSentInvites,
@@ -174,6 +175,7 @@ import {
 import type { UUID } from '@/types';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const activeTab = ref<'received' | 'sent'>('received');
 const receivedStatusFilter = ref('');

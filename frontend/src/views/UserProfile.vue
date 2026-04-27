@@ -13,7 +13,7 @@
 
     <!-- Header with back button -->
     <div class="profile-header">
-      <button class="back-button" @click="$router.back()">
+      <button class="back-button" @click="router.back()">
         <font-awesome-icon icon="arrow-left" />
       </button>
       <h1>{{ t('profile.profile') }}</h1>
@@ -410,7 +410,7 @@
       <font-awesome-icon icon="user-slash" size="3x" />
       <h2>{{ t('profile.userNotFound') }}</h2>
       <p>{{ t('profile.userNotFoundMessage') }}</p>
-      <button class="back-link" @click="$router.back()">
+      <button class="back-link" @click="router.back()">
         {{ t('common.goBack') }}
       </button>
     </div>

@@ -91,7 +91,7 @@
     "goBackHome": "Atpakaļ uz sākumlapu",
     "remove": "Noņemt",
     "action": "Darbība",
-    "welcomeTitle": "Laipni lūdzam Chat App",
+    "welcomeTitle": "Laipni lūdzam EduSphere",
     "welcomeSubtitle": "Pievienojieties sarunām par jūs interesējošām tēmām",
     "switchToListView": "Pārslēgties uz saraksta skatu",
     "switchToGridView": "Pārslēgties uz režģa skatu",
@@ -165,6 +165,7 @@
     "joinRoom": "Pievienoties istabai",
     "leaveRoom": "Pamest istabu",
     "roomName": "Istabas nosaukums",
+    "roomNamePlaceholder": "Ievadiet istabas nosaukumu",
     "description": "Apraksts",
     "topics": "Tēmas",
     "participants": "Dalībnieki",
@@ -207,6 +208,7 @@
     "searchOrCreateTopics": "Meklēt vai izveidot tēmas",
     "noMatchingTopicsCreate": "Nav atbilstošu tēmu. Nospiediet Enter, lai izveidotu \"{topic}\"",
     "addDescriptionPlaceholder": "Pievienojiet aprakstu",
+    "creating": "Izveido...",
     "updating": "Atjaunina...",
     "updateRoom": "Atjaunināt istabu",
     "topicsLabel": "Tēmas (izvēlieties vienu vai vairākas)",
@@ -214,7 +216,12 @@
     "createdOn": "Izveidots",
     "loginToJoinBefore": "Lūdzu",
     "loginToJoinAfter": "lai pievienotos sarunai",
-    "selectRole": "Izvēlieties lomu"
+    "selectRole": "Izvēlieties lomu",
+    "visibility": "Redzamība",
+    "public": "Publiska",
+    "private": "Privāta",
+    "publicDescription": "Jebkurš var pievienoties",
+    "privateDescription": "Tikai ar uzaicinājumu"
   },
   "invite": {
     "invites": "Uzaicinājumi",
@@ -236,7 +243,17 @@
     "inviteSent": "Uzaicinājums veiksmīgi nosūtīts",
     "inviteAccepted": "Uzaicinājums pieņemts",
     "inviteDeclined": "Uzaicinājums noraidīts",
-    "inviteCancelled": "Uzaicinājums atcelts"
+    "inviteCancelled": "Uzaicinājums atcelts",
+    "loadingInvite": "Ielādē uzaicinājumu...",
+    "inviteNotFound": "Uzaicinājums nav atrasts",
+    "inviteExpired": "Šī uzaicinājuma derīguma termiņš ir beidzies",
+    "inviteAlreadyUsed": "Šis uzaicinājums jau ir izmantots",
+    "loginToAccept": "Jums jāpierakstās, lai pieņemtu šo uzaicinājumu",
+    "inviteFor": "Jūs esat uzaicināts pievienoties",
+    "joinAs": "Jūs pievienosieties kā",
+    "acceptFailed": "Neizdevās pieņemt uzaicinājumu. Lūdzu, mēģiniet vēlreiz.",
+    "declineFailed": "Neizdevās noraidīt uzaicinājumu. Lūdzu, mēģiniet vēlreiz.",
+    "notYourInvite": "Šis uzaicinājums nav adresēts jums."
   },
   "role": {
     "roles": "Lomas",
@@ -377,7 +394,7 @@
     "lv": "Latviešu"
   },
   "nav": {
-    "appName": "Chat App",
+    "appName": "EduSphere",
     "home": "Sākums",
     "lightMode": "Gaišais režīms",
     "darkMode": "Tumšais režīms"

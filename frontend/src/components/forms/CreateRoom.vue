@@ -1,7 +1,7 @@
 <template>
   <div class="auth-form-container">
     <form class="auth-form" @submit.prevent="submitRoom">
-      <h2 class="form-title">Create Room</h2>
+      <h2 class="form-title">{{ t('room.createRoom') }}</h2>
       <!-- General errors display -->
       <div v-show="generalErrors.length > 0" class="error-message">
         <font-awesome-icon icon="exclamation-circle" />
@@ -11,12 +11,12 @@
       </div>
 
       <div class="form-group">
-        <label for="room-name">Room Name</label>
+        <label for="room-name">{{ t('room.roomName') }}</label>
         <input
           id="room-name"
           v-model="roomForm.name"
           type="text"
-          placeholder="Enter room name"
+          :placeholder="t('room.roomNamePlaceholder')"
           autocomplete="off"
           :maxlength="ROOM_LIMITS.name"
           required
@@ -33,7 +33,7 @@
 
       <!-- Updated to support multiple topics with tag/chip interface -->
       <div class="form-group">
-        <label for="topic-name">Topics (select one or more)</label>
+        <label for="topic-name">{{ t('room.topicsLabel') }}</label>
         
         <!-- Selected topics display -->
         <div v-if="roomForm.topicNames.length > 0" class="selected-topics">
@@ -46,7 +46,7 @@
             <button 
               type="button" 
               class="remove-topic-btn"
-              :title="`Remove ${topicName}`"
+              :title="t('common.removeTopicTitle', { name: topicName })"
               @click="removeTopic(topicName)"
             >
               <font-awesome-icon icon="times" />
@@ -59,7 +59,7 @@
             id="topic-name"
             v-model="topicSearchInput"
             type="text"
-            placeholder="Search or create topics"
+            :placeholder="t('room.searchOrCreateTopics')"
             autocomplete="off"
             :maxlength="ROOM_LIMITS.topicName"
             :disabled="loading"
@@ -88,7 +88,7 @@
               </span>
             </div>
             <div v-if="filteredTopics.length === 0" class="no-suggestions">
-              No matching topics found. Press Enter to create "{{ topicSearchInput }}"
+              {{ t('room.noMatchingTopicsCreate', { topic: topicSearchInput }) }}
             </div>
           </div>
         </div>
@@ -101,11 +101,11 @@
       </div>
 
       <div class="form-group">
-        <label for="description">Description <span>(optional)</span></label>
+        <label for="description">{{ t('room.description') }} <span>{{ t('common.optional') }}</span></label>
         <textarea
           id="description"
           v-model="roomForm.description"
-          placeholder="Add a description"
+          :placeholder="t('room.addDescriptionPlaceholder')"
           :maxlength="ROOM_LIMITS.description"
           rows="4"
           :disabled="loading"
@@ -119,9 +119,39 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label>{{ t('room.visibility') }}</label>
+        <div class="visibility-options">
+          <label class="visibility-option" :class="{ active: roomForm.visibility === 'PUBLIC' }">
+            <input
+              v-model="roomForm.visibility"
+              type="radio"
+              value="PUBLIC"
+              :disabled="loading"
+            >
+            <div class="visibility-option-content">
+              <span class="visibility-option-label">{{ t('room.public') }}</span>
+              <span class="visibility-option-desc">{{ t('room.publicDescription') }}</span>
+            </div>
+          </label>
+          <label class="visibility-option" :class="{ active: roomForm.visibility === 'PRIVATE' }">
+            <input
+              v-model="roomForm.visibility"
+              type="radio"
+              value="PRIVATE"
+              :disabled="loading"
+            >
+            <div class="visibility-option-content">
+              <span class="visibility-option-label">{{ t('room.private') }}</span>
+              <span class="visibility-option-desc">{{ t('room.privateDescription') }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
       <button type="submit" class="btn btn-primary" :disabled="loading || roomForm.topicNames.length === 0">
         <span v-if="loading" class="spinner"></span>
-        {{ loading ? 'Creating...' : 'Create Room' }}
+        {{ loading ? t('room.creating') : t('room.createRoom') }}
       </button>
     </form>
   </div>
@@ -130,12 +160,14 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useCreateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
 import { ROOM_LIMITS } from '@/schemas/field-limits';
 
 import type { CreateRoomInput, Topic } from '@/types';
 
+const { t } = useI18n();
 const router = useRouter();
 const { createRoom, loading, error } = useCreateRoom();
 const { topics } = useTopicsQuery();
@@ -143,7 +175,8 @@ const { topics } = useTopicsQuery();
 const roomForm = ref<CreateRoomInput>({
   name: '',
   topicNames: [],
-  description: ''
+  description: '',
+  visibility: 'PUBLIC'
 });
 
 const topicSearchInput = ref<string>('');
@@ -437,5 +470,55 @@ onMounted(async () => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.visibility-options {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.visibility-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.visibility-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--primary-color);
+}
+
+.visibility-option.active {
+  border-color: var(--primary-color);
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
+.visibility-option:hover:not(:has(input:disabled)) {
+  border-color: var(--primary-color);
+}
+
+.visibility-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.visibility-option-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.visibility-option-desc {
+  font-size: 0.78rem;
+  color: var(--text-light);
 }
 </style>

@@ -1,12 +1,13 @@
 import { gql } from "@apollo/client";
 
 export const CREATE_ROOM_MUTATION = gql`
-    mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!) {
-        createRoom(name: $name, topicNames: $topicNames, description: $description) {
+    mutation CreateRoom($name: String!, $topicNames: [String!]!, $description: String!, $visibility: RoomVisibilityEnum) {
+        createRoom(name: $name, topicNames: $topicNames, description: $description, visibility: $visibility) {
             room {
                 id
                 name
                 description
+                visibility
                 topics { name }
                 host {
                     id
@@ -29,16 +30,19 @@ export const UPDATE_ROOM_MUTATION = gql`
     mutation UpdateRoom(
         $roomId: UUID!,
         $topicNames: [String!],
-        $description: String
+        $description: String,
+        $visibility: RoomVisibilityEnum
     ) {
         updateRoom(
             roomId: $roomId,
             topicNames: $topicNames,
-            description: $description
+            description: $description,
+            visibility: $visibility
         ) {
             room {
                 id
                 name
+                visibility
                 topics { name }
                 description
                 participants {

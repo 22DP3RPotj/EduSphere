@@ -91,7 +91,7 @@
     "goBackHome": "Go back to home",
     "remove": "Remove",
     "action": "Action",
-    "welcomeTitle": "Welcome to Chat App",
+    "welcomeTitle": "Welcome to EduSphere",
     "welcomeSubtitle": "Join conversations on topics that matter to you",
     "switchToListView": "Switch to list view",
     "switchToGridView": "Switch to grid view",
@@ -165,6 +165,7 @@
     "joinRoom": "Join Room",
     "leaveRoom": "Leave Room",
     "roomName": "Room Name",
+    "roomNamePlaceholder": "Enter room name",
     "description": "Description",
     "topics": "Topics",
     "participants": "Participants",
@@ -207,6 +208,7 @@
     "searchOrCreateTopics": "Search or create topics",
     "noMatchingTopicsCreate": "No matching topics found. Press Enter to create \"{topic}\"",
     "addDescriptionPlaceholder": "Add a description",
+    "creating": "Creating...",
     "updating": "Updating...",
     "updateRoom": "Update Room",
     "topicsLabel": "Topics (select one or more)",
@@ -214,7 +216,12 @@
     "createdOn": "Created",
     "loginToJoinBefore": "Please",
     "loginToJoinAfter": "to join the conversation",
-    "selectRole": "Select Role"
+    "selectRole": "Select Role",
+    "visibility": "Visibility",
+    "public": "Public",
+    "private": "Private",
+    "publicDescription": "Anyone can join",
+    "privateDescription": "Invite only"
   },
   "invite": {
     "invites": "Invites",
@@ -236,7 +243,17 @@
     "inviteSent": "Invite sent successfully",
     "inviteAccepted": "Invite accepted",
     "inviteDeclined": "Invite declined",
-    "inviteCancelled": "Invite cancelled"
+    "inviteCancelled": "Invite cancelled",
+    "loadingInvite": "Loading invite...",
+    "inviteNotFound": "Invite not found",
+    "inviteExpired": "This invite has expired",
+    "inviteAlreadyUsed": "This invite has already been used",
+    "loginToAccept": "You need to log in to accept this invite",
+    "inviteFor": "You've been invited to join",
+    "joinAs": "You'll join as",
+    "acceptFailed": "Failed to accept the invite. Please try again.",
+    "declineFailed": "Failed to decline the invite. Please try again.",
+    "notYourInvite": "This invite was not sent to you."
   },
   "role": {
     "roles": "Roles",
@@ -377,7 +394,7 @@
     "lv": "Latvian"
   },
   "nav": {
-    "appName": "Chat App",
+    "appName": "EduSphere",
     "home": "Home",
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode"

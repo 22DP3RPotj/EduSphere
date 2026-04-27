@@ -22,9 +22,10 @@ class Topic(models.Model):
         app_label = "room"
         constraints = [
             models.CheckConstraint(
-                condition=Q(name__regex=r"^[A-Za-z]+$"),
-                name="letters_only_in_topic_name",
-                violation_error_message="Topic name must consist of letters only.",
+                condition=Q(name__regex=r"^[^\x00-\x1f\x7f]+$")
+                & ~Q(name__regex=r"^\s+$"),
+                name="valid_topic_name",
+                violation_error_message="Topic name must not contain control characters or consist only of whitespace.",
             ),
         ]
         indexes = [

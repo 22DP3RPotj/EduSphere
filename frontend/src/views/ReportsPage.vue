@@ -1,7 +1,7 @@
 <template>
   <div class="reports-page">
     <div class="page-header">
-      <button class="back-button" @click="$router.back()">
+      <button class="back-button" @click="router.back()">
         <font-awesome-icon icon="arrow-left" />
       </button>
       <h1>{{ t('report.myReports') }}</h1>
@@ -71,9 +71,11 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSubmittedReports } from '@/composables/useReports';
+import { useRouter } from 'vue-router';
 import type { Report } from '@/types';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const { reports, loading } = useSubmittedReports();
 

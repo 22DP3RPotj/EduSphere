@@ -99,6 +99,36 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label>{{ t('room.visibility') }}</label>
+        <div class="visibility-options">
+          <label class="visibility-option" :class="{ active: roomForm.visibility === 'PUBLIC' }">
+            <input
+              v-model="roomForm.visibility"
+              type="radio"
+              value="PUBLIC"
+              :disabled="loading"
+            >
+            <div class="visibility-option-content">
+              <span class="visibility-option-label">{{ t('room.public') }}</span>
+              <span class="visibility-option-desc">{{ t('room.publicDescription') }}</span>
+            </div>
+          </label>
+          <label class="visibility-option" :class="{ active: roomForm.visibility === 'PRIVATE' }">
+            <input
+              v-model="roomForm.visibility"
+              type="radio"
+              value="PRIVATE"
+              :disabled="loading"
+            >
+            <div class="visibility-option-content">
+              <span class="visibility-option-label">{{ t('room.private') }}</span>
+              <span class="visibility-option-desc">{{ t('room.privateDescription') }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" :disabled="loading" @click="$emit('cancel')">
           {{ t('common.cancel') }}
@@ -138,7 +168,8 @@ const { topics } = useTopicsQuery();
 const roomForm = ref<UpdateRoomInput>({
   roomId: '' as UUID,
   topicNames: [],
-  description: ''
+  description: '',
+  visibility: 'PUBLIC'
 });
 
 const topicSearchInput = ref<string>('');
@@ -150,6 +181,7 @@ watch(() => props.room, (newRoom) => {
     roomForm.value.roomId = newRoom.id;
     roomForm.value.topicNames = newRoom.topics?.map((t: Topic) => t.name) || [];
     roomForm.value.description = newRoom.description || '';
+    roomForm.value.visibility = newRoom.visibility || 'PUBLIC';
   }
 }, { immediate: true });
 
@@ -485,5 +517,55 @@ async function submitUpdate() {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.visibility-options {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.visibility-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.visibility-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--primary-color);
+}
+
+.visibility-option.active {
+  border-color: var(--primary-color);
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
+.visibility-option:hover:not(:has(input:disabled)) {
+  border-color: var(--primary-color);
+}
+
+.visibility-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.visibility-option-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.visibility-option-desc {
+  font-size: 0.78rem;
+  color: var(--text-light);
 }
 </style>

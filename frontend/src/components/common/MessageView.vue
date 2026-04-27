@@ -7,16 +7,20 @@
       'host-message': props.isHost 
   }">
     <div v-if="!isMessageOwner" class="message-avatar">
-      <img 
-        :src="userAvatar" 
-        :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
-        class="avatar-img" 
-      />
+      <router-link :to="`/u/${props.message.author?.id}`">
+        <img 
+          :src="userAvatar" 
+          :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
+          class="avatar-img" 
+        />
+      </router-link>
     </div>
     <div class="message-content">
       <div class="message-header">
         <div class="message-author">
-          <span class="username">{{ userDisplayName }}</span>
+          <span class="username">
+              <router-link :to="`/u/${props.message.author?.id}`">{{ userDisplayName }}</router-link>
+            </span>
           <span v-if="props.isHost" class="host-badge">{{ t('room.host') }}</span>
           <span 
             class="message-time" 
@@ -105,11 +109,13 @@
       <div v-else class="message-body">{{ props.message.body }}</div>
     </div>
     <div v-if="isMessageOwner" class="message-avatar own-avatar">
-      <img 
-        :src="userAvatar" 
-        :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
-        class="avatar-img" 
-      />
+      <router-link :to="`/u/${props.message.author?.id}`">
+        <img 
+          :src="userAvatar" 
+          :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
+          class="avatar-img" 
+        />
+      </router-link>
     </div>
   </div>
 </template>
@@ -161,7 +167,6 @@ const formattedTimestamp = computed(() => {
   }
 });
 
-// TODO: handle cases where author is just a string (legacy)
 const userDisplayName = computed(() => {
   return props.message.author?.username || props.message.author || '[Unknown]';
 });
@@ -339,6 +344,19 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: var(--text-color);
   font-size: 0.9rem;
+}
+
+.username a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.username a:hover {
+  text-decoration: underline;
+}
+
+.message-avatar a {
+  display: contents;
 }
 
 .host-badge {

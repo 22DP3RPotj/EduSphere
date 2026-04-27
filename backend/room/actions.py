@@ -22,8 +22,9 @@ _TOPIC_NAME_RE = re.compile(r"^[^\x00-\x1f\x7f]+$", re.UNICODE)
 def _validate_topic_names(topic_names: list[str]) -> None:
     invalid = [name for name in topic_names if not _TOPIC_NAME_RE.match(name.strip())]
     if invalid:
+        sanitized = ", ".join(repr(name) for name in invalid)
         raise ValidationException(
-            f"Topic names must not contain control characters or consist only of whitespace. Invalid: {', '.join(invalid)}"
+            f"Topic names must not contain control characters or consist only of whitespace. Invalid: {sanitized}"
         )
 
 

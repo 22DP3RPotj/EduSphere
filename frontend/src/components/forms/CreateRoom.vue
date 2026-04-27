@@ -120,7 +120,7 @@
       </div>
 
       <div class="form-group">
-        <label>Visibility</label>
+        <label>{{ t('room.visibility') }}</label>
         <div class="visibility-options">
           <label class="visibility-option" :class="{ active: roomForm.visibility === 'PUBLIC' }">
             <input
@@ -130,8 +130,8 @@
               :disabled="loading"
             >
             <div class="visibility-option-content">
-              <span class="visibility-option-label">Public</span>
-              <span class="visibility-option-desc">Anyone can join</span>
+              <span class="visibility-option-label">{{ t('room.public') }}</span>
+              <span class="visibility-option-desc">{{ t('room.publicDescription') }}</span>
             </div>
           </label>
           <label class="visibility-option" :class="{ active: roomForm.visibility === 'PRIVATE' }">
@@ -142,8 +142,8 @@
               :disabled="loading"
             >
             <div class="visibility-option-content">
-              <span class="visibility-option-label">Private</span>
-              <span class="visibility-option-desc">Invite only</span>
+              <span class="visibility-option-label">{{ t('room.private') }}</span>
+              <span class="visibility-option-desc">{{ t('room.privateDescription') }}</span>
             </div>
           </label>
         </div>
@@ -160,12 +160,14 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useCreateRoom, useTopicsQuery } from "@/composables/useRooms";
 import { parseGraphQLError } from '@/utils/errorParser';
 import { ROOM_LIMITS } from '@/schemas/field-limits';
 
 import type { CreateRoomInput, Topic } from '@/types';
 
+const { t } = useI18n();
 const router = useRouter();
 const { createRoom, loading, error } = useCreateRoom();
 const { topics } = useTopicsQuery();

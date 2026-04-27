@@ -107,6 +107,7 @@ class MessageService:
             "id": str(message.id),
             "author": message.author.username,
             "author_id": str(message.author.id),
+            "author_name": message.author.name,
             "body": message.body,
             "is_edited": message.is_edited,
             "created_at": message.created_at.isoformat(),

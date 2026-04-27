@@ -306,14 +306,14 @@
             <div v-for="message in tabsData.messages.data" :key="message.id" class="message-item-preview">
               <div class="message-room">
                 <font-awesome-icon icon="comments" class="room-icon" />
-                <span>{{ message.room.name }}</span>
+                <span>{{ message.room!.name }}</span>
                 <span class="message-date">{{ formatDate(message.createdAt) }}</span>
               </div>
               <div class="message-content-preview">
                 {{ message.body }}
               </div>
               <div class="message-actions">
-                <button class="view-room-button" @click="navigateToRoom(message.room)">
+                <button class="view-room-button" @click="navigateToRoom(message.room!)">
                   <font-awesome-icon icon="eye" /> {{ t('room.viewRoom') }}
                 </button>
               </div>

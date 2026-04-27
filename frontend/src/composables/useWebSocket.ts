@@ -2,7 +2,7 @@ import { ref, type Ref } from "vue"
 import { useAuthStore } from "@/stores/auth.store"
 import { ROOM_MESSAGES_QUERY } from "@/api/graphql";
 import { apolloClient } from "@/api/apollo.client";
-import type { Room, Message, DateTime, UUID, GqlMessage } from "@/types"
+import type { Message, DateTime, UUID, GqlMessage } from "@/types"
 import type {
   ConnectionStatus,
   ReceivedWebSocketMessage,
@@ -225,7 +225,6 @@ export function useWebSocket(
     }
   }
 
-  // TODO: real values
   function handleNewMessage(data: WSNewMessage): void {
     const newMessage: Message = {
       id: data.id,
@@ -237,16 +236,9 @@ export function useWebSocket(
       author: {
         id: data.author_id,
         username: data.author,
+        name: data.author_name,
         avatar: data.author_avatar,
-        name: data.author,
-        bio: null,
-        language: data.author_id === authStore.user?.id ? authStore.user.language : "en",
-        isStaff: false,
-        isActive: false,
-        isSuperuser: false,
-        dateJoined: asDateTime(""),
       },
-      room: {} as Room,
     }
     messages.value.push(newMessage)
   }

@@ -9,12 +9,12 @@
     </div>
 
     <div class="form-group">
-      <label for="email">Email</label>
+      <label for="email">{{ t('auth.email') }}</label>
       <input
         id="email"
         v-model="formData.email"
         type="email"
-        placeholder="Enter your email"
+        :placeholder="t('auth.enterEmail')"
         autocomplete="email"
         required
         :disabled="loginLoading"
@@ -27,12 +27,12 @@
     </div>
 
     <div class="form-group">
-      <label for="password">Password</label>
+      <label for="password">{{ t('auth.password') }}</label>
       <input
         id="password"
         v-model="formData.password"
         type="password"
-        placeholder="Enter your password"
+        :placeholder="t('auth.enterPassword')"
         autocomplete="current-password"
         required
         :disabled="loginLoading"
@@ -45,22 +45,23 @@
 
     <button type="submit" class="submit-btn" :disabled="loginLoading">
       <font-awesome-icon v-if="loginLoading" icon="spinner" spin />
-      <span v-else>Login</span>
+      <span v-else>{{ t('common.login') }}</span>
     </button>
 
     <p class="forgot-password">
-      <router-link to="/forgot-password">Forgot password?</router-link>
+      <router-link to="/forgot-password">{{ t('auth.forgotPassword') }}?</router-link>
     </p>
 
     <p class="switch-form">
-      Don't have an account?
-      <button type="button" @click="$emit('switch-to-register')">Register</button>
+      {{ t('auth.dontHaveAccount') }}
+      <button type="button" @click="$emit('switch-to-register')">{{ t('common.register') }}</button>
     </p>
   </form>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
 import { parseGraphQLError } from '@/utils/errorParser';
 
@@ -69,6 +70,7 @@ const emit = defineEmits<{
   'switch-to-register': [];
 }>();
 
+const { t } = useI18n();
 const { login, loginLoading, loginError } = useAuth();
 
 const formData = ref({

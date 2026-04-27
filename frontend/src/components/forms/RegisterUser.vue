@@ -8,13 +8,13 @@
     </div>
 
     <div class="form-group">
-      <label for="username">Username</label>
+      <label for="username">{{ t('auth.username') }}</label>
       <input
         id="username"
         v-model="formData.username"
         type="text"
         required
-        placeholder="Choose a username"
+        :placeholder="t('auth.chooseUsername')"
         autocomplete="username"
         :disabled="registerLoading"
         :class="{ 'input-error': fieldErrors.username }"
@@ -25,12 +25,12 @@
     </div>
 
     <div class="form-group">
-      <label for="name">Full Name</label>
+      <label for="name">{{ t('auth.fullName') }}</label>
       <input
         id="name"
         v-model="formData.name"
         type="text"
-        placeholder="Enter your full name"
+        :placeholder="t('auth.enterFullName')"
         autocomplete="name"
         required
         :disabled="registerLoading"
@@ -42,12 +42,12 @@
     </div>
 
     <div class="form-group">
-      <label for="email">Email</label>
+      <label for="email">{{ t('auth.email') }}</label>
       <input
         id="email"
         v-model="formData.email"
         type="email"
-        placeholder="Enter your email"
+        :placeholder="t('auth.enterEmail')"
         autocomplete="email"
         required
         :disabled="registerLoading"
@@ -59,12 +59,12 @@
     </div>
 
     <div class="form-group">
-      <label for="password1">Password</label>
+      <label for="password1">{{ t('auth.password') }}</label>
       <input
         id="password1"
         v-model="formData.password1"
         type="password"
-        placeholder="Create a password"
+        :placeholder="t('auth.createPassword')"
         autocomplete="new-password"
         required
         :disabled="registerLoading"
@@ -76,12 +76,12 @@
     </div>
 
     <div class="form-group">
-      <label for="password2">Confirm Password</label>
+      <label for="password2">{{ t('auth.confirmPassword') }}</label>
       <input
         id="password2"
         v-model="formData.password2"
         type="password"
-        placeholder="Confirm your password"
+        :placeholder="t('auth.confirmYourPassword')"
         autocomplete="new-password"
         required
         :disabled="registerLoading"
@@ -94,18 +94,19 @@
 
     <button type="submit" class="submit-btn" :disabled="registerLoading">
       <font-awesome-icon v-if="registerLoading" icon="spinner" spin />
-      <span v-else>Register</span>
+      <span v-else>{{ t('common.register') }}</span>
     </button>
 
     <p class="switch-form">
-      Already have an account?
-      <button type="button" @click="$emit('switch-to-login')">Login</button>
+      {{ t('auth.alreadyHaveAccount') }}
+      <button type="button" @click="$emit('switch-to-login')">{{ t('common.login') }}</button>
     </p>
   </form>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { parseGraphQLError } from '@/utils/errorParser'
 import type { RegisterInput } from '@/types'
@@ -115,6 +116,7 @@ const emit = defineEmits<{
   'switch-to-login': []
 }>()
 
+const { t } = useI18n()
 const { register, registerLoading, registerError } = useAuth()
 
 const formData = ref<RegisterInput>({

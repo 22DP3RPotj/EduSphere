@@ -1,7 +1,7 @@
 <template>
   <div class="auth-form-container">
     <form class="auth-form" @submit.prevent="submitRoom">
-      <h2 class="form-title">Create Room</h2>
+      <h2 class="form-title">{{ t('room.createRoom') }}</h2>
       <!-- General errors display -->
       <div v-show="generalErrors.length > 0" class="error-message">
         <font-awesome-icon icon="exclamation-circle" />
@@ -11,12 +11,12 @@
       </div>
 
       <div class="form-group">
-        <label for="room-name">Room Name</label>
+        <label for="room-name">{{ t('room.roomName') }}</label>
         <input
           id="room-name"
           v-model="roomForm.name"
           type="text"
-          placeholder="Enter room name"
+          :placeholder="t('room.roomNamePlaceholder')"
           autocomplete="off"
           :maxlength="ROOM_LIMITS.name"
           required
@@ -33,7 +33,7 @@
 
       <!-- Updated to support multiple topics with tag/chip interface -->
       <div class="form-group">
-        <label for="topic-name">Topics (select one or more)</label>
+        <label for="topic-name">{{ t('room.topicsLabel') }}</label>
         
         <!-- Selected topics display -->
         <div v-if="roomForm.topicNames.length > 0" class="selected-topics">
@@ -46,7 +46,7 @@
             <button 
               type="button" 
               class="remove-topic-btn"
-              :title="`Remove ${topicName}`"
+              :title="t('common.removeTopicTitle', { name: topicName })"
               @click="removeTopic(topicName)"
             >
               <font-awesome-icon icon="times" />
@@ -59,7 +59,7 @@
             id="topic-name"
             v-model="topicSearchInput"
             type="text"
-            placeholder="Search or create topics"
+            :placeholder="t('room.searchOrCreateTopics')"
             autocomplete="off"
             :maxlength="ROOM_LIMITS.topicName"
             :disabled="loading"
@@ -88,7 +88,7 @@
               </span>
             </div>
             <div v-if="filteredTopics.length === 0" class="no-suggestions">
-              No matching topics found. Press Enter to create "{{ topicSearchInput }}"
+              {{ t('room.noMatchingTopicsCreate', { topic: topicSearchInput }) }}
             </div>
           </div>
         </div>
@@ -101,11 +101,11 @@
       </div>
 
       <div class="form-group">
-        <label for="description">Description <span>(optional)</span></label>
+        <label for="description">{{ t('room.description') }} <span>{{ t('common.optional') }}</span></label>
         <textarea
           id="description"
           v-model="roomForm.description"
-          placeholder="Add a description"
+          :placeholder="t('room.addDescriptionPlaceholder')"
           :maxlength="ROOM_LIMITS.description"
           rows="4"
           :disabled="loading"
@@ -151,7 +151,7 @@
 
       <button type="submit" class="btn btn-primary" :disabled="loading || roomForm.topicNames.length === 0">
         <span v-if="loading" class="spinner"></span>
-        {{ loading ? 'Creating...' : 'Create Room' }}
+        {{ loading ? t('room.creating') : t('room.createRoom') }}
       </button>
     </form>
   </div>

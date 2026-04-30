@@ -4,8 +4,8 @@ from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from django.contrib.auth.models import AnonymousUser
 
-from backend.messaging.chat.routing import websocket_urlpatterns
 from backend.core.apps import CoreConfig
+from backend.messaging.chat.routing import websocket_urlpatterns
 
 
 class FakeRedis:
@@ -104,8 +104,8 @@ def users(django_user_model):
 
 @pytest.fixture
 def room_and_participant(users):
+    from backend.access.models import Participant, Role
     from backend.room.models import Room, Topic
-    from backend.access.models import Role, Participant
 
     host, member, _other = users
 

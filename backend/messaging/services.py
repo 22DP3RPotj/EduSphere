@@ -1,11 +1,11 @@
-from backend.messaging.models import Message
 from backend.account.models import User
-from backend.room.models import Room
 from backend.core.exceptions import (
     PermissionException,
 )
-from backend.messaging.rules.labels import MessagingPermission
 from backend.messaging import actions
+from backend.messaging.models import Message
+from backend.messaging.rules.labels import MessagingPermission
+from backend.room.models import Room
 
 
 class MessageService:

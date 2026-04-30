@@ -1,13 +1,13 @@
+from datetime import datetime, timedelta
 from unittest import mock
+
+import pghistory.models
 import pytest
+from django.db import DatabaseError
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from django.db import DatabaseError
-import pghistory.models
-from datetime import datetime, timedelta
 
 from backend.core.tasks.cleanup import run_audit_log_cleanup
-
 
 pytestmark = pytest.mark.unit
 

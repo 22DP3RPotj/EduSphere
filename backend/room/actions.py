@@ -3,10 +3,10 @@ from typing import Optional
 
 from django.db import IntegrityError, transaction
 
-from backend.account.models import User
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.access.services import RoleService
+from backend.account.models import User
 from backend.core.exceptions import (
     ConflictException,
     FormValidationException,

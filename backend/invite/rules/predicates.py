@@ -1,8 +1,9 @@
 from rules.predicates import predicate
+
 from backend.access.enums import PermissionCode
+from backend.account.models import User
 from backend.invite.models import Invite
 from backend.room.models import Room
-from backend.account.models import User
 
 
 @predicate

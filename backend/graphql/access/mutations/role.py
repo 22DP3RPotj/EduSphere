@@ -1,15 +1,16 @@
-import graphene
 import uuid
-from typing import Optional, Any, Self
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
-from backend.graphql.access.types import RoleType, RoleDeleteType
-from backend.core.exceptions import ErrorCode
+from typing import Any, Optional, Self
 
-from backend.graphql.mutations import BaseMutation
-from backend.room.models import Room
+import graphene
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
+
 from backend.access.models import Role
 from backend.access.services import RoleService
+from backend.core.exceptions import ErrorCode
+from backend.graphql.access.types import RoleDeleteType, RoleType
+from backend.graphql.mutations import BaseMutation
+from backend.room.models import Room
 
 
 class CreateRole(BaseMutation):

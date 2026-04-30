@@ -2,15 +2,15 @@ import pghistory
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from graphql_sync_dataloaders import DeferredExecutionContext
 from graphql_jwt.testcases import JSONWebTokenClient, JSONWebTokenTestCase
+from graphql_sync_dataloaders import DeferredExecutionContext
 
 from backend.access.models import Role
 from backend.graphql.context.registry import GQLDataLoaderRegistry
-from backend.invite.models import Invite
-from backend.room.models import Room
-from backend.room.choices import VisibilityChoices
 from backend.invite.choices import InviteStatusChoices
+from backend.invite.models import Invite
+from backend.room.choices import VisibilityChoices
+from backend.room.models import Room
 
 pytestmark = pytest.mark.unit
 

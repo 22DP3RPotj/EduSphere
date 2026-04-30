@@ -1,14 +1,13 @@
 import graphene
 
-from .resolvers import InviteQuery
-
 from .mutations.invite import (
-    SendInvite,
     AcceptInvite,
-    DeclineInvite,
     CancelInvite,
+    DeclineInvite,
     ResendInvite,
+    SendInvite,
 )
+from .resolvers import InviteQuery
 
 
 class InviteQueries(InviteQuery, graphene.ObjectType):

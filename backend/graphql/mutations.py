@@ -1,5 +1,7 @@
-import graphene
 from typing import Any, Optional, Self
+
+import graphene
+
 from backend.graphql.error.utils import resolve_errors
 
 

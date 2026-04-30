@@ -1,13 +1,13 @@
 import uuid
 
 import pghistory
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 from backend.invite.choices import InviteStatusChoices
 from backend.invite.querysets import InviteQuerySet
-from backend.invite.utils import generate_token, INVITE_TOKEN_LENGTH
+from backend.invite.utils import INVITE_TOKEN_LENGTH, generate_token
 
 
 class Invite(models.Model):

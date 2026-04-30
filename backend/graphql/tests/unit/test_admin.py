@@ -1,9 +1,11 @@
-from graphql import ExecutionResult
-from graphql_jwt.testcases import JSONWebTokenTestCase
-
-from django.contrib.auth import get_user_model
+from typing import TYPE_CHECKING
 
 import pytest
+from django.contrib.auth import get_user_model
+from graphql_jwt.testcases import JSONWebTokenTestCase
+
+if TYPE_CHECKING:
+    from graphql import ExecutionResult
 
 pytestmark = pytest.mark.unit
 

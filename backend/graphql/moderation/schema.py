@@ -1,10 +1,11 @@
 import graphene
+
 from .mutations.report import (
     CreateReport,
-    TakeCaseAction,
-    SetCaseUnderReview,
-    SetCasePriority,
     ReopenCase,
+    SetCasePriority,
+    SetCaseUnderReview,
+    TakeCaseAction,
 )
 from .resolvers import ReportQuery
 

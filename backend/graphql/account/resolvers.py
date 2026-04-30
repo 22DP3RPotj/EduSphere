@@ -1,17 +1,16 @@
+import uuid
 from datetime import datetime
+from typing import Optional
 
 import graphene
-import uuid
-from typing import Optional
-from graphql_jwt.decorators import superuser_required
-from graphql import GraphQLError
-
 from django.db.models import QuerySet
+from graphql import GraphQLError
+from graphql_jwt.decorators import superuser_required
 
-from backend.graphql.account.types import UserType, AuthStatusType
-from backend.graphql.account.filters import UserFilter
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
+from backend.graphql.account.filters import UserFilter
+from backend.graphql.account.types import AuthStatusType, UserType
 
 
 class AuthQuery(graphene.ObjectType):

@@ -1,16 +1,16 @@
 import uuid
-import graphene
 from typing import Optional
+
+import graphene
+from django.db.models import QuerySet
 from graphql import GraphQLError
 
-from django.db.models import QuerySet
-
-from backend.core.exceptions import ErrorCode
 from backend.account.models import User
+from backend.core.exceptions import ErrorCode
 from backend.graphql.room.filters import RoomFilter, TopicFilter
+from backend.graphql.room.types import RoomType, TopicType
 from backend.room.models import Room, Topic
 from backend.room.rules.labels import RoomPermission
-from backend.graphql.room.types import RoomType, TopicType
 
 
 class RoomQuery(graphene.ObjectType):

@@ -1,21 +1,20 @@
 from datetime import timedelta
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-
-import pytest
 
 pytestmark = [pytest.mark.integration, pytest.mark.services]
 
 from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant
 from backend.access.services import ParticipantService, RoleService
+from backend.core.tests.service_base import ServiceTestBase
 from backend.invite.services import InviteService
 from backend.messaging.models import Message
 from backend.messaging.services import MessageService
 from backend.room.models import Room
 from backend.room.services import RoomService
-from backend.core.tests.service_base import ServiceTestBase
 
 User = get_user_model()
 

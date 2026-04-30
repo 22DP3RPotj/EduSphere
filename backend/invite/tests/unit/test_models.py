@@ -1,15 +1,14 @@
 from datetime import timedelta
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-import pytest
-
 pytestmark = pytest.mark.unit
 
-from backend.invite.models import Invite
 from backend.access.models import Role
+from backend.invite.models import Invite
 from backend.room.models import Room
 
 User = get_user_model()

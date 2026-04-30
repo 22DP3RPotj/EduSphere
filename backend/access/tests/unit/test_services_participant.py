@@ -6,8 +6,8 @@ from backend.access.services import ParticipantService, RoleService
 from backend.core.exceptions import (
     PermissionException,
 )
-from backend.room.models import Room
 from backend.core.tests.service_base import ServiceTestBase
+from backend.room.models import Room
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 

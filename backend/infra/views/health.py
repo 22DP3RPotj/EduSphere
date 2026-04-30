@@ -1,6 +1,6 @@
-from django.db import connection, close_old_connections
+from django.db import close_old_connections, connection
 from django.db.utils import DatabaseError
-from django.http import JsonResponse, HttpRequest
+from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_GET
 
 

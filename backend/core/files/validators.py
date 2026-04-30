@@ -1,7 +1,7 @@
-from PIL import Image, UnidentifiedImageError
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.utils.deconstruct import deconstructible
+from PIL import Image, UnidentifiedImageError
 
 
 @deconstructible

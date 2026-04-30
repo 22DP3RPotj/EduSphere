@@ -3,10 +3,10 @@ from typing import Optional
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from backend.access.services import RoleService
-from backend.account.models import User as BaseUser
 from backend.access.enums import RoleCode
 from backend.access.models import Participant, Role
+from backend.access.services import RoleService
+from backend.account.models import User as BaseUser
 from backend.room.models import Room
 
 User = get_user_model()

@@ -1,4 +1,5 @@
 from enum import StrEnum
+
 from django.forms.utils import ErrorDict
 
 

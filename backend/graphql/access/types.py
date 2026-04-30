@@ -2,9 +2,9 @@ import graphene
 from graphene_django.types import DjangoObjectType
 from graphene_pydantic import PydanticObjectType
 
-from backend.access.models import Participant, Role, Permission
-from backend.graphql.account.types import UserType
 from backend.access.dtos import RoleDeleteResult
+from backend.access.models import Participant, Permission, Role
+from backend.graphql.account.types import UserType
 
 
 class PermissionType(DjangoObjectType):

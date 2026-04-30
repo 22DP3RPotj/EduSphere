@@ -1,8 +1,8 @@
 from typing import Optional
 
 import redis.asyncio as aioredis
-from django.conf import settings
 from django.apps import AppConfig
+from django.conf import settings
 
 
 class CoreConfig(AppConfig):

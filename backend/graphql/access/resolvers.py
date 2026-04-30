@@ -1,15 +1,15 @@
-import graphene
 import uuid
+
+import graphene
+from django.db.models import QuerySet
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 
-from django.db.models import QuerySet
-
+from backend.access.models import Permission, Role
+from backend.access.services import RoleService
 from backend.core.exceptions import ErrorCode
 from backend.graphql.access.types import PermissionType, RoleType
 from backend.room.models import Room
-from backend.access.services import RoleService
-from backend.access.models import Permission, Role
 
 
 class RoleQuery(graphene.ObjectType):

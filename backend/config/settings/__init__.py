@@ -1,6 +1,5 @@
-from .environment import env
-
 from .base import *  # noqa F401, F403
+from .environment import env
 
 DJANGO_ENV = env("DJANGO_ENV").lower()
 

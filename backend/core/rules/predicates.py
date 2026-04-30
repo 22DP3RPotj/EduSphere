@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from rules.predicates import predicate
+
 from backend.account.models import User
 
 

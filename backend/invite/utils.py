@@ -1,6 +1,5 @@
 import secrets
 
-
 INVITE_TOKEN_LENGTH = 12
 
 

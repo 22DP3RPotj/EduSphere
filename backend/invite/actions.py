@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.db import IntegrityError, transaction
 
-from backend.access.models import Role
+from backend.access.models import Participant, Role
 from backend.account.models import User
 from backend.core.exceptions import (
     ConflictException,
@@ -11,7 +11,6 @@ from backend.core.exceptions import (
 )
 from backend.invite.forms import InviteForm
 from backend.invite.models import Invite
-from backend.access.models import Participant
 from backend.room.models import Room
 
 

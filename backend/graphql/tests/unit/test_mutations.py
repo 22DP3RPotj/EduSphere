@@ -1,21 +1,22 @@
 import tempfile
+from typing import TYPE_CHECKING
 
-from graphql import ExecutionResult
-from graphql_jwt.testcases import JSONWebTokenTestCase
-
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
+from graphql_jwt.testcases import JSONWebTokenTestCase
 
-import pytest
+if TYPE_CHECKING:
+    from graphql import ExecutionResult
 
 pytestmark = pytest.mark.unit
 
 from backend.access.enums import PermissionCode
 from backend.access.models import Participant, Permission, Role
+from backend.core.tests.utils import create_test_image
 from backend.messaging.models import Message
 from backend.room.models import Room, Topic
-from backend.core.tests.utils import create_test_image
 
 User = get_user_model()
 

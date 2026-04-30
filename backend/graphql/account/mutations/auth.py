@@ -1,11 +1,12 @@
+from typing import Any, Optional, Self
+
 import graphene
 import graphql_jwt
-from typing import Any, Optional, Self
 from graphql_jwt.decorators import login_required
 
+from backend.account.services import AccountService
 from backend.graphql.account.types import UserType
 from backend.graphql.mutations import BaseMutation
-from backend.account.services import AccountService
 
 
 class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):

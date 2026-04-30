@@ -1,5 +1,6 @@
-import pytest
 import asyncio
+
+import pytest
 from django.test import SimpleTestCase
 from graphql import GraphQLError
 

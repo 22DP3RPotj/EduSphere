@@ -1,28 +1,27 @@
+import uuid
 from datetime import datetime
+from typing import Optional
 
 import graphene
-import uuid
-from typing import Optional
-from graphql_jwt.decorators import login_required, superuser_required
-from graphql import GraphQLError
-
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet, Count, Q
+from django.db.models import Count, Q, QuerySet
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required, superuser_required
 
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
-from backend.graphql.moderation.filters import ReportFilter, ModerationCaseFilter
+from backend.graphql.moderation.filters import ModerationCaseFilter, ReportFilter
 from backend.graphql.moderation.types import (
-    ReportType,
-    ReportReasonType,
     CaseStatusEnum,
     ModerationCaseType,
+    ReportReasonType,
     ReportTargetTypeEnum,
+    ReportType,
 )
+from backend.messaging.models import Message
 from backend.moderation.choices import CaseStatusChoices
 from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room
-from backend.messaging.models import Message
 
 
 class ReportQuery(graphene.ObjectType):

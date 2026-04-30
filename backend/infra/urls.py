@@ -1,7 +1,7 @@
 from django.urls import path
 from django_prometheus import exports
-from backend.infra.views import health, info
 
+from backend.infra.views import health, info
 
 urlpatterns = [
     path("live/", health.live, name="health-live"),

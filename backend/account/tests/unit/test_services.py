@@ -1,10 +1,10 @@
 import pytest
 from django.test import TestCase
 from django.utils import timezone
+
 from backend.account.models import User, UserBan
 from backend.account.services import ModerationService
 from backend.core.exceptions import ValidationException
-
 
 pytestmark = pytest.mark.unit
 

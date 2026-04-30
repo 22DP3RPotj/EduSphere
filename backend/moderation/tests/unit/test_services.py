@@ -1,19 +1,17 @@
 import pytest
-
 from django.contrib.contenttypes.models import ContentType
 
 from backend.core.exceptions import (
     ConflictException,
     PermissionException,
 )
+from backend.core.tests.service_base import ServiceTestBase
 from backend.moderation.choices import ActionChoices, CaseStatusChoices
 from backend.moderation.models import (
     ModerationAction,
     ReportReason,
 )
 from backend.moderation.services import ReportService
-from backend.core.tests.service_base import ServiceTestBase
-
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 

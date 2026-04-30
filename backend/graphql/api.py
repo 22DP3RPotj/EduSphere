@@ -1,12 +1,12 @@
 import graphene
 
-from backend.graphql.room.schema import RoomQueries, RoomMutations
-from backend.graphql.invite.schema import InviteQueries, InviteMutations
-from backend.graphql.access.schema import AccessQueries, AccessMutations
-from backend.graphql.moderation.schema import ModerationQueries, ModerationMutations
-from backend.graphql.messaging.schema import MessagingQueries, MessagingMutation
-from backend.graphql.account.schema import AccountQueries, AccountMutations
+from backend.graphql.access.schema import AccessMutations, AccessQueries
+from backend.graphql.account.schema import AccountMutations, AccountQueries
 from backend.graphql.audit.schema import AuditQueries
+from backend.graphql.invite.schema import InviteMutations, InviteQueries
+from backend.graphql.messaging.schema import MessagingMutation, MessagingQueries
+from backend.graphql.moderation.schema import ModerationMutations, ModerationQueries
+from backend.graphql.room.schema import RoomMutations, RoomQueries
 
 
 class Mutation(

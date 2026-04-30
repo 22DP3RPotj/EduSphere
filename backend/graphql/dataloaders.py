@@ -1,4 +1,5 @@
 from typing import Generic, Optional, Type, TypeVar
+
 from django.db import models
 from graphql_sync_dataloaders import SyncDataLoader
 

@@ -1,14 +1,15 @@
-import graphene
 import uuid
 from datetime import datetime
 from typing import Any, Optional, Self
+
+import graphene
 from graphql import GraphQLError
 from graphql_jwt.decorators import superuser_required
 
 from backend.account.models import User
+from backend.account.services import ModerationService
 from backend.core.exceptions import ErrorCode
 from backend.graphql.mutations import BaseMutation
-from backend.account.services import ModerationService
 
 
 class BanUser(BaseMutation):

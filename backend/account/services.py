@@ -4,14 +4,15 @@ from typing import Optional
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+
+from backend.account import actions
 from backend.account.choices import EmailTypeChoices
+from backend.account.models import EmailToken, User, UserBan
 from backend.account.rules.labels import AccountPermission
 from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
-from backend.account import actions
-from backend.account.models import EmailToken, User, UserBan
 
 
 class AccountService:

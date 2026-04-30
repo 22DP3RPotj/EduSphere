@@ -1,21 +1,21 @@
 import graphene
 
-from .resolvers import AuthQuery, UserQuery
+from .mutations.auth import AuthMutation
+from .mutations.moderation import (
+    BanUser,
+    BanUsers,
+    DemoteUser,
+    DemoteUsers,
+    PromoteUser,
+    PromoteUsers,
+    UnbanUser,
+    UnbanUsers,
+)
 from .mutations.user import (
     Register,
     UpdateUser,
 )
-from .mutations.auth import AuthMutation
-from .mutations.moderation import (
-    BanUsers,
-    BanUser,
-    UnbanUsers,
-    UnbanUser,
-    PromoteUsers,
-    DemoteUsers,
-    PromoteUser,
-    DemoteUser,
-)
+from .resolvers import AuthQuery, UserQuery
 
 
 class AccountQueries(AuthQuery, UserQuery, graphene.ObjectType):

@@ -2,7 +2,6 @@ import os
 import uuid
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from backend.account.models import User
 

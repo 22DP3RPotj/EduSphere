@@ -1,18 +1,20 @@
-import graphene
-from typing import Any, Optional, Self, cast
-from graphene_file_upload.scalars import Upload
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
+from typing import TYPE_CHECKING, Any, Optional, Self, cast
 
-from django.core.files.uploadedfile import UploadedFile
+import graphene
 from django.utils.datastructures import MultiValueDict
+from graphene_file_upload.scalars import Upload
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
 
 from backend.account.choices import LanguageChoices
+from backend.account.forms import UserForm
+from backend.account.services import AccountService
 from backend.core.exceptions import ErrorCode, format_form_errors
 from backend.graphql.account.types import UserType
 from backend.graphql.mutations import BaseMutation
-from backend.account.forms import UserForm
-from backend.account.services import AccountService
+
+if TYPE_CHECKING:
+    from django.core.files.uploadedfile import UploadedFile
 
 
 class Register(BaseMutation):
@@ -78,7 +80,7 @@ class UpdateUser(BaseMutation):
 
         files = None
         if avatar is not None:
-            files = MultiValueDict({"avatar": [cast(UploadedFile, avatar)]})
+            files = MultiValueDict({"avatar": [cast("UploadedFile", avatar)]})
 
         form = UserForm(data=data, files=files, instance=user)
 

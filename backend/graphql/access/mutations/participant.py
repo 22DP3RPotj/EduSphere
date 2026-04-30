@@ -1,14 +1,15 @@
-import graphene
 import uuid
-from typing import Optional, Any, Self
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
+from typing import Any, Optional, Self
 
-from backend.graphql.access.types import ParticipantType
-from backend.graphql.mutations import BaseMutation
+import graphene
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
+
 from backend.access.models import Participant, Role
 from backend.access.services import ParticipantService
 from backend.core.exceptions import ErrorCode
+from backend.graphql.access.types import ParticipantType
+from backend.graphql.mutations import BaseMutation
 
 
 class ChangeParticipantRole(BaseMutation):

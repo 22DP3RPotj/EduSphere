@@ -5,11 +5,11 @@ import pytest
 pytestmark = [pytest.mark.unit, pytest.mark.services, pytest.mark.error_handling]
 
 from backend.core.exceptions import PermissionException
+from backend.core.tests.service_base import ServiceTestBase
 from backend.invite.services import InviteService
 from backend.moderation.choices import ActionChoices
 from backend.moderation.models import ReportReason
 from backend.moderation.services import ReportService
-from backend.core.tests.service_base import ServiceTestBase
 
 
 class ErrorHandlingTests(ServiceTestBase):

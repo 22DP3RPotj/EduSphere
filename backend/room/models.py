@@ -1,11 +1,12 @@
 import uuid
+from typing import TYPE_CHECKING, Optional
+
 import pghistory
-from typing import Optional, TYPE_CHECKING
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
-from django.core.exceptions import ValidationError
 
 from backend.room.choices import VisibilityChoices
 from backend.room.querysets import RoomQuerySet, TopicQuerySet

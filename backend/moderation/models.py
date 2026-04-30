@@ -1,4 +1,5 @@
 import uuid
+
 import pghistory
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -9,9 +10,9 @@ from django.db.models import Q
 from backend.account.models import User
 from backend.core.constants import DELETED_USER
 from backend.moderation.choices import (
+    ActionChoices,
     ActionPriorityChoices,
     CaseStatusChoices,
-    ActionChoices,
 )
 
 

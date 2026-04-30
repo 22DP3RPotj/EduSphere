@@ -1,13 +1,13 @@
+import logging
+from datetime import timedelta
+from typing import Optional
+
+import pghistory.models
 from celery import shared_task
 from django.apps import apps
 from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
-from typing import Optional
-from datetime import timedelta
-import pghistory.models
-import logging
-
 
 logger = logging.getLogger(__name__)
 

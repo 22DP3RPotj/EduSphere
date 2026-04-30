@@ -1,9 +1,9 @@
 import uuid
 
 from django.conf import settings
-from django.db import models
-from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
+from django.db import models
 
 from backend.access.enums import PermissionCode
 from backend.access.querysets import PermissionQuerySet, RoleQuerySet

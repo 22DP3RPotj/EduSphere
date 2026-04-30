@@ -1,19 +1,17 @@
 import uuid
 from typing import Optional
 
-
+from backend.access import actions
+from backend.access.dtos import RoleDeleteResult
+from backend.access.enums import PermissionCode
+from backend.access.models import Participant, Role
+from backend.access.rules.labels import AccessPermission
 from backend.account.models import User
-from backend.room.models import Room
-
 from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
-from backend.access.models import Participant, Role
-from backend.access.rules.labels import AccessPermission
-from backend.access.enums import PermissionCode
-from backend.access.dtos import RoleDeleteResult
-from backend.access import actions
+from backend.room.models import Room
 from backend.room.rules.labels import RoomPermission
 
 

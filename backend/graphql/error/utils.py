@@ -1,9 +1,11 @@
 import inspect
 from functools import wraps
-from typing import Callable, TypeVar, ParamSpec
-from graphql_jwt.exceptions import JSONWebTokenError
+from typing import Callable, ParamSpec, TypeVar
+
 from graphql import GraphQLError
-from backend.core.exceptions import FormValidationException, DomainException
+from graphql_jwt.exceptions import JSONWebTokenError
+
+from backend.core.exceptions import DomainException, FormValidationException
 
 P = ParamSpec("P")
 T = TypeVar("T")

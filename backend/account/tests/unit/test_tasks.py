@@ -1,12 +1,12 @@
+from datetime import datetime, timedelta
 from unittest import mock
+
 import pytest
 from django.test import TestCase
 from django.utils import timezone
-from datetime import datetime, timedelta
 
 from backend.account.models import User, UserBan
 from backend.account.tasks.moderation import run_expire_user_bans
-
 
 pytestmark = pytest.mark.unit
 

@@ -1,10 +1,9 @@
 import uuid
 from datetime import timedelta
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-
-import pytest
 
 from backend.access.enums import PermissionCode, RoleCode
 from backend.access.models import Participant, Role
@@ -12,8 +11,8 @@ from backend.access.services import RoleService
 from backend.core.exceptions import (
     PermissionException,
 )
-from backend.invite.services import InviteService
 from backend.core.tests.service_base import ServiceTestBase
+from backend.invite.services import InviteService
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 

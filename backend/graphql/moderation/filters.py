@@ -1,17 +1,17 @@
 from typing import Optional
-import django_filters
 
+import django_filters
 from django.contrib.contenttypes.models import ContentType
 
-from backend.moderation.models import Report, ModerationCase
-from backend.moderation.choices import CaseStatusChoices, ActionPriorityChoices
 from backend.graphql.moderation.types import ReportTargetTypeEnum
+from backend.moderation.choices import ActionPriorityChoices, CaseStatusChoices
+from backend.moderation.models import ModerationCase, Report
 
 
 def _get_content_type_for_target(target_type: str) -> Optional[ContentType]:
-    from backend.room.models import Room
     from backend.account.models import User
     from backend.messaging.models import Message
+    from backend.room.models import Room
 
     model_map = {
         ReportTargetTypeEnum.ROOM: Room,

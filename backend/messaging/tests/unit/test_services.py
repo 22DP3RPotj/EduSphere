@@ -5,10 +5,9 @@ from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
+from backend.core.tests.service_base import ServiceTestBase
 from backend.messaging.models import Message
 from backend.messaging.services import MessageService
-from backend.core.tests.service_base import ServiceTestBase
-
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 

@@ -1,12 +1,13 @@
 import django_filters
-from backend.account.models import UserBanHistory, UserHistory, User
+
+from backend.account.models import User, UserBanHistory, UserHistory
+from backend.invite.models import InviteHistory, InviteLinkHistory
 from backend.moderation.models import (
     ModerationActionHistory,
     ModerationCaseHistory,
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory, InviteLinkHistory
 
 
 class BaseAuditFilter(django_filters.FilterSet):

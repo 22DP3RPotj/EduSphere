@@ -1,8 +1,7 @@
 import graphene
 
+from .mutations.room import CreateRoom, DeleteRoom, JoinRoom, LeaveRoom, UpdateRoom
 from .resolvers import RoomQuery, TopicQuery
-
-from .mutations.room import CreateRoom, DeleteRoom, UpdateRoom, JoinRoom, LeaveRoom
 
 
 class RoomQueries(RoomQuery, TopicQuery, graphene.ObjectType):

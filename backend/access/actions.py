@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 
 from backend.access.dtos import RoleDeleteResult
 from backend.access.forms import RoleForm
-from backend.access.models import Participant, Role, Permission
+from backend.access.models import Participant, Permission, Role
 from backend.access.templates import DEFAULT_ROLE_TEMPLATES
 from backend.core.exceptions import (
     ConflictException,

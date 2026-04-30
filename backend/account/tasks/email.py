@@ -2,6 +2,7 @@ from uuid import UUID
 
 from celery import shared_task
 from django.db import DatabaseError
+
 from backend.account.choices import EmailTypeChoices
 from backend.account.email import send_password_reset_email, send_verification_email
 from backend.account.models import User

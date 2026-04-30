@@ -117,10 +117,10 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "description": "This room contains spam",
             },
         )
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         data = result.data["createReport"]["report"]
-        self.assertEqual(data["reason"]["slug"], "spam")
-        self.assertEqual(data["description"], "This room contains spam")
+        assert data["reason"]["slug"] == "spam"
+        assert data["description"] == "This room contains spam"
 
     def test_create_report_user_success(self):
         self.client.authenticate(self.user)
@@ -133,9 +133,9 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "description": "Harassment by this user",
             },
         )
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         data = result.data["createReport"]["report"]
-        self.assertEqual(data["reason"]["slug"], "harassment")
+        assert data["reason"]["slug"] == "harassment"
 
     def test_create_report_not_participant(self):
         non_participant = User.objects.create_user(
@@ -157,8 +157,8 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "description": "Test report",
             },
         )
-        self.assertIsNotNone(result.errors)
-        self.assertEqual(result.errors[0].extensions["code"], "PERMISSION_DENIED")
+        assert result.errors is not None
+        assert result.errors[0].extensions["code"] == "PERMISSION_DENIED"
 
     def test_create_report_already_reported(self):
         case = make_case(self.room)
@@ -174,8 +174,8 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "description": "Another report",
             },
         )
-        self.assertIsNotNone(result.errors)
-        self.assertEqual(result.errors[0].extensions["code"], "CONFLICT")
+        assert result.errors is not None
+        assert result.errors[0].extensions["code"] == "CONFLICT"
 
     def test_create_report_invalid_reason(self):
         self.client.authenticate(self.user)
@@ -190,8 +190,8 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "description": "Test",
             },
         )
-        self.assertIsNotNone(result.errors)
-        self.assertEqual(result.errors[0].extensions["code"], "NOT_FOUND")
+        assert result.errors is not None
+        assert result.errors[0].extensions["code"] == "NOT_FOUND"
 
     def test_take_case_action_as_moderator(self):
         case = make_case(self.room)
@@ -220,13 +220,13 @@ class ReportMutationsTests(JSONWebTokenTestCase):
                 "note": "First warning issued",
             },
         )
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         data = result.data["takeCaseAction"]["case"]
-        self.assertEqual(data["status"], "RESOLVED")
-        self.assertEqual(len(data["actions"]), 1)
-        self.assertEqual(data["actions"][0]["action"], "WARNING")
-        self.assertEqual(data["actions"][0]["note"], "First warning issued")
-        self.assertEqual(data["actions"][0]["moderator"]["username"], "moderator")
+        assert data["status"] == "RESOLVED"
+        assert len(data["actions"]) == 1
+        assert data["actions"][0]["action"] == "WARNING"
+        assert data["actions"][0]["note"] == "First warning issued"
+        assert data["actions"][0]["moderator"]["username"] == "moderator"
 
     def test_set_case_under_review_as_moderator(self):
         case = make_case(self.room)
@@ -244,10 +244,8 @@ class ReportMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(
             mutation, {"caseId": str(case.id)}
         )
-        self.assertIsNone(result.errors)
-        self.assertEqual(
-            result.data["setCaseUnderReview"]["case"]["status"], "UNDER_REVIEW"
-        )
+        assert result.errors is None
+        assert result.data["setCaseUnderReview"]["case"]["status"] == "UNDER_REVIEW"
 
 
 class ReportQueryTests(JSONWebTokenTestCase):
@@ -300,8 +298,8 @@ class ReportQueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors)
-        self.assertEqual(len(result.data["submittedReports"]), 2)
+        assert result.errors is None
+        assert len(result.data["submittedReports"]) == 2
 
     def test_report_detail(self):
         self.client.authenticate(self.user)
@@ -316,8 +314,8 @@ class ReportQueryTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(
             query, {"reportId": str(self.report1.id)}
         )
-        self.assertIsNone(result.errors)
-        self.assertEqual(result.data["report"]["reason"]["slug"], "spam")
+        assert result.errors is None
+        assert result.data["report"]["reason"]["slug"] == "spam"
 
     def test_reports_as_moderator(self):
         self.client.authenticate(self.moderator)
@@ -330,8 +328,8 @@ class ReportQueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors)
-        self.assertEqual(len(result.data["reports"]), 2)
+        assert result.errors is None
+        assert len(result.data["reports"]) == 2
 
     def test_report_reasons_all(self):
         self.client.authenticate(self.user)
@@ -345,10 +343,10 @@ class ReportQueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         slugs = {r["slug"] for r in result.data["reportReasons"]}
-        self.assertIn("spam", slugs)
-        self.assertIn("harassment", slugs)
+        assert "spam" in slugs
+        assert "harassment" in slugs
 
     def test_report_reasons_by_target_type(self):
         from backend.account.models import User as UserModel
@@ -368,10 +366,10 @@ class ReportQueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         slugs = {r["slug"] for r in result.data["reportReasons"]}
         # "spam" and "harassment" have no restrictions so they appear; "impersonation" too
-        self.assertIn("impersonation", slugs)
+        assert "impersonation" in slugs
         # Room-only reason should NOT appear
         from backend.room.models import Room as RoomModel
 
@@ -382,6 +380,6 @@ class ReportQueryTests(JSONWebTokenTestCase):
         room_only.allowed_content_types.add(room_ct)
 
         result2: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result2.errors)
+        assert result2.errors is None
         slugs2 = {r["slug"] for r in result2.data["reportReasons"]}
-        self.assertNotIn("room-spam", slugs2)
+        assert "room-spam" not in slugs2

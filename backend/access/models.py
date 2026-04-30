@@ -56,6 +56,10 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class Participant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

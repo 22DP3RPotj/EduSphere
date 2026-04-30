@@ -18,14 +18,14 @@ class PermissionModelTest(TestCase):
             code=PermissionCode.ROOM_DELETE,
             defaults={"description": "Delete room"},
         )
-        self.assertEqual(permission.code, PermissionCode.ROOM_DELETE)
+        assert permission.code == PermissionCode.ROOM_DELETE
 
     def test_permission_str(self):
         permission, _created = Permission.objects.get_or_create(
             code=PermissionCode.ROOM_UPDATE,
             defaults={"description": "Update room"},
         )
-        self.assertEqual(str(permission), PermissionCode.ROOM_UPDATE)
+        assert str(permission) == PermissionCode.ROOM_UPDATE
 
 
 class RoleModelTest(TestCase):
@@ -49,11 +49,11 @@ class RoleModelTest(TestCase):
             description="Administrator role",
             priority=100,
         )
-        self.assertEqual(role.name, "Admin")
-        self.assertEqual(role.priority, 100)
+        assert role.name == "Admin"
+        assert role.priority == 100
 
         roles = Role.objects.by_room(self.room)
-        self.assertEqual(roles.count(), 1)
+        assert roles.count() == 1
 
     def test_role_unique_constraint(self):
         Role.objects.create(
@@ -62,7 +62,7 @@ class RoleModelTest(TestCase):
             description="Admin role",
             priority=100,
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             Role.objects.create(
                 room=self.room,
                 name="Admin",
@@ -77,7 +77,7 @@ class RoleModelTest(TestCase):
             description="Moderator role",
             priority=50,
         )
-        self.assertEqual(str(role), "Moderator")
+        assert str(role) == "Moderator"
 
 
 class ParticipantModelTest(TestCase):
@@ -111,8 +111,8 @@ class ParticipantModelTest(TestCase):
             room=self.room,
             role=self.role,
         )
-        self.assertEqual(participant.user, self.participant_user)
-        self.assertEqual(participant.room, self.room)
+        assert participant.user == self.participant_user
+        assert participant.room == self.room
 
     def test_participant_unique_constraint(self):
         Participant.objects.create(
@@ -120,7 +120,7 @@ class ParticipantModelTest(TestCase):
             room=self.room,
             role=self.role,
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             Participant.objects.create(
                 user=self.participant_user,
                 room=self.room,
@@ -133,7 +133,7 @@ class ParticipantModelTest(TestCase):
             room=self.room,
             role=self.role,
         )
-        self.assertEqual(str(participant), "participant in Test Room")
+        assert str(participant) == "participant in Test Room"
 
     def test_participant_role_validation(self):
         other_room = Room.objects.create(
@@ -153,5 +153,5 @@ class ParticipantModelTest(TestCase):
             room=self.room,
             role=other_role,
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             participant.full_clean()

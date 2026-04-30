@@ -22,14 +22,14 @@ class MessageServiceTest(ServiceTestBase):
             user=self.member, room=self.room, body="Test message content"
         )
 
-        self.assertIsNotNone(message)
-        self.assertEqual(message.author, self.member)
-        self.assertEqual(message.room, self.room)
-        self.assertEqual(message.body, "Test message content")
-        self.assertFalse(message.is_edited)
+        assert message is not None
+        assert message.author == self.member
+        assert message.room == self.room
+        assert message.body == "Test message content"
+        assert not message.is_edited
 
     def test_create_message_not_participant(self):
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             MessageService.create_message(
                 user=self.other_user, room=self.room, body="Test message"
             )
@@ -37,7 +37,7 @@ class MessageServiceTest(ServiceTestBase):
     def test_create_message_invalid_data(self):
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             MessageService.create_message(user=self.member, room=self.room, body="")
 
     def test_update_message_success(self):
@@ -51,8 +51,8 @@ class MessageServiceTest(ServiceTestBase):
             user=self.member, message=message, body="Updated content"
         )
 
-        self.assertEqual(updated.body, "Updated content")
-        self.assertTrue(updated.is_edited)
+        assert updated.body == "Updated content"
+        assert updated.is_edited
 
     def test_update_message_not_author(self):
         self._add_member(self.member, self.member_role)
@@ -62,7 +62,7 @@ class MessageServiceTest(ServiceTestBase):
             user=self.member, room=self.room, body="Test message"
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             MessageService.update_message(
                 user=self.other_user, message=message, body="Hacked message"
             )
@@ -74,7 +74,7 @@ class MessageServiceTest(ServiceTestBase):
             user=self.member, room=self.room, body="Test message"
         )
 
-        with self.assertRaises(FormValidationException):
+        with pytest.raises(FormValidationException):
             MessageService.update_message(user=self.member, message=message, body="")
 
     def test_delete_message_author(self):
@@ -86,8 +86,8 @@ class MessageServiceTest(ServiceTestBase):
 
         result = MessageService.delete_message(self.member, message)
 
-        self.assertTrue(result)
-        self.assertFalse(Message.objects.filter(id=message.id).exists())
+        assert result
+        assert not Message.objects.filter(id=message.id).exists()
 
     def test_delete_message_not_author_no_permission(self):
         self._add_member(self.member, self.member_role)
@@ -97,7 +97,7 @@ class MessageServiceTest(ServiceTestBase):
             user=self.member, room=self.room, body="Test message"
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             MessageService.delete_message(self.other_user, message)
 
     def test_delete_message_with_permission(self):
@@ -108,7 +108,7 @@ class MessageServiceTest(ServiceTestBase):
         )
 
         result = MessageService.delete_message(self.owner, message)
-        self.assertTrue(result)
+        assert result
 
     def test_serialize_message(self):
         self._add_member(self.member, self.member_role)
@@ -119,7 +119,7 @@ class MessageServiceTest(ServiceTestBase):
 
         serialized = MessageService.serialize(message)
 
-        self.assertEqual(serialized["body"], "Test message")
-        self.assertEqual(serialized["author"], self.member.username)
-        self.assertIn("id", serialized)
-        self.assertIn("created_at", serialized)
+        assert serialized["body"] == "Test message"
+        assert serialized["author"] == self.member.username
+        assert "id" in serialized
+        assert "created_at" in serialized

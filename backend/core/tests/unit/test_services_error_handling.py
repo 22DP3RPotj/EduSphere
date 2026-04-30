@@ -17,11 +17,11 @@ class ErrorHandlingTests(ServiceTestBase):
 
     def test_invite_get_by_token_none(self):
         result = InviteService.get_invite_by_token(None)
-        self.assertIsNone(result)
+        assert result is None
 
     def test_invite_get_by_token_fake_uuid(self):
         result = InviteService.get_invite_by_token(uuid.uuid4())
-        self.assertIsNone(result)
+        assert result is None
 
     def test_take_case_action_non_moderator_fails(self):
         self._add_member(self.member, self.member_role)
@@ -35,7 +35,7 @@ class ErrorHandlingTests(ServiceTestBase):
             description="Test report content",
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ReportService.take_case_action(
                 moderator=self.other_user,
                 case=report.case,

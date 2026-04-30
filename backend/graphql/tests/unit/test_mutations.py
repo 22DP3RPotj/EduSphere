@@ -60,9 +60,9 @@ class UserMutationsTests(JSONWebTokenTestCase):
         }
         #  Login (token generation) is disabled until email is verified
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertTrue(result.data["register"]["success"])
-        self.assertTrue(User.objects.filter(username="newuser").exists())
+        assert result.errors is None
+        assert result.data["register"]["success"]
+        assert User.objects.filter(username="newuser").exists()
 
     def test_register_user_password_mismatch(self):
         mutation = """
@@ -92,8 +92,8 @@ class UserMutationsTests(JSONWebTokenTestCase):
             "password2": "4asdfgh56",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.data["register"])
-        self.assertIn("password2", result.errors[0].extensions["errors"])
+        assert result.data["register"] is None
+        assert "password2" in result.errors[0].extensions["errors"]
 
     def test_update_user_success(self):
         user = User.objects.create_user(
@@ -112,8 +112,8 @@ class UserMutationsTests(JSONWebTokenTestCase):
         variables = {"name": "newusername"}
         result: ExecutionResult = self.client.execute(mutation, variables)
         user.refresh_from_db()
-        self.assertEqual(user.name, "newusername")
-        self.assertEqual(result.data["updateUser"]["user"]["name"], "newusername")
+        assert user.name == "newusername"
+        assert result.data["updateUser"]["user"]["name"] == "newusername"
 
     def test_update_user_avatar(self):
         user = User.objects.create_user(
@@ -135,9 +135,9 @@ class UserMutationsTests(JSONWebTokenTestCase):
         result: ExecutionResult = self.client.execute(
             mutation, variables={"avatar": avatar}
         )
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         user.refresh_from_db()
-        self.assertTrue(user.avatar.name.endswith(".jpg"))
+        assert user.avatar.name.endswith(".jpg")
 
 
 class RoomMutationsTests(JSONWebTokenTestCase):
@@ -182,12 +182,12 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             "visibility": "PUBLIC",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         room = Room.objects.get(name="New Room")
-        self.assertEqual(room.host, self.user)
-        self.assertEqual(room.visibility, Room.Visibility.PUBLIC)
-        self.assertIsNotNone(room.default_role)
-        self.assertTrue(Participant.objects.filter(user=self.user, room=room).exists())
+        assert room.host == self.user
+        assert room.visibility == Room.Visibility.PUBLIC
+        assert room.default_role is not None
+        assert Participant.objects.filter(user=self.user, room=room).exists()
 
     def test_create_room_private(self):
         self.client.authenticate(self.user)
@@ -207,8 +207,8 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             "visibility": "PRIVATE",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertEqual(result.data["createRoom"]["room"]["visibility"], "PRIVATE")
+        assert result.errors is None
+        assert result.data["createRoom"]["room"]["visibility"] == "PRIVATE"
 
     def test_update_room_success(self):
         room = Room.objects.create(
@@ -252,11 +252,11 @@ class RoomMutationsTests(JSONWebTokenTestCase):
             "visibility": "PRIVATE",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         room.refresh_from_db()
-        self.assertEqual(room.name, "Updated Room")
-        self.assertEqual(room.description, "New description")
-        self.assertEqual(room.visibility, Room.Visibility.PRIVATE)
+        assert room.name == "Updated Room"
+        assert room.description == "New description"
+        assert room.visibility == Room.Visibility.PRIVATE
 
     def test_delete_room_success(self):
         room = Room.objects.create(host=self.user, name="Test Room", description="")
@@ -286,9 +286,9 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(room.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertTrue(result.data["deleteRoom"]["success"])
-        self.assertFalse(Room.objects.filter(id=room.id).exists())
+        assert result.errors is None
+        assert result.data["deleteRoom"]["success"]
+        assert not Room.objects.filter(id=room.id).exists()
 
     def test_delete_room_not_owner(self):
         room = Room.objects.create(host=self.user, name="Test Room", description="")
@@ -307,7 +307,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(room.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNotNone(result.errors)
+        assert result.errors is not None
 
     def test_join_room_success(self):
         room = Room.objects.create(
@@ -334,10 +334,8 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(room.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertTrue(
-            Participant.objects.filter(user=self.other_user, room=room).exists()
-        )
+        assert result.errors is None
+        assert Participant.objects.filter(user=self.other_user, room=room).exists()
 
     def test_join_room_already_participant(self):
         room = Room.objects.create(
@@ -361,7 +359,7 @@ class RoomMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(room.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNotNone(result.errors)
+        assert result.errors is not None
 
 
 class MessageMutationsTests(JSONWebTokenTestCase):
@@ -404,9 +402,9 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"messageId": str(message.id)}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertTrue(result.data["deleteMessage"]["success"])
-        self.assertFalse(Message.objects.filter(id=message.id).exists())
+        assert result.errors is None
+        assert result.data["deleteMessage"]["success"]
+        assert not Message.objects.filter(id=message.id).exists()
 
     def test_update_message_success(self):
         message = Message.objects.create(
@@ -422,10 +420,10 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"messageId": str(message.id), "body": "Updated"}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
+        assert result.errors is None
         message.refresh_from_db()
-        self.assertEqual(message.body, "Updated")
-        self.assertTrue(message.is_edited)
+        assert message.body == "Updated"
+        assert message.is_edited
 
     def test_update_message_not_owner(self):
         message = Message.objects.create(
@@ -441,7 +439,7 @@ class MessageMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"messageId": str(message.id), "body": "Updated"}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNotNone(result.errors)
+        assert result.errors is not None
 
 
 class UserAdminMutationsTests(JSONWebTokenTestCase):
@@ -479,14 +477,14 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
             "reason": "Test ban",
         }
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertTrue(result.data["banUsers"]["success"])
-        self.assertEqual(result.data["banUsers"]["bannedCount"], 2)
+        assert result.errors is None
+        assert result.data["banUsers"]["success"]
+        assert result.data["banUsers"]["bannedCount"] == 2
 
         self.user1.refresh_from_db()
         self.user2.refresh_from_db()
-        self.assertFalse(self.user1.is_active)
-        self.assertFalse(self.user2.is_active)
+        assert not self.user1.is_active
+        assert not self.user2.is_active
 
     def test_update_user_staff_status(self):
         self.client.authenticate(self.admin)
@@ -500,9 +498,9 @@ class UserAdminMutationsTests(JSONWebTokenTestCase):
         """
         variables = {"userIds": [str(self.user1.id)]}
         result: ExecutionResult = self.client.execute(mutation, variables)
-        self.assertIsNone(result.errors)
-        self.assertTrue(result.data["promoteUsers"]["success"])
-        self.assertEqual(result.data["promoteUsers"]["updatedCount"], 1)
+        assert result.errors is None
+        assert result.data["promoteUsers"]["success"]
+        assert result.data["promoteUsers"]["updatedCount"] == 1
 
         self.user1.refresh_from_db()
-        self.assertTrue(self.user1.is_staff)
+        assert self.user1.is_staff

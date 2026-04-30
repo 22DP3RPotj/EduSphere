@@ -31,11 +31,11 @@ class ModerationServiceTests(TestCase):
         )
 
         self.user.refresh_from_db()
-        self.assertFalse(self.user.is_active)
-        self.assertTrue(ban.is_active)
-        self.assertEqual(ban.user, self.user)
-        self.assertEqual(ban.banned_by, self.admin)
-        self.assertEqual(ban.reason, reason)
+        assert not self.user.is_active
+        assert ban.is_active
+        assert ban.user == self.user
+        assert ban.banned_by == self.admin
+        assert ban.reason == reason
 
     def test_ban_user_self_ban_fails(self):
         with self.assertRaisesMessage(ValidationException, "You cannot ban yourself."):
@@ -52,7 +52,7 @@ class ModerationServiceTests(TestCase):
             expires_at=expires_at,
         )
 
-        self.assertEqual(ban.expires_at, expires_at)
+        assert ban.expires_at == expires_at
 
     def test_unban_user_success(self):
         # First ban the user
@@ -60,14 +60,12 @@ class ModerationServiceTests(TestCase):
             user=self.user, banned_by=self.admin, reason="Temp ban"
         )
         self.user.refresh_from_db()
-        self.assertFalse(self.user.is_active)
+        assert not self.user.is_active
 
         # Unban
         ModerationService.unban_user(actor=self.admin, user=self.user)
 
         # Verify
         self.user.refresh_from_db()
-        self.assertTrue(self.user.is_active)
-        self.assertFalse(
-            UserBan.objects.filter(user=self.user, is_active=True).exists()
-        )
+        assert self.user.is_active
+        assert not UserBan.objects.filter(user=self.user, is_active=True).exists()

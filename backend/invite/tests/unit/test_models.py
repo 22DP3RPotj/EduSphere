@@ -48,7 +48,7 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() + timedelta(days=7),
         )
-        self.assertEqual(invite.status, Invite.Status.PENDING)
+        assert invite.status == Invite.Status.PENDING
 
     def test_invite_is_expired(self):
         invite = Invite.objects.create(
@@ -58,7 +58,7 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() - timedelta(hours=1),
         )
-        self.assertTrue(invite.is_expired)
+        assert invite.is_expired
 
     def test_invite_not_expired(self):
         invite = Invite.objects.create(
@@ -68,7 +68,7 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() + timedelta(days=7),
         )
-        self.assertFalse(invite.is_expired)
+        assert not invite.is_expired
 
     def test_invite_unique_constraint(self):
         Invite.objects.create(
@@ -78,7 +78,7 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() + timedelta(days=7),
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             Invite.objects.create(
                 room=self.room,
                 inviter=self.inviter,
@@ -95,4 +95,4 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() + timedelta(days=7),
         )
-        self.assertEqual(str(invite), "Invite of invitee to Test Room by inviter")
+        assert str(invite) == "Invite of invitee to Test Room by inviter"

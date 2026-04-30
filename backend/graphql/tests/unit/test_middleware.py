@@ -45,18 +45,15 @@ class ErrorTransformingMiddlewareTests(SimpleTestCase):
             )
         )
 
-        with self.assertRaises(GraphQLError) as ctx:
+        with pytest.raises(GraphQLError) as ctx:
             self.middleware._check_errors(payload)
 
-        err = ctx.exception
-        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
-        self.assertEqual(
-            err.extensions["errors"],
-            {
-                "username": ["User with this Username already exists."],
-                "email": ["User with this Email already exists."],
-            },
-        )
+        err = ctx.value
+        assert err.extensions["code"] == ErrorCode.VALIDATION_ERROR
+        assert err.extensions["errors"] == {
+            "username": ["User with this Username already exists."],
+            "email": ["User with this Email already exists."],
+        }
 
     def test_converts_auth_error_list_to_field_map(self):
         payload = _Payload(
@@ -66,29 +63,23 @@ class ErrorTransformingMiddlewareTests(SimpleTestCase):
             ]
         )
 
-        with self.assertRaises(GraphQLError) as ctx:
+        with pytest.raises(GraphQLError) as ctx:
             self.middleware._check_errors(payload)
 
-        err = ctx.exception
-        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
-        self.assertEqual(
-            err.extensions["errors"],
-            {
-                "username": ["User with this Username already exists."],
-                "email": ["User with this Email already exists."],
-            },
-        )
+        err = ctx.value
+        assert err.extensions["code"] == ErrorCode.VALIDATION_ERROR
+        assert err.extensions["errors"] == {
+            "username": ["User with this Username already exists."],
+            "email": ["User with this Email already exists."],
+        }
 
     def test_falls_back_to_non_field_error_for_string(self):
-        with self.assertRaises(GraphQLError) as ctx:
+        with pytest.raises(GraphQLError) as ctx:
             self.middleware._check_errors({"errors": "Invalid credentials"})
 
-        err = ctx.exception
-        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
-        self.assertEqual(
-            err.extensions["errors"],
-            {"nonFieldErrors": ["Invalid credentials"]},
-        )
+        err = ctx.value
+        assert err.extensions["code"] == ErrorCode.VALIDATION_ERROR
+        assert err.extensions["errors"] == {"nonFieldErrors": ["Invalid credentials"]}
 
     # TODO: Should be covered by InternalErrorMiddleware instead
     # def test_check_errors_raises_internal_error_on_unexpected_exception(self):
@@ -121,12 +112,11 @@ class ErrorTransformingMiddlewareTests(SimpleTestCase):
             field_name = "test"
             operation = None
 
-        with self.assertRaises(GraphQLError) as ctx:
+        with pytest.raises(GraphQLError) as ctx:
             asyncio.run(self.middleware.resolve(next_, None, Info()))
 
-        err = ctx.exception
-        self.assertEqual(err.extensions["code"], ErrorCode.VALIDATION_ERROR)
-        self.assertEqual(
-            err.extensions["errors"],
-            {"email": ["User with this Email already exists."]},
-        )
+        err = ctx.value
+        assert err.extensions["code"] == ErrorCode.VALIDATION_ERROR
+        assert err.extensions["errors"] == {
+            "email": ["User with this Email already exists."]
+        }

@@ -23,18 +23,14 @@ class RoleServiceTest(ServiceTestBase):
     """Test RoleService methods."""
 
     def test_has_permission_owner(self):
-        self.assertTrue(
-            RoleService.has_permission(
-                self.owner, self.room, PermissionCode.ROOM_MANAGE_ROLES
-            )
+        assert RoleService.has_permission(
+            self.owner, self.room, PermissionCode.ROOM_MANAGE_ROLES
         )
 
     def test_has_permission_member(self):
         self._add_member(self.member, self.member_role)
-        self.assertFalse(
-            RoleService.has_permission(
-                self.member, self.room, PermissionCode.ROOM_MANAGE_ROLES
-            )
+        assert not RoleService.has_permission(
+            self.member, self.room, PermissionCode.ROOM_MANAGE_ROLES
         )
 
     def test_has_permission_superuser(self):
@@ -45,10 +41,8 @@ class RoleServiceTest(ServiceTestBase):
             password="testpass123",
         )
 
-        self.assertTrue(
-            RoleService.has_permission(
-                superuser, self.room, PermissionCode.ROOM_MANAGE_ROLES
-            )
+        assert RoleService.has_permission(
+            superuser, self.room, PermissionCode.ROOM_MANAGE_ROLES
         )
 
     def test_can_affect_role_higher_priority(self):
@@ -60,22 +54,22 @@ class RoleServiceTest(ServiceTestBase):
 
         owner_participant = Participant.objects.get(user=self.owner, room=self.room)
 
-        self.assertTrue(RoleService.can_affect_role(owner_participant, lower_role))
+        assert RoleService.can_affect_role(owner_participant, lower_role)
 
     def test_can_affect_role_equal_priority(self):
         owner_participant = Participant.objects.get(user=self.owner, room=self.room)
         owner_role = owner_participant.role
 
-        self.assertFalse(RoleService.can_affect_role(owner_participant, owner_role))
+        assert not RoleService.can_affect_role(owner_participant, owner_role)
 
     def test_get_role_by_id_success(self):
         role = RoleService.get_role_by_id(self.owner_role.id)
-        self.assertEqual(role.id, self.owner_role.id)
+        assert role.id == self.owner_role.id
 
     def test_get_role_by_id_not_found(self):
         fake_id = uuid.uuid4()
         role = RoleService.get_role_by_id(fake_id)
-        self.assertIsNone(role)
+        assert role is None
 
     def test_create_role_success(self):
         perm_ids = list(self.owner_role.permissions.values_list("id", flat=True)[:2])
@@ -89,15 +83,15 @@ class RoleServiceTest(ServiceTestBase):
             permission_ids=perm_ids,
         )
 
-        self.assertEqual(role.name, "Custom Role")
-        self.assertEqual(role.priority, 50)
-        self.assertEqual(role.room, self.room)
-        self.assertEqual(role.permissions.count(), len(perm_ids))
+        assert role.name == "Custom Role"
+        assert role.priority == 50
+        assert role.room == self.room
+        assert role.permissions.count() == len(perm_ids)
 
     def test_create_role_no_permission(self):
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoleService.create_role(
                 user=self.member,
                 room=self.room,
@@ -111,7 +105,7 @@ class RoleServiceTest(ServiceTestBase):
         owner_participant = Participant.objects.get(user=self.owner, room=self.room)
         owner_priority = owner_participant.role.priority
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoleService.create_role(
                 user=self.owner,
                 room=self.room,
@@ -129,7 +123,7 @@ class RoleServiceTest(ServiceTestBase):
         owner_only_perm = owner_perms.exclude(id__in=member_perms).first()
 
         if owner_only_perm:
-            with self.assertRaises(PermissionException):
+            with pytest.raises(PermissionException):
                 RoleService.create_role(
                     user=self.member,
                     room=self.room,
@@ -150,13 +144,13 @@ class RoleServiceTest(ServiceTestBase):
             priority=member_role.priority,
         )
 
-        self.assertEqual(updated.name, "Updated Member")
-        self.assertEqual(updated.description, "Updated description")
+        assert updated.name == "Updated Member"
+        assert updated.description == "Updated description"
 
     def test_update_role_no_permission(self):
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoleService.update_role(
                 user=self.member, role=self.owner_role, name="Hacked Role"
             )
@@ -175,8 +169,8 @@ class RoleServiceTest(ServiceTestBase):
             user=self.owner, role=custom_role, substitution_role=self.member_role
         )
 
-        self.assertTrue(result.success)
-        self.assertFalse(Role.objects.filter(id=custom_role.id).exists())
+        assert result.success
+        assert not Role.objects.filter(id=custom_role.id).exists()
 
     def test_delete_role_with_participants(self):
         custom_role = RoleService.create_role(
@@ -193,12 +187,12 @@ class RoleServiceTest(ServiceTestBase):
         # Should NOT raise an error anymore. Participants role should be set to None (0)
         result = RoleService.delete_role(user=self.owner, role=custom_role)
 
-        self.assertTrue(result.success)
-        self.assertEqual(result.participants_reassigned, 1)
+        assert result.success
+        assert result.participants_reassigned == 1
 
         # Verify participant now has no role
         participant = Participant.objects.get(user=self.member, room=self.room)
-        self.assertIsNone(participant.role)
+        assert participant.role is None
 
     def test_delete_role_no_permission(self):
         custom_role = (
@@ -208,7 +202,7 @@ class RoleServiceTest(ServiceTestBase):
         )
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoleService.delete_role(user=self.member, role=custom_role)
 
     def test_assign_permissions_to_role(self):
@@ -227,7 +221,7 @@ class RoleServiceTest(ServiceTestBase):
             user=self.owner, role=custom_role, permission_ids=perm_ids
         )
 
-        self.assertEqual(updated.permissions.count(), len(perm_ids))
+        assert updated.permissions.count() == len(perm_ids)
 
     def test_remove_permissions_from_role(self):
         perm_ids = list(self.owner_role.permissions.values_list("id", flat=True)[:2])
@@ -247,7 +241,7 @@ class RoleServiceTest(ServiceTestBase):
             permission_ids=[perm_ids[0]],
         )
 
-        self.assertEqual(updated.permissions.count(), len(perm_ids) - 1)
+        assert updated.permissions.count() == len(perm_ids) - 1
 
 
 @pytest.mark.role_advanced
@@ -258,7 +252,7 @@ class RoleServiceAdvancedTests(ServiceTestBase):
         self._add_member(self.member, self.member_role)
         member_priority = self.member_role.priority
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoleService.create_role(
                 user=self.member,
                 room=self.room,
@@ -272,7 +266,7 @@ class RoleServiceAdvancedTests(ServiceTestBase):
         self._add_member(self.member, self.member_role)
         owner_priority = self.owner_role.priority
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoleService.create_role(
                 user=self.member,
                 room=self.room,
@@ -292,7 +286,7 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             priority=lower_priority,
             permission_ids=[],
         )
-        self.assertEqual(role.priority, lower_priority)
+        assert role.priority == lower_priority
 
     def test_permission_set_is_subset_validation(self):
         self._add_member(self.member, self.owner_role)
@@ -308,7 +302,7 @@ class RoleServiceAdvancedTests(ServiceTestBase):
                 permission_ids=[member_perms[0]],
             )
 
-            self.assertEqual(custom_role.permissions.count(), 1)
+            assert custom_role.permissions.count() == 1
 
     def test_delete_role_with_participants_requires_substitution(self):
         custom_role = RoleService.create_role(
@@ -335,12 +329,12 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             user=self.owner, role=custom_role, substitution_role=None
         )
 
-        self.assertTrue(result.success)
-        self.assertEqual(result.participants_reassigned, 3)
+        assert result.success
+        assert result.participants_reassigned == 3
 
         for user in users:
             participant = Participant.objects.get(user=user, room=self.room)
-            self.assertIsNone(participant.role)
+            assert participant.role is None
 
     def test_delete_role_reassigns_invites(self):
         custom_role = RoleService.create_role(
@@ -374,13 +368,13 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             user=self.owner, role=custom_role, substitution_role=self.member_role
         )
 
-        self.assertEqual(result.invites_reassigned, 2)
+        assert result.invites_reassigned == 2
 
         for invitee in invitees:
             from backend.invite.models import Invite
 
             invite = Invite.objects.get(invitee=invitee, room=self.room)
-            self.assertEqual(invite.role, self.member_role)
+            assert invite.role == self.member_role
 
     def test_delete_role_atomicity_on_failure(self):
         custom_role = RoleService.create_role(
@@ -404,10 +398,10 @@ class RoleServiceAdvancedTests(ServiceTestBase):
             user=self.owner, role=custom_role, substitution_role=None
         )
 
-        self.assertTrue(result.success)
-        self.assertFalse(Role.objects.filter(id=custom_role.id).exists())
+        assert result.success
+        assert not Role.objects.filter(id=custom_role.id).exists()
         participant = Participant.objects.get(user=user, room=self.room)
-        self.assertIsNone(participant.role)
+        assert participant.role is None
 
     def test_can_affect_role_priority_lower(self):
         self._add_member(self.member, self.owner_role)
@@ -421,4 +415,4 @@ class RoleServiceAdvancedTests(ServiceTestBase):
         )
 
         member_participant = Participant.objects.get(user=self.member, room=self.room)
-        self.assertTrue(RoleService.can_affect_role(member_participant, lower_role))
+        assert RoleService.can_affect_role(member_participant, lower_role)

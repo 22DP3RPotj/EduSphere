@@ -52,8 +52,8 @@ class AdminQueryTests(JSONWebTokenTestCase):
         """
         variables = {"search": "Test"}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertEqual(len(result.data["users"]), 1)
-        self.assertEqual(result.data["users"][0]["username"], "testuser")
+        assert len(result.data["users"]) == 1
+        assert result.data["users"][0]["username"] == "testuser"
 
     def test_non_privileged_user_cannot_query_users(self):
         non_privileged_user = User.objects.create_user(
@@ -73,5 +73,5 @@ class AdminQueryTests(JSONWebTokenTestCase):
         """
         variables = {"search": "Test"}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertIsNotNone(result.errors)
-        self.assertGreater(len(result.errors), 0)
+        assert result.errors is not None
+        assert len(result.errors) > 0

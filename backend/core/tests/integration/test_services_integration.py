@@ -33,7 +33,7 @@ class IntegrationTests(ServiceTestBase):
 
         member_role = room.roles.get(name=RoleCode.MEMBER.label)
 
-        self.assertEqual(room.participants.count(), 1)
+        assert room.participants.count() == 1
 
         invite = InviteService.send_invite(
             inviter=self.owner,
@@ -44,17 +44,17 @@ class IntegrationTests(ServiceTestBase):
         )
 
         InviteService.accept_invite(self.other_user, invite)
-        self.assertEqual(room.participants.count(), 2)
+        assert room.participants.count() == 2
 
         message = MessageService.create_message(
             user=self.other_user, room=room, body="Hello from new participant"
         )
-        self.assertIsNotNone(message.id)
+        assert message.id is not None
 
         updated = MessageService.update_message(
             user=self.other_user, message=message, body="Updated message"
         )
-        self.assertTrue(updated.is_edited)
+        assert updated.is_edited
 
     def test_permission_check_with_role_changes(self):
         self._add_member(self.member, self.member_role)
@@ -62,12 +62,12 @@ class IntegrationTests(ServiceTestBase):
         has_perm = RoleService.has_permission(
             self.member, self.room, PermissionCode.ROOM_UPDATE
         )
-        self.assertFalse(has_perm)
+        assert not has_perm
 
         has_perm = RoleService.has_permission(
             self.owner, self.room, PermissionCode.ROOM_UPDATE
         )
-        self.assertTrue(has_perm)
+        assert has_perm
 
     def test_cascading_delete_with_messages(self):
         self._add_member(self.member, self.member_role)
@@ -79,14 +79,12 @@ class IntegrationTests(ServiceTestBase):
             user=self.member, room=self.room, body="Message 2"
         )
 
-        self.assertEqual(Message.objects.filter(author=self.member).count(), 2)
+        assert Message.objects.filter(author=self.member).count() == 2
 
         participant = Participant.objects.get(user=self.member, room=self.room)
         ParticipantService.remove_participant(self.owner, participant)
 
-        self.assertFalse(
-            Participant.objects.filter(user=self.member, room=self.room).exists()
-        )
+        assert not Participant.objects.filter(user=self.member, room=self.room).exists()
 
     def test_invite_to_private_room(self):
         private_room = RoomService.create_room(
@@ -107,4 +105,4 @@ class IntegrationTests(ServiceTestBase):
             expires_at=timezone.now() + timedelta(days=7),
         )
 
-        self.assertIsNotNone(invite.id)
+        assert invite.id is not None

@@ -19,6 +19,8 @@ class Topic(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=32, unique=True)
 
+    objects = TopicQuerySet.as_manager()
+
     class Meta:
         app_label = "room"
         constraints = [
@@ -33,8 +35,6 @@ class Topic(models.Model):
             models.Index(fields=["name"]),
         ]
         ordering = [Lower("name").asc()]
-
-    objects = TopicQuerySet.as_manager()
 
     def __str__(self):
         return self.name
@@ -94,6 +94,20 @@ class Room(models.Model):
             models.Index(fields=["updated_at"]),
         ]
 
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if self.default_role_id and self.default_role.room_id != self.id:
+            raise ValidationError(
+                {"default_role": "Default role must belong to this room."}
+            )
+
     def update_visibility(self, new_visibility: VisibilityChoices):
         if self.visibility == new_visibility:
             return
@@ -105,20 +119,6 @@ class Room(models.Model):
             return
         self.default_role = new_default_role
         self.save(update_fields=["default_role_id", "updated_at"])
-
-    def __str__(self):
-        return self.name
-
-    def clean(self):
-        super().clean()
-        if self.default_role_id and self.default_role.room_id != self.id:
-            raise ValidationError(
-                {"default_role": "Default role must belong to this room."}
-            )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class RoomHistory(

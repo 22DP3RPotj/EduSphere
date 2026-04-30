@@ -19,9 +19,11 @@ def resolve_errors(f: Callable[P, T]) -> Callable[P, T]:
         except (GraphQLError, JSONWebTokenError):
             raise
         except FormValidationException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code, "errors": e.errors})
+            raise GraphQLError(
+                str(e), extensions={"code": e.code, "errors": e.errors}
+            ) from e
         except DomainException as e:
-            raise GraphQLError(str(e), extensions={"code": e.code})
+            raise GraphQLError(str(e), extensions={"code": e.code}) from e
 
         if inspect.isawaitable(result):
 
@@ -33,9 +35,9 @@ def resolve_errors(f: Callable[P, T]) -> Callable[P, T]:
                 except FormValidationException as e:
                     raise GraphQLError(
                         str(e), extensions={"code": e.code, "errors": e.errors}
-                    )
+                    ) from e
                 except DomainException as e:
-                    raise GraphQLError(str(e), extensions={"code": e.code})
+                    raise GraphQLError(str(e), extensions={"code": e.code}) from e
 
             return handle()
 

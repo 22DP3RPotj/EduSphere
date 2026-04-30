@@ -39,7 +39,7 @@ class BanUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.ban_user(
             user=user,
@@ -73,7 +73,7 @@ class UnbanUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.unban_user(
             actor=info.context.user,
@@ -207,7 +207,7 @@ class PromoteUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.promote_user(
             actor=info.context.user,
@@ -235,7 +235,7 @@ class DemoteUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.demote_user(
             actor=info.context.user,

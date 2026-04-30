@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -77,7 +78,7 @@ class InviteModelTest(TestCase):
             role=self.role,
             expires_at=timezone.now() + timedelta(days=7),
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             Invite.objects.create(
                 room=self.room,
                 inviter=self.inviter,

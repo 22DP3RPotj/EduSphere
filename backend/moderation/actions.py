@@ -67,10 +67,10 @@ def create_report(
         report.case = case
         try:
             report.save()
-        except IntegrityError:
+        except IntegrityError as e:
             raise ConflictException(
                 "You already have an active report targeting this content."
-            )
+            ) from e
 
     return report
 

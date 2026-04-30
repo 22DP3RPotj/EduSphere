@@ -40,7 +40,7 @@ class SendInvite(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         try:
             invitee = User.objects.get(email=invitee_email)
@@ -55,7 +55,7 @@ class SendInvite(BaseMutation):
                 raise GraphQLError(
                     "Role not found in the specified room",
                     extensions={"code": ErrorCode.NOT_FOUND},
-                )
+                ) from None
 
         invite = InviteService.send_invite(
             inviter=info.context.user,

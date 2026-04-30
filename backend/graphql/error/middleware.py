@@ -33,7 +33,7 @@ class InternalErrorMiddleware:
             raise GraphQLError(
                 "Internal error",
                 extensions={"code": ErrorCode.INTERNAL_ERROR},
-            )
+            ) from None
 
         if inspect.isawaitable(result):
 
@@ -47,7 +47,7 @@ class InternalErrorMiddleware:
                     raise GraphQLError(
                         "Internal error",
                         extensions={"code": ErrorCode.INTERNAL_ERROR},
-                    )
+                    ) from None
 
             return handle()
 

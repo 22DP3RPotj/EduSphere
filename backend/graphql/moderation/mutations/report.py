@@ -53,14 +53,14 @@ class CreateReport(BaseMutation):
         except TargetModel.DoesNotExist:
             raise GraphQLError(
                 "Target not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         try:
             reason = ReportReason.objects.get(id=reason_id)
         except ReportReason.DoesNotExist:
             raise GraphQLError(
                 "Report reason not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         report = ReportService.create_report(
             reporter=info.context.user,
@@ -95,7 +95,7 @@ class TakeCaseAction(BaseMutation):
         except ModerationCase.DoesNotExist:
             raise GraphQLError(
                 "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         case = ReportService.take_case_action(
             moderator=info.context.user,
@@ -128,7 +128,7 @@ class SetCasePriority(BaseMutation):
         except ModerationCase.DoesNotExist:
             raise GraphQLError(
                 "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         case = ReportService.set_case_priority(
             moderator=info.context.user,
@@ -155,7 +155,7 @@ class SetCaseUnderReview(BaseMutation):
         except ModerationCase.DoesNotExist:
             raise GraphQLError(
                 "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         case = ReportService.set_case_under_review(
             moderator=info.context.user,
@@ -181,7 +181,7 @@ class ReopenCase(BaseMutation):
         except ModerationCase.DoesNotExist:
             raise GraphQLError(
                 "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         case = ReportService.reopen_case(
             moderator=info.context.user,

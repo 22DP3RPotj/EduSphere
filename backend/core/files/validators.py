@@ -49,9 +49,13 @@ class ImageValidator:
             with Image.open(file) as img:
                 img.verify()
         except UnidentifiedImageError:
-            raise ValidationError("Provided file is not a valid image.", code=self.code)
+            raise ValidationError(
+                "Provided file is not a valid image.", code=self.code
+            ) from None
         except OSError:
-            raise ValidationError("Could not process the image file.", code=self.code)
+            raise ValidationError(
+                "Could not process the image file.", code=self.code
+            ) from None
         finally:
             try:
                 if pos is not None:

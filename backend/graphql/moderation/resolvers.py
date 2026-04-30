@@ -80,7 +80,7 @@ class ReportQuery(graphene.ObjectType):
         except Report.DoesNotExist:
             raise GraphQLError(
                 "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         if report.reporter != info.context.user:
             raise GraphQLError(
@@ -208,4 +208,4 @@ class ReportQuery(graphene.ObjectType):
         except ModerationCase.DoesNotExist:
             raise GraphQLError(
                 "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None

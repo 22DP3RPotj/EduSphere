@@ -33,14 +33,14 @@ class ChangeParticipantRole(BaseMutation):
         except Participant.DoesNotExist:
             raise GraphQLError(
                 "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
             raise GraphQLError(
                 "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         participant = ParticipantService.change_participant_role(
             user=info.context.user, participant=participant, new_role=role
@@ -68,7 +68,7 @@ class RemoveParticipant(BaseMutation):
         except Participant.DoesNotExist:
             raise GraphQLError(
                 "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = ParticipantService.remove_participant(
             user=info.context.user, participant=participant

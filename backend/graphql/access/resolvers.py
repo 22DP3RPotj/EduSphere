@@ -44,7 +44,7 @@ class RoleQuery(graphene.ObjectType):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         return Role.objects.by_room(room).with_permissions()
 
@@ -59,7 +59,7 @@ class RoleQuery(graphene.ObjectType):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         participant = RoleService.get_participant(user, room)
 

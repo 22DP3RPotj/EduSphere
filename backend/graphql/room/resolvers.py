@@ -35,7 +35,7 @@ class RoomQuery(graphene.ObjectType):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         if not info.context.user.has_perm(RoomPermission.VIEW, room):
             raise GraphQLError(
@@ -80,7 +80,7 @@ class RoomQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         queryset = (
             Room.objects.participated_by(user)
@@ -99,7 +99,7 @@ class RoomQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         queryset = (
             Room.objects.not_participated_by(user)

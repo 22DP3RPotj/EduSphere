@@ -92,6 +92,6 @@ class UserQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         return user

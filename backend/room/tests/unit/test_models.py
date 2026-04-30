@@ -68,7 +68,7 @@ class RoomModelTest(TestCase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             Room.objects.create(
                 host=self.user,
                 name="Duplicate Room",

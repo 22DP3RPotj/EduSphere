@@ -71,7 +71,7 @@ class UpdateRoom(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         room = RoomService.update_room(
             user=info.context.user,
@@ -101,7 +101,7 @@ class DeleteRoom(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = RoomService.delete_room(user=info.context.user, room=room)
 
@@ -126,7 +126,7 @@ class JoinRoom(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         RoomService.join_room(user=info.context.user, room=room)
 
@@ -151,7 +151,7 @@ class LeaveRoom(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = RoomService.leave_room(user=info.context.user, room=room)
 

@@ -62,7 +62,7 @@ class RoleModelTest(TestCase):
             description="Admin role",
             priority=100,
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             Role.objects.create(
                 room=self.room,
                 name="Admin",
@@ -120,7 +120,7 @@ class ParticipantModelTest(TestCase):
             room=self.room,
             role=self.role,
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             Participant.objects.create(
                 user=self.participant_user,
                 room=self.room,

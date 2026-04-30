@@ -60,7 +60,7 @@ class AccountService:
                 expires_at__gt=timezone.now(),
             )
         except EmailToken.DoesNotExist:
-            raise ValidationException("Invalid or expired verification link.")
+            raise ValidationException("Invalid or expired verification link.") from None
 
         if email_token.user != user:
             raise ValidationException(
@@ -115,14 +115,14 @@ class AccountService:
                 expires_at__gt=timezone.now(),
             )
         except (EmailToken.DoesNotExist, ValueError, TypeError):
-            raise ValidationException("Invalid password reset link.")
+            raise ValidationException("Invalid password reset link.") from None
 
         user = email_token.user
 
         try:
             validate_password(new_password, user=user)
         except ValidationError as e:
-            raise ValidationException("\n".join(e.messages))
+            raise ValidationException("\n".join(e.messages)) from e
 
         return actions.reset_password(
             email_token=email_token, new_password=new_password
@@ -142,7 +142,7 @@ class AccountService:
         try:
             validate_password(new_password, user=user)
         except ValidationError as e:
-            raise ValidationException("\n".join(e.messages))
+            raise ValidationException("\n".join(e.messages)) from e
 
         return actions.change_password(
             user=user,

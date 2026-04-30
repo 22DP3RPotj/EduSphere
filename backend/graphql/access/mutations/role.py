@@ -40,7 +40,7 @@ class CreateRole(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         role = RoleService.create_role(
             user=info.context.user,
@@ -127,7 +127,7 @@ class DeleteRole(BaseMutation):
                 raise GraphQLError(
                     "Substitution role not found",
                     extensions={"code": ErrorCode.NOT_FOUND},
-                )
+                ) from None
 
         result = RoleService.delete_role(
             user=info.context.user,
@@ -191,7 +191,7 @@ class RemovePermissionsFromRole(BaseMutation):
         except Role.DoesNotExist:
             raise GraphQLError(
                 "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         role = RoleService.remove_permissions_from_role(
             user=info.context.user,

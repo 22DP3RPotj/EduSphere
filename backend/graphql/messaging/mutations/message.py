@@ -34,7 +34,7 @@ class CreateMessage(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         message = MessageService.create_message(
             user=info.context.user, room=room, body=body
@@ -59,7 +59,7 @@ class DeleteMessage(BaseMutation):
         except Message.DoesNotExist:
             raise GraphQLError(
                 "Message not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = MessageService.delete_message(user=info.context.user, message=message)
 
@@ -87,7 +87,7 @@ class UpdateMessage(BaseMutation):
         except Message.DoesNotExist:
             raise GraphQLError(
                 "Message not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         message = MessageService.update_message(
             user=info.context.user, message=message, body=body

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from backend.access.services import RoleService
 from backend.account.models import User
 from backend.core.exceptions import ConflictException, PermissionException
@@ -19,7 +17,7 @@ class RoomService:
         name: str,
         description: str,
         topic_names: list[str],
-        visibility: Optional[VisibilityChoices] = None,
+        visibility: VisibilityChoices | None = None,
     ) -> Room:
         """
         Create a new room.
@@ -51,10 +49,10 @@ class RoomService:
         *,
         user: User,
         room: Room,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        visibility: Optional[VisibilityChoices] = None,
-        topic_names: Optional[list[str]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        visibility: VisibilityChoices | None = None,
+        topic_names: list[str] | None = None,
     ) -> Room:
         """
         Update a room.

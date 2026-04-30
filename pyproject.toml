@@ -144,7 +144,7 @@ target-version = "py312"
 exclude = ["**/migrations/**"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "TC", "B"]
+select = ["E", "F", "I", "TC", "UP", "B"]
 ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]

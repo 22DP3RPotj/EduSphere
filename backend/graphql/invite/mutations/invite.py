@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -28,12 +28,12 @@ class SendInvite(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         invitee_email: str,
-        expires_at: Optional[graphene.DateTime] = None,
-        role_id: Optional[uuid.UUID] = None,
+        expires_at: graphene.DateTime | None = None,
+        role_id: uuid.UUID | None = None,
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
@@ -77,7 +77,7 @@ class AcceptInvite(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, token: uuid.UUID
     ) -> Self:
         invite = InviteService.get_invite_by_token(token=token)
 
@@ -101,7 +101,7 @@ class DeclineInvite(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, token: uuid.UUID
     ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
@@ -125,7 +125,7 @@ class CancelInvite(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, token: uuid.UUID
     ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
@@ -151,10 +151,10 @@ class ResendInvite(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         token: uuid.UUID,
-        expires_at: Optional[graphene.DateTime] = None,
+        expires_at: graphene.DateTime | None = None,
     ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 

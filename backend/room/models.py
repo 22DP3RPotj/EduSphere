@@ -1,5 +1,5 @@
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pghistory
 from django.conf import settings
@@ -100,7 +100,7 @@ class Room(models.Model):
         self.visibility = new_visibility
         self.save(update_fields=["visibility", "updated_at"])
 
-    def update_default_role(self, new_default_role: "Optional[Role]"):
+    def update_default_role(self, new_default_role: "Role | None"):
         if self.default_role == new_default_role:
             return
         self.default_role = new_default_role

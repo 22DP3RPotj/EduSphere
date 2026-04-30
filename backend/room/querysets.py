@@ -20,7 +20,7 @@ class RoomQuerySet(models.QuerySet["Room"]):
     def private(self) -> Self:
         return self.filter(visibility=self.model.Visibility.PRIVATE)
 
-    def visible_to(self, user: "User") -> Self:
+    def visible_to(self, user: User) -> Self:
         """Filter rooms visible to a specific user."""
         filters = models.Q(visibility=self.model.Visibility.PUBLIC)
 
@@ -29,11 +29,11 @@ class RoomQuerySet(models.QuerySet["Room"]):
 
         return self.filter(filters).distinct()
 
-    def participated_by(self, user: "User") -> Self:
+    def participated_by(self, user: User) -> Self:
         """Filter rooms participated by a specific user."""
         return self.filter(memberships__user=user)
 
-    def not_participated_by(self, user: "User") -> Self:
+    def not_participated_by(self, user: User) -> Self:
         """Filter rooms not participated by a specific user."""
         return self.exclude(memberships__user=user)
 

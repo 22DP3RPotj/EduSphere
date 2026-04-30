@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 import graphene
 from django.db.models import QuerySet
@@ -47,10 +46,10 @@ class RoomQuery(graphene.ObjectType):
     def resolve_rooms(
         self,
         info: graphene.ResolveInfo,
-        host_id: Optional[uuid.UUID] = None,
-        host_slug: Optional[str] = None,
-        search: Optional[str] = None,
-        topics: Optional[list[str]] = None,
+        host_id: uuid.UUID | None = None,
+        host_slug: str | None = None,
+        search: str | None = None,
+        topics: list[str] | None = None,
     ) -> QuerySet[Room]:
         queryset = (
             Room.objects.with_participants_count()
@@ -119,8 +118,8 @@ class TopicQuery(graphene.ObjectType):
     def resolve_topics(
         self,
         info: graphene.ResolveInfo,
-        search: Optional[str] = None,
-        min_rooms: Optional[int] = None,
+        search: str | None = None,
+        min_rooms: int | None = None,
     ) -> QuerySet[Topic]:
         queryset = Topic.objects.all()
 

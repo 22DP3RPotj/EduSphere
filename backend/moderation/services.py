@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
@@ -65,7 +63,7 @@ class ReportService:
         reporter: User,
         target: Model,
         reason: ReportReason,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> Report:
         """
         Create a report for any reportable target (Room, User, Message).
@@ -117,7 +115,7 @@ class ReportService:
         moderator: User,
         case: ModerationCase,
         action: ActionChoices,
-        note: Optional[str] = None,
+        note: str | None = None,
     ) -> ModerationCase:
         """
         Record a moderation action against a case and transition its status.

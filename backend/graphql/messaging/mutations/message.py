@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -24,7 +24,7 @@ class CreateMessage(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         body: str,
@@ -52,7 +52,7 @@ class DeleteMessage(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, message_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, message_id: uuid.UUID
     ) -> Self:
         try:
             message = Message.objects.get(id=message_id)
@@ -77,7 +77,7 @@ class UpdateMessage(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         message_id: uuid.UUID,
         body: str,

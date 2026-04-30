@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 import graphene
 from graphene_django.types import DjangoObjectType
@@ -39,7 +38,7 @@ class UserType(DjangoObjectType):
             "is_verified",
         )
 
-    def resolve_email(self, info) -> Optional[str]:
+    def resolve_email(self, info) -> str | None:
         user = info.context.user
 
         if not user.is_authenticated:
@@ -50,7 +49,7 @@ class UserType(DjangoObjectType):
 
         return None
 
-    def resolve_verified_at(self, info) -> Optional[datetime]:
+    def resolve_verified_at(self, info) -> datetime | None:
         user = info.context.user
 
         if not user.is_authenticated:

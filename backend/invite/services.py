@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from backend.access.models import Participant, Role
 from backend.account.models import User
@@ -23,8 +22,8 @@ class InviteService:
         inviter: User,
         room: Room,
         invitee: User,
-        role: Optional[Role] = None,
-        expires_at: Optional[datetime] = None,
+        role: Role | None = None,
+        expires_at: datetime | None = None,
     ) -> Invite:
         """
         Send an invite to a user for a room.
@@ -159,7 +158,7 @@ class InviteService:
 
     @staticmethod
     def resend_invite(
-        user: User, invite: Invite, new_expires_at: Optional[datetime]
+        user: User, invite: Invite, new_expires_at: datetime | None
     ) -> Invite:
         """
         Resend an invite by updating its expiration date.
@@ -188,7 +187,7 @@ class InviteService:
         return actions.resend_invite(invite=invite, new_expires_at=new_expires_at)
 
     @staticmethod
-    def get_invite_by_token(token: uuid.UUID) -> Optional[Invite]:
+    def get_invite_by_token(token: uuid.UUID) -> Invite | None:
         """
         Get an invite by its token.
 

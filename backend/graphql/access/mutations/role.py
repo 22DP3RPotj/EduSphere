@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -27,7 +27,7 @@ class CreateRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         name: str,
@@ -68,13 +68,13 @@ class UpdateRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        priority: Optional[int] = None,
-        permission_ids: Optional[list[uuid.UUID]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        priority: int | None = None,
+        permission_ids: list[uuid.UUID] | None = None,
     ) -> Self:
         role = RoleService.get_role_by_id(role_id=role_id)
 
@@ -106,10 +106,10 @@ class DeleteRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
-        substitution_role_id: Optional[uuid.UUID] = None,
+        substitution_role_id: uuid.UUID | None = None,
     ) -> Self:
         role = RoleService.get_role_by_id(role_id=role_id)
 
@@ -149,7 +149,7 @@ class AssignPermissionsToRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
         permission_ids: list[uuid.UUID],
@@ -181,7 +181,7 @@ class RemovePermissionsFromRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
         permission_ids: list[uuid.UUID],

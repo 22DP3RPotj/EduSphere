@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -158,8 +157,8 @@ class ModerationService:
         *,
         user: User,
         banned_by: User,
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> UserBan:
         """
         Ban a user.
@@ -198,8 +197,8 @@ class ModerationService:
         *,
         actor: User,
         user_ids: list,
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> tuple[int, int]:
         """
         Ban a list of users. Skips already-banned users.

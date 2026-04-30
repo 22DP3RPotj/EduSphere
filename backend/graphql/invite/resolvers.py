@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 
 import graphene
 from django.db.models import QuerySet
@@ -91,16 +90,16 @@ class InviteQuery(graphene.ObjectType):
     def resolve_invites(
         self,
         info: graphene.ResolveInfo,
-        room: Optional[uuid.UUID] = None,
-        inviter: Optional[uuid.UUID] = None,
-        invitee: Optional[uuid.UUID] = None,
-        status: Optional[InviteStatusChoices] = None,
-        is_expired: Optional[bool] = None,
-        is_active: Optional[bool] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        expires_after: Optional[datetime] = None,
-        expires_before: Optional[datetime] = None,
+        room: uuid.UUID | None = None,
+        inviter: uuid.UUID | None = None,
+        invitee: uuid.UUID | None = None,
+        status: InviteStatusChoices | None = None,
+        is_expired: bool | None = None,
+        is_active: bool | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        expires_after: datetime | None = None,
+        expires_before: datetime | None = None,
     ) -> QuerySet[Invite]:
         queryset = Invite.objects.select_related("inviter", "invitee", "role")
         filter_data = {
@@ -125,16 +124,16 @@ class InviteQuery(graphene.ObjectType):
     def resolve_invite_count(
         self,
         info: graphene.ResolveInfo,
-        room: Optional[uuid.UUID] = None,
-        inviter: Optional[uuid.UUID] = None,
-        invitee: Optional[uuid.UUID] = None,
-        status: Optional[InviteStatusChoices] = None,
-        is_expired: Optional[bool] = None,
-        is_active: Optional[bool] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        expires_after: Optional[datetime] = None,
-        expires_before: Optional[datetime] = None,
+        room: uuid.UUID | None = None,
+        inviter: uuid.UUID | None = None,
+        invitee: uuid.UUID | None = None,
+        status: InviteStatusChoices | None = None,
+        is_expired: bool | None = None,
+        is_active: bool | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        expires_after: datetime | None = None,
+        expires_before: datetime | None = None,
     ) -> int:
         return self.resolve_invites(
             info,

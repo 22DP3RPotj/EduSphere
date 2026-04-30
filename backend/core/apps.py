@@ -1,5 +1,3 @@
-from typing import Optional
-
 import redis.asyncio as aioredis
 from django.apps import AppConfig
 from django.conf import settings
@@ -12,7 +10,7 @@ class CoreConfig(AppConfig):
     verbose_name = "Core"
 
     # Shared Redis client for the whole app, lazily initialized on first use.
-    _redis_client: Optional[aioredis.Redis] = None
+    _redis_client: aioredis.Redis | None = None
 
     @classmethod
     def get_redis_client(cls) -> aioredis.Redis:

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import django_filters
 from django.contrib.contenttypes.models import ContentType
 
@@ -8,7 +6,7 @@ from backend.moderation.choices import ActionPriorityChoices, CaseStatusChoices
 from backend.moderation.models import ModerationCase, Report
 
 
-def _get_content_type_for_target(target_type: str) -> Optional[ContentType]:
+def _get_content_type_for_target(target_type: str) -> ContentType | None:
     from backend.account.models import User
     from backend.messaging.models import Message
     from backend.room.models import Room

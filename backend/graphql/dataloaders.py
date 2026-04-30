@@ -1,12 +1,8 @@
-from typing import Generic, Optional, Type, TypeVar
-
 from django.db import models
 from graphql_sync_dataloaders import SyncDataLoader
 
-T = TypeVar("T", bound=models.Model)
 
-
-class BaseModelLoader(Generic[T]):
+class BaseModelLoader[T: models.Model]:
     """
     Per-request batching loader backed by graphql-sync-dataloaders.
 
@@ -22,12 +18,12 @@ class BaseModelLoader(Generic[T]):
             model = User
     """
 
-    model: Type[T]
+    model: type[T]
 
     def __init__(self):
         self._loader = SyncDataLoader(self._batch_load)
 
-    def _batch_load(self, keys) -> list[Optional[T]]:
+    def _batch_load(self, keys) -> list[T | None]:
         key_strings = [str(k) for k in keys]
 
         manager: models.Manager = self.model._default_manager
@@ -36,5 +32,5 @@ class BaseModelLoader(Generic[T]):
 
         return [instance_map.get(str(k)) for k in key_strings]
 
-    def load(self, key) -> Optional[T]:
+    def load(self, key) -> T | None:
         return self._loader.load(key)

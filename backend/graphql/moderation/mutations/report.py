@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional, Self, Union
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -34,14 +34,14 @@ class CreateReport(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         target_type: ReportTargetTypeEnum,
         target_id: uuid.UUID,
         reason_id: uuid.UUID,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> Self:
-        model_map: dict[str, Union[type[Room], type[User], type[Message]]] = {
+        model_map: dict[str, type[Room] | type[User] | type[Message]] = {
             ReportTargetTypeEnum.ROOM: Room,
             ReportTargetTypeEnum.USER: User,
             ReportTargetTypeEnum.MESSAGE: Message,
@@ -84,11 +84,11 @@ class TakeCaseAction(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         case_id: uuid.UUID,
         action: ActionEnum,
-        note: Optional[str] = None,
+        note: str | None = None,
     ) -> Self:
         try:
             case = ModerationCase.objects.get(id=case_id)
@@ -118,7 +118,7 @@ class SetCasePriority(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         case_id: uuid.UUID,
         priority: ActionPriorityEnum,
@@ -148,7 +148,7 @@ class SetCaseUnderReview(BaseMutation):
     @classmethod
     @superuser_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, case_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, case_id: uuid.UUID
     ) -> Self:
         try:
             case = ModerationCase.objects.get(id=case_id)
@@ -174,7 +174,7 @@ class ReopenCase(BaseMutation):
     @classmethod
     @superuser_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, case_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, case_id: uuid.UUID
     ) -> Self:
         try:
             case = ModerationCase.objects.get(id=case_id)

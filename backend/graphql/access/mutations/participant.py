@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -23,7 +23,7 @@ class ChangeParticipantRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         participant_id: uuid.UUID,
         role_id: uuid.UUID,
@@ -59,7 +59,7 @@ class RemoveParticipant(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         participant_id: uuid.UUID,
     ) -> Self:

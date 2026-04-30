@@ -1,17 +1,14 @@
 import inspect
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, ParamSpec, TypeVar
 
 from graphql import GraphQLError
 from graphql_jwt.exceptions import JSONWebTokenError
 
 from backend.core.exceptions import DomainException, FormValidationException
 
-P = ParamSpec("P")
-T = TypeVar("T")
 
-
-def resolve_errors(f: Callable[P, T]) -> Callable[P, T]:
+def resolve_errors[**P, T](f: Callable[P, T]) -> Callable[P, T]:
     @wraps(f)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:

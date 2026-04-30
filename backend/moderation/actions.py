@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -21,7 +19,7 @@ def create_report(
     reporter: User,
     target: Model,
     reason: ReportReason,
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> Report:
     content_type = ContentType.objects.get_for_model(target)
 
@@ -80,7 +78,7 @@ def take_case_action(
     case: ModerationCase,
     action: ActionChoices,
     status: CaseStatusChoices,
-    note: Optional[str] = None,
+    note: str | None = None,
 ) -> ModerationCase:
     try:
         with transaction.atomic():

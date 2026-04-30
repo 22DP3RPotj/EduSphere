@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 from backend.access import actions
 from backend.access.dtos import RoleDeleteResult
@@ -127,7 +126,7 @@ class RoleService:
         ).exists()
 
     @staticmethod
-    def get_role_by_id(role_id: uuid.UUID) -> Optional[Role]:
+    def get_role_by_id(role_id: uuid.UUID) -> Role | None:
         """
         Get a role with optimized prefetch_related queries.
 
@@ -145,7 +144,7 @@ class RoleService:
         return role
 
     @staticmethod
-    def get_participant(user: User, room: Room) -> Optional[Participant]:
+    def get_participant(user: User, room: Room) -> Participant | None:
         """
         Get a participant by user and room
 
@@ -178,7 +177,7 @@ class RoleService:
         user: User,
         room: Room,
         name: str,
-        description: Optional[str],
+        description: str | None,
         priority: int,
         permission_ids: list[uuid.UUID],
     ) -> Role:
@@ -243,10 +242,10 @@ class RoleService:
     def update_role(
         user: User,
         role: Role,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        priority: Optional[int] = None,
-        permission_ids: Optional[list[uuid.UUID]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        priority: int | None = None,
+        permission_ids: list[uuid.UUID] | None = None,
     ) -> Role:
         """
         Update a role.
@@ -301,7 +300,7 @@ class RoleService:
 
     @staticmethod
     def delete_role(
-        user: User, role: Role, substitution_role: Optional[Role] = None
+        user: User, role: Role, substitution_role: Role | None = None
     ) -> RoleDeleteResult:
         """
         Delete a role.
@@ -439,7 +438,7 @@ class ParticipantService:
     """Service for participant mutation operations."""
 
     @staticmethod
-    def get_participant(user: User, room: Room) -> Optional[Participant]:
+    def get_participant(user: User, room: Room) -> Participant | None:
         """
         Get a participant by user and room (helper method).
 

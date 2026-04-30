@@ -1,4 +1,4 @@
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 import graphql_jwt
@@ -34,7 +34,7 @@ class VerifyAccount(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         token: str,
     ) -> Self:
@@ -53,7 +53,7 @@ class ResendActivationEmail(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
     ) -> Self:
         AccountService.resend_verification_email(user=info.context.user)
@@ -75,7 +75,7 @@ class SendPasswordResetEmail(BaseMutation):
     @classmethod
     def resolve(  # type: ignore[override]
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         email: str,
     ) -> Self:
@@ -98,7 +98,7 @@ class PasswordReset(BaseMutation):
     @classmethod
     def resolve(  # type: ignore[override]
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         token: str,
         new_password: str,
@@ -123,7 +123,7 @@ class PasswordChange(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         old_password: str,
         new_password: str,

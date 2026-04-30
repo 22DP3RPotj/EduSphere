@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -28,11 +28,11 @@ class BanUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> Self:
         try:
             user = User.objects.get(id=user_id)
@@ -64,7 +64,7 @@ class UnbanUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
     ) -> Self:
@@ -100,11 +100,11 @@ class BanUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> Self:
         banned, skipped = ModerationService.ban_users(
             actor=info.context.user,
@@ -131,7 +131,7 @@ class UnbanUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
     ) -> Self:
@@ -153,7 +153,7 @@ class PromoteUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
     ) -> Self:
@@ -176,7 +176,7 @@ class DemoteUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
     ) -> Self:
@@ -198,7 +198,7 @@ class PromoteUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
     ) -> Self:
@@ -226,7 +226,7 @@ class DemoteUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
     ) -> Self:

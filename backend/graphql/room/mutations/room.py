@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import graphene
 from graphql import GraphQLError
@@ -25,12 +25,12 @@ class CreateRoom(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         name: str,
         topic_names: list[str],
         description: str,
-        visibility: Optional[RoomVisibilityEnum] = None,
+        visibility: RoomVisibilityEnum | None = None,
     ) -> Self:
 
         room = RoomService.create_room(
@@ -58,13 +58,13 @@ class UpdateRoom(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        topic_names: Optional[list[str]] = None,
-        visibility: Optional[RoomVisibilityEnum] = None,
+        name: str | None = None,
+        description: str | None = None,
+        topic_names: list[str] | None = None,
+        visibility: RoomVisibilityEnum | None = None,
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
@@ -94,7 +94,7 @@ class DeleteRoom(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, room_id: uuid.UUID
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
@@ -117,7 +117,7 @@ class JoinRoom(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, room_id: uuid.UUID
     ) -> Self:
         try:
             room = Room.objects.get(
@@ -142,7 +142,7 @@ class LeaveRoom(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, room_id: uuid.UUID
     ) -> Self:
         try:
             room = Room.objects.get(

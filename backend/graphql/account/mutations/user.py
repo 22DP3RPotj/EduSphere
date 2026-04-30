@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional, Self, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import graphene
 from django.utils.datastructures import MultiValueDict
@@ -30,7 +30,7 @@ class Register(BaseMutation):
     @classmethod
     def resolve(  # type: ignore[override]
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         username: str,
         name: str,
@@ -62,13 +62,13 @@ class UpdateUser(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
-        name: Optional[str] = None,
-        username: Optional[str] = None,
-        bio: Optional[str] = None,
-        language: Optional[str] = None,
-        avatar: Optional[Upload] = None,
+        name: str | None = None,
+        username: str | None = None,
+        bio: str | None = None,
+        language: str | None = None,
+        avatar: Upload | None = None,
     ) -> Self:
         user = info.context.user
 

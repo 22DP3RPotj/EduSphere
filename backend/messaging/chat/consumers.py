@@ -2,7 +2,7 @@ import json
 import logging
 import uuid
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -30,11 +30,11 @@ class ClientMessageType(StrEnum):
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stream_key: Optional[str] = None
+        self.stream_key: str | None = None
         self.initialized: bool = False
-        self.room_id: Optional[uuid.UUID] = None
+        self.room_id: uuid.UUID | None = None
         self.room = None
-        self._last_seen_updated_at: Optional[datetime] = None
+        self._last_seen_updated_at: datetime | None = None
 
     @property
     def redis_client(self):
@@ -52,7 +52,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _parse_message_type(self, raw: Any) -> Optional[ClientMessageType]:
+    def _parse_message_type(self, raw: Any) -> ClientMessageType | None:
         if raw is None:
             return ClientMessageType.TEXT
         try:
@@ -60,7 +60,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except ValueError:
             return None
 
-    def _parse_uuid(self, value: Any) -> Optional[uuid.UUID]:
+    def _parse_uuid(self, value: Any) -> uuid.UUID | None:
         try:
             return uuid.UUID(str(value))
         except (ValueError, AttributeError):

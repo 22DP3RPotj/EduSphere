@@ -1,6 +1,5 @@
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional
 
 from django.db import transaction
 from django.db.models import Q
@@ -114,9 +113,9 @@ def change_password(*, user: User, new_password: str) -> User:
 def ban_user(
     *,
     user: User,
-    banned_by: Optional[User] = None,
-    reason: Optional[str] = None,
-    expires_at: Optional[datetime] = None,
+    banned_by: User | None = None,
+    reason: str | None = None,
+    expires_at: datetime | None = None,
 ) -> UserBan:
     with transaction.atomic():
         ban = UserBan.objects.create(

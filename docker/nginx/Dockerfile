@@ -3,7 +3,7 @@ FROM node:alpine AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install

@@ -97,3 +97,16 @@ jobs:
         run: |
           ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
             "make -C /opt/edusphere deploy TAG=${{ github.ref_name }}"
+
+  release:
+    name: Create GitHub Release
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

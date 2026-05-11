@@ -10,6 +10,7 @@ on:
       - 'frontend/**'
       - '.github/workflows/**'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

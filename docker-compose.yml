@@ -37,7 +37,7 @@ services:
       args:
         - GIT_SHA=${GIT_SHA:-unknown}
         - APP_VERSION=${APP_VERSION:-unknown}
-    image: edusphere-backend
+    image: ghcr.io/22dp3rpotj/edusphere-backend:${APP_VERSION:-latest}
     volumes:
       - media_data:/app/media
       - static_volume:/app/staticfiles
@@ -68,7 +68,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/backend/Dockerfile
-    image: edusphere-backend
+    image: ghcr.io/22dp3rpotj/edusphere-backend:${APP_VERSION:-latest}
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput"
@@ -89,7 +89,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/backend/Dockerfile
-    image: edusphere-backend
+    image: ghcr.io/22dp3rpotj/edusphere-backend:${APP_VERSION:-latest}
     command: celery -A backend.config worker -l info
     volumes:
       - media_data:/app/media
@@ -113,7 +113,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/backend/Dockerfile
-    image: edusphere-backend
+    image: ghcr.io/22dp3rpotj/edusphere-backend:${APP_VERSION:-latest}
     command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - media_data:/app/media
@@ -137,6 +137,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/nginx/Dockerfile
+    image: ghcr.io/22dp3rpotj/edusphere-nginx:${APP_VERSION:-latest}
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_data:/app/media:ro

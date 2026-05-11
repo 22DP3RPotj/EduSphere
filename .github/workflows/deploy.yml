@@ -1,0 +1,112 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+# Minimum permissions at workflow level - jobs escalate as needed
+permissions:
+  contents: read
+
+jobs:
+  backend-lint:
+    uses: ./.github/workflows/backend-lint.yml
+
+  backend-type:
+    uses: ./.github/workflows/backend-type.yml
+
+  backend-test:
+    uses: ./.github/workflows/backend-test.yml
+
+  frontend-lint:
+    uses: ./.github/workflows/frontend-lint.yml
+
+  docker-smoke:
+    uses: ./.github/workflows/docker-smoke.yml
+
+  build-and-push:
+    name: Build and push images to GHCR
+    needs: [backend-lint, backend-type, backend-test, frontend-lint, docker-smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create empty docker.env for build
+        run: touch docker.env
+
+      - name: Build images
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+          GIT_SHA_FULL: ${{ github.sha }}
+        run: |
+          GIT_SHA="${GIT_SHA_FULL:0:7}" \
+          APP_VERSION="$APP_VERSION" \
+          docker compose build backend nginx
+
+      - name: Push versioned tags
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+        run: APP_VERSION="$APP_VERSION" docker compose push backend nginx
+
+      - name: Tag and push latest
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+        run: |
+          docker tag ghcr.io/22dp3rpotj/edusphere-backend:"$APP_VERSION" \
+                     ghcr.io/22dp3rpotj/edusphere-backend:latest
+          docker push ghcr.io/22dp3rpotj/edusphere-backend:latest
+
+          docker tag ghcr.io/22dp3rpotj/edusphere-nginx:"$APP_VERSION" \
+                     ghcr.io/22dp3rpotj/edusphere-nginx:latest
+          docker push ghcr.io/22dp3rpotj/edusphere-nginx:latest
+
+  deploy:
+    name: Deploy to production server
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+      - name: Add pinned server host key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SERVER_HOST_KEY }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+            "make -C /opt/edusphere deploy TAG=${{ github.ref_name }}"
+
+  release:
+    name: Create GitHub Release
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

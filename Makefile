@@ -158,12 +158,12 @@ deploy rollback:
 		echo "Error: TAG is required. Usage: make $@ TAG=v1.0.0"; \
 		exit 1; \
 	fi
-	git fetch --tags --force
+	git fetch origin tag $(TAG)
 	git -c advice.detachedHead=false checkout tags/$(TAG)
 	APP_VERSION=$(TAG) $(DC) pull backend nginx
 	APP_VERSION=$(TAG) $(DC) run --rm migrate
 	APP_VERSION=$(TAG) $(DC) up -d
-	docker system prune -f
+	docker image prune -f
 
 # ---------------------------------------------------------------------------
 # Cleanup

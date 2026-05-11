@@ -65,6 +65,9 @@ services:
   
   # Database migration service
   migrate:
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
     image: edusphere-backend
     command: >
       sh -c "python manage.py migrate --noinput &&
@@ -83,6 +86,9 @@ services:
 
   # Celery Worker
   celery_worker:
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
     image: edusphere-backend
     command: celery -A backend.config worker -l info
     volumes:
@@ -104,6 +110,9 @@ services:
 
   # Celery Beat
   celery_beat:
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
     image: edusphere-backend
     command: celery -A backend.config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:

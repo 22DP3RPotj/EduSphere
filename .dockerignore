@@ -56,3 +56,9 @@ staticfiles/
 
 # Logs
 *.log
+
+# TLS certificates (owned by root after certbot run, not needed in build context)
+certbot/
+
+# Secrets
+secrets/

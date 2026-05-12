@@ -57,7 +57,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/infra/ready/"]
+      test: ["CMD", "curl", "-f", "-H", "Host: backend", "http://127.0.0.1:8000/infra/ready/"]
       interval: 5s
       timeout: 3s
       retries: 5

@@ -45,5 +45,9 @@ TODO
 # Password examples
 !.htpasswd.*.example
 
-# Backend environment setup
-!backend/config/settings/env.py
+# Secrets (API keys, credentials — never commit)
+secrets/
+
+# Let's Encrypt issued certificates
+certbot/conf/
+

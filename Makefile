@@ -3,7 +3,7 @@
         unit-test integration-test test coverage report \
         typecheck check fix format-check format lint ci \
         up down ps logs shell migrate restart \
-        deploy rollback \
+        deploy rollback cert-init cert-renew \
         clean clean-migrations
 
 PY := poetry run python
@@ -55,6 +55,8 @@ help:
 	@echo "Deployment  (run on the production server)"
 	@echo "  deploy  TAG=v1.0.0   - Pull and deploy a tagged release"
 	@echo "  rollback TAG=v1.0.0  - Roll back to a previously deployed tag"
+	@echo "  cert-init            - Issue Let's Encrypt cert (run once after first deploy)"
+	@echo "  cert-renew           - Renew certificates and reload nginx"
 	@echo ""
 	@echo "Cleanup"
 	@echo "  clean                - Remove .pyc files and .coverage"
@@ -164,6 +166,25 @@ deploy rollback:
 	APP_VERSION=$(TAG) $(DC) run --rm migrate
 	APP_VERSION=$(TAG) $(DC) up -d
 	docker image prune -f
+
+# Obtain a Let's Encrypt certificate via Cloudflare DNS-01 challenge.
+# Run once before starting nginx. Requires secrets/cf.ini, NGINX_HOST and
+# CERTBOT_EMAIL in docker.env. nginx does not need to be running.
+cert-init:
+	mkdir -p certbot/conf
+	$(DC) run --rm certbot certonly \
+		--dns-cloudflare \
+		--dns-cloudflare-credentials /run/secrets/cf.ini \
+		--email $$(grep '^CERTBOT_EMAIL=' docker.env | cut -d= -f2) \
+		--agree-tos \
+		--no-eff-email \
+		-d $$(grep '^NGINX_HOST=' docker.env | cut -d= -f2)
+
+# Renew certificates (run from cron weekly, e.g.):
+#   0 3 * * 1 cd /opt/edusphere && make cert-renew >> /var/log/certbot-renew.log 2>&1
+cert-renew:
+	$(DC) run --rm certbot renew
+	$(DC) exec nginx nginx -s reload
 
 # ---------------------------------------------------------------------------
 # Cleanup

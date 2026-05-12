@@ -1,26 +1,44 @@
+# HTTP — redirect everything to HTTPS
 server {
     listen 80;
-    server_name localhost;
+    server_name ${NGINX_HOST};
 
+    location / {
+        return 301 https://${NGINX_HOST}$request_uri;
+    }
+}
+
+# HTTPS — full application
+server {
+    listen 443 ssl;
+    server_name ${NGINX_HOST};
+
+    ssl_certificate     /etc/letsencrypt/live/${NGINX_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${NGINX_HOST}/privkey.pem;
+
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers off;
+
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    ssl_stapling        on;
+    ssl_stapling_verify on;
     resolver 127.0.0.11 valid=30s;
 
-    # Security Headers
-    # add_header X-Frame-Options "SAMEORIGIN";
-    # add_header X-XSS-Protection "1; mode=block";
-    # add_header X-Content-Type-Options "nosniff";
-    # add_header Referrer-Policy "strict-origin-when-cross-origin";
-    # add_header Content-Security-Policy "default-src 'self'; 
-    #     script-src 'self' 'unsafe-inline'; 
-    #     style-src 'self' 'unsafe-inline'; 
-    #     img-src 'self' data: blob:; 
-    #     connect-src 'self' ws: wss:; 
-    #     font-src 'self' data:; 
-    #     frame-ancestors 'self'; 
-    #     object-src 'none';" always;
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; font-src 'self' data:; frame-ancestors 'self'; object-src 'none';" always;
 
     # Proxy buffers
-    proxy_buffer_size 128k;
-    proxy_buffers 4 256k;
+    proxy_buffer_size   128k;
+    proxy_buffers       4 256k;
     proxy_busy_buffers_size 256k;
 
     location / {
@@ -42,28 +60,14 @@ server {
         add_header Cache-Control "public";
     }
 
-    # Prevent SPA fallback from catching /media/* requests
     location /media/ {
-        # TODO: Add validation
-        # internal;
         alias /app/media/;
         expires 7d;
         add_header Cache-Control "public";
         add_header X-Content-Type-Options "nosniff";
     }
 
-    # Backend API requests
-    # location /api/ {
-    #     proxy_pass http://backend:8000;
-    #     proxy_set_header Host $host;
-    #     proxy_set_header X-Real-IP $remote_addr;
-    #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    #     proxy_set_header X-Forwarded-Proto $scheme;
-    #     proxy_read_timeout 300s;
-    #     proxy_connect_timeout 75s;
-    # }
-
-    # GraphQL UI
+    # GraphQL / backend API
     location /graphql/ {
         proxy_pass http://backend:8000;
         proxy_set_header Host $host;
@@ -80,6 +84,7 @@ server {
         proxy_set_header Connection "Upgrade";
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 3600s;
         proxy_cache_bypass $http_upgrade;
     }

@@ -18,7 +18,7 @@ GRAPHQL_JWT = {
     "JWT_VERIFY_EXPIRATION": True,
     "JWT_EXPIRATION_DELTA": timedelta(minutes=10),
     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=7),
-    "JWT_COOKIE_SECURE": False,  # TODO: HTTPS
+    "JWT_COOKIE_SECURE": env.bool("JWT_COOKIE_SECURE", default=False),
     "JWT_COOKIE_HTTPONLY": True,
     "JWT_COOKIE_SAMESITE": "Lax",
     "JWT_BLACKLIST_ENABLED": True,

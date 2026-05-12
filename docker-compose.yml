@@ -267,7 +267,7 @@ services:
       # Authentication
       - GF_USER_ALLOW_SIGN_UP=false
       # Server configuration for subpath
-      - GF_SERVER_DOMAIN=localhost
+      - GF_SERVER_DOMAIN=${NGINX_HOST:-localhost}
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     env_file:

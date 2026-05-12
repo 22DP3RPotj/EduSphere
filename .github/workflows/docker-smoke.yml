@@ -37,6 +37,14 @@ jobs:
       - name: Create test .env file
         run: cp .env.example docker.env
 
+      - name: Create self-signed cert for CI (NGINX_HOST=localhost)
+        run: |
+          mkdir -p certbot/conf/live/localhost
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout certbot/conf/live/localhost/privkey.pem \
+            -out certbot/conf/live/localhost/fullchain.pem \
+            -subj "/CN=localhost" 2>/dev/null
+
       - name: Show Docker versions
         run: |
           docker --version
@@ -83,17 +91,27 @@ jobs:
         run: |
           set -euo pipefail
 
+          # HTTP should redirect to HTTPS (301)
           root_code="$(curl -sS --retry 10 --retry-connrefused --retry-delay 2 -o /dev/null -w '%{http_code}' http://localhost/)"
-          echo "GET / -> $root_code"
-          if [ "$root_code" -ge 500 ] || [ "$root_code" = "000" ]; then
-            echo "Unexpected root status: $root_code"
+          echo "GET http:// -> $root_code"
+          if [ "$root_code" != "301" ]; then
+            echo "Expected 301 redirect, got: $root_code"
+            docker compose --env-file docker.env logs --no-color --tail=300 nginx
+            exit 1
+          fi
+
+          # HTTPS should serve the SPA (200) — skip cert validation for self-signed
+          https_code="$(curl -sk --retry 5 --retry-connrefused --retry-delay 2 -o /dev/null -w '%{http_code}' https://localhost/)"
+          echo "GET https:// -> $https_code"
+          if [ "$https_code" -ge 500 ] || [ "$https_code" = "000" ]; then
+            echo "Unexpected HTTPS root status: $https_code"
             docker compose --env-file docker.env logs --no-color --tail=300 nginx
             docker compose --env-file docker.env logs --no-color --tail=300 backend
             exit 1
           fi
 
-          graphql_code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost/graphql/ || true)"
-          echo "GET /graphql/ -> ${graphql_code:-unknown}"
+          graphql_code="$(curl -sk -o /dev/null -w '%{http_code}' https://localhost/graphql/ || true)"
+          echo "GET https:///graphql/ -> ${graphql_code:-unknown}"
           if [ -n "$graphql_code" ] && [ "$graphql_code" != "000" ] && [ "$graphql_code" -ge 500 ]; then
             echo "Unexpected graphql status: $graphql_code"
             docker compose --env-file docker.env logs --no-color --tail=300 nginx

@@ -132,10 +132,12 @@ services:
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_data:/app/media:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
     env_file:
       - ./docker.env
     ports:
       - "80:80"
+      - "443:443"
     networks:
       - app_network
       - monitor_network
@@ -147,6 +149,15 @@ services:
       grafana:
         condition: service_healthy
     restart: unless-stopped
+
+  # Certbot — run via `make cert-init` or `make cert-renew`; not started automatically
+  certbot:
+    image: certbot/dns-cloudflare
+    profiles: [tools]
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./secrets/cf.ini:/run/secrets/cf.ini:ro
+    restart: "no"
 
   # Node Exporter - host metrics for Prometheus
   node-exporter:
@@ -268,7 +279,7 @@ services:
       - GF_USER_ALLOW_SIGN_UP=false
       # Server configuration for subpath
       - GF_SERVER_DOMAIN=${NGINX_HOST:-localhost}
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_ROOT_URL=https://%(domain)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     env_file:
       - ./docker.env

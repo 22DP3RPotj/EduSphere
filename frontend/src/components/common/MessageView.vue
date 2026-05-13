@@ -51,6 +51,13 @@
             <div v-if="showActions" class="action-dropdown">
               <button 
                 class="dropdown-action"
+                @click="handleReply"
+              >
+                <font-awesome-icon icon="reply" class="action-icon" />
+                {{ t('message.reply') }}
+              </button>
+              <button 
+                class="dropdown-action"
                 @click="startEditing"
               >
                 <font-awesome-icon icon="edit" class="action-icon" />
@@ -79,6 +86,13 @@
           <transition name="dropdown">
             <div v-if="showActions" class="action-dropdown">
               <button 
+                class="dropdown-action"
+                @click="handleReply"
+              >
+                <font-awesome-icon icon="reply" class="action-icon" />
+                {{ t('message.reply') }}
+              </button>
+              <button 
                 class="dropdown-action report-action"
                 @click="handleReportMessage"
               >
@@ -88,8 +102,41 @@
             </div>
           </transition>
         </div>
+
+        <div v-else-if="!isMessageOwner && !isEditing" class="message-actions">
+          <button 
+            class="action-toggle-button"
+            :class="{ 'active': showActions }"
+            @click="toggleActions"
+          >
+            <font-awesome-icon icon="ellipsis-v" />
+          </button>
+          
+          <transition name="dropdown">
+            <div v-if="showActions" class="action-dropdown">
+              <button 
+                class="dropdown-action"
+                @click="handleReply"
+              >
+                <font-awesome-icon icon="reply" class="action-icon" />
+                {{ t('message.reply') }}
+              </button>
+            </div>
+          </transition>
+        </div>
       </div>
       
+      <!-- Reply indicator -->
+      <div 
+        v-if="props.message.parent" 
+        class="reply-indicator"
+        @click="$emit('scroll-to-message', props.message.parent.id)"
+      >
+        <font-awesome-icon icon="reply" class="reply-icon" />
+        <span class="reply-author">{{ props.message.parent.author?.username || t('message.unknownUser') }}</span>
+        <span class="reply-body">{{ truncateReplyBody(props.message.parent.body) }}</span>
+      </div>
+
       <!-- Message content - edit mode -->
       <div v-if="isEditing" class="message-edit-form">
         <textarea 
@@ -114,6 +161,7 @@
       
       <!-- Message content - display mode -->
       <div v-else class="message-body">{{ props.message.body }}</div>
+
     </div>
     <div v-if="isMessageOwner" class="message-avatar own-avatar">
       <router-link v-if="props.message.author?.id" :to="`/u/${props.message.author.id}`">
@@ -156,7 +204,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['delete-message', 'update-message', 'report-message']);
+const emit = defineEmits(['delete-message', 'update-message', 'report-message', 'reply-message', 'scroll-to-message']);
 
 const isEditing = ref<boolean>(false);
 const editBody = ref<string>('');
@@ -197,6 +245,19 @@ function handleMessageDelete() {
 function handleReportMessage() {
   showActions.value = false;
   emit('report-message', props.message.id);
+}
+
+function handleReply() {
+  showActions.value = false;
+  emit('reply-message', {
+    id: props.message.id,
+    body: props.message.body,
+    author: props.message.author?.username || userDisplayName.value,
+  });
+}
+
+function truncateReplyBody(body: string): string {
+  return body.length > 60 ? body.slice(0, 60) + '…' : body;
 }
 
 async function startEditing() {
@@ -447,15 +508,6 @@ onBeforeUnmount(() => {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.own-message .action-toggle-button {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.own-message .action-toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
 .action-dropdown {
   position: absolute;
   right: 0;
@@ -586,6 +638,43 @@ onBeforeUnmount(() => {
 }
 
 /* Mobile responsiveness */
+/* Reply indicator */
+.reply-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  background-color: rgba(0, 0, 0, 0.04);
+  border-left: 2px solid var(--primary-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.reply-indicator:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.reply-icon {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.reply-author {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.reply-body {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 768px) {
   .message-item:not(.own-message) .message-content,
   .own-message .message-content {

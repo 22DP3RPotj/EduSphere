@@ -1,13 +1,14 @@
 import uuid
 
 import graphene
-from django.db.models import QuerySet
+from django.db.models import Count, Q, QuerySet
 from graphql import GraphQLError
 
 from backend.access.models import Participant
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
 from backend.graphql.messaging.types import MessageType
+from backend.messaging.choices import MessageStatusChoices
 from backend.messaging.models import Message
 from backend.room.models import Room
 
@@ -34,7 +35,21 @@ class MessageQuery(graphene.ObjectType):
                 "Not a participant", extensions={"code": ErrorCode.PERMISSION_DENIED}
             )
 
-        return room.message_set.select_related("author").order_by("created_at")
+        qs = (
+            room.message_set.select_related("author", "parent", "parent__author")
+            .annotate(
+                _status_delivered=Count(
+                    "statuses",
+                    filter=Q(statuses__status=MessageStatusChoices.DELIVERED),
+                ),
+                _status_seen=Count(
+                    "statuses",
+                    filter=Q(statuses__status=MessageStatusChoices.SEEN),
+                ),
+            )
+            .order_by("created_at")
+        )
+        return qs
 
     def resolve_messages_by_user(
         self, info: graphene.ResolveInfo, user_id: uuid.UUID

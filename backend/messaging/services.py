@@ -1,11 +1,17 @@
+import uuid
+
 from backend.account.models import User
 from backend.core.exceptions import (
+    NotFoundException,
     PermissionException,
 )
 from backend.messaging import actions
-from backend.messaging.models import Message
+from backend.messaging.choices import MessageStatusChoices
+from backend.messaging.models import Message, MessageStatus
 from backend.messaging.rules.labels import MessagingPermission
 from backend.room.models import Room
+
+_PARENT_PREVIEW_LENGTH = 100
 
 
 class MessageService:
@@ -16,6 +22,7 @@ class MessageService:
         user: User,
         room: Room,
         body: str,
+        parent_id: uuid.UUID | None = None,
     ) -> Message:
         """
         Create a new message in a room.
@@ -24,12 +31,14 @@ class MessageService:
             user: User creating the message (must be a participant of the room)
             room: The room to create the message in
             body: Message content
+            parent_id: Optional UUID of the parent message (for replies)
 
         Returns:
             The created Message instance
 
         Raises:
             PermissionException: If user doesn't have permission to send messages
+            NotFoundException: If parent message doesn't exist or is in a different room
             FormValidationException: If form validation fails
             ConflictException: If message creation conflicts
         """
@@ -38,7 +47,16 @@ class MessageService:
                 "You don't have permission to send messages in this room."
             )
 
-        return actions.create_message(user=user, room=room, body=body)
+        parent = None
+        if parent_id is not None:
+            try:
+                parent = Message.objects.select_related("author").get(id=parent_id)
+            except Message.DoesNotExist:
+                raise NotFoundException("Parent message not found.") from None
+            if parent.room_id != room.id:
+                raise NotFoundException("Parent message not found.") from None
+
+        return actions.create_message(user=user, room=room, body=body, parent=parent)
 
     @staticmethod
     def update_message(
@@ -103,6 +121,16 @@ class MessageService:
         Returns:
             Dictionary representation of the message
         """
+        parent_preview = None
+        if message.parent_id is not None:
+            parent = message.parent
+            if parent is not None:
+                parent_preview = {
+                    "id": str(parent.id),
+                    "body": parent.body[:_PARENT_PREVIEW_LENGTH],
+                    "author": parent.author.username,
+                }
+
         return {
             "id": str(message.id),
             "author": message.author.username,
@@ -115,4 +143,119 @@ class MessageService:
             "author_avatar": (
                 message.author.avatar.name if message.author.avatar else None
             ),
+            "parent_id": str(message.parent_id) if message.parent_id else None,
+            "parent_preview": parent_preview,
         }
+
+
+class MessageStatusService:
+    """Service for message delivery/read status operations."""
+
+    @staticmethod
+    def mark_delivered(
+        user: User, room: Room, message_ids: list[uuid.UUID]
+    ) -> list[MessageStatus]:
+        """
+        Bulk-create DELIVERED statuses for messages not authored by the user.
+        Uses ignore_conflicts to skip already-delivered messages.
+        """
+        messages = Message.objects.filter(id__in=message_ids, room=room).exclude(
+            author=user
+        )
+
+        statuses = [
+            MessageStatus(
+                message=msg,
+                user=user,
+                status=MessageStatusChoices.DELIVERED,
+            )
+            for msg in messages
+        ]
+        return MessageStatus.objects.bulk_create(statuses, ignore_conflicts=True)
+
+    @staticmethod
+    def mark_seen(user: User, room: Room, message_ids: list[uuid.UUID]) -> list[dict]:
+        """
+        Mark messages as SEEN for the user. Upgrades DELIVERED → SEEN.
+        Returns list of updates that were actually applied (for broadcasting).
+        """
+        msg_ids = list(
+            Message.objects.filter(id__in=message_ids, room=room)
+            .exclude(author=user)
+            .values_list("id", flat=True)
+        )
+        if not msg_ids:
+            return []
+
+        existing = dict(
+            MessageStatus.objects.filter(message_id__in=msg_ids, user=user).values_list(
+                "message_id", "status"
+            )
+        )
+
+        to_update = [
+            mid
+            for mid, status in existing.items()
+            if status != MessageStatusChoices.SEEN
+        ]
+        to_create = [mid for mid in msg_ids if mid not in existing]
+        affected = to_update + to_create
+
+        if not affected:
+            return []
+
+        if to_update:
+            MessageStatus.objects.filter(message_id__in=to_update, user=user).update(
+                status=MessageStatusChoices.SEEN
+            )
+        if to_create:
+            MessageStatus.objects.bulk_create(
+                [
+                    MessageStatus(
+                        message_id=mid, user=user, status=MessageStatusChoices.SEEN
+                    )
+                    for mid in to_create
+                ],
+                ignore_conflicts=True,
+            )
+
+        return [
+            {
+                "message_id": str(mid),
+                "user_id": str(user.id),
+                "status": MessageStatusChoices.SEEN,
+                "prev_status": str(existing[mid]) if mid in existing else None,
+            }
+            for mid in affected
+        ]
+
+    @staticmethod
+    def get_status_summary(message_ids: list[uuid.UUID]) -> dict[str, dict]:
+        """
+        Get aggregated status counts per message.
+        Returns {message_id_str: {"delivered": int, "seen": int}}
+        """
+        from django.db.models import Count, Q
+
+        statuses = (
+            MessageStatus.objects.filter(message_id__in=message_ids)
+            .values("message_id")
+            .annotate(
+                delivered=Count(
+                    "id",
+                    filter=Q(status=MessageStatusChoices.DELIVERED),
+                ),
+                seen=Count(
+                    "id",
+                    filter=Q(status=MessageStatusChoices.SEEN),
+                ),
+            )
+        )
+
+        summary = {}
+        for row in statuses:
+            summary[str(row["message_id"])] = {
+                "delivered": row["delivered"],
+                "seen": row["seen"],
+            }
+        return summary

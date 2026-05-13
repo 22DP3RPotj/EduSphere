@@ -5,14 +5,20 @@ from backend.messaging.models import Message, MessageStatus
 
 
 class MessageStatusEnum(graphene.Enum):
-    SENT = "SENT"
     DELIVERED = "DELIVERED"
     SEEN = "SEEN"
+
+
+class StatusSummaryType(graphene.ObjectType):
+    delivered = graphene.Int(required=True)
+    seen = graphene.Int(required=True)
 
 
 class MessageType(DjangoObjectType):
     author = graphene.Field("backend.graphql.account.types.UserType", required=True)
     room = graphene.Field("backend.graphql.room.types.RoomType", required=True)
+    parent = graphene.Field("backend.graphql.messaging.types.MessageType")
+    status_summary = graphene.Field(StatusSummaryType)
 
     class Meta:
         model = Message
@@ -20,11 +26,19 @@ class MessageType(DjangoObjectType):
             "id",
             "author",
             "room",
+            "parent",
             "body",
             "is_edited",
             "created_at",
             "updated_at",
         )
+
+    def resolve_status_summary(self, info):
+        if hasattr(self, "_status_delivered") and hasattr(self, "_status_seen"):
+            return StatusSummaryType(
+                delivered=self._status_delivered, seen=self._status_seen
+            )
+        return None
 
 
 class MessageStatusType(graphene.ObjectType):

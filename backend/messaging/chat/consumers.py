@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
 from django.utils.timezone import now
 from redis.exceptions import RedisError
 
@@ -25,6 +26,7 @@ class ClientMessageType(StrEnum):
     TEXT = "text"
     DELETE = "delete"
     UPDATE = "update"
+    MARK_SEEN = "mark_seen"
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -159,6 +161,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.initialized = True
         await self.accept()
 
+        @database_sync_to_async
+        def backfill_delivered():
+            from backend.messaging.models import Message
+            from backend.messaging.services import MessageStatusService
+
+            limit = settings.DELIVERED_BACKFILL_LIMIT
+
+            msg_ids = list(
+                Message.objects.filter(room=self.room)
+                .order_by("-created_at")[:limit]
+                .values_list("id", flat=True)
+            )
+            if msg_ids:
+                MessageStatusService.mark_delivered(
+                    user=self.user, room=self.room, message_ids=msg_ids
+                )
+
+        await backfill_delivered()
+
     async def disconnect(self, close_code):
         """Leave the room group on disconnect."""
         if not self.initialized:
@@ -204,7 +225,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if not isinstance(message_body, str):
                 await self.send_error("Missing or invalid 'message'.")
                 return
-            await self.handle_new_message(room, message_body)
+            parent_id = self._parse_uuid(data.get("parentId"))
+            await self.handle_new_message(room, message_body, parent_id=parent_id)
             return
 
         if msg_type is ClientMessageType.DELETE:
@@ -227,17 +249,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.handle_update_message(message_id, new_body)
             return
 
+        if msg_type is ClientMessageType.MARK_SEEN:
+            raw_ids = data.get("messageIds")
+            if not isinstance(raw_ids, list):
+                await self.send_error("Missing or invalid 'messageIds'.")
+                return
+            message_ids = [self._parse_uuid(mid) for mid in raw_ids]
+            message_ids = [mid for mid in message_ids if mid is not None]
+            if not message_ids:
+                return
+            await self.handle_mark_seen(message_ids)
+            return
+
     # ------------------------------------------------------------------
     # Message handlers
     # ------------------------------------------------------------------
 
-    async def handle_new_message(self, room, message_body):
+    async def handle_new_message(self, room, message_body, parent_id=None):
         """Handle creation of a new message."""
         from backend.messaging.services import MessageService
 
         @database_sync_to_async
-        def create_message(user, room, body):
-            return MessageService.create_message(user=user, room=room, body=body)
+        def create_message(user, room, body, parent_id):
+            return MessageService.create_message(
+                user=user, room=room, body=body, parent_id=parent_id
+            )
 
         @database_sync_to_async
         def serialize(message):
@@ -245,7 +281,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         try:
             new_message = await create_message(
-                user=self.user, room=room, body=message_body
+                user=self.user, room=room, body=message_body, parent_id=parent_id
             )
         except FormValidationException as e:
             await self.send_error({"message": str(e), "errors": e.errors})
@@ -340,8 +376,72 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(self.room_group_name, message_data)
         await self.publish_to_stream(message_data)
 
+    async def handle_mark_seen(self, message_ids: list[uuid.UUID]):
+        """Handle marking messages as seen by the current user."""
+        from backend.messaging.services import MessageStatusService
+
+        room = self.room
+
+        @database_sync_to_async
+        def mark_seen(user, ids):
+            return MessageStatusService.mark_seen(user=user, room=room, message_ids=ids)
+
+        try:
+            updates = await mark_seen(self.user, message_ids)
+        except Exception:
+            logger.error("Failed to mark messages as seen", exc_info=True)
+            return
+
+        if not updates:
+            return
+
+        status_data = {
+            "type": "chat_message",
+            "action": "status_update",
+            "updates": updates,
+        }
+
+        await self.channel_layer.group_send(self.room_group_name, status_data)
+
     async def chat_message(self, event):
         """Receive messages broadcast to the group and relay to this client."""
+        if event.get("action") == "new":
+            msg_id = self._parse_uuid(event.get("id"))
+            author_id = event.get("author_id")
+            if msg_id and str(self.user.id) != str(author_id):
+                from backend.messaging.choices import MessageStatusChoices
+
+                @database_sync_to_async
+                def mark_delivered():
+                    from backend.messaging.services import MessageStatusService
+
+                    return MessageStatusService.mark_delivered(
+                        user=self.user, room=self.room, message_ids=[msg_id]
+                    )
+
+                try:
+                    # Non-empty only when rows were actually inserted (ON CONFLICT DO NOTHING)
+                    created = await mark_delivered()
+                except Exception:
+                    logger.error("Failed to mark message as delivered", exc_info=True)
+                    created = []
+
+                if created:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "chat_message",
+                            "action": "status_update",
+                            "updates": [
+                                {
+                                    "message_id": str(msg_id),
+                                    "user_id": str(self.user.id),
+                                    "status": MessageStatusChoices.DELIVERED,
+                                }
+                            ],
+                        },
+                    )
+
         await self.send(text_data=json.dumps(event))
 
     async def publish_to_stream(self, message_data):

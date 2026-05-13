@@ -2,16 +2,18 @@ import { ref, type Ref } from "vue"
 import { useAuthStore } from "@/stores/auth.store"
 import { ROOM_MESSAGES_QUERY } from "@/api/graphql";
 import { apolloClient } from "@/api/apollo.client";
-import type { Message, DateTime, UUID, GqlMessage } from "@/types"
+import type { Message, MessageParent, DateTime, UUID, GqlMessage, StatusSummary } from "@/types"
 import type {
   ConnectionStatus,
   ReceivedWebSocketMessage,
   WSNewMessage,
   WSUpdateMessage,
   WSDeleteMessage,
+  WSStatusUpdate,
   OutgoingWebSocketMessage,
   OutgoingUpdateMessage,
   OutgoingDeleteMessage,
+  OutgoingMarkSeenMessage,
 } from "@/types"
 
 export function useWebSocket(
@@ -55,6 +57,10 @@ export function useWebSocket(
     return msg.action === "delete"
   }
 
+  function isWSStatusUpdate(msg: ReceivedWebSocketMessage): msg is WSStatusUpdate {
+    return msg.action === "status_update"
+  }
+
   function asDateTime(value: string): DateTime {
     return value as unknown as DateTime
   }
@@ -75,11 +81,16 @@ export function useWebSocket(
       id: m.id,
       author: m.author,
       room: m.room,
-      parent: null,
+      parent: m.parent ? {
+        id: m.parent.id,
+        body: m.parent.body,
+        author: { username: m.parent.author.username },
+      } : null,
       body: m.body,
       isEdited: m.isEdited,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,
+      statusSummary: m.statusSummary ?? null,
     }))
     return normalized
   }
@@ -181,6 +192,11 @@ export function useWebSocket(
               if (del) handleDeleteMessage(del)
               break
             }
+            case "status_update": {
+              const statusUpd = isWSStatusUpdate(data) ? data : undefined
+              if (statusUpd) handleStatusUpdate(statusUpd)
+              break
+            }
             default: {
               console.warn("[v0] Unknown WebSocket action:", data)
             }
@@ -226,12 +242,21 @@ export function useWebSocket(
   }
 
   function handleNewMessage(data: WSNewMessage): void {
+    let parentMessage: MessageParent | null = null
+    if (data.parent_id && data.parent_preview) {
+      parentMessage = {
+        id: asUUID(data.parent_preview.id),
+        body: data.parent_preview.body,
+        author: { username: data.parent_preview.author },
+      }
+    }
+
     const newMessage: Message = {
       id: data.id,
       body: data.body,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      parent: null,
+      parent: parentMessage,
       isEdited: data.is_edited,
       author: {
         id: data.author_id,
@@ -261,6 +286,35 @@ export function useWebSocket(
     messages.value = messages.value.filter((m) => m.id !== messageId)
   }
 
+  function handleStatusUpdate(data: WSStatusUpdate): void {
+    for (const update of data.updates) {
+      const idx = messages.value.findIndex((m) => m.id === update.message_id)
+      if (idx === -1) continue
+      const msg = messages.value[idx]
+      const summary: StatusSummary = msg.statusSummary
+        ? { ...msg.statusSummary }
+        : { delivered: 0, seen: 0 }
+
+      if (typeof update.delivered === "number" && typeof update.seen === "number") {
+        summary.delivered = Math.max(0, update.delivered)
+        summary.seen = Math.max(0, update.seen)
+      } else {
+        if (update.prev_status === "SEEN") {
+          summary.seen = Math.max(0, summary.seen - 1)
+        } else if (update.prev_status === "DELIVERED") {
+          summary.delivered = Math.max(0, summary.delivered - 1)
+        }
+        if (update.status === "SEEN") {
+          summary.seen += 1
+        } else if (update.status === "DELIVERED") {
+          summary.delivered += 1
+        }
+      }
+
+      messages.value[idx] = { ...msg, statusSummary: summary }
+    }
+  }
+
   function attemptReconnect(): void {
     if (reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
       reconnectAttempts.value++
@@ -272,7 +326,7 @@ export function useWebSocket(
     }
   }
 
-  function sendMessage(message: string): Promise<boolean> {
+  function sendMessage(message: string, parentId?: UUID): Promise<boolean> {
     const trimmed = String(message ?? "").trim()
     if (!trimmed) return Promise.resolve(false)
     if (!socket.value || socket.value.readyState !== WebSocket.OPEN) {
@@ -291,6 +345,7 @@ export function useWebSocket(
           message: trimmed,
           type: "text",
           timestamp: asDateTime(new Date().toISOString()),
+          ...(parentId ? { parentId } : {}),
         }
         socket.value!.send(JSON.stringify(msg))
       } catch (err) {
@@ -370,6 +425,17 @@ export function useWebSocket(
     advisoryMessage.value = null
   }
 
+  function markSeen(messageIds: UUID[]): void {
+    if (!messageIds.length) return
+    if (!socket.value || socket.value.readyState !== WebSocket.OPEN) return
+
+    const msg: OutgoingMarkSeenMessage = {
+      type: "mark_seen",
+      messageIds,
+    }
+    socket.value.send(JSON.stringify(msg))
+  }
+
   return {
     socket,
     messages,
@@ -381,6 +447,7 @@ export function useWebSocket(
     sendMessage,
     deleteMessage,
     updateMessage,
+    markSeen,
     closeWebSocket,
     clearError,
     clearAdvisory,

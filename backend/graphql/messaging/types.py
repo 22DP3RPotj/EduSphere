@@ -5,7 +5,6 @@ from backend.messaging.models import Message, MessageStatus
 
 
 class MessageStatusEnum(graphene.Enum):
-    SENT = "SENT"
     DELIVERED = "DELIVERED"
     SEEN = "SEEN"
 

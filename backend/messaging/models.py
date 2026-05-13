@@ -10,7 +10,7 @@ from backend.messaging.choices import MessageStatusChoices
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="replies"
     )
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     room = models.ForeignKey("room.Room", on_delete=models.CASCADE)

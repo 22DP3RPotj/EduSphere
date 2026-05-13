@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
 from django.utils.timezone import now
 from redis.exceptions import RedisError
 
@@ -160,6 +161,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.initialized = True
         await self.accept()
 
+        @database_sync_to_async
+        def backfill_delivered():
+            from backend.messaging.models import Message
+            from backend.messaging.services import MessageStatusService
+
+            limit = settings.DELIVERED_BACKFILL_LIMIT
+
+            msg_ids = list(
+                Message.objects.filter(room=self.room)
+                .order_by("-created_at")[:limit]
+                .values_list("id", flat=True)
+            )
+            if msg_ids:
+                MessageStatusService.mark_delivered(user=self.user, message_ids=msg_ids)
+
+        await backfill_delivered()
+
     async def disconnect(self, close_code):
         """Leave the room group on disconnect."""
         if not self.initialized:
@@ -247,8 +265,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_new_message(self, room, message_body, parent_id=None):
         """Handle creation of a new message."""
-        from backend.messaging.choices import MessageStatusChoices
-        from backend.messaging.models import MessageStatus
         from backend.messaging.services import MessageService
 
         @database_sync_to_async
@@ -261,14 +277,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         def serialize(message):
             return MessageService.serialize(message)
 
-        @database_sync_to_async
-        def create_sent_status(message, user):
-            MessageStatus.objects.create(
-                message=message,
-                user=user,
-                status=MessageStatusChoices.SENT,
-            )
-
         try:
             new_message = await create_message(
                 user=self.user, room=room, body=message_body, parent_id=parent_id
@@ -279,8 +287,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except DomainException as e:
             await self.send_error(str(e))
             return
-
-        await create_sent_status(new_message, self.user)
 
         serialized = await serialize(new_message)
         message_data = {
@@ -395,6 +401,43 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def chat_message(self, event):
         """Receive messages broadcast to the group and relay to this client."""
+        if event.get("action") == "new":
+            msg_id = self._parse_uuid(event.get("id"))
+            author_id = event.get("author_id")
+            if msg_id and str(self.user.id) != str(author_id):
+                from backend.messaging.choices import MessageStatusChoices
+
+                @database_sync_to_async
+                def mark_delivered():
+                    from backend.messaging.services import MessageStatusService
+
+                    return MessageStatusService.mark_delivered(
+                        user=self.user, message_ids=[msg_id]
+                    )
+
+                try:
+                    # Non-empty only when rows were actually inserted (ON CONFLICT DO NOTHING)
+                    created = await mark_delivered()
+                except Exception:
+                    logger.error("Failed to mark message as delivered", exc_info=True)
+                    created = []
+
+                if created:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "chat_message",
+                            "action": "status_update",
+                            "updates": [
+                                {
+                                    "message_id": str(msg_id),
+                                    "user_id": str(self.user.id),
+                                    "status": MessageStatusChoices.DELIVERED,
+                                }
+                            ],
+                        },
+                    )
+
         await self.send(text_data=json.dumps(event))
 
     async def publish_to_stream(self, message_data):

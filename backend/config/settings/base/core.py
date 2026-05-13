@@ -125,6 +125,8 @@ LAST_SEEN_INACTIVITY_THRESHOLD = env.int(
 # File upload
 MAX_FILE_SIZE_MB = 10
 
+# Number of most-recent messages to mark as DELIVERED when a user connects
+DELIVERED_BACKFILL_LIMIT = env.int("DELIVERED_BACKFILL_LIMIT", default=100)
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

@@ -11,6 +11,8 @@ from backend.messaging.models import Message, MessageStatus
 from backend.messaging.rules.labels import MessagingPermission
 from backend.room.models import Room
 
+_PARENT_PREVIEW_LENGTH = 100
+
 
 class MessageService:
     """Service for message mutation operations."""
@@ -125,7 +127,7 @@ class MessageService:
             if parent is not None:
                 parent_preview = {
                     "id": str(parent.id),
-                    "body": parent.body[:100],
+                    "body": parent.body[:_PARENT_PREVIEW_LENGTH],
                     "author": parent.author.username,
                 }
 
@@ -175,9 +177,18 @@ class MessageStatusService:
         """
         messages = Message.objects.filter(id__in=message_ids).exclude(author=user)
 
+        already_seen = set(
+            MessageStatus.objects.filter(
+                message__in=messages,
+                user=user,
+                status=MessageStatusChoices.SEEN,
+            ).values_list("message_id", flat=True)
+        )
+        messages = messages.exclude(id__in=already_seen)
+
         updates = []
         for msg in messages:
-            _, created = MessageStatus.objects.update_or_create(
+            MessageStatus.objects.update_or_create(
                 message=msg,
                 user=user,
                 defaults={"status": MessageStatusChoices.SEEN},

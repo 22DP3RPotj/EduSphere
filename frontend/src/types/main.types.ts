@@ -64,11 +64,17 @@ export interface StatusSummary {
   seen: number;
 }
 
+export interface MessageParent {
+  id: UUID;
+  body: string;
+  author: { username: string };
+}
+
 export interface Message {
   id: UUID;
   author: MessageAuthor;
   room?: Room;
-  parent: Message | null;
+  parent: MessageParent | null;
   body: string;
   isEdited: boolean;
   createdAt: DateTime;

@@ -2,7 +2,7 @@ import { ref, type Ref } from "vue"
 import { useAuthStore } from "@/stores/auth.store"
 import { ROOM_MESSAGES_QUERY } from "@/api/graphql";
 import { apolloClient } from "@/api/apollo.client";
-import type { Room, Message, DateTime, UUID, GqlMessage, StatusSummary } from "@/types"
+import type { Message, MessageParent, DateTime, UUID, GqlMessage, StatusSummary } from "@/types"
 import type {
   ConnectionStatus,
   ReceivedWebSocketMessage,
@@ -84,23 +84,7 @@ export function useWebSocket(
       parent: m.parent ? {
         id: m.parent.id,
         body: m.parent.body,
-        author: {
-          id: m.parent.author.id,
-          username: m.parent.author.username,
-          name: m.parent.author.username,
-          // bio: null,
-          avatar: null,
-          // language: "en",
-          // isStaff: false,
-          // isActive: false,
-          // isSuperuser: false,
-          // dateJoined: asDateTime(""),
-        },
-        room: {} as Room,
-        parent: null,
-        isEdited: false,
-        createdAt: asDateTime(""),
-        updatedAt: asDateTime(""),
+        author: { username: m.parent.author.username },
       } : null,
       body: m.body,
       isEdited: m.isEdited,
@@ -258,28 +242,12 @@ export function useWebSocket(
   }
 
   function handleNewMessage(data: WSNewMessage): void {
-    let parentMessage: Message | null = null
+    let parentMessage: MessageParent | null = null
     if (data.parent_id && data.parent_preview) {
       parentMessage = {
         id: asUUID(data.parent_preview.id),
         body: data.parent_preview.body,
-        author: {
-          id: asUUID(""),
-          username: data.parent_preview.author,
-          name: data.parent_preview.author,
-          // bio: null,
-          avatar: null,
-          // language: "en",
-          // isStaff: false,
-          // isActive: false,
-          // isSuperuser: false,
-          // dateJoined: asDateTime(""),
-        },
-        room: {} as Room,
-        parent: null,
-        isEdited: false,
-        createdAt: asDateTime(""),
-        updatedAt: asDateTime(""),
+        author: { username: data.parent_preview.author },
       }
     }
 

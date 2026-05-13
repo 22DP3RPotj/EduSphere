@@ -138,7 +138,7 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_delivered_creates_status_for_recipient(self):
         MessageStatusService.mark_delivered(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         assert MessageStatus.objects.filter(
             message=self.message,
@@ -148,7 +148,7 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_delivered_excludes_author(self):
         MessageStatusService.mark_delivered(
-            user=self.member, message_ids=[self.message.id]
+            user=self.member, room=self.room, message_ids=[self.message.id]
         )
         assert not MessageStatus.objects.filter(
             message=self.message, user=self.member
@@ -156,10 +156,10 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_delivered_is_idempotent(self):
         MessageStatusService.mark_delivered(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         MessageStatusService.mark_delivered(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         assert (
             MessageStatus.objects.filter(
@@ -170,7 +170,7 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_seen_creates_seen_status(self):
         MessageStatusService.mark_seen(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         assert MessageStatus.objects.filter(
             message=self.message,
@@ -180,10 +180,10 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_seen_upgrades_delivered_to_seen(self):
         MessageStatusService.mark_delivered(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         MessageStatusService.mark_seen(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         assert MessageStatus.objects.filter(
             message=self.message,
@@ -198,7 +198,7 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_seen_excludes_author(self):
         updates = MessageStatusService.mark_seen(
-            user=self.member, message_ids=[self.message.id]
+            user=self.member, room=self.room, message_ids=[self.message.id]
         )
         assert updates == []
         assert not MessageStatus.objects.filter(
@@ -207,9 +207,9 @@ class MessageStatusServiceTest(ServiceTestBase):
 
     def test_mark_seen_no_duplicate_updates_when_already_seen(self):
         MessageStatusService.mark_seen(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         updates = MessageStatusService.mark_seen(
-            user=self.other_user, message_ids=[self.message.id]
+            user=self.other_user, room=self.room, message_ids=[self.message.id]
         )
         assert updates == []

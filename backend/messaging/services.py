@@ -152,12 +152,16 @@ class MessageStatusService:
     """Service for message delivery/read status operations."""
 
     @staticmethod
-    def mark_delivered(user: User, message_ids: list[uuid.UUID]) -> list[MessageStatus]:
+    def mark_delivered(
+        user: User, room: Room, message_ids: list[uuid.UUID]
+    ) -> list[MessageStatus]:
         """
         Bulk-create DELIVERED statuses for messages not authored by the user.
         Uses ignore_conflicts to skip already-delivered messages.
         """
-        messages = Message.objects.filter(id__in=message_ids).exclude(author=user)
+        messages = Message.objects.filter(id__in=message_ids, room=room).exclude(
+            author=user
+        )
 
         statuses = [
             MessageStatus(
@@ -170,38 +174,59 @@ class MessageStatusService:
         return MessageStatus.objects.bulk_create(statuses, ignore_conflicts=True)
 
     @staticmethod
-    def mark_seen(user: User, message_ids: list[uuid.UUID]) -> list[dict]:
+    def mark_seen(user: User, room: Room, message_ids: list[uuid.UUID]) -> list[dict]:
         """
         Mark messages as SEEN for the user. Upgrades DELIVERED → SEEN.
         Returns list of updates that were actually applied (for broadcasting).
         """
-        messages = Message.objects.filter(id__in=message_ids).exclude(author=user)
-
-        already_seen = set(
-            MessageStatus.objects.filter(
-                message__in=messages,
-                user=user,
-                status=MessageStatusChoices.SEEN,
-            ).values_list("message_id", flat=True)
+        msg_ids = list(
+            Message.objects.filter(id__in=message_ids, room=room)
+            .exclude(author=user)
+            .values_list("id", flat=True)
         )
-        messages = messages.exclude(id__in=already_seen)
+        if not msg_ids:
+            return []
 
-        updates = []
-        for msg in messages:
-            MessageStatus.objects.update_or_create(
-                message=msg,
-                user=user,
-                defaults={"status": MessageStatusChoices.SEEN},
+        existing = dict(
+            MessageStatus.objects.filter(message_id__in=msg_ids, user=user).values_list(
+                "message_id", "status"
             )
-            updates.append(
-                {
-                    "message_id": str(msg.id),
-                    "user_id": str(user.id),
-                    "status": MessageStatusChoices.SEEN,
-                }
+        )
+
+        to_update = [
+            mid
+            for mid, status in existing.items()
+            if status != MessageStatusChoices.SEEN
+        ]
+        to_create = [mid for mid in msg_ids if mid not in existing]
+        affected = to_update + to_create
+
+        if not affected:
+            return []
+
+        if to_update:
+            MessageStatus.objects.filter(message_id__in=to_update, user=user).update(
+                status=MessageStatusChoices.SEEN
+            )
+        if to_create:
+            MessageStatus.objects.bulk_create(
+                [
+                    MessageStatus(
+                        message_id=mid, user=user, status=MessageStatusChoices.SEEN
+                    )
+                    for mid in to_create
+                ],
+                ignore_conflicts=True,
             )
 
-        return updates
+        return [
+            {
+                "message_id": str(mid),
+                "user_id": str(user.id),
+                "status": MessageStatusChoices.SEEN,
+            }
+            for mid in affected
+        ]
 
     @staticmethod
     def get_status_summary(message_ids: list[uuid.UUID]) -> dict[str, dict]:

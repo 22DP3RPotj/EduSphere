@@ -174,7 +174,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 .values_list("id", flat=True)
             )
             if msg_ids:
-                MessageStatusService.mark_delivered(user=self.user, message_ids=msg_ids)
+                MessageStatusService.mark_delivered(
+                    user=self.user, room=self.room, message_ids=msg_ids
+                )
 
         await backfill_delivered()
 
@@ -378,9 +380,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Handle marking messages as seen by the current user."""
         from backend.messaging.services import MessageStatusService
 
+        room = self.room
+
         @database_sync_to_async
         def mark_seen(user, ids):
-            return MessageStatusService.mark_seen(user=user, message_ids=ids)
+            return MessageStatusService.mark_seen(user=user, room=room, message_ids=ids)
 
         try:
             updates = await mark_seen(self.user, message_ids)
@@ -412,7 +416,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     from backend.messaging.services import MessageStatusService
 
                     return MessageStatusService.mark_delivered(
-                        user=self.user, message_ids=[msg_id]
+                        user=self.user, room=self.room, message_ids=[msg_id]
                     )
 
                 try:

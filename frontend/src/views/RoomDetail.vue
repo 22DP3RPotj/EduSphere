@@ -287,7 +287,7 @@
           </div>
           
           <!-- Reply preview bar -->
-          <div v-if="replyingTo" class="reply-preview-bar">
+          <div v-if="replyingTo && canSendMessage" class="reply-preview-bar">
             <div class="reply-preview-content">
               <font-awesome-icon icon="reply" class="reply-preview-icon" />
               <span class="reply-preview-text">
@@ -382,7 +382,7 @@ const { t } = useI18n();
 
 const messageInput = ref<string>('');
 const messagesContainerRef = ref<HTMLElement | null>(null);
-const replyingTo = ref<{ id: string; body: string; author: string } | null>(null);
+const replyingTo = ref<{ id: UUID; body: string; author: string } | null>(null);
 const showSidebar = ref<boolean>(window.innerWidth > 768);
 const isMobileView = ref<boolean>(window.innerWidth <= 768);
 const showEditForm = ref<boolean>(false);
@@ -437,6 +437,7 @@ const visibleAdvisory = ref<string | null>(null);
 const lastInputChangeAt = ref<number>(Date.now());
 let advisoryTimer: number | null = null;
 
+// TODO: think of a better way to do this
 function isRateLimitAdvisory(msg: string): boolean {
   return /(rate\s*limit|too\s*many|slow\s*down|throttl)/i.test(msg);
 }
@@ -630,7 +631,8 @@ async function handleMessageUpdate(messageId: UUID, newBody: string) {
   }
 }
 
-function handleReplyMessage(payload: { id: string; body: string; author: string }) {
+function handleReplyMessage(payload: { id: UUID; body: string; author: string }) {
+  if (!canSendMessage.value) return;
   replyingTo.value = payload;
   const inputEl = document.getElementById('messageInput');
   if (inputEl) inputEl.focus();
@@ -640,7 +642,7 @@ function cancelReply() {
   replyingTo.value = null;
 }
 
-function scrollToMessage(messageId: string) {
+function scrollToMessage(messageId: UUID) {
   const el = messagesContainerRef.value?.querySelector(`[data-message-id="${messageId}"]`);
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });

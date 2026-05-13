@@ -132,6 +132,7 @@ export const ROOM_MESSAGES_QUERY = gql`
             author {
                 id
                 username
+                name
                 avatar
             }
             body

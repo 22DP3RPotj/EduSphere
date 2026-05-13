@@ -295,10 +295,20 @@ export function useWebSocket(
         ? { ...msg.statusSummary }
         : { delivered: 0, seen: 0 }
 
-      if (update.status === "SEEN") {
-        summary.seen += 1
-      } else if (update.status === "DELIVERED") {
-        summary.delivered += 1
+      if (typeof update.delivered === "number" && typeof update.seen === "number") {
+        summary.delivered = Math.max(0, update.delivered)
+        summary.seen = Math.max(0, update.seen)
+      } else {
+        if (update.prev_status === "SEEN") {
+          summary.seen = Math.max(0, summary.seen - 1)
+        } else if (update.prev_status === "DELIVERED") {
+          summary.delivered = Math.max(0, summary.delivered - 1)
+        }
+        if (update.status === "SEEN") {
+          summary.seen += 1
+        } else if (update.status === "DELIVERED") {
+          summary.delivered += 1
+        }
       }
 
       messages.value[idx] = { ...msg, statusSummary: summary }

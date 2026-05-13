@@ -224,6 +224,7 @@ class MessageStatusService:
                 "message_id": str(mid),
                 "user_id": str(user.id),
                 "status": MessageStatusChoices.SEEN,
+                "prev_status": str(existing[mid]) if mid in existing else None,
             }
             for mid in affected
         ]

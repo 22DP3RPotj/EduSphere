@@ -24,8 +24,8 @@ export interface WSNewMessage extends WSBaseMessage {
   author_id: UUID;
   author_name: string;
   author_avatar: string | null;
-  parent_id: string | null;
-  parent_preview: { id: string; body: string; author: string } | null;
+  parent_id: UUID | null;
+  parent_preview: { id: UUID; body: string; author: string } | null;
 }
 
 export interface WSUpdateMessage extends WSBaseMessage {
@@ -42,7 +42,14 @@ export interface WSDeleteMessage extends WSBaseMessage {
 export interface WSStatusUpdate {
   type: 'chat_message';
   action: 'status_update';
-  updates: Array<{ message_id: string; user_id: string; status: string }>;
+  updates: Array<{
+    message_id: UUID;
+    user_id: UUID;
+    status: "DELIVERED" | "SEEN";
+    prev_status: "DELIVERED" | "SEEN" | null;
+    delivered?: number;
+    seen?: number;
+  }>;
 }
 
 export type ReceivedWebSocketMessage = WSNewMessage | WSUpdateMessage | WSDeleteMessage | WSStatusUpdate;

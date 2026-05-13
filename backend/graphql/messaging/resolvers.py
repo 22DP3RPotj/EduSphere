@@ -1,17 +1,15 @@
 import uuid
 
 import graphene
-from django.db.models import QuerySet
+from django.db.models import Count, Q, QuerySet
 from graphql import GraphQLError
-
-from django.db.models import QuerySet, Count, Q
 
 from backend.access.models import Participant
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
 from backend.graphql.messaging.types import MessageType
-from backend.messaging.models import Message
 from backend.messaging.choices import MessageStatusChoices
+from backend.messaging.models import Message
 from backend.room.models import Room
 
 

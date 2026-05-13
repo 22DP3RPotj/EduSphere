@@ -247,9 +247,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_new_message(self, room, message_body, parent_id=None):
         """Handle creation of a new message."""
-        from backend.messaging.services import MessageService
         from backend.messaging.choices import MessageStatusChoices
         from backend.messaging.models import MessageStatus
+        from backend.messaging.services import MessageService
 
         @database_sync_to_async
         def create_message(user, room, body, parent_id):

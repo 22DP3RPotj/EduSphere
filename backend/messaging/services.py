@@ -1,14 +1,13 @@
 import uuid
 
-from backend.messaging.models import Message, MessageStatus
-from backend.messaging.choices import MessageStatusChoices
 from backend.account.models import User
 from backend.core.exceptions import (
-    PermissionException,
     NotFoundException,
+    PermissionException,
 )
 from backend.messaging import actions
-from backend.messaging.models import Message
+from backend.messaging.choices import MessageStatusChoices
+from backend.messaging.models import Message, MessageStatus
 from backend.messaging.rules.labels import MessagingPermission
 from backend.room.models import Room
 
@@ -51,9 +50,9 @@ class MessageService:
             try:
                 parent = Message.objects.select_related("author").get(id=parent_id)
             except Message.DoesNotExist:
-                raise NotFoundException("Parent message not found.")
+                raise NotFoundException("Parent message not found.") from None
             if parent.room_id != room.id:
-                raise NotFoundException("Parent message not found.")
+                raise NotFoundException("Parent message not found.") from None
 
         return actions.create_message(user=user, room=room, body=body, parent=parent)
 

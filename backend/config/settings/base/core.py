@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_prometheus",
     "django_filters",
+    "anymail",
 ]
 
 try:
@@ -92,11 +93,6 @@ TEMPLATES = [
 ASGI_APPLICATION = "backend.config.asgi.application"
 
 WSGI_APPLICATION = "backend.config.wsgi.application"
-
-EMAIL_BACKEND = env(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.smtp.EmailBackend",
-)
 
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost")
 

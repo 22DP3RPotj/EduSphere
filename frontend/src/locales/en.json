@@ -187,6 +187,7 @@
     "createFirstRoom": "Create your first room",
     "noRecommendations": "No recommendations available right now",
     "viewRoom": "View Room",
+    "unknownRoom": "Unknown Room",
     "failedToLoadHostedRooms": "Failed to load hosted rooms",
     "noRoomsHosted": "No rooms hosted yet",
     "failedToLoadJoinedRooms": "Failed to load joined rooms",

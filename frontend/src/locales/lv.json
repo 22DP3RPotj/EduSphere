@@ -187,6 +187,7 @@
     "createFirstRoom": "Izveidojiet savu pirmo istabu",
     "noRecommendations": "Pašlaik nav pieejamu ieteikumu",
     "viewRoom": "Skatīt istabu",
+    "unknownRoom": "Nezināma istaba",
     "failedToLoadHostedRooms": "Neizdevās ielādēt uzturētās istabas",
     "noRoomsHosted": "Vēl nav uzturētu istabu",
     "failedToLoadJoinedRooms": "Neizdevās ielādēt pievienotās istabas",

@@ -26,7 +26,7 @@ class MessageQuery(graphene.ObjectType):
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError(
-                "Room not found", extensions={"code": "NOT_FOUND"}
+                "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
             ) from None
 
         if not Participant.objects.filter(user=info.context.user, room=room).exists():
@@ -43,7 +43,7 @@ class MessageQuery(graphene.ObjectType):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise GraphQLError(
-                "User not found", extensions={"code": "NOT_FOUND"}
+                "User not found", extensions={"code": ErrorCode.NOT_FOUND}
             ) from None
 
         return user.message_set.select_related("room", "room__host").order_by(

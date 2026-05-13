@@ -7,19 +7,26 @@
       'host-message': props.isHost 
   }">
     <div v-if="!isMessageOwner" class="message-avatar">
-      <router-link :to="`/u/${props.message.author?.id}`">
+      <router-link v-if="props.message.author?.id" :to="`/u/${props.message.author.id}`">
         <img 
           :src="userAvatar" 
           :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
           class="avatar-img" 
         />
       </router-link>
+      <img 
+        v-else
+        :src="userAvatar" 
+        :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
+        class="avatar-img" 
+      />
     </div>
     <div class="message-content">
       <div class="message-header">
         <div class="message-author">
           <span class="username">
-              <router-link :to="`/u/${props.message.author?.id}`">{{ userDisplayName }}</router-link>
+              <router-link v-if="props.message.author?.id" :to="`/u/${props.message.author.id}`">{{ userDisplayName }}</router-link>
+              <span v-else>{{ userDisplayName }}</span>
             </span>
           <span v-if="props.isHost" class="host-badge">{{ t('room.host') }}</span>
           <span 
@@ -109,13 +116,19 @@
       <div v-else class="message-body">{{ props.message.body }}</div>
     </div>
     <div v-if="isMessageOwner" class="message-avatar own-avatar">
-      <router-link :to="`/u/${props.message.author?.id}`">
+      <router-link v-if="props.message.author?.id" :to="`/u/${props.message.author.id}`">
         <img 
           :src="userAvatar" 
           :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
           class="avatar-img" 
         />
       </router-link>
+      <img 
+        v-else
+        :src="userAvatar" 
+        :alt="t('message.userAvatarAlt', { name: userDisplayName })" 
+        class="avatar-img" 
+      />
     </div>
   </div>
 </template>
@@ -356,7 +369,8 @@ onBeforeUnmount(() => {
 }
 
 .message-avatar a {
-  display: contents;
+  display: inline-flex;
+  border-radius: 50%;
 }
 
 .host-badge {

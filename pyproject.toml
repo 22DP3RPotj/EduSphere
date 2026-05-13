@@ -39,11 +39,8 @@ watchfiles = "^1.1.1"
 websockets = "^16.0"
 graphql-relay = "^3.2.0"
 
-# Optional platform-specific dependency for Linux/macOS only
-uvloop = { version = "^0.22.1", optional = true, markers = "sys_platform != 'win32'" }
-
-[tool.poetry.extras]
-performance = ["uvloop"]
+# Platform-specific dependency for Linux/macOS only
+uvloop = { version = "^0.22.1", markers = "sys_platform == 'linux' or sys_platform == 'darwin'" }
 
 [tool.poetry.group.typecheck]
 optional = true

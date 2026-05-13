@@ -2772,10 +2772,10 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 name = "uvloop"
 version = "0.22.1"
 description = "Fast implementation of asyncio event loop on top of libuv"
-optional = true
+optional = false
 python-versions = ">=3.8.1"
 groups = ["main"]
-markers = "sys_platform != \"win32\" and extra == \"performance\""
+markers = "sys_platform == \"linux\" or sys_platform == \"darwin\""
 files = [
     {file = "uvloop-0.22.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ef6f0d4cc8a9fa1f6a910230cd53545d9a14479311e87e3cb225495952eb672c"},
     {file = "uvloop-0.22.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7cd375a12b71d33d46af85a3343b35d98e8116134ba404bd657b3b1d15988792"},
@@ -3100,10 +3100,7 @@ docs = ["Sphinx", "furo", "repoze.sphinx.autointerface"]
 test = ["coverage[toml]", "zope.event", "zope.testing"]
 testing = ["coverage[toml]", "zope.event", "zope.testing"]
 
-[extras]
-performance = ["uvloop"]
-
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "900657f1b030387dc9c6211e27723a1b70433169631585760bc3480f97e6dc32"
+content-hash = "c3ea8ab7263f0c257c3418aaa6d2524ea6710b62bc40caf82e6e2ba70221ccef"

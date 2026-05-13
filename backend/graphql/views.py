@@ -1,7 +1,8 @@
 from django.conf import settings
 from graphene_file_upload.django import FileUploadGraphQLView
-from backend.graphql.security import get_validation_rules
 from graphql_sync_dataloaders import DeferredExecutionContext
+
+from backend.graphql.security import get_validation_rules
 
 
 class GraphqlView(FileUploadGraphQLView):

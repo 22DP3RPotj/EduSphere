@@ -3,34 +3,33 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphql_jwt.decorators import superuser_required
 
 from backend.account.models import UserBanHistory, UserHistory
+from backend.graphql.audit.filters import (
+    InviteAuditFilter,
+    InviteLinkAuditFilter,
+    ModerationActionAuditFilter,
+    ModerationCaseAuditFilter,
+    ReportAuditFilter,
+    RoomAuditFilter,
+    UserAuditFilter,
+    UserBanAuditFilter,
+)
+from backend.graphql.audit.types import (
+    InviteAuditType,
+    InviteLinkAuditType,
+    ModerationActionAuditType,
+    ModerationCaseAuditType,
+    ReportAuditType,
+    RoomAuditType,
+    UserAuditType,
+    UserBanAuditType,
+)
+from backend.invite.models import InviteHistory, InviteLinkHistory
 from backend.moderation.models import (
     ModerationActionHistory,
     ModerationCaseHistory,
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory, InviteLinkHistory
-
-from backend.graphql.audit.types import (
-    ModerationActionAuditType,
-    ModerationCaseAuditType,
-    ReportAuditType,
-    UserAuditType,
-    RoomAuditType,
-    InviteAuditType,
-    InviteLinkAuditType,
-    UserBanAuditType,
-)
-from backend.graphql.audit.filters import (
-    InviteLinkAuditFilter,
-    ModerationActionAuditFilter,
-    ModerationCaseAuditFilter,
-    ReportAuditFilter,
-    UserAuditFilter,
-    RoomAuditFilter,
-    InviteAuditFilter,
-    UserBanAuditFilter,
-)
 
 
 class AuditQuery(graphene.ObjectType):

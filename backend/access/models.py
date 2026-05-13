@@ -1,9 +1,9 @@
 import uuid
 
 from django.conf import settings
-from django.db import models
-from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
+from django.db import models
 
 from backend.access.enums import PermissionCode
 from backend.access.querysets import PermissionQuerySet, RoleQuerySet
@@ -16,14 +16,14 @@ class Permission(models.Model):
     )
     description = models.CharField(max_length=255)
 
+    objects = PermissionQuerySet.as_manager()
+
     class Meta:
         app_label = "access"
         ordering = ["code"]
         indexes = [
             models.Index(fields=["code"]),
         ]
-
-    objects = PermissionQuerySet.as_manager()
 
     def __str__(self):
         return self.code
@@ -43,6 +43,8 @@ class Role(models.Model):
     priority = models.PositiveIntegerField(validators=[MaxValueValidator(100)])
     permissions = models.ManyToManyField(Permission, related_name="roles", blank=True)
 
+    objects = RoleQuerySet.as_manager()
+
     class Meta:
         app_label = "access"
         constraints = [
@@ -51,10 +53,12 @@ class Role(models.Model):
             ),
         ]
 
-    objects = RoleQuerySet.as_manager()
-
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class Participant(models.Model):
@@ -83,16 +87,16 @@ class Participant(models.Model):
     def __str__(self):
         return f"{self.user.username} in {self.room.name}"
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def clean(self):
         super().clean()
         if self.role is not None and self.role.room_id != self.room_id:
             raise ValidationError(
                 {"role": "Role must belong to the same room as the participant."}
             )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 # class RoomBan(models.Model):

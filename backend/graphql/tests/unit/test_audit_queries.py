@@ -2,15 +2,15 @@ import pghistory
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from graphql_sync_dataloaders import DeferredExecutionContext
 from graphql_jwt.testcases import JSONWebTokenClient, JSONWebTokenTestCase
+from graphql_sync_dataloaders import DeferredExecutionContext
 
 from backend.access.models import Role
 from backend.graphql.context.registry import GQLDataLoaderRegistry
-from backend.invite.models import Invite
-from backend.room.models import Room
-from backend.room.choices import VisibilityChoices
 from backend.invite.choices import InviteStatusChoices
+from backend.invite.models import Invite
+from backend.room.choices import VisibilityChoices
+from backend.room.models import Room
 
 pytestmark = pytest.mark.unit
 
@@ -83,8 +83,8 @@ class AuditQueryTests(JSONWebTokenTestCase):
 
         for query in queries:
             response = self.client.execute(query)
-            self.assertIsNotNone(response.errors)
-            self.assertIn("permission", str(response.errors[0]).lower())
+            assert response.errors is not None
+            assert "permission" in str(response.errors[0]).lower()
 
     def test_room_audits(self):
         """Test room audit logging, actor resolution, and filtering."""
@@ -120,31 +120,30 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """
 
         response = self.client.execute(query)
-        self.assertIsNone(response.errors)
+        assert response.errors is None
         data = response.data["roomAudits"]["edges"]
-        self.assertGreater(len(data), 0)
+        assert len(data) > 0
 
         latest = data[0]["node"]
-        self.assertEqual(latest["name"], "Audit Room Updated")
-        self.assertEqual(latest["visibility"], VisibilityChoices.PRIVATE)
-        self.assertEqual(latest["actor"]["username"], self.user.username)
-        self.assertEqual(str(latest["pghObjId"]), str(room.id))
+        assert latest["name"] == "Audit Room Updated"
+        assert latest["visibility"] == VisibilityChoices.PRIVATE
+        assert latest["actor"]["username"] == self.user.username
+        assert str(latest["pghObjId"]) == str(room.id)
 
         response = self.client.execute(query, variables={"name": "Updated"})
-        self.assertIsNone(response.errors)
-        self.assertGreater(len(response.data["roomAudits"]["edges"]), 0)
+        assert response.errors is None
+        assert len(response.data["roomAudits"]["edges"]) > 0
 
         response = self.client.execute(query, variables={"targetId": str(room.id)})
-        self.assertIsNone(response.errors)
-        self.assertGreater(len(response.data["roomAudits"]["edges"]), 0)
-        self.assertEqual(
-            str(response.data["roomAudits"]["edges"][0]["node"]["pghObjId"]),
-            str(room.id),
+        assert response.errors is None
+        assert len(response.data["roomAudits"]["edges"]) > 0
+        assert str(response.data["roomAudits"]["edges"][0]["node"]["pghObjId"]) == str(
+            room.id
         )
 
         response = self.client.execute(query, variables={"name": "NonExistent"})
-        self.assertIsNone(response.errors)
-        self.assertEqual(len(response.data["roomAudits"]["edges"]), 0)
+        assert response.errors is None
+        assert len(response.data["roomAudits"]["edges"]) == 0
 
     def test_user_audits(self):
         """Test user audit logging and filters."""
@@ -173,14 +172,14 @@ class AuditQueryTests(JSONWebTokenTestCase):
             query,
             variables={"actorUsername": self.superuser.username},
         )
-        self.assertIsNone(response.errors)
+        assert response.errors is None
         data = response.data["userAudits"]["edges"]
-        self.assertGreater(len(data), 0)
+        assert len(data) > 0
 
         latest = data[-1]["node"]
-        self.assertEqual(latest["isActive"], False)
-        self.assertEqual(latest["actor"]["username"], self.superuser.username)
-        self.assertEqual(str(latest["pghObjId"]), str(self.user.id))
+        assert not latest["isActive"]
+        assert latest["actor"]["username"] == self.superuser.username
+        assert str(latest["pghObjId"]) == str(self.user.id)
 
     def test_invite_audits(self):
         """Test invite audit logging for status changes."""
@@ -216,14 +215,14 @@ class AuditQueryTests(JSONWebTokenTestCase):
         """
 
         response = self.client.execute(query)
-        self.assertIsNone(response.errors)
+        assert response.errors is None
         data = response.data["inviteAudits"]["edges"]
-        self.assertGreater(len(data), 0)
+        assert len(data) > 0
 
         latest = data[0]["node"]
-        self.assertEqual(latest["status"], "ACCEPTED")
-        self.assertEqual(latest["actor"]["username"], self.user.username)
-        self.assertEqual(str(latest["pghObjId"]), str(invite.id))
+        assert latest["status"] == "ACCEPTED"
+        assert latest["actor"]["username"] == self.user.username
+        assert str(latest["pghObjId"]) == str(invite.id)
 
     def test_date_range_filter(self):
         """Test common date filtering across audit logs."""
@@ -252,8 +251,8 @@ class AuditQueryTests(JSONWebTokenTestCase):
         response = self.client.execute(
             query, variables={"dateFrom": yesterday, "dateTo": tomorrow}
         )
-        self.assertIsNone(response.errors)
-        self.assertGreater(len(response.data["userAudits"]["edges"]), 0)
+        assert response.errors is None
+        assert len(response.data["userAudits"]["edges"]) > 0
 
         future_start = (now + timezone.timedelta(days=2)).date().isoformat()
         future_end = (now + timezone.timedelta(days=3)).date().isoformat()
@@ -261,5 +260,5 @@ class AuditQueryTests(JSONWebTokenTestCase):
         response = self.client.execute(
             query, variables={"dateFrom": future_start, "dateTo": future_end}
         )
-        self.assertIsNone(response.errors)
-        self.assertEqual(len(response.data["userAudits"]["edges"]), 0)
+        assert response.errors is None
+        assert len(response.data["userAudits"]["edges"]) == 0

@@ -1,14 +1,15 @@
-import graphene
 import uuid
-from typing import Optional, Any, Self
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
+from typing import Any, Self
 
-from backend.graphql.access.types import ParticipantType
-from backend.graphql.mutations import BaseMutation
+import graphene
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
+
 from backend.access.models import Participant, Role
 from backend.access.services import ParticipantService
 from backend.core.exceptions import ErrorCode
+from backend.graphql.access.types import ParticipantType
+from backend.graphql.mutations import BaseMutation
 
 
 class ChangeParticipantRole(BaseMutation):
@@ -22,7 +23,7 @@ class ChangeParticipantRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         participant_id: uuid.UUID,
         role_id: uuid.UUID,
@@ -32,14 +33,14 @@ class ChangeParticipantRole(BaseMutation):
         except Participant.DoesNotExist:
             raise GraphQLError(
                 "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         try:
             role = Role.objects.get(id=role_id)
         except Role.DoesNotExist:
             raise GraphQLError(
                 "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         participant = ParticipantService.change_participant_role(
             user=info.context.user, participant=participant, new_role=role
@@ -58,7 +59,7 @@ class RemoveParticipant(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         participant_id: uuid.UUID,
     ) -> Self:
@@ -67,7 +68,7 @@ class RemoveParticipant(BaseMutation):
         except Participant.DoesNotExist:
             raise GraphQLError(
                 "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = ParticipantService.remove_participant(
             user=info.context.user, participant=participant

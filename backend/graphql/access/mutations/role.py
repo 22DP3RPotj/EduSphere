@@ -1,15 +1,16 @@
-import graphene
 import uuid
-from typing import Optional, Any, Self
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
-from backend.graphql.access.types import RoleType, RoleDeleteType
-from backend.core.exceptions import ErrorCode
+from typing import Any, Self
 
-from backend.graphql.mutations import BaseMutation
-from backend.room.models import Room
+import graphene
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
+
 from backend.access.models import Role
 from backend.access.services import RoleService
+from backend.core.exceptions import ErrorCode
+from backend.graphql.access.types import RoleDeleteType, RoleType
+from backend.graphql.mutations import BaseMutation
+from backend.room.models import Room
 
 
 class CreateRole(BaseMutation):
@@ -26,7 +27,7 @@ class CreateRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         name: str,
@@ -39,7 +40,7 @@ class CreateRole(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         role = RoleService.create_role(
             user=info.context.user,
@@ -67,13 +68,13 @@ class UpdateRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        priority: Optional[int] = None,
-        permission_ids: Optional[list[uuid.UUID]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        priority: int | None = None,
+        permission_ids: list[uuid.UUID] | None = None,
     ) -> Self:
         role = RoleService.get_role_by_id(role_id=role_id)
 
@@ -105,10 +106,10 @@ class DeleteRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
-        substitution_role_id: Optional[uuid.UUID] = None,
+        substitution_role_id: uuid.UUID | None = None,
     ) -> Self:
         role = RoleService.get_role_by_id(role_id=role_id)
 
@@ -126,7 +127,7 @@ class DeleteRole(BaseMutation):
                 raise GraphQLError(
                     "Substitution role not found",
                     extensions={"code": ErrorCode.NOT_FOUND},
-                )
+                ) from None
 
         result = RoleService.delete_role(
             user=info.context.user,
@@ -148,7 +149,7 @@ class AssignPermissionsToRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
         permission_ids: list[uuid.UUID],
@@ -180,7 +181,7 @@ class RemovePermissionsFromRole(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         role_id: uuid.UUID,
         permission_ids: list[uuid.UUID],
@@ -190,7 +191,7 @@ class RemovePermissionsFromRole(BaseMutation):
         except Role.DoesNotExist:
             raise GraphQLError(
                 "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         role = RoleService.remove_permissions_from_role(
             user=info.context.user,

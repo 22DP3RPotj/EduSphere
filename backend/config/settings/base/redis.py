@@ -1,5 +1,6 @@
-from ..environment import env
 from celery.schedules import crontab
+
+from ..environment import env
 
 # Redis Streams
 REDIS_STREAMS = {

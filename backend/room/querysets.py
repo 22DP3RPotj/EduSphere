@@ -1,16 +1,23 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Self
+
 from django.db import models
-from typing import Self
+
 from backend.access.models import Participant
-from backend.account.models import User
+
+if TYPE_CHECKING:
+    from backend.account.models import User
+    from backend.room.models import Room, Topic  # noqa: F401
 
 
-class RoomQuerySet(models.QuerySet):
+class RoomQuerySet(models.QuerySet["Room"]):
     """Custom QuerySet for Room model."""
 
-    def public(self):
+    def public(self) -> Self:
         return self.filter(visibility=self.model.Visibility.PUBLIC)
 
-    def private(self):
+    def private(self) -> Self:
         return self.filter(visibility=self.model.Visibility.PRIVATE)
 
     def visible_to(self, user: User) -> Self:
@@ -62,7 +69,7 @@ class RoomQuerySet(models.QuerySet):
         )
 
 
-class TopicQuerySet(models.QuerySet):
+class TopicQuerySet(models.QuerySet["Topic"]):
     """Custom QuerySet for Topic model."""
 
     def with_rooms_count(self) -> Self:

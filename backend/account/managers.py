@@ -1,5 +1,5 @@
-from django.utils.text import slugify
 from django.contrib.auth.base_user import BaseUserManager
+from django.utils.text import slugify
 
 
 class UserManager(BaseUserManager):

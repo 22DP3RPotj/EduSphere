@@ -1,13 +1,13 @@
 import uuid
 
 import pghistory
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 from backend.invite.choices import InviteStatusChoices
 from backend.invite.querysets import InviteQuerySet
-from backend.invite.utils import generate_token, INVITE_TOKEN_LENGTH
+from backend.invite.utils import INVITE_TOKEN_LENGTH, generate_token
 
 
 class Invite(models.Model):
@@ -44,6 +44,8 @@ class Invite(models.Model):
     expires_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    objects = InviteQuerySet.as_manager()
+
     class Meta:
         app_label = "invite"
         constraints = [
@@ -58,8 +60,6 @@ class Invite(models.Model):
             models.Index(fields=["expires_at"]),
         ]
         ordering = ["-created_at"]
-
-    objects = InviteQuerySet.as_manager()
 
     def __str__(self):
         return f"Invite of {self.invitee.username} to {self.room.name} by {self.inviter.username}"

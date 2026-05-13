@@ -1,13 +1,13 @@
-from django.db import models
-from typing import Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
+from django.db import models
 
 if TYPE_CHECKING:
+    from backend.access.models import Participant, Permission, Role  # noqa: F401
     from backend.room.models import Room
-    from backend.access.models import Participant
 
 
-class RoleQuerySet(models.QuerySet):
+class RoleQuerySet(models.QuerySet["Role"]):
     """Custom QuerySet for access-related models, providing common filtering methods."""
 
     def with_permissions(self) -> Self:
@@ -23,7 +23,7 @@ class RoleQuerySet(models.QuerySet):
         return self.filter(room=room)
 
 
-class PermissionQuerySet(models.QuerySet):
+class PermissionQuerySet(models.QuerySet["Permission"]):
     """Custom QuerySet for Permission model, providing common filtering methods."""
 
     def visible_to(self, participant: "Participant") -> Self:

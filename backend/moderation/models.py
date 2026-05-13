@@ -1,4 +1,5 @@
 import uuid
+
 import pghistory
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -9,9 +10,9 @@ from django.db.models import Q
 from backend.account.models import User
 from backend.core.constants import DELETED_USER
 from backend.moderation.choices import (
+    ActionChoices,
     ActionPriorityChoices,
     CaseStatusChoices,
-    ActionChoices,
 )
 
 
@@ -134,18 +135,6 @@ class ModerationCase(models.Model):
             models.Index(fields=["content_type", "object_id"]),
         ]
 
-    def update_status(self, new_status: CaseStatusChoices) -> None:
-        if self.status == new_status:
-            return
-        self.status = new_status
-        self.save(update_fields=["status", "updated_at"])
-
-    def update_priority(self, new_priority: ActionPriorityChoices) -> None:
-        if self.priority == new_priority:
-            return
-        self.priority = new_priority
-        self.save(update_fields=["priority", "updated_at"])
-
     def __str__(self):
         target = (
             str(self.content_object)
@@ -157,6 +146,18 @@ class ModerationCase(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def update_status(self, new_status: CaseStatusChoices) -> None:
+        if self.status == new_status:
+            return
+        self.status = new_status
+        self.save(update_fields=["status", "updated_at"])
+
+    def update_priority(self, new_priority: ActionPriorityChoices) -> None:
+        if self.priority == new_priority:
+            return
+        self.priority = new_priority
+        self.save(update_fields=["priority", "updated_at"])
 
 
 class ModerationAction(models.Model):

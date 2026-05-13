@@ -1,17 +1,17 @@
 import graphene
 
-from .resolvers import RoleQuery
 from .mutations.participant import (
     ChangeParticipantRole,
     RemoveParticipant,
 )
 from .mutations.role import (
     AssignPermissionsToRole,
-    RemovePermissionsFromRole,
     CreateRole,
     DeleteRole,
+    RemovePermissionsFromRole,
     UpdateRole,
 )
+from .resolvers import RoleQuery
 
 
 class AccessQueries(RoleQuery, graphene.ObjectType):

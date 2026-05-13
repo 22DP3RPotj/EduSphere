@@ -1,19 +1,17 @@
 import pytest
-
 from django.contrib.contenttypes.models import ContentType
 
 from backend.core.exceptions import (
     ConflictException,
     PermissionException,
 )
+from backend.core.tests.service_base import ServiceTestBase
 from backend.moderation.choices import ActionChoices, CaseStatusChoices
 from backend.moderation.models import (
     ModerationAction,
     ReportReason,
 )
 from backend.moderation.services import ReportService
-from backend.core.tests.service_base import ServiceTestBase
-
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 
@@ -42,17 +40,17 @@ class ReportServiceTest(ServiceTestBase):
             description="This room contains inappropriate content",
         )
 
-        self.assertEqual(report.reporter, self.member)
-        self.assertEqual(report.content_object, self.room)
-        self.assertEqual(report.reason, self.reason_spam)
-        self.assertIsNotNone(report.case)
-        self.assertEqual(report.case.status, CaseStatusChoices.PENDING)
+        assert report.reporter == self.member
+        assert report.content_object == self.room
+        assert report.reason == self.reason_spam
+        assert report.case is not None
+        assert report.case.status == CaseStatusChoices.PENDING
 
     def test_create_report_not_participant(self):
         self.room.visibility = self.room.Visibility.PRIVATE
         self.room.save(update_fields=["visibility"])
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ReportService.create_report(
                 reporter=self.other_user,
                 target=self.room,
@@ -70,7 +68,7 @@ class ReportServiceTest(ServiceTestBase):
             description="First report",
         )
 
-        with self.assertRaises(ConflictException):
+        with pytest.raises(ConflictException):
             ReportService.create_report(
                 reporter=self.member,
                 target=self.room,
@@ -96,7 +94,7 @@ class ReportServiceTest(ServiceTestBase):
             description="Second reporter",
         )
 
-        self.assertEqual(report1.case, report2.case)
+        assert report1.case == report2.case
 
     # --- User target tests ---
 
@@ -108,9 +106,9 @@ class ReportServiceTest(ServiceTestBase):
             description="Harassing other users",
         )
 
-        self.assertEqual(report.reporter, self.member)
-        self.assertEqual(report.content_object, self.other_user)
-        self.assertEqual(report.reason, self.reason_harassment)
+        assert report.reporter == self.member
+        assert report.content_object == self.other_user
+        assert report.reason == self.reason_harassment
 
     def test_create_report_user_no_participant_check(self):
         """Any authenticated user can report another user without membership."""
@@ -120,7 +118,7 @@ class ReportServiceTest(ServiceTestBase):
             reason=self.reason_spam,
             description="Suspicious user",
         )
-        self.assertIsNotNone(report.pk)
+        assert report.pk is not None
 
     # --- Reason validation tests ---
 
@@ -130,7 +128,7 @@ class ReportServiceTest(ServiceTestBase):
         )
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ReportService.create_report(
                 reporter=self.member,
                 target=self.room,
@@ -150,7 +148,7 @@ class ReportServiceTest(ServiceTestBase):
 
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ReportService.create_report(
                 reporter=self.member,
                 target=self.room,
@@ -178,11 +176,11 @@ class ReportServiceTest(ServiceTestBase):
             note="Warning issued",
         )
 
-        self.assertEqual(updated_case.status, CaseStatusChoices.RESOLVED)
+        assert updated_case.status == CaseStatusChoices.RESOLVED
         action = ModerationAction.objects.get(case=case)
-        self.assertEqual(action.action, ActionChoices.WARNING)
-        self.assertEqual(action.moderator, self.moderator)
-        self.assertEqual(action.note, "Warning issued")
+        assert action.action == ActionChoices.WARNING
+        assert action.moderator == self.moderator
+        assert action.note == "Warning issued"
 
     def test_take_case_action_no_violation_dismisses(self):
         self._add_member(self.member, self.member_role)
@@ -200,7 +198,7 @@ class ReportServiceTest(ServiceTestBase):
             action=ActionChoices.NO_VIOLATION,
         )
 
-        self.assertEqual(updated_case.status, CaseStatusChoices.DISMISSED)
+        assert updated_case.status == CaseStatusChoices.DISMISSED
 
     def test_take_case_action_not_moderator(self):
         self._add_member(self.member, self.member_role)
@@ -212,7 +210,7 @@ class ReportServiceTest(ServiceTestBase):
             description="Test report",
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ReportService.take_case_action(
                 moderator=self.other_user,
                 case=report.case,
@@ -234,8 +232,8 @@ class ReportServiceTest(ServiceTestBase):
             case=report.case,
         )
 
-        self.assertEqual(updated_case.status, CaseStatusChoices.UNDER_REVIEW)
-        self.assertEqual(ModerationAction.objects.filter(case=report.case).count(), 0)
+        assert updated_case.status == CaseStatusChoices.UNDER_REVIEW
+        assert ModerationAction.objects.filter(case=report.case).count() == 0
 
     def test_set_case_under_review_not_moderator(self):
         self._add_member(self.member, self.member_role)
@@ -247,7 +245,7 @@ class ReportServiceTest(ServiceTestBase):
             description="Test report",
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ReportService.set_case_under_review(
                 moderator=self.other_user,
                 case=report.case,

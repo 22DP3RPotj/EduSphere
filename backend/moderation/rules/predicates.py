@@ -1,6 +1,7 @@
 from rules.predicates import predicate
-from backend.moderation.models import Report
+
 from backend.account.models import User
+from backend.moderation.models import Report
 
 
 @predicate

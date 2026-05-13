@@ -1,13 +1,13 @@
+from datetime import datetime, timedelta
 from unittest import mock
+
+import pghistory.models
 import pytest
+from django.db import DatabaseError
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from django.db import DatabaseError
-import pghistory.models
-from datetime import datetime, timedelta
 
 from backend.core.tasks.cleanup import run_audit_log_cleanup
-
 
 pytestmark = pytest.mark.unit
 
@@ -77,13 +77,13 @@ class CleanupOldAuditLogsTests(TestCase):
 
         # Verify deletion calls
         mock_objects.filter.assert_any_call(pk__in=id_batch)
-        self.assertTrue(mock_queryset.delete.called)
+        mock_queryset.delete.assert_called()
 
         # Verify logs for deleted records
         mock_logger.info.assert_any_call("Deleted 3 records from core.MockEvent")
         mock_logger.info.assert_any_call("Total audit log records deleted: 3")
 
-        self.assertEqual(total_deleted, 3)
+        assert total_deleted == 3
 
     @override_settings(AUDIT_LOG_RETENTION_DAYS=30)
     @mock.patch("backend.core.tasks.cleanup.apps.get_models")
@@ -103,7 +103,7 @@ class CleanupOldAuditLogsTests(TestCase):
         mock_get_models.return_value = [self.MockEvent]
 
         # Verify exception is raised instead of logged
-        with self.assertRaises(DatabaseError):
+        with pytest.raises(DatabaseError):
             run_audit_log_cleanup()
 
     @mock.patch("backend.core.tasks.cleanup.apps.get_models")
@@ -120,7 +120,7 @@ class CleanupOldAuditLogsTests(TestCase):
 
         total_deleted = run_audit_log_cleanup()
 
-        self.assertEqual(total_deleted, 0)
+        assert total_deleted == 0
 
     @mock.patch("backend.core.tasks.cleanup.apps.get_models")
     @mock.patch("backend.core.tasks.cleanup.timezone")
@@ -138,6 +138,6 @@ class CleanupOldAuditLogsTests(TestCase):
 
             total_deleted = run_audit_log_cleanup()
 
-            self.assertEqual(total_deleted, 0)
+            assert total_deleted == 0
         finally:
             self.MockEvent._meta.proxy = original_proxy

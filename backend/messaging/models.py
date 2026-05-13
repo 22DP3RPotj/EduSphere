@@ -1,7 +1,8 @@
 import uuid
+
 from django.conf import settings
-from django.db import models
 from django.core.exceptions import ValidationError
+from django.db import models
 
 from backend.messaging.choices import MessageStatusChoices
 
@@ -32,16 +33,16 @@ class Message(models.Model):
     def __str__(self):
         return self.body[0:50] + ("..." if len(self.body) > 50 else "")
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     def clean(self):
         super().clean()
         if self.parent and self.parent.room_id != self.room_id:
             raise ValidationError(
                 {"parent": "Parent message must be in the same room as the message."}
             )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
 
 
 class MessageStatus(models.Model):

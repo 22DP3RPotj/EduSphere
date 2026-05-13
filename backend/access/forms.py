@@ -1,5 +1,6 @@
-from backend.access.models import Role
 from django.forms import ModelForm
+
+from backend.access.models import Role
 
 
 class RoleForm(ModelForm):

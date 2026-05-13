@@ -1,11 +1,12 @@
 import uuid
+from typing import TYPE_CHECKING
+
 import pghistory
-from typing import Optional, TYPE_CHECKING
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
-from django.core.exceptions import ValidationError
 
 from backend.room.choices import VisibilityChoices
 from backend.room.querysets import RoomQuerySet, TopicQuerySet
@@ -17,6 +18,8 @@ if TYPE_CHECKING:
 class Topic(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=32, unique=True)
+
+    objects = TopicQuerySet.as_manager()
 
     class Meta:
         app_label = "room"
@@ -32,8 +35,6 @@ class Topic(models.Model):
             models.Index(fields=["name"]),
         ]
         ordering = [Lower("name").asc()]
-
-    objects = TopicQuerySet.as_manager()
 
     def __str__(self):
         return self.name
@@ -93,20 +94,12 @@ class Room(models.Model):
             models.Index(fields=["updated_at"]),
         ]
 
-    def update_visibility(self, new_visibility: VisibilityChoices):
-        if self.visibility == new_visibility:
-            return
-        self.visibility = new_visibility
-        self.save(update_fields=["visibility", "updated_at"])
-
-    def update_default_role(self, new_default_role: "Optional[Role]"):
-        if self.default_role == new_default_role:
-            return
-        self.default_role = new_default_role
-        self.save(update_fields=["default_role_id", "updated_at"])
-
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()
@@ -115,9 +108,17 @@ class Room(models.Model):
                 {"default_role": "Default role must belong to this room."}
             )
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+    def update_visibility(self, new_visibility: VisibilityChoices):
+        if self.visibility == new_visibility:
+            return
+        self.visibility = new_visibility
+        self.save(update_fields=["visibility", "updated_at"])
+
+    def update_default_role(self, new_default_role: "Role | None"):
+        if self.default_role == new_default_role:
+            return
+        self.default_role = new_default_role
+        self.save(update_fields=["default_role_id", "updated_at"])
 
 
 class RoomHistory(

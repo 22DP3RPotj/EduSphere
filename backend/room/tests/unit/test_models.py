@@ -1,8 +1,7 @@
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-
-import pytest
 
 pytestmark = pytest.mark.unit
 
@@ -14,32 +13,32 @@ User = get_user_model()
 class TopicModelTest(TestCase):
     def test_topic_creation(self):
         topic = Topic.objects.create(name="Programming")
-        self.assertEqual(topic.name, "Programming")
+        assert topic.name == "Programming"
 
     def test_topic_str(self):
         topic = Topic.objects.create(name="Music")
-        self.assertEqual(str(topic), "Music")
+        assert str(topic) == "Music"
 
     def test_topic_invalid_name(self):
-        with self.assertRaises(ValidationError):
-            topic = Topic(name="\x01control")
+        topic = Topic(name="\x01control")
+        with pytest.raises(ValidationError):
             topic.full_clean()
 
     def test_topic_name_with_numbers(self):
         topic = Topic.objects.create(name="Music101")
-        self.assertEqual(topic.name, "Music101")
+        assert topic.name == "Music101"
 
     def test_topic_name_with_spaces(self):
         topic = Topic.objects.create(name="Data Science")
-        self.assertEqual(topic.name, "Data Science")
+        assert topic.name == "Data Science"
 
     def test_topic_name_with_unicode(self):
         topic = Topic.objects.create(name="Программирование")
-        self.assertEqual(topic.name, "Программирование")
+        assert topic.name == "Программирование"
 
     def test_topic_name_whitespace_only_invalid(self):
-        with self.assertRaises(ValidationError):
-            topic = Topic(name="   ")
+        topic = Topic(name="   ")
+        with pytest.raises(ValidationError):
             topic.full_clean()
 
 
@@ -58,9 +57,9 @@ class RoomModelTest(TestCase):
             description="Test Description",
             visibility=Room.Visibility.PUBLIC,
         )
-        self.assertEqual(room.name, "Test Room")
-        self.assertEqual(room.host, self.user)
-        self.assertEqual(room.visibility, Room.Visibility.PUBLIC)
+        assert room.name == "Test Room"
+        assert room.host == self.user
+        assert room.visibility == Room.Visibility.PUBLIC
 
     def test_room_unique_constraint(self):
         Room.objects.create(
@@ -69,7 +68,7 @@ class RoomModelTest(TestCase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        with self.assertRaises(Exception):
+        with pytest.raises(ValidationError):
             Room.objects.create(
                 host=self.user,
                 name="Duplicate Room",
@@ -84,4 +83,4 @@ class RoomModelTest(TestCase):
             description="",
             visibility=Room.Visibility.PUBLIC,
         )
-        self.assertEqual(str(room), "Test Room")
+        assert str(room) == "Test Room"

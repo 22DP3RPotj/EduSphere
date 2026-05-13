@@ -1,17 +1,15 @@
+import uuid
 from datetime import datetime
 
 import graphene
-import uuid
-from typing import Optional
-from graphql_jwt.decorators import login_required, superuser_required
-from graphql import GraphQLError
-
 from django.db.models import QuerySet
 from django.utils import timezone
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required, superuser_required
 
 from backend.core.exceptions import ErrorCode
-from backend.graphql.invite.types import InviteType, InviteStatusEnum
 from backend.graphql.invite.filters import InviteFilter
+from backend.graphql.invite.types import InviteStatusEnum, InviteType
 from backend.invite.choices import InviteStatusChoices
 from backend.invite.models import Invite
 from backend.invite.services import InviteService
@@ -92,16 +90,16 @@ class InviteQuery(graphene.ObjectType):
     def resolve_invites(
         self,
         info: graphene.ResolveInfo,
-        room: Optional[uuid.UUID] = None,
-        inviter: Optional[uuid.UUID] = None,
-        invitee: Optional[uuid.UUID] = None,
-        status: Optional[InviteStatusChoices] = None,
-        is_expired: Optional[bool] = None,
-        is_active: Optional[bool] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        expires_after: Optional[datetime] = None,
-        expires_before: Optional[datetime] = None,
+        room: uuid.UUID | None = None,
+        inviter: uuid.UUID | None = None,
+        invitee: uuid.UUID | None = None,
+        status: InviteStatusChoices | None = None,
+        is_expired: bool | None = None,
+        is_active: bool | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        expires_after: datetime | None = None,
+        expires_before: datetime | None = None,
     ) -> QuerySet[Invite]:
         queryset = Invite.objects.select_related("inviter", "invitee", "role")
         filter_data = {
@@ -126,16 +124,16 @@ class InviteQuery(graphene.ObjectType):
     def resolve_invite_count(
         self,
         info: graphene.ResolveInfo,
-        room: Optional[uuid.UUID] = None,
-        inviter: Optional[uuid.UUID] = None,
-        invitee: Optional[uuid.UUID] = None,
-        status: Optional[InviteStatusChoices] = None,
-        is_expired: Optional[bool] = None,
-        is_active: Optional[bool] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        expires_after: Optional[datetime] = None,
-        expires_before: Optional[datetime] = None,
+        room: uuid.UUID | None = None,
+        inviter: uuid.UUID | None = None,
+        invitee: uuid.UUID | None = None,
+        status: InviteStatusChoices | None = None,
+        is_expired: bool | None = None,
+        is_active: bool | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        expires_after: datetime | None = None,
+        expires_before: datetime | None = None,
     ) -> int:
         return self.resolve_invites(
             info,

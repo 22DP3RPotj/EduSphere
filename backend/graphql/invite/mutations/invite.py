@@ -1,17 +1,18 @@
-import graphene
 import uuid
-from typing import Optional, Any, Self
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
+from typing import Any, Self
 
-from backend.graphql.mutations import BaseMutation
-from backend.graphql.invite.types import InviteType
-from backend.graphql.access.types import ParticipantType
-from backend.account.models import User
-from backend.room.models import Room
+import graphene
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
+
 from backend.access.models import Role
-from backend.invite.services import InviteService
+from backend.account.models import User
 from backend.core.exceptions import ErrorCode
+from backend.graphql.access.types import ParticipantType
+from backend.graphql.invite.types import InviteType
+from backend.graphql.mutations import BaseMutation
+from backend.invite.services import InviteService
+from backend.room.models import Room
 
 
 class SendInvite(BaseMutation):
@@ -27,19 +28,19 @@ class SendInvite(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         invitee_email: str,
-        expires_at: Optional[graphene.DateTime] = None,
-        role_id: Optional[uuid.UUID] = None,
+        expires_at: graphene.DateTime | None = None,
+        role_id: uuid.UUID | None = None,
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         try:
             invitee = User.objects.get(email=invitee_email)
@@ -54,7 +55,7 @@ class SendInvite(BaseMutation):
                 raise GraphQLError(
                     "Role not found in the specified room",
                     extensions={"code": ErrorCode.NOT_FOUND},
-                )
+                ) from None
 
         invite = InviteService.send_invite(
             inviter=info.context.user,
@@ -76,7 +77,7 @@ class AcceptInvite(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, token: uuid.UUID
     ) -> Self:
         invite = InviteService.get_invite_by_token(token=token)
 
@@ -100,7 +101,7 @@ class DeclineInvite(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, token: uuid.UUID
     ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
@@ -124,7 +125,7 @@ class CancelInvite(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, token: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, token: uuid.UUID
     ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 
@@ -150,10 +151,10 @@ class ResendInvite(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         token: uuid.UUID,
-        expires_at: Optional[graphene.DateTime] = None,
+        expires_at: graphene.DateTime | None = None,
     ) -> Self:
         invite = InviteService.get_invite_by_token(token)
 

@@ -1,4 +1,5 @@
 from rules.predicates import predicate
+
 from backend.access.enums import PermissionCode
 from backend.access.models import Role
 from backend.account.models import User

@@ -1,12 +1,11 @@
 import re
-from typing import Optional
 
 from django.db import IntegrityError, transaction
 
-from backend.account.models import User
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.access.services import RoleService
+from backend.account.models import User
 from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
@@ -34,7 +33,7 @@ def create_room(
     name: str,
     description: str,
     topic_names: list[str],
-    visibility: Optional[VisibilityChoices] = None,
+    visibility: VisibilityChoices | None = None,
 ) -> Room:
     data = {
         "name": name,
@@ -79,10 +78,10 @@ def create_room(
 def update_room(
     *,
     room: Room,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    visibility: Optional[VisibilityChoices] = None,
-    topic_names: Optional[list[str]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    visibility: VisibilityChoices | None = None,
+    topic_names: list[str] | None = None,
 ) -> Room:
     data = {
         "name": name if name is not None else room.name,

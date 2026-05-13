@@ -3,11 +3,10 @@ import pytest
 from backend.access.enums import RoleCode
 from backend.access.models import Participant
 from backend.core.exceptions import FormValidationException, PermissionException
-from backend.room.models import Room
-from backend.room.services import RoomService
-from backend.room.rules.labels import RoomPermission
 from backend.core.tests.service_base import ServiceTestBase
-
+from backend.room.models import Room
+from backend.room.rules.labels import RoomPermission
+from backend.room.services import RoomService
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 
@@ -17,10 +16,10 @@ class RoomServiceTest(ServiceTestBase):
 
     def test_can_view_participant(self):
         self._add_member(self.member, self.member_role)
-        self.assertTrue(self.member.has_perm(RoomPermission.VIEW, self.room))
+        assert self.member.has_perm(RoomPermission.VIEW, self.room)
 
     def test_can_view_public_room(self):
-        self.assertTrue(self.other_user.has_perm(RoomPermission.VIEW, self.room))
+        assert self.other_user.has_perm(RoomPermission.VIEW, self.room)
 
     def test_cannot_view_private_room(self):
         private_room = Room.objects.create(
@@ -29,7 +28,7 @@ class RoomServiceTest(ServiceTestBase):
             description="",
             visibility=Room.Visibility.PRIVATE,
         )
-        self.assertFalse(self.other_user.has_perm(RoomPermission.VIEW, private_room))
+        assert not self.other_user.has_perm(RoomPermission.VIEW, private_room)
 
     def test_create_room_success(self):
         room = RoomService.create_room(
@@ -40,16 +39,16 @@ class RoomServiceTest(ServiceTestBase):
             topic_names=["Programming", "Python"],
         )
 
-        self.assertEqual(room.name, "New Room")
-        self.assertEqual(room.host, self.other_user)
-        self.assertEqual(room.visibility, Room.Visibility.PUBLIC)
-        self.assertEqual(room.topics.count(), 2)
+        assert room.name == "New Room"
+        assert room.host == self.other_user
+        assert room.visibility == Room.Visibility.PUBLIC
+        assert room.topics.count() == 2
 
         owner_participant = Participant.objects.get(user=self.other_user, room=room)
-        self.assertEqual(owner_participant.role.name, RoleCode.OWNER.label)
+        assert owner_participant.role.name == RoleCode.OWNER.label
 
     def test_create_room_invalid_data(self):
-        with self.assertRaises(FormValidationException):
+        with pytest.raises(FormValidationException):
             RoomService.create_room(
                 user=self.other_user,
                 name="",
@@ -68,13 +67,13 @@ class RoomServiceTest(ServiceTestBase):
             topic_names=["NewTopic"],
         )
 
-        self.assertEqual(updated.name, "Updated Room Name")
-        self.assertEqual(updated.description, "Updated description")
-        self.assertEqual(updated.visibility, Room.Visibility.PRIVATE)
-        self.assertEqual(updated.topics.count(), 1)
+        assert updated.name == "Updated Room Name"
+        assert updated.description == "Updated description"
+        assert updated.visibility == Room.Visibility.PRIVATE
+        assert updated.topics.count() == 1
 
     def test_update_room_no_permission(self):
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoomService.update_room(
                 user=self.other_user, room=self.room, name="Hacked Room"
             )
@@ -82,9 +81,9 @@ class RoomServiceTest(ServiceTestBase):
     def test_delete_room_success(self):
         result = RoomService.delete_room(self.owner, self.room)
 
-        self.assertTrue(result)
-        self.assertFalse(Room.objects.filter(id=self.room.id).exists())
+        assert result
+        assert not Room.objects.filter(id=self.room.id).exists()
 
     def test_delete_room_no_permission(self):
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             RoomService.delete_room(self.other_user, self.room)

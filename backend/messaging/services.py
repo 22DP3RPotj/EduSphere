@@ -1,11 +1,11 @@
-from backend.messaging.models import Message
 from backend.account.models import User
-from backend.room.models import Room
 from backend.core.exceptions import (
     PermissionException,
 )
-from backend.messaging.rules.labels import MessagingPermission
 from backend.messaging import actions
+from backend.messaging.models import Message
+from backend.messaging.rules.labels import MessagingPermission
+from backend.room.models import Room
 
 
 class MessageService:
@@ -107,6 +107,7 @@ class MessageService:
             "id": str(message.id),
             "author": message.author.username,
             "author_id": str(message.author.id),
+            "author_name": message.author.name,
             "body": message.body,
             "is_edited": message.is_edited,
             "created_at": message.created_at.isoformat(),

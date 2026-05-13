@@ -52,10 +52,17 @@ export interface Room {
   createdAt: DateTime;
 }
 
+export interface MessageAuthor {
+  id: UUID;
+  username: string;
+  name: string;
+  avatar: string | null;
+}
+
 export interface Message {
   id: UUID;
-  author: User;
-  room: Room;
+  author: MessageAuthor;
+  room?: Room;
   parent: Message | null;
   body: string;
   isEdited: boolean;

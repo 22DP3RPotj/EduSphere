@@ -1,28 +1,26 @@
+import uuid
 from datetime import datetime
 
 import graphene
-import uuid
-from typing import Optional
-from graphql_jwt.decorators import login_required, superuser_required
-from graphql import GraphQLError
-
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet, Count, Q
+from django.db.models import Count, Q, QuerySet
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required, superuser_required
 
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
-from backend.graphql.moderation.filters import ReportFilter, ModerationCaseFilter
+from backend.graphql.moderation.filters import ModerationCaseFilter, ReportFilter
 from backend.graphql.moderation.types import (
-    ReportType,
-    ReportReasonType,
     CaseStatusEnum,
     ModerationCaseType,
+    ReportReasonType,
     ReportTargetTypeEnum,
+    ReportType,
 )
+from backend.messaging.models import Message
 from backend.moderation.choices import CaseStatusChoices
 from backend.moderation.models import ModerationCase, Report, ReportReason
 from backend.room.models import Room
-from backend.messaging.models import Message
 
 
 class ReportQuery(graphene.ObjectType):
@@ -81,7 +79,7 @@ class ReportQuery(graphene.ObjectType):
         except Report.DoesNotExist:
             raise GraphQLError(
                 "Report not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         if report.reporter != info.context.user:
             raise GraphQLError(
@@ -95,13 +93,13 @@ class ReportQuery(graphene.ObjectType):
     def resolve_reports(
         self,
         info: graphene.ResolveInfo,
-        reason: Optional[uuid.UUID] = None,
-        reporter: Optional[uuid.UUID] = None,
-        case: Optional[uuid.UUID] = None,
-        has_case: Optional[bool] = None,
-        target_type: Optional[str] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
+        reason: uuid.UUID | None = None,
+        reporter: uuid.UUID | None = None,
+        case: uuid.UUID | None = None,
+        has_case: bool | None = None,
+        target_type: str | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
     ) -> QuerySet[Report]:
         queryset = Report.objects.select_related(
             "reporter", "reason", "content_type", "case"
@@ -125,13 +123,13 @@ class ReportQuery(graphene.ObjectType):
     def resolve_report_count(
         self,
         info: graphene.ResolveInfo,
-        reason: Optional[uuid.UUID] = None,
-        reporter: Optional[uuid.UUID] = None,
-        case: Optional[uuid.UUID] = None,
-        has_case: Optional[bool] = None,
-        target_type: Optional[str] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
+        reason: uuid.UUID | None = None,
+        reporter: uuid.UUID | None = None,
+        case: uuid.UUID | None = None,
+        has_case: bool | None = None,
+        target_type: str | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
     ) -> int:
         return self.resolve_reports(
             info,
@@ -148,7 +146,7 @@ class ReportQuery(graphene.ObjectType):
     def resolve_report_reasons(
         self,
         info: graphene.ResolveInfo,
-        target_type: Optional[ReportTargetTypeEnum] = None,
+        target_type: ReportTargetTypeEnum | None = None,
     ) -> QuerySet[ReportReason]:
         queryset = ReportReason.objects.filter(is_active=True)
         if target_type is not None:
@@ -172,14 +170,14 @@ class ReportQuery(graphene.ObjectType):
     def resolve_cases(
         self,
         info: graphene.ResolveInfo,
-        status: Optional[CaseStatusChoices] = None,
-        priority: Optional[int] = None,
-        has_actions: Optional[bool] = None,
-        target_type: Optional[str] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
-        updated_after: Optional[datetime] = None,
-        updated_before: Optional[datetime] = None,
+        status: CaseStatusChoices | None = None,
+        priority: int | None = None,
+        has_actions: bool | None = None,
+        target_type: str | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        updated_after: datetime | None = None,
+        updated_before: datetime | None = None,
     ) -> QuerySet[ModerationCase]:
         queryset = ModerationCase.objects.prefetch_related("reports", "actions")
         filter_data = {
@@ -209,4 +207,4 @@ class ReportQuery(graphene.ObjectType):
         except ModerationCase.DoesNotExist:
             raise GraphQLError(
                 "Case not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None

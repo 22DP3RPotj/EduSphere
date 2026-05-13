@@ -1,8 +1,8 @@
 import graphene
 from graphene_django.types import DjangoObjectType
 
-from backend.room.models import Room, Topic
 from backend.access.models import Participant
+from backend.room.models import Room, Topic
 
 
 class RoomVisibilityEnum(graphene.Enum):

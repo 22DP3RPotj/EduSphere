@@ -1,14 +1,15 @@
-import graphene
 import uuid
-from typing import Optional, Self, Any
-from graphql_jwt.decorators import login_required
+from typing import Any, Self
+
+import graphene
 from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
 
 from backend.core.exceptions import ErrorCode
+from backend.graphql.mutations import BaseMutation
 from backend.graphql.room.types import RoomType, RoomVisibilityEnum
 from backend.room.models import Room
 from backend.room.services import RoomService
-from backend.graphql.mutations import BaseMutation
 
 
 class CreateRoom(BaseMutation):
@@ -24,12 +25,12 @@ class CreateRoom(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         name: str,
         topic_names: list[str],
         description: str,
-        visibility: Optional[RoomVisibilityEnum] = None,
+        visibility: RoomVisibilityEnum | None = None,
     ) -> Self:
 
         room = RoomService.create_room(
@@ -57,20 +58,20 @@ class UpdateRoom(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        topic_names: Optional[list[str]] = None,
-        visibility: Optional[RoomVisibilityEnum] = None,
+        name: str | None = None,
+        description: str | None = None,
+        topic_names: list[str] | None = None,
+        visibility: RoomVisibilityEnum | None = None,
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         room = RoomService.update_room(
             user=info.context.user,
@@ -93,14 +94,14 @@ class DeleteRoom(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, room_id: uuid.UUID
     ) -> Self:
         try:
             room = Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = RoomService.delete_room(user=info.context.user, room=room)
 
@@ -116,7 +117,7 @@ class JoinRoom(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, room_id: uuid.UUID
     ) -> Self:
         try:
             room = Room.objects.get(
@@ -125,7 +126,7 @@ class JoinRoom(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         RoomService.join_room(user=info.context.user, room=room)
 
@@ -141,7 +142,7 @@ class LeaveRoom(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, room_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, room_id: uuid.UUID
     ) -> Self:
         try:
             room = Room.objects.get(
@@ -150,7 +151,7 @@ class LeaveRoom(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = RoomService.leave_room(user=info.context.user, room=room)
 

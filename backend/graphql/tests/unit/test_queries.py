@@ -1,9 +1,11 @@
-from graphql import ExecutionResult
-from graphql_jwt.testcases import JSONWebTokenTestCase
-
-from django.contrib.auth import get_user_model
+from typing import TYPE_CHECKING
 
 import pytest
+from django.contrib.auth import get_user_model
+from graphql_jwt.testcases import JSONWebTokenTestCase
+
+if TYPE_CHECKING:
+    from graphql import ExecutionResult
 
 pytestmark = pytest.mark.unit
 
@@ -55,11 +57,11 @@ class QueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertIsNone(result.errors, f"Unexpected errors: {result.errors}")
-        self.assertIsNotNone(result.data)
-        self.assertEqual(len(result.data["rooms"]), 1)
-        self.assertEqual(result.data["rooms"][0]["name"], self.room.name)
-        self.assertEqual(result.data["rooms"][0]["visibility"], "PUBLIC")
+        assert result.errors is None, f"Unexpected errors: {result.errors}"
+        assert result.data is not None
+        assert len(result.data["rooms"]) == 1
+        assert result.data["rooms"][0]["name"] == self.room.name
+        assert result.data["rooms"][0]["visibility"] == "PUBLIC"
 
     def test_room_query(self):
         query = """
@@ -73,8 +75,8 @@ class QueryTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(self.room.id)}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertIsNone(result.errors)
-        self.assertEqual(result.data["room"]["name"], self.room.name)
+        assert result.errors is None
+        assert result.data["room"]["name"] == self.room.name
 
     def test_me_query(self):
         self.client.authenticate(self.user)
@@ -86,7 +88,7 @@ class QueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertEqual(result.data["me"]["username"], "testuser")
+        assert result.data["me"]["username"] == "testuser"
 
     def test_auth_status_authenticated(self):
         self.client.authenticate(self.user)
@@ -101,10 +103,8 @@ class QueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertTrue(result.data["authStatus"]["isAuthenticated"])
-        self.assertEqual(
-            result.data["authStatus"]["user"]["username"], self.user.username
-        )
+        assert result.data["authStatus"]["isAuthenticated"]
+        assert result.data["authStatus"]["user"]["username"] == self.user.username
 
     def test_auth_status_not_authenticated(self):
         query = """
@@ -118,8 +118,8 @@ class QueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertFalse(result.data["authStatus"]["isAuthenticated"])
-        self.assertIsNone(result.data["authStatus"]["user"])
+        assert not result.data["authStatus"]["isAuthenticated"]
+        assert result.data["authStatus"]["user"] is None
 
     def test_messages_query(self):
         self.client.authenticate(self.user)
@@ -133,8 +133,8 @@ class QueryTests(JSONWebTokenTestCase):
         """
         variables = {"roomId": str(self.room.id)}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertEqual(len(result.data["messages"]), 1)
-        self.assertEqual(result.data["messages"][0]["body"], self.message.body)
+        assert len(result.data["messages"]) == 1
+        assert result.data["messages"][0]["body"] == self.message.body
 
     def test_rooms_with_search_filter(self):
         query = """
@@ -146,9 +146,9 @@ class QueryTests(JSONWebTokenTestCase):
         """
         variables = {"search": "Test"}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertIsNone(result.errors, f"Unexpected errors: {result.errors}")
-        self.assertIsNotNone(result.data)
-        self.assertEqual(len(result.data["rooms"]), 1)
+        assert result.errors is None, f"Unexpected errors: {result.errors}"
+        assert result.data is not None
+        assert len(result.data["rooms"]) == 1
 
     def test_rooms_with_topic_filter(self):
         query = """
@@ -160,9 +160,9 @@ class QueryTests(JSONWebTokenTestCase):
         """
         variables = {"topics": ["Tech"]}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertIsNone(result.errors, f"Unexpected errors: {result.errors}")
-        self.assertIsNotNone(result.data)
-        self.assertEqual(len(result.data["rooms"]), 1)
+        assert result.errors is None, f"Unexpected errors: {result.errors}"
+        assert result.data is not None
+        assert len(result.data["rooms"]) == 1
 
     def test_rooms_participated_by_user(self):
         self.client.authenticate(self.user)
@@ -175,9 +175,9 @@ class QueryTests(JSONWebTokenTestCase):
         """
         variables = {"userId": str(self.user.id)}
         result: ExecutionResult = self.client.execute(query, variables)
-        self.assertIsNone(result.errors, f"Unexpected errors: {result.errors}")
-        self.assertIsNotNone(result.data)
-        self.assertEqual(len(result.data["roomsParticipatedByUser"]), 1)
+        assert result.errors is None, f"Unexpected errors: {result.errors}"
+        assert result.data is not None
+        assert len(result.data["roomsParticipatedByUser"]) == 1
 
     def test_auth_status_unauthenticated(self):
         query = """
@@ -191,8 +191,8 @@ class QueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertFalse(result.data["authStatus"]["isAuthenticated"])
-        self.assertIsNone(result.data["authStatus"]["user"])
+        assert not result.data["authStatus"]["isAuthenticated"]
+        assert result.data["authStatus"]["user"] is None
 
     def test_topics_query(self):
         query = """
@@ -203,7 +203,7 @@ class QueryTests(JSONWebTokenTestCase):
             }
         """
         result: ExecutionResult = self.client.execute(query)
-        self.assertEqual(len(result.data["topics"]), 2)
+        assert len(result.data["topics"]) == 2
         topic_names = [topic["name"] for topic in result.data["topics"]]
-        self.assertIn("Tech", topic_names)
-        self.assertIn("Music", topic_names)
+        assert "Tech" in topic_names
+        assert "Music" in topic_names

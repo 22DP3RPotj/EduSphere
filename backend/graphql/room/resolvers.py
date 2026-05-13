@@ -1,16 +1,15 @@
 import uuid
+
 import graphene
-from typing import Optional
+from django.db.models import QuerySet
 from graphql import GraphQLError
 
-from django.db.models import QuerySet
-
-from backend.core.exceptions import ErrorCode
 from backend.account.models import User
+from backend.core.exceptions import ErrorCode
 from backend.graphql.room.filters import RoomFilter, TopicFilter
+from backend.graphql.room.types import RoomType, TopicType
 from backend.room.models import Room, Topic
 from backend.room.rules.labels import RoomPermission
-from backend.graphql.room.types import RoomType, TopicType
 
 
 class RoomQuery(graphene.ObjectType):
@@ -35,7 +34,7 @@ class RoomQuery(graphene.ObjectType):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         if not info.context.user.has_perm(RoomPermission.VIEW, room):
             raise GraphQLError(
@@ -47,10 +46,10 @@ class RoomQuery(graphene.ObjectType):
     def resolve_rooms(
         self,
         info: graphene.ResolveInfo,
-        host_id: Optional[uuid.UUID] = None,
-        host_slug: Optional[str] = None,
-        search: Optional[str] = None,
-        topics: Optional[list[str]] = None,
+        host_id: uuid.UUID | None = None,
+        host_slug: str | None = None,
+        search: str | None = None,
+        topics: list[str] | None = None,
     ) -> QuerySet[Room]:
         queryset = (
             Room.objects.with_participants_count()
@@ -80,7 +79,7 @@ class RoomQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         queryset = (
             Room.objects.participated_by(user)
@@ -99,7 +98,7 @@ class RoomQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         queryset = (
             Room.objects.not_participated_by(user)
@@ -119,8 +118,8 @@ class TopicQuery(graphene.ObjectType):
     def resolve_topics(
         self,
         info: graphene.ResolveInfo,
-        search: Optional[str] = None,
-        min_rooms: Optional[int] = None,
+        search: str | None = None,
+        min_rooms: int | None = None,
     ) -> QuerySet[Topic]:
         queryset = Topic.objects.all()
 

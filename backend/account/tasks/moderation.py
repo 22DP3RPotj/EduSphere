@@ -1,9 +1,11 @@
-from celery import shared_task
-from django.utils import timezone
-from django.db.utils import DatabaseError
-from backend.account.models import UserBan
-from backend.account import actions as AccountActions
 import logging
+
+from celery import shared_task
+from django.db.utils import DatabaseError
+from django.utils import timezone
+
+from backend.account import actions as AccountActions
+from backend.account.models import UserBan
 
 logger = logging.getLogger(__name__)
 

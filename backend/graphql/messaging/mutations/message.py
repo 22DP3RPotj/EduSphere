@@ -1,15 +1,16 @@
-import graphene
 import uuid
-from typing import Any, Optional, Self
-from graphql_jwt.decorators import login_required
-from graphql import GraphQLError
+from typing import Any, Self
 
-from backend.graphql.mutations import BaseMutation
-from backend.graphql.messaging.types import MessageType
-from backend.messaging.models import Message
-from backend.room.models import Room
-from backend.messaging.services import MessageService
+import graphene
+from graphql import GraphQLError
+from graphql_jwt.decorators import login_required
+
 from backend.core.exceptions import ErrorCode
+from backend.graphql.messaging.types import MessageType
+from backend.graphql.mutations import BaseMutation
+from backend.messaging.models import Message
+from backend.messaging.services import MessageService
+from backend.room.models import Room
 
 
 class CreateMessage(BaseMutation):
@@ -23,7 +24,7 @@ class CreateMessage(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         room_id: uuid.UUID,
         body: str,
@@ -33,7 +34,7 @@ class CreateMessage(BaseMutation):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         message = MessageService.create_message(
             user=info.context.user, room=room, body=body
@@ -51,14 +52,14 @@ class DeleteMessage(BaseMutation):
     @classmethod
     @login_required
     def resolve(
-        cls, root: Optional[Any], info: graphene.ResolveInfo, message_id: uuid.UUID
+        cls, root: Any | None, info: graphene.ResolveInfo, message_id: uuid.UUID
     ) -> Self:
         try:
             message = Message.objects.get(id=message_id)
         except Message.DoesNotExist:
             raise GraphQLError(
                 "Message not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         success = MessageService.delete_message(user=info.context.user, message=message)
 
@@ -76,7 +77,7 @@ class UpdateMessage(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         message_id: uuid.UUID,
         body: str,
@@ -86,7 +87,7 @@ class UpdateMessage(BaseMutation):
         except Message.DoesNotExist:
             raise GraphQLError(
                 "Message not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         message = MessageService.update_message(
             user=info.context.user, message=message, body=body

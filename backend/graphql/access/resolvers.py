@@ -1,15 +1,15 @@
-import graphene
 import uuid
+
+import graphene
+from django.db.models import QuerySet
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 
-from django.db.models import QuerySet
-
+from backend.access.models import Permission, Role
+from backend.access.services import RoleService
 from backend.core.exceptions import ErrorCode
 from backend.graphql.access.types import PermissionType, RoleType
 from backend.room.models import Room
-from backend.access.services import RoleService
-from backend.access.models import Permission, Role
 
 
 class RoleQuery(graphene.ObjectType):
@@ -44,7 +44,7 @@ class RoleQuery(graphene.ObjectType):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         return Role.objects.by_room(room).with_permissions()
 
@@ -59,7 +59,7 @@ class RoleQuery(graphene.ObjectType):
         except Room.DoesNotExist:
             raise GraphQLError(
                 "Room not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         participant = RoleService.get_participant(user, room)
 

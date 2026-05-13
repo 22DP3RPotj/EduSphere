@@ -1,10 +1,9 @@
 import uuid
 from datetime import timedelta
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-
-import pytest
 
 from backend.access.services import RoleService
 from backend.core.exceptions import (
@@ -13,11 +12,10 @@ from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
+from backend.core.tests.service_base import ServiceTestBase
 from backend.invite.models import Invite
 from backend.invite.services import InviteService
 from backend.room.models import Room
-from backend.core.tests.service_base import ServiceTestBase
-
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 
@@ -39,16 +37,16 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at,
         )
 
-        self.assertIsNotNone(invite)
-        self.assertEqual(invite.inviter, self.member)
-        self.assertEqual(invite.invitee, self.other_user)
-        self.assertEqual(invite.room, self.room)
-        self.assertEqual(invite.status, Invite.Status.PENDING)
+        assert invite is not None
+        assert invite.inviter == self.member
+        assert invite.invitee == self.other_user
+        assert invite.room == self.room
+        assert invite.status == Invite.Status.PENDING
 
     def test_send_invite_not_participant(self):
         expires_at = timezone.now() + timedelta(days=7)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             InviteService.send_invite(
                 inviter=self.other_user,
                 room=self.room,
@@ -62,7 +60,7 @@ class InviteServiceTest(ServiceTestBase):
 
         expires_at = timezone.now() + timedelta(days=7)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             InviteService.send_invite(
                 inviter=self.member,
                 room=self.room,
@@ -77,7 +75,7 @@ class InviteServiceTest(ServiceTestBase):
 
         expires_at = timezone.now() + timedelta(days=7)
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             InviteService.send_invite(
                 inviter=self.member,
                 room=self.room,
@@ -100,7 +98,7 @@ class InviteServiceTest(ServiceTestBase):
 
         expires_at = timezone.now() + timedelta(days=7)
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             InviteService.send_invite(
                 inviter=self.member,
                 room=self.room,
@@ -122,7 +120,7 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at,
         )
 
-        with self.assertRaises(ConflictException):
+        with pytest.raises(ConflictException):
             InviteService.send_invite(
                 inviter=self.member,
                 room=self.room,
@@ -145,12 +143,12 @@ class InviteServiceTest(ServiceTestBase):
 
         participant = InviteService.accept_invite(self.other_user, invite)
 
-        self.assertEqual(participant.user, self.other_user)
-        self.assertEqual(participant.room, self.room)
-        self.assertEqual(participant.role, self.member_role)
+        assert participant.user == self.other_user
+        assert participant.room == self.room
+        assert participant.role == self.member_role
 
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.Status.ACCEPTED)
+        assert invite.status == Invite.Status.ACCEPTED
 
     def test_accept_invite_not_invitee(self):
         self._add_member(self.member, self.owner_role)
@@ -164,7 +162,7 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at,
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             InviteService.accept_invite(self.member, invite)
 
     def test_accept_invite_not_pending(self):
@@ -182,7 +180,7 @@ class InviteServiceTest(ServiceTestBase):
         invite.status = Invite.Status.DECLINED
         invite.save()
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             InviteService.accept_invite(self.other_user, invite)
 
     def test_accept_invite_already_participant(self):
@@ -205,7 +203,7 @@ class InviteServiceTest(ServiceTestBase):
 
         InviteService.accept_invite(invitee, invite)
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             InviteService.send_invite(
                 inviter=self.member,
                 room=self.room,
@@ -228,9 +226,9 @@ class InviteServiceTest(ServiceTestBase):
 
         result = InviteService.decline_invite(self.other_user, invite)
 
-        self.assertTrue(result)
+        assert result
         invite.refresh_from_db()
-        self.assertEqual(invite.status, Invite.Status.DECLINED)
+        assert invite.status == Invite.Status.DECLINED
 
     def test_decline_invite_not_invitee(self):
         self._add_member(self.member, self.owner_role)
@@ -244,7 +242,7 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at,
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             InviteService.decline_invite(self.member, invite)
 
     def test_decline_invite_not_pending(self):
@@ -262,7 +260,7 @@ class InviteServiceTest(ServiceTestBase):
         invite.status = Invite.Status.EXPIRED
         invite.save()
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             InviteService.decline_invite(self.other_user, invite)
 
     def test_cancel_invite_success(self):
@@ -279,7 +277,7 @@ class InviteServiceTest(ServiceTestBase):
 
         result = InviteService.cancel_invite(self.member, invite)
 
-        self.assertEqual(result.status, Invite.Status.REVOKED)
+        assert result.status == Invite.Status.REVOKED
 
     def test_cancel_invite_not_inviter(self):
         self._add_member(self.member, self.owner_role)
@@ -293,7 +291,7 @@ class InviteServiceTest(ServiceTestBase):
             expires_at=expires_at,
         )
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             InviteService.cancel_invite(self.other_user, invite)
 
     def test_cancel_invite_not_pending(self):
@@ -311,7 +309,7 @@ class InviteServiceTest(ServiceTestBase):
         invite.status = Invite.Status.ACCEPTED
         invite.save()
 
-        with self.assertRaises((ValidationException, FormValidationException)):
+        with pytest.raises((ValidationException, FormValidationException)):
             InviteService.cancel_invite(self.member, invite)
 
     def test_get_invite_by_token_success(self):
@@ -327,13 +325,13 @@ class InviteServiceTest(ServiceTestBase):
         )
 
         retrieved = InviteService.get_invite_by_token(invite.token)
-        self.assertEqual(retrieved.id, invite.id)
+        assert retrieved.id == invite.id
 
     def test_get_invite_by_token_not_found(self):
         fake_token = uuid.uuid4()
 
         result = InviteService.get_invite_by_token(fake_token)
-        self.assertIsNone(result)
+        assert result is None
 
     def test_update_expired_invites(self):
         self._add_member(self.member, self.owner_role)
@@ -350,7 +348,7 @@ class InviteServiceTest(ServiceTestBase):
 
         result = InviteService.get_invite_by_token(invite.token)
 
-        self.assertEqual(result.status, Invite.Status.EXPIRED)
+        assert result.status == Invite.Status.EXPIRED
 
 
 @pytest.mark.invite_advanced
@@ -362,7 +360,7 @@ class InviteServiceAdvancedTests(ServiceTestBase):
 
         expires_at = timezone.now() - timedelta(hours=1)
 
-        with self.assertRaises(ValidationException):
+        with pytest.raises(ValidationException):
             InviteService.send_invite(
                 inviter=self.member,
                 room=self.room,
@@ -385,7 +383,7 @@ class InviteServiceAdvancedTests(ServiceTestBase):
 
         InviteService.accept_invite(self.other_user, invite)
 
-        with self.assertRaises(ValidationException):
+        with pytest.raises(ValidationException):
             InviteService.accept_invite(self.other_user, invite)
 
     def test_invite_cannot_be_declined_after_accepted(self):
@@ -402,7 +400,7 @@ class InviteServiceAdvancedTests(ServiceTestBase):
 
         InviteService.decline_invite(self.other_user, invite)
 
-        with self.assertRaises(ValidationException):
+        with pytest.raises(ValidationException):
             InviteService.accept_invite(self.other_user, invite)
 
     def test_invite_with_different_role_per_invitee(self):
@@ -433,6 +431,6 @@ class InviteServiceAdvancedTests(ServiceTestBase):
             expires_at=expires_at,
         )
 
-        self.assertEqual(invite1.role, self.member_role)
-        self.assertEqual(invite2.role, self.member_role)
-        self.assertNotEqual(invite1.invitee, invite2.invitee)
+        assert invite1.role == self.member_role
+        assert invite2.role == self.member_role
+        assert invite1.invitee != invite2.invitee

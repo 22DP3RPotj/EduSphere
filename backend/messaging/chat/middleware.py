@@ -1,8 +1,9 @@
 from http.cookies import SimpleCookie
-from graphql_jwt.shortcuts import get_user_by_token
+
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
 from graphql_jwt.exceptions import JSONWebTokenError
+from graphql_jwt.shortcuts import get_user_by_token
 
 
 def _get_anonymous_user():

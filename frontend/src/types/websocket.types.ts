@@ -22,6 +22,7 @@ export interface WSNewMessage extends WSBaseMessage {
   is_edited: boolean;
   author: string;
   author_id: UUID;
+  author_name: string;
   author_avatar: string | null;
 }
 

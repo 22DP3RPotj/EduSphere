@@ -1,8 +1,9 @@
 from rules.predicates import predicate
-from backend.messaging.models import Message
-from backend.account.models import User
-from backend.access.services import RoleService
+
 from backend.access.enums import PermissionCode
+from backend.access.services import RoleService
+from backend.account.models import User
+from backend.messaging.models import Message
 from backend.room.models import Room
 
 

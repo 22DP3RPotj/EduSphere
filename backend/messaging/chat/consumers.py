@@ -1,21 +1,22 @@
-import uuid
 import json
 import logging
-from datetime import datetime
-from typing import Any, Optional
+import uuid
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any
 
-from django.utils.timezone import now
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from enum import StrEnum
+from django.utils.timezone import now
 from redis.exceptions import RedisError
 
+from backend.core.apps import CoreConfig
 from backend.core.exceptions import (
     DomainException,
     FormValidationException,
 )
-from backend.core.apps import CoreConfig
 
+if TYPE_CHECKING:
+    from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +30,11 @@ class ClientMessageType(StrEnum):
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stream_key: Optional[str] = None
+        self.stream_key: str | None = None
         self.initialized: bool = False
-        self.room_id: Optional[uuid.UUID] = None
+        self.room_id: uuid.UUID | None = None
         self.room = None
-        self._last_seen_updated_at: Optional[datetime] = None
+        self._last_seen_updated_at: datetime | None = None
 
     @property
     def redis_client(self):
@@ -51,7 +52,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _parse_message_type(self, raw: Any) -> Optional[ClientMessageType]:
+    def _parse_message_type(self, raw: Any) -> ClientMessageType | None:
         if raw is None:
             return ClientMessageType.TEXT
         try:
@@ -59,7 +60,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except ValueError:
             return None
 
-    def _parse_uuid(self, value: Any) -> Optional[uuid.UUID]:
+    def _parse_uuid(self, value: Any) -> uuid.UUID | None:
         try:
             return uuid.UUID(str(value))
         except (ValueError, AttributeError):
@@ -85,7 +86,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return False
 
     async def _maybe_update_last_seen(self) -> None:
-        from backend.account.utils import update_last_seen, get_inactivity_threshold
+        from backend.account.utils import get_inactivity_threshold, update_last_seen
 
         threshold = get_inactivity_threshold()
         if (
@@ -133,8 +134,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f"chat_{room_id_str}"
         self.stream_key = f"chat_stream:{room_id_str}"
 
-        from backend.room.models import Room
         from backend.access.models import Participant
+        from backend.room.models import Room
 
         room = await database_sync_to_async(
             Room.objects.filter(id=self.room_id).first

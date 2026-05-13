@@ -1,9 +1,13 @@
-from typing import Self
+from typing import TYPE_CHECKING, Self
+
 from django.db import models
 from django.utils import timezone
 
+if TYPE_CHECKING:
+    from backend.invite.models import Invite  # noqa: F401
 
-class InviteQuerySet(models.QuerySet):
+
+class InviteQuerySet(models.QuerySet["Invite"]):
     """Custom QuerySet for Invite model."""
 
     def pending(self) -> Self:

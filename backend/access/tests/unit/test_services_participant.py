@@ -6,8 +6,8 @@ from backend.access.services import ParticipantService, RoleService
 from backend.core.exceptions import (
     PermissionException,
 )
-from backend.room.models import Room
 from backend.core.tests.service_base import ServiceTestBase
+from backend.room.models import Room
 
 pytestmark = [pytest.mark.unit, pytest.mark.services]
 
@@ -20,13 +20,13 @@ class ParticipantServiceTest(ServiceTestBase):
 
         participant = ParticipantService.get_participant(self.member, self.room)
 
-        self.assertIsNotNone(participant)
-        self.assertEqual(participant.user, self.member)
-        self.assertEqual(participant.room, self.room)
+        assert participant is not None
+        assert participant.user == self.member
+        assert participant.room == self.room
 
     def test_get_participant_not_found(self):
         participant = ParticipantService.get_participant(self.other_user, self.room)
-        self.assertIsNone(participant)
+        assert participant is None
 
     def test_change_participant_role_success(self):
         participant = self._add_member(self.other_user, self.member_role)
@@ -43,13 +43,13 @@ class ParticipantServiceTest(ServiceTestBase):
             new_role=moderator_role,
         )
 
-        self.assertEqual(result.role, moderator_role)
+        assert result.role == moderator_role
 
     def test_change_participant_role_no_permission(self):
         participant = self._add_member(self.other_user, self.member_role)
         self._add_member(self.member, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ParticipantService.change_participant_role(
                 user=self.member,
                 participant=participant,
@@ -68,7 +68,7 @@ class ParticipantServiceTest(ServiceTestBase):
         RoleService.create_default_roles(other_room)
         other_role = other_room.roles.first()
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ParticipantService.change_participant_role(
                 user=self.owner,
                 participant=participant,
@@ -79,24 +79,24 @@ class ParticipantServiceTest(ServiceTestBase):
         self._add_member(self.member, self.member_role)
         participant = Participant.objects.get(user=self.member, room=self.room)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ParticipantService.remove_participant(self.member, participant)
 
-        self.assertTrue(Participant.objects.filter(id=participant.id).exists())
+        assert Participant.objects.filter(id=participant.id).exists()
 
     def test_remove_participant_with_permission(self):
         participant = self._add_member(self.other_user, self.member_role)
 
         result = ParticipantService.remove_participant(self.owner, participant)
 
-        self.assertTrue(result)
-        self.assertFalse(Participant.objects.filter(id=participant.id).exists())
+        assert result
+        assert not Participant.objects.filter(id=participant.id).exists()
 
     def test_remove_participant_no_permission(self):
         self._add_member(self.member, self.member_role)
         participant = self._add_member(self.other_user, self.member_role)
 
-        with self.assertRaises(PermissionException):
+        with pytest.raises(PermissionException):
             ParticipantService.remove_participant(self.member, participant)
 
     def test_get_user_rooms(self):
@@ -114,6 +114,6 @@ class ParticipantServiceTest(ServiceTestBase):
 
         rooms = ParticipantService.get_user_rooms(self.member)
 
-        self.assertEqual(rooms.count(), 2)
-        self.assertIn(self.room, rooms)
-        self.assertIn(other_room, rooms)
+        assert rooms.count() == 2
+        assert self.room in rooms
+        assert other_room in rooms

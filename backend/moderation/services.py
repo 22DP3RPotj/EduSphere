@@ -1,23 +1,20 @@
-from typing import Optional
-
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 
 from backend.account.models import User
 from backend.account.rules.labels import AccountPermission
+from backend.core.exceptions import ConflictException, PermissionException
+from backend.messaging.models import Message
+from backend.moderation import actions
 from backend.moderation.choices import (
     ActionChoices,
     ActionPriorityChoices,
     CaseStatusChoices,
 )
 from backend.moderation.models import ModerationCase, Report, ReportReason
-from backend.room.models import Room
-from backend.messaging.models import Message
-from backend.core.exceptions import PermissionException, ConflictException
 from backend.moderation.rules.labels import ModerationPermission
-from backend.moderation import actions
+from backend.room.models import Room
 from backend.room.rules.labels import RoomPermission
-
 
 _ACTION_TO_STATUS: dict[ActionChoices, CaseStatusChoices] = {
     ActionChoices.NO_VIOLATION: CaseStatusChoices.DISMISSED,
@@ -66,7 +63,7 @@ class ReportService:
         reporter: User,
         target: Model,
         reason: ReportReason,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> Report:
         """
         Create a report for any reportable target (Room, User, Message).
@@ -118,7 +115,7 @@ class ReportService:
         moderator: User,
         case: ModerationCase,
         action: ActionChoices,
-        note: Optional[str] = None,
+        note: str | None = None,
     ) -> ModerationCase:
         """
         Record a moderation action against a case and transition its status.

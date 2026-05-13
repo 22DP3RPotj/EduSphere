@@ -1,6 +1,7 @@
 import inspect
 import logging
-from typing import Any, Callable, NoReturn, Optional
+from collections.abc import Callable
+from typing import Any, NoReturn
 
 import graphene
 from graphql import GraphQLError
@@ -33,7 +34,7 @@ class InternalErrorMiddleware:
             raise GraphQLError(
                 "Internal error",
                 extensions={"code": ErrorCode.INTERNAL_ERROR},
-            )
+            ) from None
 
         if inspect.isawaitable(result):
 
@@ -47,7 +48,7 @@ class InternalErrorMiddleware:
                     raise GraphQLError(
                         "Internal error",
                         extensions={"code": ErrorCode.INTERNAL_ERROR},
-                    )
+                    ) from None
 
             return handle()
 
@@ -119,7 +120,7 @@ class ErrorTransformingMiddleware:
             },
         )
 
-    def _normalize_errors(self, errors: Any) -> Optional[dict]:
+    def _normalize_errors(self, errors: Any) -> dict | None:
         if hasattr(errors, "get_json_data") and callable(errors.get_json_data):
             return format_form_errors(errors)
 

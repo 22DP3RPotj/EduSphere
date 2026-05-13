@@ -1,11 +1,11 @@
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from django.db import IntegrityError, transaction
 
 from backend.access.dtos import RoleDeleteResult
 from backend.access.forms import RoleForm
-from backend.access.models import Participant, Role, Permission
+from backend.access.models import Participant, Permission, Role
 from backend.access.templates import DEFAULT_ROLE_TEMPLATES
 from backend.core.exceptions import (
     ConflictException,
@@ -31,7 +31,7 @@ def create_default_roles(room: Room) -> None:
 def create_role(
     room: Room,
     name: str,
-    description: Optional[str],
+    description: str | None,
     priority: int,
     permission_ids: list[uuid.UUID],
 ) -> Role:
@@ -63,10 +63,10 @@ def create_role(
 
 def update_role(
     role: Role,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    priority: Optional[int] = None,
-    permission_ids: Optional[list[uuid.UUID]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    priority: int | None = None,
+    permission_ids: list[uuid.UUID] | None = None,
 ) -> Role:
     data: dict[str, Any] = {}
 
@@ -99,9 +99,7 @@ def update_role(
     return role
 
 
-def delete_role(
-    role: Role, substitution_role: Optional[Role] = None
-) -> RoleDeleteResult:
+def delete_role(role: Role, substitution_role: Role | None = None) -> RoleDeleteResult:
     with transaction.atomic():
         participants_count = Participant.objects.filter(role=role).update(
             role=substitution_role

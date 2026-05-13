@@ -1,14 +1,15 @@
-import graphene
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Self
+from typing import Any, Self
+
+import graphene
 from graphql import GraphQLError
 from graphql_jwt.decorators import superuser_required
 
 from backend.account.models import User
+from backend.account.services import ModerationService
 from backend.core.exceptions import ErrorCode
 from backend.graphql.mutations import BaseMutation
-from backend.account.services import ModerationService
 
 
 class BanUser(BaseMutation):
@@ -27,18 +28,18 @@ class BanUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> Self:
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.ban_user(
             user=user,
@@ -63,7 +64,7 @@ class UnbanUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
     ) -> Self:
@@ -72,7 +73,7 @@ class UnbanUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.unban_user(
             actor=info.context.user,
@@ -99,11 +100,11 @@ class BanUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> Self:
         banned, skipped = ModerationService.ban_users(
             actor=info.context.user,
@@ -130,7 +131,7 @@ class UnbanUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
     ) -> Self:
@@ -152,7 +153,7 @@ class PromoteUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
     ) -> Self:
@@ -175,7 +176,7 @@ class DemoteUsers(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_ids: list[uuid.UUID],
     ) -> Self:
@@ -197,7 +198,7 @@ class PromoteUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
     ) -> Self:
@@ -206,7 +207,7 @@ class PromoteUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.promote_user(
             actor=info.context.user,
@@ -225,7 +226,7 @@ class DemoteUser(BaseMutation):
     @superuser_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         user_id: uuid.UUID,
     ) -> Self:
@@ -234,7 +235,7 @@ class DemoteUser(BaseMutation):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         ModerationService.demote_user(
             actor=info.context.user,

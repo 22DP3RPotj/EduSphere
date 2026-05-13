@@ -1,18 +1,17 @@
+import logging
+from datetime import timedelta
+
+import pghistory.models
 from celery import shared_task
 from django.apps import apps
 from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
-from typing import Optional
-from datetime import timedelta
-import pghistory.models
-import logging
-
 
 logger = logging.getLogger(__name__)
 
 
-def run_audit_log_cleanup(days: Optional[int] = None, batch_size: Optional[int] = None):
+def run_audit_log_cleanup(days: int | None = None, batch_size: int | None = None):
     """
     Core logic for cleaning up audit logs.
     Separated from the task for easier testing and manual execution.

@@ -1,8 +1,9 @@
 import inspect
-import graphene
-from typing import Any, Callable
-from prometheus_client import Counter, Histogram
+from collections.abc import Callable
+from typing import Any
 
+import graphene
+from prometheus_client import Counter, Histogram
 
 GRAPHQL_RESOLVER_LATENCY_SECONDS = Histogram(
     "graphql_resolver_latency_seconds",

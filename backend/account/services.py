@@ -1,17 +1,17 @@
 from datetime import datetime
-from typing import Optional
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+
+from backend.account import actions
 from backend.account.choices import EmailTypeChoices
+from backend.account.models import EmailToken, User, UserBan
 from backend.account.rules.labels import AccountPermission
 from backend.core.exceptions import (
     PermissionException,
     ValidationException,
 )
-from backend.account import actions
-from backend.account.models import EmailToken, User, UserBan
 
 
 class AccountService:
@@ -59,7 +59,7 @@ class AccountService:
                 expires_at__gt=timezone.now(),
             )
         except EmailToken.DoesNotExist:
-            raise ValidationException("Invalid or expired verification link.")
+            raise ValidationException("Invalid or expired verification link.") from None
 
         if email_token.user != user:
             raise ValidationException(
@@ -114,14 +114,14 @@ class AccountService:
                 expires_at__gt=timezone.now(),
             )
         except (EmailToken.DoesNotExist, ValueError, TypeError):
-            raise ValidationException("Invalid password reset link.")
+            raise ValidationException("Invalid password reset link.") from None
 
         user = email_token.user
 
         try:
             validate_password(new_password, user=user)
         except ValidationError as e:
-            raise ValidationException("\n".join(e.messages))
+            raise ValidationException("\n".join(e.messages)) from e
 
         return actions.reset_password(
             email_token=email_token, new_password=new_password
@@ -141,7 +141,7 @@ class AccountService:
         try:
             validate_password(new_password, user=user)
         except ValidationError as e:
-            raise ValidationException("\n".join(e.messages))
+            raise ValidationException("\n".join(e.messages)) from e
 
         return actions.change_password(
             user=user,
@@ -157,8 +157,8 @@ class ModerationService:
         *,
         user: User,
         banned_by: User,
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> UserBan:
         """
         Ban a user.
@@ -197,8 +197,8 @@ class ModerationService:
         *,
         actor: User,
         user_ids: list,
-        reason: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
+        reason: str | None = None,
+        expires_at: datetime | None = None,
     ) -> tuple[int, int]:
         """
         Ban a list of users. Skips already-banned users.

@@ -1,24 +1,22 @@
+import uuid
 from datetime import datetime
 
 import graphene
-import uuid
-from typing import Optional
-from graphql_jwt.decorators import superuser_required
-from graphql import GraphQLError
-
 from django.db.models import QuerySet
+from graphql import GraphQLError
+from graphql_jwt.decorators import superuser_required
 
-from backend.graphql.account.types import UserType, AuthStatusType
-from backend.graphql.account.filters import UserFilter
 from backend.account.models import User
 from backend.core.exceptions import ErrorCode
+from backend.graphql.account.filters import UserFilter
+from backend.graphql.account.types import AuthStatusType, UserType
 
 
 class AuthQuery(graphene.ObjectType):
     me = graphene.Field(UserType)
     auth_status = graphene.Field(AuthStatusType)
 
-    def resolve_me(self, info: graphene.ResolveInfo) -> Optional[User]:
+    def resolve_me(self, info: graphene.ResolveInfo) -> User | None:
         user = info.context.user
         if user.is_authenticated:
             return user
@@ -57,16 +55,16 @@ class UserQuery(graphene.ObjectType):
     def resolve_users(
         self,
         info: graphene.ResolveInfo,
-        search: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        is_staff: Optional[bool] = None,
-        is_superuser: Optional[bool] = None,
-        has_avatar: Optional[bool] = None,
-        has_active_ban: Optional[bool] = None,
-        date_joined_after: Optional[datetime] = None,
-        date_joined_before: Optional[datetime] = None,
-        last_seen_after: Optional[datetime] = None,
-        last_seen_before: Optional[datetime] = None,
+        search: str | None = None,
+        is_active: bool | None = None,
+        is_staff: bool | None = None,
+        is_superuser: bool | None = None,
+        has_avatar: bool | None = None,
+        has_active_ban: bool | None = None,
+        date_joined_after: datetime | None = None,
+        date_joined_before: datetime | None = None,
+        last_seen_after: datetime | None = None,
+        last_seen_before: datetime | None = None,
     ) -> QuerySet[User]:
         queryset = User.objects.all().prefetch_related("hosted_rooms")
         filter_data = {
@@ -93,6 +91,6 @@ class UserQuery(graphene.ObjectType):
         except User.DoesNotExist:
             raise GraphQLError(
                 "User not found", extensions={"code": ErrorCode.NOT_FOUND}
-            )
+            ) from None
 
         return user

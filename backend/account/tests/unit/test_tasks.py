@@ -1,12 +1,12 @@
+from datetime import datetime, timedelta
 from unittest import mock
+
 import pytest
 from django.test import TestCase
 from django.utils import timezone
-from datetime import datetime, timedelta
 
 from backend.account.models import User, UserBan
 from backend.account.tasks.moderation import run_expire_user_bans
-
 
 pytestmark = pytest.mark.unit
 
@@ -48,7 +48,7 @@ class ExpireUserBansTests(TestCase):
         count = run_expire_user_bans()
 
         # Verify
-        self.assertEqual(count, 1)
+        assert count == 1
         mock_lift_ban.assert_called_once_with(ban=ban)
         mock_logger.info.assert_any_call("Expired 1 user bans.")
 

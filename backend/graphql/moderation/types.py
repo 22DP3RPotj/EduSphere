@@ -1,6 +1,9 @@
 import graphene
 from graphene_django import DjangoObjectType
 
+from backend.graphql.account.types import UserType
+from backend.graphql.messaging.types import MessageType
+from backend.graphql.room.types import RoomType
 from backend.moderation.models import (
     ModerationAction,
     ModerationCase,
@@ -8,9 +11,6 @@ from backend.moderation.models import (
     ReportHistory,
     ReportReason,
 )
-from backend.graphql.room.types import RoomType
-from backend.graphql.account.types import UserType
-from backend.graphql.messaging.types import MessageType
 
 
 class CaseStatusEnum(graphene.Enum):
@@ -52,9 +52,9 @@ class ReportTargetType(graphene.Union):
 
     @classmethod
     def resolve_type(cls, instance, info):
-        from backend.room.models import Room
         from backend.account.models import User
         from backend.messaging.models import Message
+        from backend.room.models import Room
 
         if isinstance(instance, Room):
             return RoomType

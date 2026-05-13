@@ -1,5 +1,6 @@
-from ..environment import env
 from datetime import timedelta
+
+from ..environment import env
 
 GRAPHENE = {
     "SCHEMA": "backend.graphql.schema.schema",

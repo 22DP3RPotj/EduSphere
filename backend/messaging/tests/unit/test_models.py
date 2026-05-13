@@ -1,8 +1,7 @@
+import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-
-import pytest
 
 pytestmark = pytest.mark.unit
 
@@ -32,8 +31,8 @@ class MessageModelTest(TestCase):
             room=self.room,
             body="Hello world!",
         )
-        self.assertEqual(message.body, "Hello world!")
-        self.assertFalse(message.is_edited)
+        assert message.body == "Hello world!"
+        assert not message.is_edited
 
     def test_message_str(self):
         message = Message.objects.create(
@@ -41,7 +40,7 @@ class MessageModelTest(TestCase):
             room=self.room,
             body="A" * 100,
         )
-        self.assertEqual(str(message), "A" * 50 + "...")
+        assert str(message) == "A" * 50 + "..."
 
     def test_message_str_short(self):
         message = Message.objects.create(
@@ -49,7 +48,7 @@ class MessageModelTest(TestCase):
             room=self.room,
             body="Short",
         )
-        self.assertEqual(str(message), "Short")
+        assert str(message) == "Short"
 
     def test_message_parent_validation(self):
         other_room = Room.objects.create(
@@ -69,5 +68,5 @@ class MessageModelTest(TestCase):
             body="Child",
             parent=parent_message,
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             child_message.full_clean()

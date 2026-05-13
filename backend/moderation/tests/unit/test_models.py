@@ -1,8 +1,7 @@
+import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
-
-import pytest
 
 pytestmark = pytest.mark.unit
 
@@ -24,8 +23,8 @@ class ReportReasonModelTest(TestCase):
         reason, _ = ReportReason.objects.get_or_create(
             slug="spam", defaults={"label": "Spam"}
         )
-        self.assertTrue(reason.is_active)
-        self.assertEqual(str(reason), "Spam")
+        assert reason.is_active
+        assert str(reason) == "Spam"
 
     def test_reason_with_content_type_restriction(self):
         ct = ContentType.objects.get_for_model(Room)
@@ -33,7 +32,7 @@ class ReportReasonModelTest(TestCase):
             slug="room-only", defaults={"label": "Room Only"}
         )
         reason.allowed_content_types.add(ct)
-        self.assertIn(ct, reason.allowed_content_types.all())
+        assert ct in reason.allowed_content_types.all()
 
 
 class ReportModelTest(TestCase):
@@ -73,19 +72,19 @@ class ReportModelTest(TestCase):
 
     def test_report_creation(self):
         report = self._make_report()
-        self.assertEqual(report.content_object, self.room)
-        self.assertEqual(report.case, self.case)
+        assert report.content_object == self.room
+        assert report.case == self.case
 
     def test_report_str(self):
         report = self._make_report()
-        self.assertEqual(str(report), "Report by user on Test Room")
+        assert str(report) == "Report by user on Test Room"
 
     def test_report_str_deleted_user(self):
         report = self._make_report()
         # Simulate on_delete=SET_NULL by bypassing full_clean via update()
         Report.objects.filter(pk=report.pk).update(reporter=None)
         report.refresh_from_db()
-        self.assertIn(DELETED_USER, str(report))
+        assert DELETED_USER in str(report)
 
 
 class ModerationCaseModelTest(TestCase):
@@ -109,7 +108,7 @@ class ModerationCaseModelTest(TestCase):
             object_id=self.room.pk,
             status=CaseStatusChoices.PENDING,
         )
-        self.assertEqual(case.status, CaseStatusChoices.PENDING)
+        assert case.status == CaseStatusChoices.PENDING
 
     def test_unique_active_case_per_target(self):
         from django.core.exceptions import ValidationError
@@ -119,7 +118,7 @@ class ModerationCaseModelTest(TestCase):
             object_id=self.room.pk,
             status=CaseStatusChoices.PENDING,
         )
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             ModerationCase.objects.create(
                 content_type=self.ct_room,
                 object_id=self.room.pk,
@@ -140,7 +139,7 @@ class ModerationCaseModelTest(TestCase):
             object_id=self.room.pk,
             status=CaseStatusChoices.PENDING,
         )
-        self.assertIsNotNone(new_case.pk)
+        assert new_case.pk is not None
 
 
 class ModerationActionModelTest(TestCase):
@@ -175,8 +174,8 @@ class ModerationActionModelTest(TestCase):
             action=ActionChoices.WARNING,
             note="First warning issued",
         )
-        self.assertEqual(action.action, ActionChoices.WARNING)
-        self.assertEqual(action.moderator, self.moderator)
+        assert action.action == ActionChoices.WARNING
+        assert action.moderator == self.moderator
 
     def test_actions_ordered_by_created_at(self):
         ModerationAction.objects.create(
@@ -188,6 +187,4 @@ class ModerationActionModelTest(TestCase):
             action=ActionChoices.CONTENT_REMOVED,
         )
         actions = list(self.case.actions.values_list("action", flat=True))
-        self.assertEqual(
-            actions, [ActionChoices.WARNING, ActionChoices.CONTENT_REMOVED]
-        )
+        assert actions == [ActionChoices.WARNING, ActionChoices.CONTENT_REMOVED]

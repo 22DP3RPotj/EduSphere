@@ -2,19 +2,19 @@ import uuid
 
 import pghistory
 from django.conf import settings
-from django.utils import timezone
-from django.db import models
-from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import (
     FileExtensionValidator,
     MinLengthValidator,
     RegexValidator,
 )
+from django.db import models
+from django.db.models.functions import Lower
+from django.utils import timezone
 
-from backend.account.choices import EmailTypeChoices, UserStatusChoices, LanguageChoices
-from backend.account.managers import UserManager
+from backend.account.choices import EmailTypeChoices, LanguageChoices, UserStatusChoices
 from backend.account.files.paths import avatar_upload_path
+from backend.account.managers import UserManager
 from backend.core.files.validators import FileSizeValidator, ImageValidator
 
 

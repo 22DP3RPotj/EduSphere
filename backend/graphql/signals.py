@@ -1,7 +1,7 @@
 from django.contrib.auth.models import update_last_login
 from django.dispatch import receiver
-from graphql_jwt.signals import token_issued
 from graphql_jwt.refresh_token.signals import refresh_token_rotated
+from graphql_jwt.signals import token_issued
 
 
 @receiver(token_issued)

@@ -1,11 +1,12 @@
+from typing import Any, Self
+
 import graphene
 import graphql_jwt
-from typing import Any, Optional, Self
 from graphql_jwt.decorators import login_required
 
+from backend.account.services import AccountService
 from backend.graphql.account.types import UserType
 from backend.graphql.mutations import BaseMutation
-from backend.account.services import AccountService
 
 
 class ObtainJSONWebToken(graphql_jwt.JSONWebTokenMutation):
@@ -33,7 +34,7 @@ class VerifyAccount(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         token: str,
     ) -> Self:
@@ -52,7 +53,7 @@ class ResendActivationEmail(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
     ) -> Self:
         AccountService.resend_verification_email(user=info.context.user)
@@ -74,7 +75,7 @@ class SendPasswordResetEmail(BaseMutation):
     @classmethod
     def resolve(  # type: ignore[override]
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         email: str,
     ) -> Self:
@@ -97,7 +98,7 @@ class PasswordReset(BaseMutation):
     @classmethod
     def resolve(  # type: ignore[override]
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         token: str,
         new_password: str,
@@ -122,7 +123,7 @@ class PasswordChange(BaseMutation):
     @login_required
     def resolve(
         cls,
-        root: Optional[Any],
+        root: Any | None,
         info: graphene.ResolveInfo,
         old_password: str,
         new_password: str,

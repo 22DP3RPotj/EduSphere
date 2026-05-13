@@ -1,5 +1,6 @@
 from django.urls import include, path
 from graphql_jwt.decorators import jwt_cookie
+
 from backend.graphql.views import GraphqlView
 
 urlpatterns = [

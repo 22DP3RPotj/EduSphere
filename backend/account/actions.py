@@ -1,5 +1,4 @@
 import secrets
-from typing import Optional
 from datetime import datetime, timedelta
 
 from django.db import transaction
@@ -7,13 +6,12 @@ from django.db.models import Q
 from django.utils import timezone
 
 from backend.account.choices import EmailTypeChoices
+from backend.account.forms import RegisterForm
 from backend.account.models import EmailToken, User, UserBan
+from backend.account.tasks.email import enqueue_email
 from backend.core.exceptions import (
     FormValidationException,
 )
-from backend.account.forms import RegisterForm
-from backend.account.tasks.email import enqueue_email
-
 
 TOKEN_EXPIRY = {
     EmailTypeChoices.VERIFICATION: timedelta(days=3),
@@ -115,9 +113,9 @@ def change_password(*, user: User, new_password: str) -> User:
 def ban_user(
     *,
     user: User,
-    banned_by: Optional[User] = None,
-    reason: Optional[str] = None,
-    expires_at: Optional[datetime] = None,
+    banned_by: User | None = None,
+    reason: str | None = None,
+    expires_at: datetime | None = None,
 ) -> UserBan:
     with transaction.atomic():
         ban = UserBan.objects.create(

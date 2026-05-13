@@ -2,13 +2,13 @@ import graphene
 from graphene_django import DjangoObjectType
 
 from backend.account.models import UserBanHistory, UserHistory
+from backend.invite.models import InviteHistory, InviteLinkHistory
 from backend.moderation.models import (
     ModerationActionHistory,
     ModerationCaseHistory,
     ReportHistory,
 )
 from backend.room.models import RoomHistory
-from backend.invite.models import InviteHistory, InviteLinkHistory
 
 
 class BaseAuditType(graphene.ObjectType):

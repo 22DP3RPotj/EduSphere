@@ -86,6 +86,13 @@
           <transition name="dropdown">
             <div v-if="showActions" class="action-dropdown">
               <button 
+                class="dropdown-action"
+                @click="handleReply"
+              >
+                <font-awesome-icon icon="reply" class="action-icon" />
+                {{ t('message.reply') }}
+              </button>
+              <button 
                 class="dropdown-action report-action"
                 @click="handleReportMessage"
               >
@@ -155,10 +162,6 @@
       <!-- Message content - display mode -->
       <div v-else class="message-body">{{ props.message.body }}</div>
 
-      <!-- Status indicator (own messages only) -->
-      <div v-if="isMessageOwner && statusText" class="message-status" :title="statusTooltip">
-        <span :class="statusClass">{{ statusText }}</span>
-      </div>
     </div>
     <div v-if="isMessageOwner" class="message-avatar own-avatar">
       <router-link v-if="props.message.author?.id" :to="`/u/${props.message.author.id}`">
@@ -256,28 +259,6 @@ function handleReply() {
 function truncateReplyBody(body: string): string {
   return body.length > 60 ? body.slice(0, 60) + '…' : body;
 }
-
-const statusText = computed(() => {
-  const summary = props.message.statusSummary;
-  if (!summary) return '';
-  if (summary.seen > 0) return '✓✓';
-  if (summary.delivered > 0) return '✓✓';
-  return '✓';
-});
-
-const statusClass = computed(() => {
-  const summary = props.message.statusSummary;
-  if (!summary) return '';
-  if (summary.seen > 0) return 'status-seen';
-  if (summary.delivered > 0) return 'status-delivered';
-  return 'status-sent';
-});
-
-const statusTooltip = computed(() => {
-  const summary = props.message.statusSummary;
-  if (!summary) return '';
-  return t('message.statusTooltip', { delivered: summary.delivered, seen: summary.seen });
-});
 
 async function startEditing() {
   editBody.value = props.message.body;
@@ -527,15 +508,6 @@ onBeforeUnmount(() => {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.own-message .action-toggle-button {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.own-message .action-toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
 .action-dropdown {
   position: absolute;
   right: 0;
@@ -687,16 +659,6 @@ onBeforeUnmount(() => {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-.own-message .reply-indicator {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-left-color: rgba(255, 255, 255, 0.6);
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.own-message .reply-indicator:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
 .reply-icon {
   font-size: 0.7rem;
   flex-shrink: 0;
@@ -711,25 +673,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Message status */
-.message-status {
-  font-size: 0.7rem;
-  margin-top: 0.15rem;
-  text-align: right;
-}
-
-.status-sent {
-  color: var(--text-light);
-}
-
-.status-delivered {
-  color: var(--text-light);
-}
-
-.status-seen {
-  color: #3b82f6;
 }
 
 @media (max-width: 768px) {

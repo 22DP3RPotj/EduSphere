@@ -368,8 +368,7 @@
     "userAvatarAlt": "{name}'s avatar",
     "reply": "Reply",
     "replyingTo": "Replying to {author}",
-    "unknownUser": "Unknown",
-    "statusTooltip": "Delivered to {delivered} · Seen by {seen}"
+    "unknownUser": "Unknown"
   },
   "profile": {
     "profile": "Profile",

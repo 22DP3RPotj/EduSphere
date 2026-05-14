@@ -104,6 +104,7 @@ class RoomQuery(graphene.ObjectType):
             Room.objects.not_participated_by(user)
             .with_participants_count()
             .with_details()
+            .visible_to(info.context.user)
             .ordered_by_popularity()
         )
 

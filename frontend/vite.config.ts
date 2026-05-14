@@ -8,7 +8,6 @@ export default () => {
   return defineConfig({
     define: {
       __API_URL__: JSON.stringify('/graphql/'),
-      __WS_URL__: JSON.stringify('localhost/ws'),
     },
     server: {
       hmr: {

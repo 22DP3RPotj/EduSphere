@@ -122,7 +122,7 @@ export function useWebSocket(
     }
 
     // Initialize WebSocket connection
-    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${__WS_URL__}/chat/${roomId.value}`
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/chat/${roomId.value}`
     
     // Close existing connection if any
     closeWebSocket()

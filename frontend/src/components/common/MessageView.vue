@@ -99,6 +99,14 @@
                 <font-awesome-icon icon="flag" class="action-icon" />
                 {{ t('report.report') }}
               </button>
+              <button
+                v-if="props.canDeleteAnyMessage"
+                class="dropdown-action delete-action"
+                @click="handleMessageDelete"
+              >
+                <font-awesome-icon icon="trash" class="action-icon" />
+                {{ t('common.delete') }}
+              </button>
             </div>
           </transition>
         </div>
@@ -199,6 +207,10 @@ const props = defineProps({
     default: null
   },
   isHost: {
+    type: Boolean,
+    default: false
+  },
+  canDeleteAnyMessage: {
     type: Boolean,
     default: false
   }

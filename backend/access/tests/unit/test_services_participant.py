@@ -5,6 +5,7 @@ from backend.access.models import Participant
 from backend.access.services import ParticipantService, RoleService
 from backend.core.exceptions import (
     PermissionException,
+    ValidationException,
 )
 from backend.core.tests.service_base import ServiceTestBase
 from backend.room.models import Room
@@ -68,7 +69,7 @@ class ParticipantServiceTest(ServiceTestBase):
         RoleService.create_default_roles(other_room)
         other_role = other_room.roles.first()
 
-        with pytest.raises(PermissionException):
+        with pytest.raises(ValidationException):
             ParticipantService.change_participant_role(
                 user=self.owner,
                 participant=participant,

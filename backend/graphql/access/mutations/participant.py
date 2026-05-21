@@ -15,7 +15,7 @@ from backend.graphql.mutations import BaseMutation
 class ChangeParticipantRole(BaseMutation):
     class Arguments:
         participant_id = graphene.UUID(required=True)
-        role_id = graphene.UUID(required=True)
+        role_id = graphene.UUID(required=False)
 
     participant = graphene.Field(ParticipantType)
 
@@ -26,7 +26,7 @@ class ChangeParticipantRole(BaseMutation):
         root: Any | None,
         info: graphene.ResolveInfo,
         participant_id: uuid.UUID,
-        role_id: uuid.UUID,
+        role_id: uuid.UUID | None = None,
     ) -> Self:
         try:
             participant = Participant.objects.get(id=participant_id)
@@ -35,12 +35,14 @@ class ChangeParticipantRole(BaseMutation):
                 "Participant not found", extensions={"code": ErrorCode.NOT_FOUND}
             ) from None
 
-        try:
-            role = Role.objects.get(id=role_id)
-        except Role.DoesNotExist:
-            raise GraphQLError(
-                "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
-            ) from None
+        role: Role | None = None
+        if role_id is not None:
+            try:
+                role = Role.objects.get(id=role_id)
+            except Role.DoesNotExist:
+                raise GraphQLError(
+                    "Role not found", extensions={"code": ErrorCode.NOT_FOUND}
+                ) from None
 
         participant = ParticipantService.change_participant_role(
             user=info.context.user, participant=participant, new_role=role

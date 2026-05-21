@@ -96,7 +96,7 @@ export const LEAVE_ROOM_MUTATION = gql`
 `;
 
 export const CHANGE_PARTICIPANT_ROLE_MUTATION = gql`
-    mutation ChangeParticipantRole($participantId: UUID!, $roleId: UUID!) {
+    mutation ChangeParticipantRole($participantId: UUID!, $roleId: UUID) {
         changeParticipantRole(participantId: $participantId, roleId: $roleId) {
             participant {
                 id

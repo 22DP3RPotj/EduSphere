@@ -8,9 +8,14 @@ from backend.graphql.account.types import UserType
 
 
 class PermissionType(DjangoObjectType):
+    code = graphene.String(required=True)
+
     class Meta:
         model = Permission
         fields = ("id", "code", "description")
+
+    def resolve_code(self, info: graphene.ResolveInfo) -> str:
+        return self.code
 
 
 class RoleType(DjangoObjectType):

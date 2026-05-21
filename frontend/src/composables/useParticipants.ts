@@ -34,7 +34,7 @@ export function useLeaveRoom(roomId?: Ref<UUID>) {
 export function useChangeParticipantRole() {
   const { mutate, loading, error } = useMutation(CHANGE_PARTICIPANT_ROLE_MUTATION)
 
-  async function changeParticipantRole(participantId: UUID, roleId: UUID) {
+  async function changeParticipantRole(participantId: UUID, roleId: UUID | null) {
     const result = await mutate({ participantId, roleId })
 
     if (result?.data?.changeParticipantRole?.participant) {

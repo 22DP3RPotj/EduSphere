@@ -63,14 +63,15 @@
         <div class="form-group">
           <label for="select-role">{{ t('room.selectRole') }}</label>
           <select id="select-role" v-model="selectedRoleId" class="form-select">
-            <option :value="null" disabled>{{ t('room.selectARolePlaceholder') }}</option>
+            <option :value="undefined" disabled>{{ t('room.selectARolePlaceholder') }}</option>
+            <option :value="null">{{ t('room.removeRole') }}</option>
             <option v-for="role in assignableRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
           </select>
         </div>
         <p v-if="roleChangeError" class="modal-error">{{ roleChangeError }}</p>
         <div class="modal-actions">
           <button type="button" class="btn-cancel" @click="showRoleChangeModal = false">{{ t('common.cancel') }}</button>
-          <button type="button" class="btn-confirm" :disabled="changeRoleLoading || !selectedRoleId" @click="confirmRoleChange">
+          <button type="button" class="btn-confirm" :disabled="changeRoleLoading || selectedRoleId === undefined" @click="confirmRoleChange">
             <font-awesome-icon v-if="changeRoleLoading" icon="spinner" spin />
             {{ t('common.confirm') }}
           </button>
@@ -155,21 +156,21 @@
             <font-awesome-icon :icon="showSidebar ? 'times' : 'users'" />
           </button>
           
-          <!-- Room Actions Menu for Host -->
-          <div v-if="isHost" class="room-actions-menu" @click.stop>
+          <!-- Room Actions Menu for Host/Admins -->
+          <div v-if="isHost || canUpdateRoom || canManageRoles || canDeleteRoom" class="room-actions-menu" @click.stop>
             <button class="room-actions-button" @click="toggleRoomActionsMenu">
               <font-awesome-icon icon="ellipsis-vertical" />
             </button>
             <div v-if="showRoomActionsMenu" class="room-actions-dropdown">
-              <button class="room-action-item" @click="handleEditRoom">
+              <button v-if="isHost || canUpdateRoom" class="room-action-item" @click="handleEditRoom">
                 <font-awesome-icon icon="edit" />
                 <span>{{ t('room.editRoom') }}</span>
               </button>
-              <button class="room-action-item" @click="showRoomActionsMenu = false; showRoleManager = true">
+              <button v-if="isHost || canManageRoles" class="room-action-item" @click="showRoomActionsMenu = false; showRoleManager = true">
                 <font-awesome-icon icon="user-tag" />
                 <span>{{ t('room.manageRoles') }}</span>
               </button>
-              <button class="room-action-item delete-action" @click="handleRoomDelete">
+              <button v-if="isHost || canDeleteRoom" class="room-action-item delete-action" @click="handleRoomDelete">
                 <font-awesome-icon icon="trash" />
                 <span>{{ t('room.deleteRoom') }}</span>
               </button>
@@ -188,7 +189,7 @@
             <font-awesome-icon icon="flag" />
             {{ t('report.report') }}
           </button>
-          <button v-if="isHost" class="invite-button" @click="showInviteModal = true">
+          <button v-if="isHost || canInviteParticipants" class="invite-button" @click="showInviteModal = true">
             <font-awesome-icon icon="user-plus" />
             {{ t('room.invite') }}
           </button>
@@ -241,7 +242,7 @@
                 <span v-else-if="participant.role" class="role-badge">{{ participant.role.name }}</span>
               </div>
               <!-- Host context menu for participants -->
-              <div v-if="isHost && !participant.isHost" class="participant-context" @click.stop>
+              <div v-if="(isHost || canInviteParticipants || canManageRoles) && !participant.isHost" class="participant-context" @click.stop>
                 <button class="context-menu-btn" @click.stop="toggleParticipantMenu(participant.id)">
                   <font-awesome-icon icon="ellipsis-vertical" />
                 </button>
@@ -555,6 +556,26 @@ const canDeleteAnyMessage = computed(() => {
   return myRole.value?.permissions?.some((p: { code: string }) => p.code === 'room.delete_message') ?? false;
 });
 
+const canInviteParticipants = computed(() => {
+  if (isHost.value) return true;
+  return myRole.value?.permissions?.some((p: { code: string }) => p.code === 'room.manage_participants') ?? false;
+});
+
+const canManageRoles = computed(() => {
+  if (isHost.value) return true;
+  return myRole.value?.permissions?.some((p: { code: string }) => p.code === 'room.manage_roles') ?? false;
+});
+
+const canUpdateRoom = computed(() => {
+  if (isHost.value) return true;
+  return myRole.value?.permissions?.some((p: { code: string }) => p.code === 'room.update') ?? false;
+});
+
+const canDeleteRoom = computed(() => {
+  if (isHost.value) return true;
+  return myRole.value?.permissions?.some((p: { code: string }) => p.code === 'room.delete') ?? false;
+});
+
 // Invite modal state
 const showInviteModal = ref(false);
 const inviteUserEmail = ref('');
@@ -564,7 +585,7 @@ const inviteRoleId = ref<string | null>(null);
 const participantMenuId = ref<UUID | null>(null);
 const showRoleChangeModal = ref(false);
 const roleChangeParticipantId = ref<UUID | null>(null);
-const selectedRoleId = ref<string | null>(null);
+const selectedRoleId = ref<string | null | undefined>(undefined);
 const roleChangeError = ref<string | null>(null);
 
 const {
@@ -779,22 +800,25 @@ function toggleParticipantMenu(participantId: UUID) {
 
 function openRoleChangeModal(participantId: UUID) {
   roleChangeParticipantId.value = participantId;
-  selectedRoleId.value = null;
+  selectedRoleId.value = undefined;
   roleChangeError.value = null;
   showRoleChangeModal.value = true;
   participantMenuId.value = null;
 }
 
 async function confirmRoleChange() {
-  if (!roleChangeParticipantId.value || !selectedRoleId.value) return;
+  if (!roleChangeParticipantId.value || selectedRoleId.value === undefined) return;
 
   roleChangeError.value = null;
-  const result = await changeRoleMutation(roleChangeParticipantId.value, selectedRoleId.value as UUID);
+  const result = await changeRoleMutation(
+    roleChangeParticipantId.value,
+    selectedRoleId.value as UUID | null,
+  );
   if (result.success) {
     await refetchRoom();
     showRoleChangeModal.value = false;
     roleChangeParticipantId.value = null;
-    selectedRoleId.value = null;
+    selectedRoleId.value = undefined;
   } else {
     roleChangeError.value = result.error || 'Failed to change participant role';
   }

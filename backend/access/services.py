@@ -464,15 +464,15 @@ class ParticipantService:
     def change_participant_role(
         user: User,
         participant: Participant,
-        new_role: Role,
+        new_role: Role | None,
     ) -> Participant:
         """
-        Change a participant's role.
+        Change or remove a participant's role.
 
         Args:
             user: User performing the action (must have role management permission)
             participant: The participant to update
-            new_role: The new role
+            new_role: The new role, or None to remove the participant's role
 
         Returns:
             The updated Participant instance
@@ -481,12 +481,6 @@ class ParticipantService:
             PermissionException: If user doesn't have permission
             ValidationException: If role doesn't belong to the room
         """
-        if not user.has_perm(AccessPermission.UPDATE, new_role):
-            raise PermissionException("You don't have permission to assign this role.")
-
-        if new_role.room != participant.room:
-            raise ValidationException("New role must belong to the same room.")
-
         actor_participant = ParticipantService.get_participant(user, participant.room)
 
         if actor_participant is None or actor_participant.role is None:
@@ -494,12 +488,38 @@ class ParticipantService:
                 "You must have a role to change participant roles."
             )
 
-        if not RoleService.can_affect_role(actor_participant, new_role):
-            raise PermissionException(
-                f"Cannot assign roles with priority equal to or higher than your own. "
-                f"Your priority: {actor_participant.role.priority}, "
-                f"Target role priority: {new_role.priority}"
-            )
+        if new_role is None:
+            # Removing a role requires manage_roles permission and higher priority
+            # than the role being removed.
+            if not RoleService.has_permission(
+                user, participant.room, PermissionCode.ROOM_MANAGE_ROLES
+            ):
+                raise PermissionException(
+                    "You don't have permission to remove roles."
+                )
+            if participant.role is not None and not RoleService.can_affect_role(
+                actor_participant, participant.role
+            ):
+                raise PermissionException(
+                    f"Cannot remove a role with priority equal to or higher than your own. "
+                    f"Your priority: {actor_participant.role.priority}, "
+                    f"Target role priority: {participant.role.priority}"
+                )
+        else:
+            if new_role.room != participant.room:
+                raise ValidationException("New role must belong to the same room.")
+
+            if not user.has_perm(AccessPermission.UPDATE, new_role):
+                raise PermissionException(
+                    "You don't have permission to assign this role."
+                )
+
+            if not RoleService.can_affect_role(actor_participant, new_role):
+                raise PermissionException(
+                    f"Cannot assign roles with priority equal to or higher than your own. "
+                    f"Your priority: {actor_participant.role.priority}, "
+                    f"Target role priority: {new_role.priority}"
+                )
 
         return actions.change_participant_role(
             participant=participant, new_role=new_role

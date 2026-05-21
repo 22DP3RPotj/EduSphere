@@ -128,10 +128,7 @@ def remove_permissions_from_role(role: Role, permission_ids: list[uuid.UUID]) ->
     return role
 
 
-def change_participant_role(participant: Participant, new_role: Role) -> Participant:
-    if new_role.room != participant.room:
-        raise ValidationException("New role must belong to the same room.")
-
+def change_participant_role(participant: Participant, new_role: Role | None) -> Participant:
     participant.role = new_role
     participant.save()
 

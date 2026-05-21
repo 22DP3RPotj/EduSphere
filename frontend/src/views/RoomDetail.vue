@@ -42,7 +42,7 @@
             <label for="invite-role">{{ t('room.roleOptional') }}</label>
             <select id="invite-role" v-model="inviteRoleId" class="form-select">
               <option :value="null">{{ t('room.noRole') }}</option>
-              <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+              <option v-for="role in assignableRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
             </select>
           </div>
           <div class="modal-actions">
@@ -64,7 +64,7 @@
           <label for="select-role">{{ t('room.selectRole') }}</label>
           <select id="select-role" v-model="selectedRoleId" class="form-select">
             <option :value="null" disabled>{{ t('room.selectARolePlaceholder') }}</option>
-            <option v-for="role in roomRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+            <option v-for="role in assignableRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
           </select>
         </div>
         <p v-if="roleChangeError" class="modal-error">{{ roleChangeError }}</p>
@@ -278,6 +278,7 @@
               :message="message"
               :current-user-id="authStore.user?.id"
               :is-host="message.author?.id === room?.host?.id"
+              :can-delete-any-message="canDeleteAnyMessage"
               @delete-message="handleMessageDelete"
               @update-message="handleMessageUpdate"
               @report-message="handleReportMessage"
@@ -371,7 +372,7 @@ import ConfirmationModal from '@/components/layout/ConfirmationModal.vue';
 import RoleManager from '@/components/common/RoleManager.vue';
 import ReportModal from '@/components/common/ReportModal.vue';
 import { ReportTargetType } from '@/types';
-import type { Room, Participant, UUID } from '@/types';
+import type { Room, Participant, UUID, Role } from '@/types';
 
 const MESSAGE_WARNING_THRESHOLD = Math.floor(MESSAGE_LIMITS.body * 0.9);
 
@@ -535,6 +536,24 @@ const { changeParticipantRole: changeRoleMutation, loading: changeRoleLoading } 
 const { removeParticipant: removeParticipantMutation } = useRemoveParticipant();
 const { sendInvite: sendInviteMutation, loading: sendInviteLoading } = useSendInvite();
 const { roles: roomRoles } = useRoomRoles(roomId);
+
+const myRole = computed(() => {
+  const user = authStore.user;
+  if (!user || !room.value) return null;
+  const myParticipant = room.value.participants.find((p: Participant) => p.user.id === user.id);
+  if (!myParticipant?.role?.id) return null;
+  return roomRoles.value.find((r: Role) => r.id === myParticipant.role.id) ?? null;
+});
+
+const assignableRoles = computed(() => {
+  if (!myRole.value) return [];
+  return roomRoles.value.filter((r: Role) => r.priority < myRole.value!.priority);
+});
+
+const canDeleteAnyMessage = computed(() => {
+  if (isHost.value) return true;
+  return myRole.value?.permissions?.some((p: { code: string }) => p.code === 'room.delete_message') ?? false;
+});
 
 // Invite modal state
 const showInviteModal = ref(false);

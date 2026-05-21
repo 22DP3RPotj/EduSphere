@@ -494,9 +494,7 @@ class ParticipantService:
             if not RoleService.has_permission(
                 user, participant.room, PermissionCode.ROOM_MANAGE_ROLES
             ):
-                raise PermissionException(
-                    "You don't have permission to remove roles."
-                )
+                raise PermissionException("You don't have permission to remove roles.")
             if participant.role is not None and not RoleService.can_affect_role(
                 actor_participant, participant.role
             ):

@@ -64,7 +64,7 @@
           <label for="select-role">{{ t('room.selectRole') }}</label>
           <select id="select-role" v-model="selectedRoleId" class="form-select">
             <option :value="undefined" disabled>{{ t('room.selectARolePlaceholder') }}</option>
-            <option :value="null">{{ t('room.removeRole') }}</option>
+            <option :value="null">{{ t('room.noRole') }}</option>
             <option v-for="role in assignableRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
           </select>
         </div>
@@ -242,12 +242,12 @@
                 <span v-else-if="participant.role" class="role-badge">{{ participant.role.name }}</span>
               </div>
               <!-- Host context menu for participants -->
-              <div v-if="(isHost || canInviteParticipants || canManageRoles) && !participant.isHost" class="participant-context" @click.stop>
+              <div v-if="(isHost || canInviteParticipants || canAffectParticipantRole(participant)) && !participant.isHost" class="participant-context" @click.stop>
                 <button class="context-menu-btn" @click.stop="toggleParticipantMenu(participant.id)">
                   <font-awesome-icon icon="ellipsis-vertical" />
                 </button>
                 <div v-if="participantMenuId === participant.id" class="context-dropdown">
-                  <button class="context-item" @click="openRoleChangeModal(participant.id)">
+                  <button v-if="isHost || canAffectParticipantRole(participant)" class="context-item" @click="openRoleChangeModal(participant.id)">
                     <font-awesome-icon icon="user-tag" />
                     {{ t('room.changeRole') }}
                   </button>
@@ -550,6 +550,15 @@ const assignableRoles = computed(() => {
   if (!myRole.value) return [];
   return roomRoles.value.filter((r: Role) => r.priority < myRole.value!.priority);
 });
+
+function canAffectParticipantRole(participant: ParticipantWithHost): boolean {
+  if (isHost.value) return true;
+  if (!canManageRoles.value) return false;
+  if (!participant.role?.id) return true;
+  const targetRole = roomRoles.value.find((r: Role) => r.id === participant.role.id);
+  if (!targetRole || !myRole.value) return false;
+  return myRole.value.priority > targetRole.priority;
+}
 
 const canDeleteAnyMessage = computed(() => {
   if (isHost.value) return true;

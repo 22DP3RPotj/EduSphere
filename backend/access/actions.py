@@ -10,7 +10,6 @@ from backend.access.templates import DEFAULT_ROLE_TEMPLATES
 from backend.core.exceptions import (
     ConflictException,
     FormValidationException,
-    ValidationException,
 )
 from backend.invite.models import Invite
 from backend.room.models import Room
@@ -128,7 +127,9 @@ def remove_permissions_from_role(role: Role, permission_ids: list[uuid.UUID]) ->
     return role
 
 
-def change_participant_role(participant: Participant, new_role: Role | None) -> Participant:
+def change_participant_role(
+    participant: Participant, new_role: Role | None
+) -> Participant:
     participant.role = new_role
     participant.save()
 

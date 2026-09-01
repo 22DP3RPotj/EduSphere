@@ -11,7 +11,7 @@ env.*
 !.env.example
 
 # Docs
-docs/*
+local_docs/*
 
 # IDE
 .vscode/
